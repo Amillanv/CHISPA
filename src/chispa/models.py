@@ -41,3 +41,58 @@ class Detection:
                 raise ValueError(f"{name} has no timezone. Use a UTC time.")
         if self.available_at < self.observed_at:
             raise ValueError("available_at is before observed_at.")
+
+
+@dataclass(frozen=True)
+class Scar:
+    """A connected area that MapBiomas Fogo maps as burned in one month.
+
+    `number` identifies the scar in its year. The scar grid of that year holds this number
+    in each pixel of the scar. The position is the mean of the pixel centres.
+    """
+
+    year: int
+    number: int
+    month: int
+    area_ha: float
+    lat: float
+    lon: float
+    south: float
+    west: float
+    north: float
+    east: float
+
+
+@dataclass(frozen=True)
+class Event:
+    """A group of detections that the fusion assigns to one fire."""
+
+    id: int
+    first_observed_at: datetime
+    last_observed_at: datetime
+    first_available_at: datetime
+    detections: int
+    lat: float
+    lon: float
+    south: float
+    west: float
+    north: float
+    east: float
+    max_frp_mw: float | None
+    level: str
+    families: str
+    passes: int
+
+
+@dataclass(frozen=True)
+class Alert:
+    """One state of the alert of an event: the confidence level from a given time.
+
+    An event has one alert. Each record is a change of that alert, with its evidence.
+    """
+
+    event_id: int
+    at: datetime
+    level: str
+    families: str
+    passes: int
