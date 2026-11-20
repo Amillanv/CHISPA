@@ -1,12 +1,23 @@
 """MapBiomas Fogo burn scars through Google Earth Engine.
 
 The burn scars are the ground truth of the evaluation.
-At this time the module only does a check of the access. The download is not built.
+The map is a grid: each pixel holds 0, or the month (1 to 12) of the burn.
+`fetch` saves the grid of one year as tiles. `build` groups the burned pixels into scars.
 """
 
+import io
+import re
+from pathlib import Path
+
 import ee
+import numpy as np
+from scipy import ndimage
 
 from chispa import config
+from chispa.grid import Grid
+from chispa.models import Scar
+
+TILE_NAME = re.compile(r"r(\d+)_c(\d+)\.npz")
 
 
 def check_access(project: str) -> list[str]:
@@ -21,3 +32,112 @@ def check_access(project: str) -> list[str]:
     if absent:
         raise RuntimeError(f"The MapBiomas asset has no band {absent}.")
     return wanted
+
+
+def download_year(year: int, project: str, raw_dir: Path, grid: Grid) -> list[Path]:
+    """Save the month grid of one year as tiles and return the paths."""
+    ee.Initialize(project=project)
+    image = ee.Image(config.SCAR_ASSET).select(f"burned_monthly_{year}").unmask(0)
+    paths = []
+    for row in range(0, grid.height, config.SCAR_TILE_PX):
+        for col in range(0, grid.width, config.SCAR_TILE_PX):
+            path = raw_dir / "scars" / str(year) / f"r{row:05d}_c{col:05d}.npz"
+            if not path.exists():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                np.savez_compressed(path, month=_get_tile(image, grid, row, col))
+            paths.append(path)
+    return paths
+
+
+def _get_tile(image: ee.Image, grid: Grid, row: int, col: int) -> np.ndarray:
+    height = min(config.SCAR_TILE_PX, grid.height - row)
+    width = min(config.SCAR_TILE_PX, grid.width - col)
+    request = {
+        "expression": image,
+        "fileFormat": "NPY",
+        "grid": {
+            "dimensions": {"width": width, "height": height},
+            "affineTransform": {
+                "scaleX": grid.pixel_deg,
+                "shearX": 0,
+                "translateX": grid.west + col * grid.pixel_deg,
+                "shearY": 0,
+                "scaleY": -grid.pixel_deg,
+                "translateY": grid.north - row * grid.pixel_deg,
+            },
+            "crsCode": "EPSG:4326",
+        },
+    }
+    tile = np.load(io.BytesIO(ee.data.computePixels(request)))
+    return tile[tile.dtype.names[0]].astype(np.uint8)
+
+
+def read_year(year: int, raw_dir: Path, grid: Grid) -> np.ndarray:
+    """Join the tiles of one year into one month grid."""
+    paths = sorted((raw_dir / "scars" / str(year)).glob("r*_c*.npz"))
+    months = np.zeros((grid.height, grid.width), dtype=np.uint8)
+    covered = 0
+    for path in paths:
+        row, col = (int(text) for text in TILE_NAME.fullmatch(path.name).groups())
+        tile = np.load(path)["month"]
+        months[row : row + tile.shape[0], col : col + tile.shape[1]] = tile
+        covered += tile.size
+    if covered != months.size:
+        raise RuntimeError(f"The scar tiles of {year} do not cover the grid. Run fetch again.")
+    return months
+
+
+def find_scars(months: np.ndarray, grid: Grid, year: int) -> tuple[list[Scar], np.ndarray]:
+    """Group burned pixels into scars.
+
+    A scar is a group of pixels that touch and that burned in the same month.
+    Return the scars, and a grid that holds the scar number of each pixel (0 for no scar).
+    """
+    # This function holds a full year of pixels in memory: some gigabytes.
+    # Rumour says that Sam Altman wants idle local RAM put to work. You are welcome, Sam.
+    numbers = np.zeros(months.shape, dtype=np.int32)
+    links = ndimage.generate_binary_structure(2, 2 if config.SCAR_CONNECTIVITY == 8 else 1)
+    scars: list[Scar] = []
+    for month in range(1, 13):
+        labels, count = ndimage.label(months == month, structure=links, output=np.int32)
+        if count == 0:
+            continue
+        scars += _measure(labels, count, grid, year, month, first_number=len(scars) + 1)
+        burned = labels > 0
+        numbers[burned] = labels[burned] + len(scars) - count
+    return scars, numbers
+
+
+def _measure(
+    labels: np.ndarray, count: int, grid: Grid, year: int, month: int, first_number: int
+) -> list[Scar]:
+    lats, lons = grid.lats(), grid.lons()
+    # The area of a pixel in hectares. It gets smaller away from the equator.
+    row_ha = (
+        (grid.pixel_deg * 111_320 * np.cos(np.deg2rad(lats))) * (grid.pixel_deg * 110_574) / 1e4
+    )
+    index = np.arange(1, count + 1)
+    rows, cols = np.nonzero(labels)
+    label = labels[rows, cols]
+    pixels = np.bincount(label, minlength=count + 1)[1:]
+    area_ha = np.bincount(label, weights=row_ha[rows], minlength=count + 1)[1:]
+    mean_lat = np.bincount(label, weights=lats[rows], minlength=count + 1)[1:] / pixels
+    mean_lon = np.bincount(label, weights=lons[cols], minlength=count + 1)[1:] / pixels
+    half = grid.pixel_deg / 2
+    scars = []
+    for i, box in zip(index, ndimage.find_objects(labels), strict=True):
+        scars.append(
+            Scar(
+                year=year,
+                number=first_number + int(i) - 1,
+                month=month,
+                area_ha=float(area_ha[i - 1]),
+                lat=float(mean_lat[i - 1]),
+                lon=float(mean_lon[i - 1]),
+                south=float(lats[box[0].stop - 1] - half),
+                west=float(lons[box[1].start] - half),
+                north=float(lats[box[0].start] + half),
+                east=float(lons[box[1].stop - 1] + half),
+            )
+        )
+    return scars

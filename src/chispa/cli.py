@@ -5,15 +5,18 @@ One command for each step lets a reader make each result again.
 
 import argparse
 import os
+from datetime import UTC, datetime
 
 from dotenv import load_dotenv
 
 from chispa import bucket, config
 from chispa.build import build_store
-from chispa.sources import firms, goes, inpe, scars
+from chispa.fusion import LEVELS, fuse
+from chispa.grid import pantanal_grid
+from chispa.sources import border, firms, goes, inpe, scars
+from chispa.store import open_store, read_detections, replace_fusion
 
 NOT_BUILT = {
-    "fuse": "Replay detections and write events and alerts.",
     "evaluate": "Compare alerts with burn scars and write the result tables.",
     "serve": "Start the dashboard.",
     "mcp": "Start the MCP server.",
@@ -27,11 +30,13 @@ def main(arguments: list[str] | None = None) -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("check", help="Do a check of the keys and the logins.")
     fetch = commands.add_parser("fetch", help="Get the raw files of one source for one year.")
-    fetch.add_argument("source", choices=["firms", "goes", "inpe"])
-    fetch.add_argument("--year", type=int, required=True)
+    fetch.add_argument("source", choices=["firms", "goes", "inpe", "scars", "border"])
+    fetch.add_argument("--year", type=int, help="Necessary for each source apart from border.")
     fetch.add_argument("--push", action="store_true", help="Also copy new files to the bucket.")
     build = commands.add_parser("build", help="Make the store from the raw files.")
     build.add_argument("--offline", action="store_true", help="Do not get files from the bucket.")
+    fusion = commands.add_parser("fuse", help="Replay one year of detections into events.")
+    fusion.add_argument("--year", type=int, required=True)
     for name, text in NOT_BUILT.items():
         commands.add_parser(name, help=f"{text} Not built.")
     chosen = parser.parse_args(arguments)
@@ -42,6 +47,8 @@ def main(arguments: list[str] | None = None) -> None:
         run_fetch(chosen.source, chosen.year, chosen.push)
     elif chosen.command == "build":
         run_build(chosen.offline)
+    elif chosen.command == "fuse":
+        run_fuse(chosen.year)
     else:
         parser.exit(1, f"The command '{chosen.command}' is not built.\n")
 
@@ -64,12 +71,19 @@ def check() -> None:
     print(f"Earth Engine: login works. Found {', '.join(bands)}.")
 
 
-def run_fetch(source: str, year: int, push: bool) -> None:
+def run_fetch(source: str, year: int | None, push: bool) -> None:
     """Download the raw files of one source from its origin. This does not change the store."""
+    if source != "border" and year is None:
+        raise SystemExit("Give the year: --year 2024.")
     if source == "firms":
         files = firms.download_year(year, read_setting("FIRMS_API_KEY"), config.RAW_DIR)
     elif source == "inpe":
         files = inpe.download_year(year, config.RAW_DIR)
+    elif source == "scars":
+        project = read_setting("EE_PROJECT")
+        files = scars.download_year(year, project, config.RAW_DIR, pantanal_grid())
+    elif source == "border":
+        files = [border.download(config.RAW_DIR)]
     elif year == config.GOES_GAP_START.year:
         files = goes.download_gap(config.RAW_DIR)
     else:
@@ -86,4 +100,16 @@ def run_build(offline: bool) -> None:
     for source, (files, detections, rejected) in build_store(
         config.RAW_DIR, config.STORE_PATH
     ).items():
-        print(f"{source}: {files} files, {detections} detections, {rejected} rows rejected.")
+        print(f"{source}: {files} files, {detections} records, {rejected} rows rejected.")
+
+
+def run_fuse(year: int) -> None:
+    """Replay the detections that became available in one year and save the events."""
+    store = open_store(config.STORE_PATH)
+    start, end = datetime(year, 1, 1, tzinfo=UTC), datetime(year + 1, 1, 1, tzinfo=UTC)
+    # An event id is the year, then a number. Thus the ids of two years do not collide.
+    first_id = year * 10_000_000
+    events, alerts, memberships = fuse(read_detections(store, start, end), first_id)
+    replace_fusion(store, (first_id, first_id + 10_000_000), events, alerts, memberships)
+    levels = {level: sum(event.level == level for event in events) for level in LEVELS}
+    print(f"{year}: {len(memberships)} detections, {len(events)} events, {levels}.")

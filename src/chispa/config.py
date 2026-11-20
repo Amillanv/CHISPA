@@ -67,3 +67,36 @@ SCAR_ASSET = (
     "projects/mapbiomas-public/assets/brazil/fire/collection5_1/"
     "mapbiomas_fire_collection51_monthly_burned_v1"
 )
+
+# The grid of the MapBiomas asset: the size of a pixel in degrees (30 m) and the
+# west and north edges of the full grid. These values come from the asset.
+SCAR_PIXEL_DEG = 0.0002694945852358564
+SCAR_ORIGIN = (-74.54354974916409, 6.761619143567639)
+
+# The side of a download tile in pixels. Earth Engine limits the size of one request.
+SCAR_TILE_PX = 2048
+
+# 8: pixels that touch at a corner are one scar. 4: only pixels that share a side.
+SCAR_CONNECTIVITY = 8
+
+# --- Fusion ---
+# These values are a first proposal. Tune them only on the development year.
+
+# The fusion puts detections on a grid of cells. This is the side of a cell in degrees
+# (approximately 550 m). The join distance is thus approximate by up to one cell.
+FUSION_CELL_DEG = 0.005
+
+# A detection occupies its footprint plus this margin, in metres.
+FUSION_MARGIN_M = 500.0
+
+# Two detections that occupy the same cell are one event if their observation times
+# are not farther apart than this.
+FUSION_WINDOW = timedelta(hours=24)
+
+# Detections of one platform are one pass if their times are not farther apart than this.
+# FIRMS and INPE give times of the same pass that differ by one or two minutes.
+PASS_GAP = timedelta(minutes=30)
+
+# GOES makes one scan each 10 minutes. FIRMS gives the start of the scan. INPE gives a time
+# approximately 7 minutes later. We move each GOES time back to the start of its scan.
+GOES_SCAN = timedelta(minutes=10)
