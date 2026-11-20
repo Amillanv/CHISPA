@@ -5,10 +5,10 @@ Then it measures how good those alerts are.
 
 ## Status
 
-**Nothing is built. There are no results.**
+**There are no results.**
 
-This repository contains the rules ([CLAUDE.md](CLAUDE.md)) and the build plan ([PLAN.md](PLAN.md)).
-This section will change when code and results exist.
+The project skeleton exists: the detection record, the SQLite store and the command names.
+No command gets data yet. This section will change when data and results exist.
 
 ## The problem
 
@@ -83,8 +83,16 @@ It does not say that a burn is safe, and it does not give authorization to burn.
 
 ## How to use it
 
-There is nothing to run yet.
-The planned commands are in [PLAN.md](PLAN.md). This section will give the real commands when they work.
+Install the project and run the tests. Python 3.12 or later is necessary.
+
+```
+python3 -m venv venv
+venv/bin/pip install -e ".[dev]"
+venv/bin/pytest
+venv/bin/chispa --help
+```
+
+The commands in the help text are not built yet. Each one stops with a message.
 
 ## Language
 
@@ -100,4 +108,4 @@ We do not claim certified compliance.
 
 ## Licence
 
-Not decided. See the open decisions in [PLAN.md](PLAN.md).
+Not decided.
