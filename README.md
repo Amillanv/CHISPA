@@ -9,12 +9,13 @@ Then it measures how good those alerts are.
 
 What works at this time:
 
-- A public bucket holds the raw files of FIRMS, of the GOES gap fill and of INPE.
-- The command `chispa build` gets the raw files from the bucket and makes a SQLite store of detections. It needs no key.
-- The command `chispa fetch` gets raw files from the sources: FIRMS (VIIRS, MODIS, GOES-16), raw GOES files and INPE.
-- The command `chispa check` does a check of the bucket, the FIRMS key and the Earth Engine login.
+- A public bucket holds the raw files: FIRMS, the GOES gap fill, INPE and the MapBiomas burn scar tiles.
+- `chispa build` gets the raw files from the bucket and makes a SQLite store: 4.1 million detections and the burn scars of 2023 and 2024.
+- `chispa fuse` groups the detections of one year into events with a confidence level. It is a first version and is not tuned.
+- `chispa fetch` gets raw files from the sources. `chispa check` does a check of the bucket, the key and the login.
 
-The weather, the burn scars, the fusion, the evaluation, the agent and the dashboard do not exist yet.
+Known problem: large fires chain into very large events. In 2023, one event holds 27 percent of all detections.
+The weather, the evaluation, the agent and the dashboard do not exist yet.
 
 ## The problem
 
@@ -78,6 +79,7 @@ Each source owns its data. The public bucket has a file `README.txt` with the te
 - GOES: NOAA GOES-16 ABI Level 2 Fire/Hot Spot Characterization, from the NOAA Open Data Dissemination Program.
 - INPE: INPE. Banco de Dados de queimadas. Disponível em: http://www.inpe.br/queimadas/bdqueimadas. Acesso em: 20 nov. 2026.
 - MapBiomas Fogo: CC BY 4.0. Alencar et al. 2022, Remote Sensing 14(11), 2510.
+- IBGE: Biomas e Sistema Costeiro-Marinho do Brasil, 1:250 000. Rio de Janeiro: IBGE, 2019.
 
 INPE gives no named licence for its files. It publishes them as open data for public use.
 Our copy of the INPE files is not an official INPE service.
@@ -110,12 +112,13 @@ python3 -m venv venv
 venv/bin/pip install -e ".[dev]"
 venv/bin/pytest
 venv/bin/chispa build
+venv/bin/chispa fuse --year 2023
 ```
 
 The command `build` does two things:
 
 1. It downloads each raw file that is absent from `data/raw/`. The first run gets approximately 1.8 GB.
-2. It makes `data/chispa.sqlite` from all the raw files in `data/raw/`.
+2. It makes `data/chispa.sqlite` from all the raw files in `data/raw/`. This needs approximately 5.5 GB of memory and 3 minutes.
 
 Use `venv/bin/chispa build --offline` to make the store from the local raw files only.
 The other commands in `venv/bin/chispa --help` are not built yet.
@@ -175,6 +178,8 @@ If the Earth Engine line fails after some weeks, run the `gcloud` login command 
 venv/bin/chispa fetch firms --year 2024 --push
 venv/bin/chispa fetch goes --year 2024 --push
 venv/bin/chispa fetch inpe --year 2024 --push
+venv/bin/chispa fetch scars --year 2024 --push
+venv/bin/chispa fetch border --push
 ```
 
 - `fetch` saves raw files in `data/raw/`. It does not download a file that is there, and it does not change the store.
@@ -182,6 +187,8 @@ venv/bin/chispa fetch inpe --year 2024 --push
 - `fetch firms` makes approximately 475 requests for one year.
 - `fetch goes` fills a gap of 50 days in the FIRMS record of GOES-16. It reads approximately 11 GB of raw files and keeps only the fire pixels.
 - `fetch inpe` downloads approximately 1.4 GB for the two years. The INPE server is slow.
+- `fetch scars` reads the burn scar map from Earth Engine as 130 tiles for one year.
+- `fetch border` gets the border of the Pantanal biome from IBGE.
 
 Then run `venv/bin/chispa build` to make the store again.
 

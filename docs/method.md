@@ -80,41 +80,51 @@ If a source does not give the publication time, use a fixed delay from `config.p
 - The fusion is causal. At time T it uses only detections with `available_at` at or before T.
 - A person must be able to explain each alert from its detections and the rules.
 
-### 10.2 Deduplication
+### 10.2 Deduplication and events
 
-1. Two detections with the same platform, the same `observed_at` and almost the same position are one observation. Keep one.
-2. A detection joins an event if it is near in space and near in time to the event.
-3. "Near in space" uses the footprints of the two detections plus a margin from `config.py`.
-4. "Near in time" uses a time window from `config.py`.
-5. If a detection is near to two events, the two events merge. Keep the older identifier.
-6. If a detection is near to no event, it starts a new event.
+The fusion uses a grid of cells of approximately 550 m.
+
+1. A detection occupies the cells of a square: its footprint plus a margin, on each side of its centre.
+2. A cell remembers the event that occupied it last, and the observation time.
+3. A detection joins an event if it occupies a cell of that event, and the two observation times are in the time window.
+4. If a detection joins two or more events, the events merge. The oldest identifier stays.
+5. If a detection joins no event, it starts a new event.
+6. The grid makes the join distance approximate by up to one cell.
+
+The fusion does not delete a detection that two sources give. It counts the two as one pass (section 10.3).
+The cell size, the margin and the time window are in `config.py`.
+
+Known limit, found on 2023: large fires chain into very large events.
+The largest 2023 event has 275 200 of 1 000 362 detections, lasts 25 days and spans 112 km by 169 km.
+Thus "one event" is not always "one fire". The evaluation must use the position of each detection, not the event centre.
 
 ### 10.3 Confidence level
 
 The first version uses rules, not a model.
 
-- Count independent evidence by sensor family and by observation time, not by source.
-- The same satellite pass from two sources is one item of evidence.
-- LOW: one item of evidence with low or nominal source confidence.
-- MEDIUM: a high source confidence, or a second observation from the same sensor family.
-- HIGH: observations from two or more sensor families.
+- An item of evidence is one pass of one platform over the event.
+- Detections of one platform are one pass if their times are not farther apart than the pass gap in `config.py`.
+- For GOES, a pass is one scan. We move each GOES time back to the start of its 10 minute scan.
+- Thus the same pass from FIRMS and from INPE is one item of evidence.
+- LOW: one pass with low or nominal source confidence.
+- MEDIUM: a high source confidence, or two or more passes of one sensor family.
+- HIGH: passes from two or more sensor families.
 
 These rules are a first proposal. Tune them only on the development period.
 A confidence level is useful only if HIGH alerts match scars more frequently than LOW alerts.
 The evaluation must report the matched share for each level.
 
-### 10.4 Alert content
+### 10.4 Fusion output
 
-An alert contains:
+The command `chispa fuse --year` writes three tables.
 
-- An identifier.
-- The centre and the radius of the event.
-- The time of the first detection and of the last detection.
-- The confidence level and the evidence that gave that level.
-- The largest FRP, if available.
-- The list of detection identifiers.
+- `events`: one row for each event at the end of the year: times, number of detections, mean position, bounding box, largest FRP, level, sensor families and number of passes.
+- `alerts`: one row for each change of the level of an event, with the time when the change became available.
+- `memberships`: one row for each detection: its event, and the level of the event immediately after that detection.
 
-The short alert text must be plain ASCII and must fit in 160 characters.
+The `memberships` table lets the evaluation ask: "When did an alert of a given level first have a detection at this place?"
+
+The short alert text is not built. It must be plain ASCII and must fit in 160 characters.
 This lets the same text go through SMS and voice radio.
 
 ## 11. Evaluation rules

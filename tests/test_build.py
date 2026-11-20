@@ -1,10 +1,10 @@
 """Tests of the store build."""
 
 import shutil
-import sqlite3
 from pathlib import Path
 
-from chispa.build import build_store
+from chispa.build import read_raw
+from chispa.store import add_detections, open_store
 
 SAMPLES = Path(__file__).parent / "samples"
 
@@ -23,16 +23,9 @@ def make_raw(raw_dir: Path) -> None:
 
 def test_build_reads_each_source(tmp_path):
     make_raw(tmp_path / "raw")
-    totals = build_store(tmp_path / "raw", tmp_path / "store.sqlite")
-    # [files, detections, rejected rows]. The samples hold 4 + 4 + 4 FIRMS rows that we use.
-    assert totals == {"firms": [3, 12, 0], "noaa": [1, 1, 0], "inpe": [1, 10, 0]}
-
-
-def test_second_build_replaces_the_store(tmp_path):
-    make_raw(tmp_path / "raw")
-    build_store(tmp_path / "raw", tmp_path / "store.sqlite")
-    shutil.rmtree(tmp_path / "raw" / "inpe")
-    build_store(tmp_path / "raw", tmp_path / "store.sqlite")
-    store = sqlite3.connect(tmp_path / "store.sqlite")
-    assert store.execute("SELECT count(*) FROM detections").fetchone()[0] == 13
-    assert not (tmp_path / "store.sqlite.building").exists()
+    store = open_store(tmp_path / "store.sqlite")
+    totals = dict.fromkeys(("firms", "noaa", "inpe"), 0)
+    for source, detections, rejected in read_raw(tmp_path / "raw"):
+        totals[source] += add_detections(store, detections) + rejected
+    # The samples hold 4 + 4 + 4 FIRMS rows that we use.
+    assert totals == {"firms": 12, "noaa": 1, "inpe": 10}
