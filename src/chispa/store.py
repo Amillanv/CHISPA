@@ -27,12 +27,6 @@ CREATE TABLE IF NOT EXISTS detections (
     UNIQUE (source, platform, observed_at, lat, lon)
 );
 CREATE INDEX IF NOT EXISTS detections_available_at ON detections (available_at);
-CREATE TABLE IF NOT EXISTS files (
-    path TEXT PRIMARY KEY,
-    source TEXT NOT NULL,
-    product TEXT NOT NULL,
-    downloaded_at TEXT NOT NULL
-);
 """
 
 COLUMNS = ", ".join(field.name for field in fields(Detection))
@@ -77,15 +71,6 @@ def read_detections(
         (to_text(start), to_text(end)),
     )
     return [_from_row(row) for row in cursor]
-
-
-def add_file(connection: sqlite3.Connection, path: Path, source: str, product: str) -> None:
-    """Record a raw file, its source and the time of the download."""
-    connection.execute(
-        "INSERT OR REPLACE INTO files VALUES (?, ?, ?, ?)",
-        (str(path), source, product, to_text(datetime.now(UTC))),
-    )
-    connection.commit()
 
 
 def _to_row(detection: Detection) -> tuple:

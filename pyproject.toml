@@ -7,8 +7,14 @@ name = "chispa"
 version = "0.0.1"
 description = "Merge fire detections into one alert for each fire, then measure the alerts."
 requires-python = ">=3.12"
-# No runtime dependencies yet. Each new dependency must have a comment with its reason.
-dependencies = []
+# Each dependency must have a comment with its reason.
+dependencies = [
+    "requests>=2.31",        # HTTP requests with timeouts, for the source modules
+    "python-dotenv>=1.0",    # reads the keys from the file .env
+    "earthengine-api>=1.5",  # the only access to the MapBiomas burn scars
+    "netCDF4>=1.7",          # reads the raw GOES files
+    "numpy>=2.0",            # array calculations for the GOES grid
+]
 
 [project.optional-dependencies]
 dev = [
