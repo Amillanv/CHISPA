@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chispa"
+version = "0.0.1"
+description = "Merge fire detections into one alert for each fire, then measure the alerts."
+requires-python = ">=3.12"
+# No runtime dependencies yet. Each new dependency must have a comment with its reason.
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",  # runs the tests
+    "ruff>=0.6",  # format and lint
+]
+
+[project.scripts]
+chispa = "chispa.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
