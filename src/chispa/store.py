@@ -9,7 +9,7 @@ from dataclasses import astuple, fields
 from datetime import UTC, datetime
 from pathlib import Path
 
-from chispa.models import Detection
+from chispa.models import Alert, Detection, Event, Scar
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS detections (
@@ -27,6 +27,50 @@ CREATE TABLE IF NOT EXISTS detections (
     UNIQUE (source, platform, observed_at, lat, lon)
 );
 CREATE INDEX IF NOT EXISTS detections_available_at ON detections (available_at);
+CREATE TABLE IF NOT EXISTS scars (
+    year INTEGER NOT NULL,
+    number INTEGER NOT NULL,
+    month INTEGER NOT NULL,
+    area_ha REAL NOT NULL,
+    lat REAL NOT NULL,
+    lon REAL NOT NULL,
+    south REAL NOT NULL,
+    west REAL NOT NULL,
+    north REAL NOT NULL,
+    east REAL NOT NULL,
+    PRIMARY KEY (year, number)
+);
+CREATE TABLE IF NOT EXISTS events (
+    id INTEGER PRIMARY KEY,
+    first_observed_at TEXT NOT NULL,
+    last_observed_at TEXT NOT NULL,
+    first_available_at TEXT NOT NULL,
+    detections INTEGER NOT NULL,
+    lat REAL NOT NULL,
+    lon REAL NOT NULL,
+    south REAL NOT NULL,
+    west REAL NOT NULL,
+    north REAL NOT NULL,
+    east REAL NOT NULL,
+    max_frp_mw REAL,
+    level TEXT NOT NULL,
+    families TEXT NOT NULL,
+    passes INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS alerts (
+    event_id INTEGER NOT NULL,
+    at TEXT NOT NULL,
+    level TEXT NOT NULL,
+    families TEXT NOT NULL,
+    passes INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS alerts_event ON alerts (event_id);
+CREATE TABLE IF NOT EXISTS memberships (
+    detection_id INTEGER PRIMARY KEY,
+    event_id INTEGER NOT NULL,
+    level TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS memberships_event ON memberships (event_id);
 """
 
 COLUMNS = ", ".join(field.name for field in fields(Detection))
@@ -61,16 +105,57 @@ def add_detections(connection: sqlite3.Connection, detections: list[Detection]) 
     return connection.total_changes - before
 
 
-def read_detections(
-    connection: sqlite3.Connection, start: datetime, end: datetime
-) -> list[Detection]:
-    """Return detections with start <= available_at < end, in available_at sequence."""
+def read_detections(connection: sqlite3.Connection, start: datetime, end: datetime):
+    """Give (id, detection) with start <= available_at < end, in available_at sequence.
+
+    This gives one record at a time. A year of detections does not fit well in memory.
+    """
     cursor = connection.execute(
-        f"SELECT {COLUMNS} FROM detections WHERE available_at >= ? AND available_at < ? "
+        f"SELECT id, {COLUMNS} FROM detections WHERE available_at >= ? AND available_at < ? "
         "ORDER BY available_at, id",
         (to_text(start), to_text(end)),
     )
-    return [_from_row(row) for row in cursor]
+    for row in cursor:
+        yield row[0], _from_row(row[1:])
+
+
+def replace_fusion(
+    connection: sqlite3.Connection,
+    id_range: tuple[int, int],
+    events: list[Event],
+    alerts: list[Alert],
+    memberships: list[tuple[int, int, str]],
+) -> None:
+    """Delete the fusion results with an event id in the range, then save the new results."""
+    for table, column in (("events", "id"), ("alerts", "event_id"), ("memberships", "event_id")):
+        connection.execute(f"DELETE FROM {table} WHERE {column} >= ? AND {column} < ?", id_range)
+    rows = [_times_to_text(astuple(event), (1, 2, 3)) for event in events]
+    connection.executemany(f"INSERT INTO events VALUES ({', '.join('?' * 15)})", rows)
+    rows = [_times_to_text(astuple(alert), (1,)) for alert in alerts]
+    connection.executemany("INSERT INTO alerts VALUES (?, ?, ?, ?, ?)", rows)
+    connection.executemany("INSERT INTO memberships VALUES (?, ?, ?)", memberships)
+    connection.commit()
+
+
+def _times_to_text(row: tuple, positions: tuple[int, ...]) -> tuple:
+    values = list(row)
+    for position in positions:
+        values[position] = to_text(values[position])
+    return tuple(values)
+
+
+def add_scars(connection: sqlite3.Connection, scars: list[Scar]) -> None:
+    """Save the burn scars of one year."""
+    connection.executemany(
+        "INSERT INTO scars VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [astuple(scar) for scar in scars]
+    )
+    connection.commit()
+
+
+def read_scars(connection: sqlite3.Connection, year: int) -> list[Scar]:
+    """Return the burn scars of one year, in number sequence."""
+    cursor = connection.execute("SELECT * FROM scars WHERE year = ? ORDER BY number", (year,))
+    return [Scar(*row) for row in cursor]
 
 
 def _to_row(detection: Detection) -> tuple:

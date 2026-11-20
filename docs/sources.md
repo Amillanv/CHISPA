@@ -81,6 +81,9 @@ Checked 2026-11-19 with live requests.
 - Some rows have no `frp` field.
 - METOP, NOAA-18 and NOAA-19 carry the AVHRR sensor. FIRMS does not give it. It is a sensor family that only INPE adds.
 - INPE uses its own detection method on GOES-16. Its GOES counts are not the FIRMS counts.
+- INPE gives a GOES time approximately 7 minutes after the start of the scan. FIRMS gives the start of the scan.
+- For the polar-orbit satellites, the INPE time and the FIRMS time of one pass differ by one or two minutes.
+- The store has 1 135 655 INPE detections for the Pantanal box in 2023 and 2024.
 - Some rows have positions with only two decimal places.
 - An INPE hotspot and a FIRMS hotspot from the same satellite pass are one observation, not two.
 
@@ -121,6 +124,27 @@ Checked 2026-11-19 against the MapBiomas pages, the method document for Collecti
 - The Cloud project ID is in the environment variable `EE_PROJECT`.
 - Earth Engine uses the Google login of `gcloud` on the computer. The command `earthengine authenticate` was blocked for the owner account.
 - Licence: CC BY 4.0. Cite Alencar et al. 2022, Remote Sensing 14(11), 2510.
+
+What we store, from the download of 2026-11-20:
+
+- `fetch scars` reads the layer on its own 30 m grid, with no resampling, as 130 tiles for each year. The tiles for two years are 8 MB.
+- The Pantanal box is a grid of 25 975 rows and 18 554 columns.
+- `build` keeps the pixels in the biome border and groups pixels that touch and have the same month into scars.
+- 2023: 66 349 scars, 627 508 hectares. 2024: 703 889 scars, 2 212 767 hectares.
+- Most scars are very small. In 2024, 631 033 scars are smaller than 1 hectare. Together they hold 6 percent of the burned area.
+- A cause is the month split: one burned area with two image dates becomes pieces with different months.
+- Thus the evaluation must report by scar size and by area, and must use a minimum scar size.
+- `build` needs approximately 5.5 GB of memory for the scar step.
+
+### 8.8 IBGE biome border
+
+Checked 2026-11-20 with a live request.
+
+- Content: the border of the six biomes of Brazil at the scale 1:250 000, from the IBGE map service (layer `CREN:lm_bioma_250`).
+- The Pantanal has the code 6 and an area of 150 961 km2. Our grid mask of the border has 150 761 km2.
+- The file is GeoJSON in the datum SIRGAS 2000, which is less than one metre from WGS84.
+- The terms of IBGE for a public copy are `UNVERIFIED`. The owner decided on 2026-11-20 to put the border file in the bucket with attribution.
+- The citation in the bucket file is from memory. `UNVERIFIED`
 
 Independence from hotspots:
 
