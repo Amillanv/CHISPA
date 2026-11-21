@@ -1,0 +1,37 @@
+configuration,size_class_ha,fires,fires_found,fire_recall,config,run_date
+source firms,10 to 100,794,577,0.7267,e03804b1c89a,2026-11-21
+source firms,100 to 1000,122,113,0.9262,e03804b1c89a,2026-11-21
+source firms,1000 to 10000,44,44,1.0,e03804b1c89a,2026-11-21
+source firms,10000 to inf,9,9,1.0,e03804b1c89a,2026-11-21
+source inpe,10 to 100,794,599,0.7544,e03804b1c89a,2026-11-21
+source inpe,100 to 1000,122,112,0.918,e03804b1c89a,2026-11-21
+source inpe,1000 to 10000,44,44,1.0,e03804b1c89a,2026-11-21
+source inpe,10000 to inf,9,9,1.0,e03804b1c89a,2026-11-21
+family abi,10 to 100,794,593,0.7469,e03804b1c89a,2026-11-21
+family abi,100 to 1000,122,114,0.9344,e03804b1c89a,2026-11-21
+family abi,1000 to 10000,44,44,1.0,e03804b1c89a,2026-11-21
+family abi,10000 to inf,9,9,1.0,e03804b1c89a,2026-11-21
+family avhrr,10 to 100,794,218,0.2746,e03804b1c89a,2026-11-21
+family avhrr,100 to 1000,122,64,0.5246,e03804b1c89a,2026-11-21
+family avhrr,1000 to 10000,44,39,0.8864,e03804b1c89a,2026-11-21
+family avhrr,10000 to inf,9,8,0.8889,e03804b1c89a,2026-11-21
+family modis,10 to 100,794,411,0.5176,e03804b1c89a,2026-11-21
+family modis,100 to 1000,122,104,0.8525,e03804b1c89a,2026-11-21
+family modis,1000 to 10000,44,43,0.9773,e03804b1c89a,2026-11-21
+family modis,10000 to inf,9,9,1.0,e03804b1c89a,2026-11-21
+family viirs,10 to 100,794,491,0.6184,e03804b1c89a,2026-11-21
+family viirs,100 to 1000,122,108,0.8852,e03804b1c89a,2026-11-21
+family viirs,1000 to 10000,44,44,1.0,e03804b1c89a,2026-11-21
+family viirs,10000 to inf,9,9,1.0,e03804b1c89a,2026-11-21
+"merged, level LOW or higher",10 to 100,794,619,0.7796,e03804b1c89a,2026-11-21
+"merged, level LOW or higher",100 to 1000,122,114,0.9344,e03804b1c89a,2026-11-21
+"merged, level LOW or higher",1000 to 10000,44,44,1.0,e03804b1c89a,2026-11-21
+"merged, level LOW or higher",10000 to inf,9,9,1.0,e03804b1c89a,2026-11-21
+"merged, level MEDIUM or higher",10 to 100,794,602,0.7582,e03804b1c89a,2026-11-21
+"merged, level MEDIUM or higher",100 to 1000,122,113,0.9262,e03804b1c89a,2026-11-21
+"merged, level MEDIUM or higher",1000 to 10000,44,44,1.0,e03804b1c89a,2026-11-21
+"merged, level MEDIUM or higher",10000 to inf,9,9,1.0,e03804b1c89a,2026-11-21
+"merged, level HIGH",10 to 100,794,559,0.704,e03804b1c89a,2026-11-21
+"merged, level HIGH",100 to 1000,122,112,0.918,e03804b1c89a,2026-11-21
+"merged, level HIGH",1000 to 10000,44,44,1.0,e03804b1c89a,2026-11-21
+"merged, level HIGH",10000 to inf,9,9,1.0,e03804b1c89a,2026-11-21

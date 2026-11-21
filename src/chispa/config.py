@@ -108,24 +108,26 @@ GOES_SCAN = timedelta(minutes=10)
 # --- Evaluation ---
 # Tune these values only on the development year.
 
-# A scar smaller than this is not counted in scar recall. Most of them are pieces
-# that the month split of the map makes.
-EVAL_MIN_SCAR_HA = 10.0
+# A fire smaller than this is not counted in fire recall. Most of them are small scars
+# with no burn day: pieces that the month split of the map makes.
+EVAL_MIN_FIRE_HA = 10.0
 
-# A detection matches a scar in time if its day is not farther than this from the
-# burn days of the scar. Two burn day products agree to 7 days for 95 percent of cells.
+# A detection matches a fire in time if its day is not farther than this from the
+# burn days of the fire. Two burn day products agree to 7 days for 95 percent of cells.
+# Two burned cells that touch are one fire if their burn days are not farther apart than this:
+# we cannot divide in time what we cannot match in time.
 EVAL_DAY_MARGIN = 7
 
 # The scar map gives the month of an image. For 60 percent of the burned area that is one
 # month after the burn, and almost never before it. Thus we look this many months back:
-# for the burn day of a scar, and for the month of a detection when a scar has no burn day.
+# for the burn day of a pixel, and for the month of a detection when a fire has no burn day.
 EVAL_MONTHS_BEFORE = 1
 
-# A detection matches a scar if a pixel of the scar is in the square of the footprint
+# A detection matches a fire if a pixel of the fire is in the square of the footprint
 # plus this margin, in metres.
 EVAL_MARGIN_M = 250.0
 
-# The limits of the scar size classes in hectares.
+# The limits of the fire size classes in hectares.
 EVAL_SIZE_CLASSES_HA = (10.0, 100.0, 1000.0, 10000.0)
 
 RESULTS_DIR = Path("results")
