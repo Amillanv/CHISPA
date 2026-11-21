@@ -15,6 +15,7 @@ LIMITS = """Limits of these results:
 - The sources are satellites only. There are no camera detections or community reports.
 - A fire is a group of burned cells that touch and burned in near days (`docs/method.md`).
 - The burn day of a fire is uncertain by some days. A fire with no burn day has only a month.
+- The MODIS orbits drift. The effect on the burn days of late 2024 is not published.
 - A delay is relative to the first detection from all sources, not to the start of the fire.
 - Only isolated fires give a delay. `delay_fires` is their number. It is a small sample.
 - The precision against the map is 1 minus the unmatched share. It is a lower limit:
