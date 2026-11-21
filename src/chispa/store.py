@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS scars (
     west REAL NOT NULL,
     north REAL NOT NULL,
     east REAL NOT NULL,
+    first_burn_day INTEGER,
+    last_burn_day INTEGER,
     PRIMARY KEY (year, number)
 );
 CREATE TABLE IF NOT EXISTS events (
@@ -147,7 +149,8 @@ def _times_to_text(row: tuple, positions: tuple[int, ...]) -> tuple:
 def add_scars(connection: sqlite3.Connection, scars: list[Scar]) -> None:
     """Save the burn scars of one year."""
     connection.executemany(
-        "INSERT INTO scars VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [astuple(scar) for scar in scars]
+        "INSERT INTO scars VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [astuple(scar) for scar in scars],
     )
     connection.commit()
 

@@ -5,7 +5,7 @@ Then it measures how good those alerts are.
 
 ## Status
 
-**There are no results.**
+**There are no results for the test year 2024.**
 
 What works at this time:
 
@@ -14,8 +14,15 @@ What works at this time:
 - `chispa fuse` groups the detections of one year into events with a confidence level. It is a first version and is not tuned.
 - `chispa fetch` gets raw files from the sources. `chispa check` does a check of the bucket, the key and the login.
 
-Known problem: large fires chain into very large events. In 2023, one event holds 27 percent of all detections.
-The weather, the evaluation, the agent and the dashboard do not exist yet.
+- `chispa evaluate` compares one fused year with the burn scars and writes [results/SUMMARY.md](results/SUMMARY.md).
+
+**The numbers in `results/` are for the development year 2023 and are not conclusions.**
+Two known problems are open:
+
+- The delay between sources depends on the pixel size of each sensor. We do not have one honest number yet.
+- Large fires chain into very large events. In 2023, one event holds 27 percent of all detections.
+
+The weather, the smoke level, the agent and the dashboard do not exist yet.
 
 ## The problem
 
@@ -79,6 +86,7 @@ Each source owns its data. The public bucket has a file `README.txt` with the te
 - GOES: NOAA GOES-16 ABI Level 2 Fire/Hot Spot Characterization, from the NOAA Open Data Dissemination Program.
 - INPE: INPE. Banco de Dados de queimadas. Disponível em: http://www.inpe.br/queimadas/bdqueimadas. Acesso em: 20 nov. 2026.
 - MapBiomas Fogo: CC BY 4.0. Alencar et al. 2022, Remote Sensing 14(11), 2510.
+- Burn days: NASA MODIS MCD64A1 Version 6.1. https://doi.org/10.5067/MODIS/MCD64A1.061
 - IBGE: Biomas e Sistema Costeiro-Marinho do Brasil, 1:250 000. Rio de Janeiro: IBGE, 2019.
 
 INPE gives no named licence for its files. It publishes them as open data for public use.
@@ -113,6 +121,7 @@ venv/bin/pip install -e ".[dev]"
 venv/bin/pytest
 venv/bin/chispa build
 venv/bin/chispa fuse --year 2023
+venv/bin/chispa evaluate --year 2023
 ```
 
 The command `build` does two things:
@@ -179,6 +188,7 @@ venv/bin/chispa fetch firms --year 2024 --push
 venv/bin/chispa fetch goes --year 2024 --push
 venv/bin/chispa fetch inpe --year 2024 --push
 venv/bin/chispa fetch scars --year 2024 --push
+venv/bin/chispa fetch burnday --year 2024 --push
 venv/bin/chispa fetch border --push
 ```
 

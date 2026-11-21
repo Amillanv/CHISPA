@@ -182,3 +182,39 @@ Known errors of the ground truth:
 12. Do not use `--push` for a new source until the owner agrees. The owner agreed for FIRMS, GOES and INPE.
 14. The file `README.txt` in the bucket gives the terms of each source. Update it when a source is added.
 13. The store is a result. Do not edit it by hand. Change the parser or the raw files, then build again.
+
+### 8.9 Burn day products
+
+Checked 2026-11-20 with live requests, and against the user guides and Giglio et al. 2018 and 2025.
+We use MCD64A1: `fetch burnday` saves one file for each month on a grid of 0.004 degrees. We do not use VNP64A1.
+
+Access:
+
+- The FIRMS products `BA_MODIS` and `BA_VIIRS` give no rows through the area CSV API. Do not use them.
+- Earth Engine has `MODIS/061/MCD64A1` and `NASA/VIIRS/002/VNP64A1`: one image for each month, pixels of 463 m.
+- Each has 12 images for 2023 and for 2024.
+- Terms: open with no restriction (CC0). NASA asks for a citation. MCD64A1: https://doi.org/10.5067/MODIS/MCD64A1.061
+
+Method, from the documents:
+
+- The burn day comes only from the change in the surface reflectance. It does not come from a hotspot.
+- The decision that a pixel burned does use hotspots: they give the training samples and the prior probability.
+- Thus the burn day is "reasonably independent" of hotspots (the words of the authors), but the set of burned pixels is not.
+- The uncertainty band is the number of days between the last clear view before the burn and the first clear view after it.
+- Published check for 2023: 46 percent of MCD64A1 burn days are the day of a MODIS hotspot, and 72 percent are not more than 2 days from it.
+- Global validation: approximately 72 percent omission and 34 to 40 percent commission. The products do not find most small burns.
+- VNP64A1 uses only the Suomi NPP satellite, with pixels of 750 m. Suomi NPP data stopped on 2026-11-02.
+- The MODIS orbits drift. The authors say the effect became larger in late 2024 and that they examine it. The size of the effect on MCD64A1 is not published.
+
+Our comparison in the Pantanal biome, 2023, on a grid of 0.004 degrees:
+
+| | MCD64A1 | VNP64A1 |
+|---|---|---|
+| MapBiomas burned area that has a burn day | 0.891 | 0.836 |
+| Product burned area that MapBiomas also maps | 0.469 | 0.473 |
+| Uncertainty in days, median and 90th percentile | 3 and 7 | 4 and 11 |
+
+- With one or the other product, 0.913 of the MapBiomas burned area has a burn day.
+- The two products agree on the burn day to 1 day for 48 percent of cells, to 3 days for 77 percent and to 7 days for 95 percent.
+- MapBiomas gives the same month as the burn day for 37 percent of the area, one month later for 60 percent, two months later for 1.5 percent. It almost never gives an earlier month. The two products give the same numbers.
+- Thus the month margin of the evaluation must be on one side: the detection is in the scar month or the month before.
