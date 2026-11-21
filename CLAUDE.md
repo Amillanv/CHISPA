@@ -48,8 +48,8 @@ These rules have priority over all other rules.
 
 ## Scope
 
-- Now: recorded satellite detections, fusion, evaluation, MCP server, agent, gold questions, dashboard.
-- Later: live operation, delivery by SMS or radio, cameras, community reports, OlmoEarth, other regions.
+- Now: recorded satellite detections, fusion, evaluation, live operation, MCP server, agent, gold questions, dashboard.
+- Later: delivery by SMS or radio, cameras, community reports, OlmoEarth, other regions.
 - Never: a fire spread forecast, a permission to burn, a replacement for official alert systems.
 - The first evaluation uses satellite sources only. Say this in each result.
 
