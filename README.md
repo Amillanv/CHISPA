@@ -46,10 +46,10 @@ We will not ask a brigade to trust a number that we did not measure.
 
 - `chispa build` gets the raw files from a public bucket and makes a SQLite store: 4.1 million detections and the mapped fires of 2023 and 2024.
 - `chispa fuse` groups the detections of one year into events with a confidence level. `chispa evaluate` compares them with the mapped fires.
-- `chispa poll` does one pass of the live poller: it records each new detection with the time of the pass. It needs a FIRMS key.
+- `chispa poll` does one pass of the live poller: it records each new detection with the time of the pass, then updates the store and the events. It needs a FIRMS key.
+- `tools.py` answers three questions for a given time: the alerts near a position, the detail of one event, and the measured quality of the alerts.
 - [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
-
-The live delay report, the live alerts, the weather, the agent and the dashboard do not exist yet.
+- Not built yet: the live delay report, the weather, the MCP server, the agent and the dashboard.
 
 ## What we measure
 

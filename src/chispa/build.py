@@ -63,8 +63,28 @@ def read_raw(raw_dir: Path):
         detections, rejected = firms.parse_file(path, path.parent.name)
         yield "firms", detections, rejected
     for path in sorted((raw_dir / "goes").glob("*.csv")):
-        yield "noaa", goes.parse_file(path), 0
+        yield "noaa", goes.parse_file(path, "GOES16"), 0
     for path in sorted((raw_dir / "inpe").glob("focos_mensal_br_*")):
         if path.suffix in (".csv", ".zip"):
+            detections, rejected, _ = inpe.parse_file(path)
+            yield "inpe", detections, rejected
+    yield from read_live(raw_dir, first_day="")
+
+
+def read_live(raw_dir: Path, first_day: str):
+    """Give (source, detections, rejected rows) for each log of the live poller.
+
+    `first_day` is a date as text. A log of an earlier day is not read.
+    """
+    live = raw_dir / "live"
+    for path in sorted((live / "firms").glob("*/*.csv")):
+        if path.stem >= first_day:
+            detections, rejected = firms.parse_file(path, path.parent.name)
+            yield "firms", detections, rejected
+    for path in sorted((live / "goes").glob("*.csv")):
+        if path.stem >= first_day:
+            yield "noaa", goes.parse_file(path, "GOES19"), 0
+    for path in sorted((live / "inpe").glob("*.csv")):
+        if path.stem >= first_day:
             detections, rejected, _ = inpe.parse_file(path)
             yield "inpe", detections, rejected

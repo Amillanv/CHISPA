@@ -33,7 +33,7 @@ def test_day_file_becomes_detections(tmp_path):
         "2024-10-01T15:00:00+00:00,-17.5,-57.5,30,20.7\n"
         "2024-10-01T15:00:00+00:00,-17.6,-57.5,11,\n"
     )
-    first, saturated = parse_file(path)
+    first, saturated = parse_file(path, "GOES16")
     assert (first.source, first.platform, first.sensor_family) == ("noaa", "GOES16", "abi")
     assert first.observed_at == datetime(2024, 10, 1, 15, 0, tzinfo=UTC)
     assert (first.frp_mw, saturated.frp_mw) == (20.7, None)

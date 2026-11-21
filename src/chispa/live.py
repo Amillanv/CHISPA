@@ -6,13 +6,16 @@ The logs are raw files: they only grow, and `build` can read them again.
 """
 
 import csv
+import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 
 import requests
 
 from chispa import config
+from chispa.build import read_live
 from chispa.sources import firms, goes, inpe
+from chispa.store import add_detections
 
 # The fields that identify one FIRMS row. A row that we saw before is not a new detection.
 FIRMS_KEY = ("satellite", "acq_date", "acq_time", "latitude", "longitude")
@@ -28,6 +31,16 @@ def poll(raw_dir: Path, key: str, now: datetime) -> list[dict]:
     results += _poll_goes(live, now) + _poll_inpe(live, now)
     _append(live / "polls" / f"{now.date()}.csv", results)
     return results
+
+
+def ingest(raw_dir: Path, store: sqlite3.Connection, now: datetime) -> int:
+    """Add the detections of the newest logs to the store. Return the number of new detections.
+
+    The store ignores a detection that it holds. Thus a pass can read the same log again,
+    and `build` gives the same detections from the same logs.
+    """
+    first_day = (now - config.LIVE_COMPLETE_AFTER).date().isoformat()
+    return sum(add_detections(store, found) for _, found, _ in read_live(raw_dir, first_day))
 
 
 def _result(now: datetime, source: str, item: str, result: str, new_rows: int) -> dict:
