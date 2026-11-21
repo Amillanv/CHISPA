@@ -5,7 +5,7 @@ Then it measures how good those alerts are.
 
 ## Status
 
-**There are no results for the test year 2024.**
+**The test year 2024 has one run, on the frozen configuration `e03804b1c89a`.** [results/SUMMARY.md](results/SUMMARY.md) has the tables.
 
 What works at this time:
 
@@ -15,10 +15,10 @@ What works at this time:
 - `chispa evaluate` compares one fused year with the mapped fires and writes [results/SUMMARY.md](results/SUMMARY.md).
 - `chispa fetch` gets raw files from the sources. `chispa check` does a check of the bucket, the key and the login.
 
-**The numbers in `results/` are for the development year 2023 and are not conclusions.**
+The 2023 tables are for the development year. The 2024 tables are the result. Read each number with the limits below it.
 Two known limits are open:
 
-- Only isolated fires give a delay. In 2023 that is a small sample.
+- Only isolated fires give a delay. That is a small sample in each year.
 - One event is not always one fire. The results give the purity and the completeness of the events.
 
 [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
