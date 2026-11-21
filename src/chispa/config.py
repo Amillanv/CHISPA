@@ -140,4 +140,12 @@ LIVE_LOOKBACK = timedelta(hours=3)
 # a FIRMS request for 2 days gives rows of the day before. Then the log is complete.
 LIVE_COMPLETE_AFTER = timedelta(days=2)
 
+# --- Tools ---
+
+# The largest radius that a tool accepts, in kilometres. The Pantanal box is 780 km long.
+TOOL_MAX_RADIUS_KM = 500.0
+
+# The largest number of detections that a tool returns for one event.
+TOOL_MAX_DETECTIONS = 200
+
 RESULTS_DIR = Path("results")

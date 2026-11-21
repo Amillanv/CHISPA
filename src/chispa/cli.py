@@ -140,7 +140,7 @@ def run_evaluate(year: int, test_run: bool) -> None:
 
 
 def run_poll(push: bool) -> None:
-    """Do one pass of the live poller and show what it found."""
+    """Do one pass of the live poller, then update the store and the events of this year."""
     now = datetime.now(UTC)
     results = live.poll(config.RAW_DIR, read_setting("FIRMS_API_KEY"), now)
     for source in ("firms", "goes", "inpe"):
@@ -150,6 +150,10 @@ def run_poll(push: bool) -> None:
         print(f"{source}: {len(of_source)} items, {new_rows} new rows, {len(failed)} failed.")
         for text in sorted(set(failed)):
             print(f"  {text}")
+    new = live.ingest(config.RAW_DIR, open_store(config.STORE_PATH), now)
+    print(f"store: {new} new detections.")
+    # The replay of the year from its start is simple. It gets slow when the year has much data.
+    run_fuse(now.year)
     if push:
         new_files = bucket.push(config.RAW_DIR, live.complete_logs(config.RAW_DIR, now))
         print(f"live: {new_files} complete logs copied to the bucket.")

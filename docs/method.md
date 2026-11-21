@@ -251,7 +251,9 @@ Purity and completeness count matches with counted fires. A detection that match
 
 ### 12.1 Tools
 
-- Keep the number of tools small. The target is six or fewer.
+- Keep the number of tools small. The target is six or fewer. Three exist: `alerts_near`, `event_detail` and `evaluation_summary`.
+- Each tool that reads events has an as-of time. It uses only detections with `available_at` at or before that time.
+- Known limit: if two events merged after the as-of time, the tool shows them as one event.
 - Each tool is one function in `tools.py` with typed arguments and a typed return value.
 - Each tool returns data with units, times and source names.
 - The MCP server and the agent expose the same functions. Do not write a tool two times.

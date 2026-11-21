@@ -169,20 +169,24 @@ def _number(value: float) -> float | str:
     return "" if np.isnan(value) else round(float(value), 4)
 
 
-def parse_file(path: Path) -> list[Detection]:
-    """Return the detections of one day file."""
+def parse_file(path: Path, platform: str) -> list[Detection]:
+    """Return the detections of one day file. The platform is GOES16 or GOES19."""
     with path.open(newline="") as file:
-        return [_parse_row(row) for row in csv.DictReader(file)]
+        return [_parse_row(row, platform) for row in csv.DictReader(file)]
 
 
-def _parse_row(row: dict) -> Detection:
+def _parse_row(row: dict, platform: str) -> Detection:
     observed_at = datetime.fromisoformat(row["observed_at"])
+    # A live row has the time when we first saw it. A recorded row has only an estimate.
+    seen = row.get("first_seen_at")
     return Detection(
         source="noaa",
         sensor_family="abi",
-        platform="GOES16",
+        platform=platform,
         observed_at=observed_at,
-        available_at=observed_at + config.AVAILABLE_DELAY["abi"],
+        available_at=datetime.fromisoformat(seen)
+        if seen
+        else observed_at + config.AVAILABLE_DELAY["abi"],
         lat=float(row["lat"]),
         lon=float(row["lon"]),
         footprint_m=config.GOES_FOOTPRINT_M,

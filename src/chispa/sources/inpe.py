@@ -129,13 +129,20 @@ def _in_box(lat: float, lon: float) -> bool:
 def parse_row(row: dict) -> Detection:
     """Make one detection from one CSV row. A bad row raises an error."""
     sensor_family, platform = SATELLITES[row["satelite"]]
-    observed_at = datetime.fromisoformat(row["data_hora_gmt"]).replace(tzinfo=UTC)
+    # A monthly file has the field `data_hora_gmt`. A file of 10 minutes has the field `data`.
+    observed_at = datetime.fromisoformat(row.get("data_hora_gmt") or row["data"]).replace(
+        tzinfo=UTC
+    )
+    # A live row has the time when we first saw it. A recorded row has only an estimate.
+    seen = row.get("first_seen_at")
     return Detection(
         source="inpe",
         sensor_family=sensor_family,
         platform=platform,
         observed_at=observed_at,
-        available_at=observed_at + config.AVAILABLE_DELAY[sensor_family],
+        available_at=datetime.fromisoformat(seen)
+        if seen
+        else observed_at + config.AVAILABLE_DELAY[sensor_family],
         lat=float(row["lat"]),
         lon=float(row["lon"]),
         footprint_m=config.INPE_FOOTPRINT_M[sensor_family],
