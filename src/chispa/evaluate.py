@@ -215,6 +215,41 @@ def split_table(detections: Fields, pairs: Pairs, fires: Fields) -> list[dict]:
     return rows
 
 
+def gain_table(detections: Fields, pairs: Pairs, fires: Fields) -> list[dict]:
+    """Return what the merge adds to each sensor family alone, for each fire size class.
+
+    `fires_gained` are the fires that the merge finds and the family does not find.
+    `fires_later` are the isolated fires that the family finds later than the merge,
+    by the `available_at` time.
+    """
+    count = len(fires["area_ha"]) - 1
+    merged = first_times(
+        pairs, np.ones(len(detections["family"]), dtype=bool), detections["available"], count
+    )
+    rows = []
+    for family in np.unique(detections["family"]):
+        alone = first_times(pairs, detections["family"] == family, detections["available"], count)
+        for label, in_class in (*_size_classes(fires), ("all", fires["counted"])):
+            gained = in_class & np.isfinite(merged) & ~np.isfinite(alone)
+            timed = in_class & np.isfinite(alone) & fires["isolated"]
+            delay_h = (alone[timed] - merged[timed]) / 3600
+            rows.append(
+                {
+                    "sensor_family": family,
+                    "size_class_ha": label,
+                    "fires_found_merged": int((in_class & np.isfinite(merged)).sum()),
+                    "fires_found_family": int((in_class & np.isfinite(alone)).sum()),
+                    "fires_gained": int(gained.sum()),
+                    "gained_area_ha": round(float(fires["area_ha"][gained].sum())),
+                    "delay_fires": int(timed.sum()),
+                    "fires_later": int((delay_h > 0).sum()),
+                    "later_h_median": _percentile(delay_h[delay_h > 0], 50),
+                    "later_h_p90": _percentile(delay_h[delay_h > 0], 90),
+                }
+            )
+    return rows
+
+
 def load_fires(store: sqlite3.Connection, year: int) -> Fields:
     """Return the fire fields as arrays, with the fire number as the index.
 
@@ -255,4 +290,5 @@ def evaluate(year: int, store_path: Path, raw_dir: Path) -> dict[str, list[dict]
         "fire_sizes": size_table(detections, pairs, fires, chosen),
         "fire_events": split_table(detections, pairs, fires),
         "events": event_table(detections, pairs, fires, final_level),
+        "merge_gain": gain_table(detections, pairs, fires),
     }
