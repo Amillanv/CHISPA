@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from chispa.evaluate import event_table, measure, split_table
+from chispa.evaluate import event_table, gain_table, measure, split_table
 from chispa.grid import Grid
 from chispa.match import first_times, isolated, match
 
@@ -151,3 +151,23 @@ def test_purity_and_completeness():
     every = split_table(found, pairs, fires)[-1]
     assert (every["size_class_ha"], every["fires_found"]) == ("all", 2)
     assert every["completeness"] == 0.8  # fire 1: 3 of 3. Fire 2: 1 of 2.
+
+
+def test_merge_gain_counts_fires_that_a_family_does_not_find_or_finds_later(monkeypatch):
+    monkeypatch.setattr("chispa.config.EVAL_SIZE_CLASSES_HA", (10.0, 200.0))
+    # Fire 1 (100 hectares): GOES at 1 h, VIIRS at 4 h. Fire 2 (300 hectares): only VIIRS.
+    found = {
+        "family": np.array(["abi", "viirs", "viirs"]),
+        "available": np.array([3600.0, 14400.0, 0.0]),
+    }
+    pairs = (np.array([0, 1, 2]), np.array([1, 1, 2]))
+    rows = {
+        row["sensor_family"]: row
+        for row in gain_table(found, pairs, two_fires([True, True]))
+        if row["size_class_ha"] == "all"
+    }
+    goes, viirs = rows["abi"], rows["viirs"]
+    assert (goes["fires_found_merged"], goes["fires_found_family"]) == (2, 1)
+    assert (goes["fires_gained"], goes["gained_area_ha"], goes["fires_later"]) == (1, 300, 0)
+    assert (viirs["fires_gained"], viirs["delay_fires"], viirs["fires_later"]) == (0, 2, 1)
+    assert viirs["later_h_median"] == 3.0  # VIIRS is 3 hours after GOES for fire 1
