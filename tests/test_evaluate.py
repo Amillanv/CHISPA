@@ -135,3 +135,19 @@ def test_tables_count_events_for_each_fire_and_fires_for_each_event(monkeypatch)
     low = event_table(found, PAIRS, fires, {7: "LOW", 8: "LOW", 9: "LOW"})[0]
     assert (low["events"], low["events_matched"], low["matched_share"]) == (3, 2, 0.6667)
     assert (low["events_on_one_fire"], low["fires_per_event_max"]) == (2, 1)
+
+
+def test_purity_and_completeness():
+    # Event 7 has three matches on fire 1 and one match on fire 2. Event 8 has one match on fire 2.
+    found = {"event": np.array([7, 7, 7, 7, 8])}
+    pairs = (np.arange(5), np.array([1, 1, 1, 2, 2]))
+    fires = two_fires([False, False])
+    by_level = {
+        row["final_level"]: row for row in event_table(found, pairs, fires, {7: "HIGH", 8: "LOW"})
+    }
+    assert by_level["HIGH"]["purity"] == 0.75  # 3 of the 4 matches of event 7 are on fire 1
+    assert by_level["LOW"]["purity"] == 1.0
+    assert by_level["all"]["purity"] == 0.8  # 3 + 1 of 5 matches
+    every = split_table(found, pairs, fires)[-1]
+    assert (every["size_class_ha"], every["fires_found"]) == ("all", 2)
+    assert every["completeness"] == 0.8  # fire 1: 3 of 3. Fire 2: 1 of 2.
