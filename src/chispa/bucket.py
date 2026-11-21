@@ -70,18 +70,22 @@ def _download(name: str, item: dict, path: Path) -> None:
     part.rename(path)
 
 
-def push(raw_dir: Path, folder: str) -> int:
-    """Upload each local file of one source folder that is absent from the bucket.
+def source_files(raw_dir: Path, folder: str) -> list[Path]:
+    """Return the raw files of one source folder."""
+    # A name that ends in `.part` is a download in progress. It is not a raw file yet.
+    files = sorted((raw_dir / folder).rglob("*"))
+    return [path for path in files if path.is_file() and path.suffix != ".part"]
+
+
+def push(raw_dir: Path, files: list[Path]) -> int:
+    """Upload each of these raw files that is absent from the bucket. Return the count.
 
     This needs a Google login with write access to the bucket. README.md gives the setup.
     """
     credentials, _ = google.auth.default(scopes=[WRITE_SCOPE])
     session = AuthorizedSession(credentials)
     present = list_objects()
-    # A name that ends in `.part` is a download in progress. It is not a raw file yet.
-    files = sorted((raw_dir / folder).rglob("*"))
-    local = [path for path in files if path.is_file() and path.suffix != ".part"]
-    absent = [path for path in local if path.relative_to(raw_dir).as_posix() not in present]
+    absent = [path for path in files if path.relative_to(raw_dir).as_posix() not in present]
     for path in absent:
         name = PREFIX + path.relative_to(raw_dir).as_posix()
         with path.open("rb") as file:
