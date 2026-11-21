@@ -26,6 +26,8 @@ Use each term only with this meaning.
 | Unmatched share | The detections that match no fire, divided by all detections of a configuration. |
 | Fire recall | The counted fires with a minimum of one match, divided by all counted fires. |
 | Relative delay | The first match of a configuration minus the first match from all sources, for one fire. |
+| Purity | The share of the matches of an event that are on its main fire. A low value shows that the fusion merged fires. |
+| Completeness | The share of the matches of a fire that are in its main event. A low value shows that the fusion split a fire. |
 | Footprint | The ground area that one detection can represent, as a radius in metres. |
 | FRP | Fire radiative power, in megawatts. A measure of fire intensity. |
 | AOD | Aerosol optical depth. We use it as the measure of smoke level. |
@@ -238,8 +240,10 @@ The tables are:
 
 - `configurations`: fire recall, area recall, unmatched share and delay for each source, sensor family and merged level.
 - `fire_sizes`: fire recall for each configuration and fire size class.
-- `fire_events`: for each fire size class, into how many events the fusion split a fire.
-- `events`: for each final level, the share of events that match a fire, and how many counted fires one event holds.
+- `fire_events`: for each fire size class, into how many events the fusion split a fire, and the completeness.
+- `events`: for each final level, the share of events that match a fire, how many counted fires one event holds, and the purity.
+
+Purity and completeness count matches with counted fires. A detection that matches two fires counts two times.
 
 ## 12. Agent and MCP rules
 
@@ -327,7 +331,9 @@ When a choice changes, change its row in the same step.
 | A detection occupies a square: its footprint plus a margin, on cells of approximately 550 m. | It is simple and quick, and a person can calculate it. | The join distance is approximate. A sensor with a large footprint joins more. |
 | The time window is 24 hours. | A polar-orbit satellite sees a fire that continues a minimum of one time in 24 hours. | A large fire that continues becomes one very large event (section 10.2). |
 | The level counts passes and sensor families. | It needs no trained model, and a person can explain each alert. | An event that lasts long becomes HIGH. HIGH does not mean a large or dangerous fire. |
-| The thresholds are a first proposal. | A check on 2023 with shorter windows and margins did not divide the largest event. | One event is not always one fire: see the tables `fire_events` and `events`. An alert for new ground in an event is not built. |
+| The cell size, the margin and the time window stay at their first values. | On 2023, smaller cells, smaller margins and shorter windows did not increase the purity. To do this check again, change a value in `config.py`, then run `fuse` and `evaluate`. | One event is not always one fire. The tables `events` and `fire_events` give the purity and the completeness. |
+| A detection with a large footprint joins and merges events as each other detection. | A test outside the repository gave it a small core and no permission to merge. Purity increased a little, completeness decreased more, and the number of events doubled. | The test is not a repository command. Hotspots that are continuous in space and time cannot divide fires that burn near each other. |
+| One event has one alert. | It is the first, simple design. | A very large event lasts for weeks. An alert for new ground in an event is not built. |
 
 ### 13.4 Evaluation
 
