@@ -24,22 +24,24 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
 
-| final_level | events | events_matched | matched_share | events_on_counted_fires | events_on_one_fire | fires_per_event_max |
-|---|---|---|---|---|---|---|
-| LOW | 2739 | 619 | 0.226 | 345 | 289 | 7 |
-| MEDIUM | 2072 | 776 | 0.3745 | 405 | 269 | 21 |
-| HIGH | 1079 | 655 | 0.607 | 470 | 232 | 125 |
+| final_level | events | events_matched | matched_share | events_on_counted_fires | events_on_one_fire | fires_per_event_max | purity |
+|---|---|---|---|---|---|---|---|
+| LOW | 2739 | 619 | 0.226 | 345 | 289 | 7 | 0.8438 |
+| MEDIUM | 2072 | 776 | 0.3745 | 405 | 269 | 21 | 0.6886 |
+| HIGH | 1079 | 655 | 0.607 | 470 | 232 | 125 | 0.7383 |
+| all | 5890 | 2050 | 0.348 | 1220 | 790 | 125 | 0.7378 |
 
 ### fire_events
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
 
-| size_class_ha | fires | fires_with_burn_day | fires_isolated | fires_found | fires_in_one_event | events_per_fire_median | events_per_fire_max |
-|---|---|---|---|---|---|---|---|
-| 10 to 100 | 794 | 223 | 281 | 619 | 242 | 2.0 | 12 |
-| 100 to 1000 | 122 | 106 | 29 | 114 | 28 | 2.0 | 13 |
-| 1000 to 10000 | 44 | 44 | 3 | 44 | 0 | 5.0 | 22 |
-| 10000 to inf | 9 | 9 | 0 | 9 | 0 | 14.0 | 256 |
+| size_class_ha | fires | fires_with_burn_day | fires_isolated | fires_found | fires_in_one_event | events_per_fire_median | events_per_fire_max | completeness |
+|---|---|---|---|---|---|---|---|---|
+| 10 to 100 | 794 | 223 | 281 | 619 | 242 | 2.0 | 12 | 0.8837 |
+| 100 to 1000 | 122 | 106 | 29 | 114 | 28 | 2.0 | 13 | 0.9022 |
+| 1000 to 10000 | 44 | 44 | 3 | 44 | 0 | 5.0 | 22 | 0.7883 |
+| 10000 to inf | 9 | 9 | 0 | 9 | 0 | 14.0 | 256 | 0.8786 |
+| all | 969 | 382 | 313 | 786 | 270 | 2.0 | 256 | 0.8641 |
 
 ### fire_sizes
 
