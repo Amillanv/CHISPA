@@ -1,23 +1,7 @@
 # CHISPA
 
 CHISPA merges fire detections from different sources into one alert for each fire.
-Then it measures how good those alerts are.
-
-## Status
-
-**The test year 2024 has one run, on the frozen configuration `e03804b1c89a`.** [results/SUMMARY.md](results/SUMMARY.md) has the tables.
-
-What works at this time:
-
-- A public bucket holds the raw files of each source in the table below.
-- `chispa build` gets the raw files from the bucket and makes a SQLite store: 4.1 million detections and the mapped fires of 2023 and 2024.
-- `chispa fuse` groups the detections of one year into events with a confidence level. Its thresholds are a first proposal.
-- `chispa evaluate` compares one fused year with the mapped fires and writes [results/SUMMARY.md](results/SUMMARY.md).
-
-The 2023 tables are for the development year. The 2024 tables are the result. Read each number with the limits below it.
-Only isolated fires give a delay: a small sample. One event is not always one fire: the results give the purity.
-[docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
-The weather, the smoke level, the agent and the dashboard do not exist yet.
+Then it measures how good those alerts are, and it publishes the result: good or bad.
 
 ## The problem
 
@@ -32,6 +16,10 @@ The same fire can show as many records, and some records are not fires.
 A merged alert finds the same mapped fires earlier than one source alone.
 It does this without a larger share of alerts that have no mapped fire.
 
+## The result
+
+We did not assume that the merge helps. We measured it against fires that a different satellite mapped after the season.
+We set the rules on 2023. Then we ran 2024 one time, on the frozen configuration `e03804b1c89a`.
 The 2024 result, with satellite sources only, supports the hypothesis only in part:
 
 - The merge finds more fires than each sensor family alone. The gain on GOES, the best family, is small: almost all of it is fires smaller than 100 hectares.
@@ -39,9 +27,33 @@ The 2024 result, with satellite sources only, supports the hypothesis only in pa
 - The unmatched share of the merge is between the shares of the single families.
 - A higher confidence level matches a mapped fire more frequently.
 
+We also found an error that is easy to make. A simple comparison showed GOES hours before VIIRS.
+That lead came from the large GOES pixel, which reaches the fires adjacent to its fire. With a clear match, the two are equal for the typical fire.
+[results/SUMMARY.md](results/SUMMARY.md) has each number, adjacent to its limits.
+
+## Why we build the live system
+
+The gain of the merge alone is not the reason. The result gives three better reasons:
+
+1. **No one sensor is sufficient.** GOES is quick and finds the large fires. The polar-orbit satellites find small fires that GOES does not find, and they are first when GOES is late.
+2. **The confidence level has a measured meaning.** In 2024, 80 percent of 1582 HIGH events matched a mapped fire, and 52 percent of 2914 LOW events. A brigade with few people can go to the HIGH alerts first.
+3. **Recorded data cannot answer the two most important questions.** How many minutes go by from a satellite scan to an alert? Does a brigade say that the alert was worth action?
+
+Only a live system can measure these. Thus we build one that measures itself from the first day.
+We will not ask a brigade to trust a number that we did not measure.
+
+## Status
+
+- `chispa build` gets the raw files from a public bucket and makes a SQLite store: 4.1 million detections and the mapped fires of 2023 and 2024.
+- `chispa fuse` groups the detections of one year into events with a confidence level.
+- `chispa evaluate` compares one fused year with the mapped fires and writes the result tables.
+- [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
+
+The live system, the weather, the agent and the dashboard do not exist yet.
+
 ## What we measure
 
-The evaluation uses recorded data from the Brazilian Pantanal. We tune on 2023 and score on 2024.
+The evaluation uses recorded data from the Brazilian Pantanal.
 The truth is a map of burn scars. We group the scars into fires with a map of burn days.
 
 | Measure | Meaning |
@@ -51,21 +63,14 @@ The truth is a map of burn scars. We group the scars into fires with a map of bu
 | Unmatched share | The share of detections with no mapped fire. Precision against the map is 1 minus this share. |
 
 We report each measure by source, by sensor family, by confidence level and by fire size.
-
-### What we cannot measure yet
-
-The true goal has two measures:
-
-- The minutes from first detection to brigade acknowledgment.
-- The share of alerts that brigades say were worth action.
-
-These measures need a live system and brigades that use it.
-Recorded data cannot give them. We will not report them until we have them.
+We cannot measure the true goal yet: the minutes to brigade acknowledgment, and the share of alerts that brigades say were worth action.
+We will not report these two measures until brigades use a live system.
 
 ## Limits you must know
 
 - The first evaluation uses satellite sources only. We have no recorded camera data or community reports for 2024.
 - The ground truth gives the day of a burn, with an uncertainty of some days. Thus we measure delay between sources, not delay from the true start of a fire.
+- Only isolated fires give a delay: a small sample. One event is not always one fire: the results give the purity.
 - An alert with no mapped fire is not always a false alarm. The fire can be too small for the map.
 - Some sources use the same satellites. We count one satellite pass as one observation.
 
@@ -90,8 +95,7 @@ Each source owns its data. The public bucket has a file `README.txt` with the te
 - Burn days: NASA MODIS MCD64A1 Version 6.1. https://doi.org/10.5067/MODIS/MCD64A1.061
 - IBGE: Biomas e Sistema Costeiro-Marinho do Brasil, 1:250 000. Rio de Janeiro: IBGE, 2019.
 
-INPE gives no named licence for its files. It publishes them as open data for public use.
-Our copy of the INPE files is not an official INPE service.
+INPE gives no named licence for its files: it publishes them as open data. Our copy is not an official INPE service.
 
 ## How the data moves
 
@@ -101,8 +105,7 @@ sources  --fetch-->  data/raw/  --push-->  public bucket
 public bucket  --build-->  data/raw/  --build-->  data/chispa.sqlite
 ```
 
-- The raw files are the files that the sources gave, with no change.
-- The bucket `gs://chispa_raw` is a public copy of the raw files. It holds no code, no store and no key.
+- The bucket `gs://chispa_raw` is a public copy of the raw files, with no change. It holds no code, no store and no key.
 - The store is a result. The command `build` makes it again from the raw files each time.
 - A file in the bucket never changes. An upload of a file that exists fails.
 
@@ -119,10 +122,8 @@ venv/bin/chispa fuse --year 2023
 venv/bin/chispa evaluate --year 2023
 ```
 
-The command `build` does two things:
-
-1. It downloads each raw file that is absent from `data/raw/`. The first run gets approximately 1.8 GB.
-2. It makes `data/chispa.sqlite` from the raw files. This needs approximately 5.5 GB of memory and 3 minutes.
+The command `build` downloads each raw file that is absent from `data/raw/`. The first run gets approximately 1.8 GB.
+Then it makes `data/chispa.sqlite`. This needs approximately 5.5 GB of memory and 3 minutes.
 
 Use `venv/bin/chispa build --offline` to make the store from the local raw files only.
 
@@ -188,7 +189,7 @@ Then run `venv/bin/chispa build` to make the store again.
 ## Later work
 
 - An MCP server with a small agent, gold questions and a Flask dashboard. The agent will not say that a burn is safe.
-- Live operation with delivery by SMS, radio or an offline app.
+- Delivery of alerts by SMS, radio or an offline app.
 - Camera detections and community reports.
 - Burn scar maps from Ai2 OlmoEarth on Sentinel-2 imagery, for areas that MapBiomas does not map.
 - Other regions.

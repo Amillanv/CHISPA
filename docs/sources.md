@@ -184,6 +184,20 @@ Checked 2026-11-20 with a live request.
 - The terms of IBGE for a public copy are `UNVERIFIED`. The owner decided on 2026-11-20 to put the border file in the bucket with attribution.
 - The citation in the bucket file is from memory. `UNVERIFIED`
 
+### 8.10 Live products
+
+Checked 2026-11-21 at 20:13 UTC with live requests. No code uses these products yet.
+
+- FIRMS has the near-real-time products `VIIRS_NOAA20_NRT`, `VIIRS_NOAA21_NRT`, `MODIS_NRT` and `GOES_NRT` to the present day.
+- `VIIRS_SNPP_NRT` stops on 2026-11-02. Suomi NPP is not a live source.
+- In `GOES_NRT`, the `satellite` field now has `G19`, `G19FRP`, `Met12` and `Met10`. GOES-19 replaced GOES-16.
+- The near-real-time rows have the same fields as the archive rows, and no publication time.
+- The newest row of each FIRMS product for the Pantanal box was 3 to 15 hours old. This says little: it depends on the passes and on the fires of that day.
+- Raw GOES-19 files: bucket `noaa-goes19`, same prefix as GOES-16. The bucket `noaa-goes16` has no new files.
+- For 12 of 12 scans in two hours, the raw GOES-19 file was in the bucket 10 minutes after the start of its scan. The bucket gives this time for each file.
+- INPE has one CSV file for each 10 minutes in `focos/csv/10min/`. The file of 20:10 UTC was on the server at 20:10 UTC.
+- Thus two sources give a publication time that we can measure: raw GOES and the INPE files of 10 minutes. FIRMS gives none: we must record when we first see a row.
+
 ### 8.9 Burn day products
 
 Checked 2026-11-20 with live requests, and against the user guides and Giglio et al. 2018 and 2025.
