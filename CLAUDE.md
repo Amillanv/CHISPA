@@ -28,7 +28,7 @@ A merged alert finds the same burn scars earlier than one source alone.
 It does this without a larger share of alerts that have no mapped scar.
 A negative result is a valid result. Publish it the same way as a positive result.
 
-We can calculate scar recall, relative delay and unmatched alert share from recorded data.
+We can calculate fire recall, relative delay and unmatched alert share from recorded data.
 We cannot calculate the true goal from recorded data: the minutes to brigade acknowledgment
 and the share of alerts that brigades say were worth action. Do not report a value for them.
 

@@ -1,8 +1,8 @@
-"""The evaluation: compare detections and alerts with the mapped burn scars.
+"""The evaluation: compare detections and alerts with the mapped fires.
 
-For each scar we ask: did a detection fall on it, and when did the first one come?
+For each fire we ask: did a detection fall on it, and when did the first one come?
 We ask the same question for each source alone and for the merged alerts.
-The fusion never reads this module or the scars. The evaluation runs after the fusion.
+The fusion never reads this module or the fires. The evaluation runs after the fusion.
 """
 
 import sqlite3
@@ -13,9 +13,10 @@ import numpy as np
 
 from chispa import config
 from chispa.fusion import LEVELS
-from chispa.grid import Grid, pantanal_grid
+from chispa.grid import pantanal_grid
+from chispa.match import Fields, Pairs, first_times, isolated, match
 from chispa.sources import border
-from chispa.store import read_scars
+from chispa.store import read_fires
 
 QUERY = """
 SELECT d.source, d.sensor_family, m.level, m.event_id,
@@ -30,7 +31,7 @@ TEXT = ("source", "family", "level")
 NUMBERS = ("event", "observed", "available", "month", "day", "lat", "lon", "footprint_m")
 
 
-def load_detections(store: sqlite3.Connection, year: int) -> dict[str, np.ndarray]:
+def load_detections(store: sqlite3.Connection, year: int) -> Fields:
     """Return the detections of one fused year as one array for each field."""
     first_id = year * 10_000_000
     cursor = store.execute(QUERY, (first_id, first_id + 10_000_000))
@@ -44,97 +45,39 @@ def load_detections(store: sqlite3.Connection, year: int) -> dict[str, np.ndarra
     return {name: np.concatenate(chunks) for name, chunks in parts.items()}
 
 
-def near_in_time(
-    scars: dict[str, np.ndarray], found: np.ndarray, month: int, day: int
-) -> np.ndarray:
-    """Return True for each scar number in `found` that burned near the time of a detection.
-
-    A scar with burn days: the day of the detection is in the burn days, plus the day margin.
-    A scar with no burn day: the detection is in the scar month or in the months before it.
-    """
-    first, last = scars["first_day"][found], scars["last_day"][found]
-    by_day = (day >= first - config.EVAL_DAY_MARGIN) & (day <= last + config.EVAL_DAY_MARGIN)
-    months_before = scars["month"][found] - month
-    by_month = (months_before >= 0) & (months_before <= config.EVAL_MONTHS_BEFORE)
-    return np.where(first > 0, by_day, by_month)
-
-
-def match(
-    detections: dict[str, np.ndarray], numbers: np.ndarray, grid: Grid, scars: dict[str, np.ndarray]
-) -> tuple[np.ndarray, np.ndarray]:
-    """Return pairs (detection index, scar number) for each detection that matches a scar.
-
-    A detection matches a scar if a pixel of the scar is in the square of the footprint
-    plus the margin, and the scar burned near the time of the detection.
-    """
-    reach_m = detections["footprint_m"] + config.EVAL_MARGIN_M
-    d_rows = np.ceil(reach_m / (grid.pixel_deg * 110_574)).astype(int)
-    d_cols = np.ceil(
-        reach_m / (grid.pixel_deg * 111_320 * np.cos(np.deg2rad(detections["lat"])))
-    ).astype(int)
-    rows, cols = grid.rows_cols(detections["lat"], detections["lon"])
-    months, days = detections["month"], detections["day"]
-    pair_detection, pair_scar = [], []
-    for i in range(len(rows)):
-        window = numbers[
-            max(rows[i] - d_rows[i], 0) : rows[i] + d_rows[i] + 1,
-            max(cols[i] - d_cols[i], 0) : cols[i] + d_cols[i] + 1,
-        ]
-        if not window.any():
-            continue
-        found = np.unique(window)
-        found = found[found > 0]
-        found = found[near_in_time(scars, found, months[i], days[i])]
-        pair_detection += [i] * len(found)
-        pair_scar += found.tolist()
-    return np.array(pair_detection, dtype=int), np.array(pair_scar, dtype=int)
-
-
-def first_times(pairs, chosen: np.ndarray, times: np.ndarray, scar_count: int) -> np.ndarray:
-    """Return, for each scar number, the first time of a chosen detection that matches it.
-
-    A scar with no chosen detection gets infinity.
-    """
-    pair_detection, pair_scar = pairs
-    keep = chosen[pair_detection]
-    first = np.full(scar_count + 1, np.inf)
-    np.minimum.at(first, pair_scar[keep], times[pair_detection[keep]])
-    return first
-
-
-def measure(name, chosen, detections, pairs, scars, reference) -> dict:
+def measure(name: str, chosen: np.ndarray, detections: Fields, pairs: Pairs, fires: Fields) -> dict:
     """Return the measures of one configuration: one subset of the detections.
 
-    `scars` holds `area_ha` and `counted` for each scar number.
-    `reference` holds the first observed and available time of each scar from all detections.
+    A delay is the first time of the configuration minus the first time of all detections.
+    Only isolated fires give a delay.
     """
-    count = len(scars["area_ha"]) - 1
-    observed = first_times(pairs, chosen, detections["observed"], count)
-    available = first_times(pairs, chosen, detections["available"], count)
-    found = np.isfinite(observed) & scars["counted"]
+    count = len(fires["area_ha"]) - 1
+    counted = fires["counted"]
+    everything = np.ones(len(chosen), dtype=bool)
+    found = np.isfinite(first_times(pairs, chosen, detections["observed"], count)) & counted
     matched = np.zeros(len(chosen), dtype=bool)
     matched[pairs[0]] = True
-    delay_observed = (observed[found] - reference[0][found]) / 3600
-    delay_available = (available[found] - reference[1][found]) / 3600
-    return {
+    timed = found & fires["isolated"]
+    row = {
         "configuration": name,
         "detections": int(chosen.sum()),
         "unmatched_detections": int((chosen & ~matched).sum()),
         "unmatched_share": _share((chosen & ~matched).sum(), chosen.sum()),
-        "scars": int(scars["counted"].sum()),
-        "scars_found": int(found.sum()),
-        "scar_recall": _share(found.sum(), scars["counted"].sum()),
-        "area_recall": _share(
-            scars["area_ha"][found].sum(), scars["area_ha"][scars["counted"]].sum()
-        ),
-        "delay_observed_h_median": _percentile(delay_observed, 50),
-        "delay_observed_h_p90": _percentile(delay_observed, 90),
-        "delay_available_h_median": _percentile(delay_available, 50),
-        "delay_available_h_p90": _percentile(delay_available, 90),
+        "fires": int(counted.sum()),
+        "fires_found": int(found.sum()),
+        "fire_recall": _share(found.sum(), counted.sum()),
+        "area_recall": _share(fires["area_ha"][found].sum(), fires["area_ha"][counted].sum()),
+        "delay_fires": int(timed.sum()),
     }
+    for time in ("observed", "available"):
+        reference = first_times(pairs, everything, detections[time], count)[timed]
+        delay_h = (first_times(pairs, chosen, detections[time], count)[timed] - reference) / 3600
+        row[f"delay_{time}_h_median"] = _percentile(delay_h, 50)
+        row[f"delay_{time}_h_p90"] = _percentile(delay_h, 90)
+    return row
 
 
-def _share(part, total) -> float | None:
+def _share(part: float, total: float) -> float | None:
     return round(float(part) / float(total), 4) if total else None
 
 
@@ -142,7 +85,7 @@ def _percentile(values: np.ndarray, percent: int) -> float | None:
     return round(float(np.percentile(values, percent)), 2) if len(values) else None
 
 
-def configurations(detections: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+def configurations(detections: Fields) -> Fields:
     """Return each configuration as a selection of detections.
 
     A merged row selects the detections whose event had that level, or a higher level,
@@ -161,72 +104,105 @@ def configurations(detections: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     return chosen
 
 
-def event_table(
-    detections: dict[str, np.ndarray], pairs, final_level: dict[int, str]
-) -> list[dict]:
-    """Return, for each final level, how many events have a detection that matches a scar."""
+def _links(detections: Fields, pairs: Pairs, fires: Fields) -> np.ndarray:
+    """Return each different (event, counted fire) that a match connects, as two rows."""
+    counted = fires["counted"][pairs[1]]
+    events = detections["event"][pairs[0][counted]]
+    return np.unique(np.stack([events, pairs[1][counted]]), axis=1)
+
+
+def event_table(detections: Fields, pairs: Pairs, fires: Fields, final_level: dict) -> list[dict]:
+    """Return, for each final level, how many events match a fire and how many fires.
+
+    `matched_share` is the precision against the map. An event on more than one counted
+    fire shows that the fusion merged fires.
+    """
     matched = np.zeros(len(detections["event"]), dtype=bool)
     matched[pairs[0]] = True
-    events = np.unique(detections["event"])
     matched_events = set(np.unique(detections["event"][matched]).tolist())
-    event_scar = set(zip(detections["event"][pairs[0]].tolist(), pairs[1].tolist(), strict=True))
-    scars_of = Counter(event for event, _ in event_scar)
+    fires_of = Counter(_links(detections, pairs, fires)[0].tolist())
     rows = []
     for level in LEVELS:
-        of_level = [event for event in events.tolist() if final_level[event] == level]
-        hits = [event for event in of_level if event in matched_events]
-        per_event = [scars_of[event] for event in hits]
+        events = [e for e in np.unique(detections["event"]).tolist() if final_level[e] == level]
+        hits = sum(event in matched_events for event in events)
+        per_event = [fires_of[event] for event in events if event in fires_of]
         rows.append(
             {
                 "final_level": level,
-                "events": len(of_level),
-                "events_matched": len(hits),
-                "matched_share": _share(len(hits), len(of_level)),
-                "scars_per_matched_event_median": _percentile(np.array(per_event), 50),
-                "scars_per_matched_event_max": max(per_event, default=None),
+                "events": len(events),
+                "events_matched": hits,
+                "matched_share": _share(hits, len(events)),
+                "events_on_counted_fires": len(per_event),
+                "events_on_one_fire": per_event.count(1),
+                "fires_per_event_max": max(per_event, default=None),
             }
         )
     return rows
 
 
-def size_table(detections, pairs, scars, chosen: dict[str, np.ndarray]) -> list[dict]:
-    """Return the scar recall of each configuration for each scar size class."""
+def _size_classes(fires: Fields) -> list[tuple[str, np.ndarray]]:
     limits = (*config.EVAL_SIZE_CLASSES_HA, np.inf)
-    count = len(scars["area_ha"]) - 1
+    area = fires["area_ha"]
+    return [
+        (f"{low:g} to {high:g}", (area >= low) & (area < high))
+        for low, high in zip(limits[:-1], limits[1:], strict=True)
+    ]
+
+
+def size_table(detections: Fields, pairs: Pairs, fires: Fields, chosen: Fields) -> list[dict]:
+    """Return the fire recall of each configuration for each fire size class."""
+    count = len(fires["area_ha"]) - 1
     rows = []
     for name, selection in chosen.items():
         found = np.isfinite(first_times(pairs, selection, detections["observed"], count))
-        for low, high in zip(limits[:-1], limits[1:], strict=True):
-            in_class = (scars["area_ha"] >= low) & (scars["area_ha"] < high) & scars["in_year"]
+        for label, in_class in _size_classes(fires):
             rows.append(
                 {
                     "configuration": name,
-                    "size_class_ha": f"{low:g} to {high:g}",
-                    "scars": int(in_class.sum()),
-                    "scars_with_burn_day": int((in_class & (scars["first_day"] > 0)).sum()),
-                    "scars_found": int((found & in_class).sum()),
-                    "scar_recall": _share((found & in_class).sum(), in_class.sum()),
+                    "size_class_ha": label,
+                    "fires": int(in_class.sum()),
+                    "fires_found": int((found & in_class).sum()),
+                    "fire_recall": _share((found & in_class).sum(), in_class.sum()),
                 }
             )
     return rows
 
 
-def load_scars(store: sqlite3.Connection, year: int) -> dict[str, np.ndarray]:
-    """Return the scar fields as arrays, with the scar number as the index.
+def split_table(detections: Fields, pairs: Pairs, fires: Fields) -> list[dict]:
+    """Return, for each fire size class, into how many events the fusion split a fire."""
+    events_of = np.bincount(_links(detections, pairs, fires)[1], minlength=len(fires["area_ha"]))
+    rows = []
+    for label, in_class in _size_classes(fires):
+        per_fire = events_of[in_class & (events_of > 0)]
+        rows.append(
+            {
+                "size_class_ha": label,
+                "fires": int(in_class.sum()),
+                "fires_with_burn_day": int((in_class & (fires["first_day"] > 0)).sum()),
+                "fires_isolated": int((in_class & fires["isolated"]).sum()),
+                "fires_found": len(per_fire),
+                "fires_in_one_event": int((per_fire == 1).sum()),
+                "events_per_fire_median": _percentile(per_fire, 50),
+                "events_per_fire_max": int(per_fire.max()) if len(per_fire) else None,
+            }
+        )
+    return rows
 
-    Index 0 is "no scar". `counted` marks the scars that scar recall counts.
-    A scar with no burn day has 0 in `first_day` and `last_day`.
+
+def load_fires(store: sqlite3.Connection, year: int) -> Fields:
+    """Return the fire fields as arrays, with the fire number as the index.
+
+    Index 0 is "no fire". `counted` marks the fires that fire recall counts.
+    A fire with no burn day has 0 in `first_day` and `last_day`, and its map month in `month`.
     """
-    found = read_scars(store, year)
-    area = np.array([0.0] + [scar.area_ha for scar in found])
-    in_year = np.arange(len(area)) > 0
+    found = read_fires(store, year)
+    area = np.array([0.0] + [fire.area_ha for fire in found])
     return {
         "area_ha": area,
-        "month": np.array([0] + [scar.month for scar in found]),
-        "first_day": np.array([0] + [scar.first_burn_day or 0 for scar in found]),
-        "last_day": np.array([0] + [scar.last_burn_day or 0 for scar in found]),
-        "in_year": in_year,
-        "counted": in_year & (area >= config.EVAL_MIN_SCAR_HA),
+        "month": np.array([0] + [fire.month or 0 for fire in found]),
+        "first_day": np.array([0] + [fire.first_burn_day or 0 for fire in found]),
+        "last_day": np.array([0] + [fire.last_burn_day or 0 for fire in found]),
+        "counted": area >= config.EVAL_MIN_FIRE_HA,
     }
 
 
@@ -240,22 +216,17 @@ def evaluate(year: int, store_path: Path, raw_dir: Path) -> dict[str, list[dict]
     keep = in_biome[rows, cols]
     del in_biome
     detections = {name: values[keep] for name, values in detections.items()}
-    numbers = np.load(store_path.parent / "scars" / f"numbers_{year}.npz")["numbers"]
-    scars = load_scars(store, year)
-    area = scars["area_ha"]
-    pairs = match(detections, numbers, grid, scars)
-    everything = np.ones(len(keep[keep]), dtype=bool)
-    reference = (
-        first_times(pairs, everything, detections["observed"], len(area) - 1),
-        first_times(pairs, everything, detections["available"], len(area) - 1),
-    )
+    numbers = np.load(store_path.parent / "fires" / f"{year}.npz")["numbers"]
+    fires = load_fires(store, year)
+    pairs = match(detections, numbers, grid, fires)
+    fires["isolated"] = isolated(pairs, fires)
     chosen = configurations(detections)
     final_level = dict(store.execute("SELECT id, level FROM events"))
     return {
         "configurations": [
-            measure(name, selection, detections, pairs, scars, reference)
-            for name, selection in chosen.items()
+            measure(name, selection, detections, pairs, fires) for name, selection in chosen.items()
         ],
-        "scar_sizes": size_table(detections, pairs, scars, chosen),
-        "events": event_table(detections, pairs, final_level),
+        "fire_sizes": size_table(detections, pairs, fires, chosen),
+        "fire_events": split_table(detections, pairs, fires),
+        "events": event_table(detections, pairs, fires, final_level),
     }

@@ -4,15 +4,14 @@ The store is a result, not a source. This module makes it again from the raw fol
 Thus a change in a parser, or a new raw file, needs only a new build.
 """
 
-from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
 
-from chispa import config
+from chispa import config, fires
 from chispa.grid import pantanal_grid
 from chispa.sources import border, burnday, firms, goes, inpe, scars
-from chispa.store import add_detections, add_scars, open_store
+from chispa.store import add_detections, add_fires, open_store
 
 
 def build_store(raw_dir: Path, store_path: Path) -> dict[str, list[int]]:
@@ -30,35 +29,32 @@ def build_store(raw_dir: Path, store_path: Path) -> dict[str, list[int]]:
         total[1] += add_detections(store, detections)
         total[2] += rejected
     for year in (config.DEVELOPMENT_YEAR, config.TEST_YEAR):
-        totals[f"scars {year}"] = [1, build_scars(year, raw_dir, store_path.parent, store), 0]
+        scar_count, fire_count = build_fires(year, raw_dir, store_path.parent, store)
+        totals[f"scars {year}"] = [1, scar_count, 0]
+        totals[f"fires {year}"] = [1, fire_count, 0]
     store.close()
     new_path.replace(store_path)
     return totals
 
 
-def build_scars(year: int, raw_dir: Path, data_dir: Path, store) -> int:
-    """Find the burn scars of one year in the biome. Save them, and save the scar grid.
+def build_fires(year: int, raw_dir: Path, data_dir: Path, store) -> tuple[int, int]:
+    """Find the fires of one year in the biome. Save them, and save the fire grid.
 
-    The scar grid is a file, not a table: it has one number for each 30 m pixel.
+    The fire grid is a file, not a table: it has one number for each 30 m pixel.
+    Return the number of scars and the number of fires.
     """
     grid = pantanal_grid()
     in_biome = border.rasterize(border.read_rings(raw_dir / "border" / "pantanal.geojson"), grid)
     months = scars.read_year(year, raw_dir, grid) * in_biome
-    found, numbers = scars.find_scars(months, grid, year)
-    first, last = burnday.scar_burn_days(
-        numbers, months, grid, burnday.read_year(year, raw_dir), burnday.burnday_grid(), len(found)
+    scar_numbers = scars.find_scars(months)
+    found, numbers = fires.find_fires(
+        months, scar_numbers, grid, burnday.read_year(year, raw_dir), burnday.burnday_grid()
     )
-    found = [
-        replace(scar, first_burn_day=int(first[scar.number]), last_burn_day=int(last[scar.number]))
-        if first[scar.number]
-        else scar
-        for scar in found
-    ]
-    add_scars(store, found)
-    path = data_dir / "scars" / f"numbers_{year}.npz"
+    add_fires(store, year, found)
+    path = data_dir / "fires" / f"{year}.npz"
     path.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(path, numbers=numbers)
-    return len(found)
+    return int(scar_numbers.max()), len(found)
 
 
 def read_raw(raw_dir: Path):
