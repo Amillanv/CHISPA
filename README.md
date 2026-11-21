@@ -13,14 +13,9 @@ What works at this time:
 - `chispa build` gets the raw files from the bucket and makes a SQLite store: 4.1 million detections and the mapped fires of 2023 and 2024.
 - `chispa fuse` groups the detections of one year into events with a confidence level. Its thresholds are a first proposal.
 - `chispa evaluate` compares one fused year with the mapped fires and writes [results/SUMMARY.md](results/SUMMARY.md).
-- `chispa fetch` gets raw files from the sources. `chispa check` does a check of the bucket, the key and the login.
 
 The 2023 tables are for the development year. The 2024 tables are the result. Read each number with the limits below it.
-Two known limits are open:
-
-- Only isolated fires give a delay. That is a small sample in each year.
-- One event is not always one fire. The results give the purity and the completeness of the events.
-
+Only isolated fires give a delay: a small sample. One event is not always one fire: the results give the purity.
 [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
 The weather, the smoke level, the agent and the dashboard do not exist yet.
 
@@ -37,8 +32,12 @@ The same fire can show as many records, and some records are not fires.
 A merged alert finds the same mapped fires earlier than one source alone.
 It does this without a larger share of alerts that have no mapped fire.
 
-We do not know if this is true. The project exists to find out.
-We will publish the result if it is positive or negative.
+The 2024 result, with satellite sources only, supports the hypothesis only in part:
+
+- The merge finds more fires than each sensor family alone. The gain on GOES, the best family, is small: almost all of it is fires smaller than 100 hectares.
+- The merge is not earlier for the typical fire. It is earlier for some fires: where GOES was late, a polar-orbit satellite was first.
+- The unmatched share of the merge is between the shares of the single families.
+- A higher confidence level matches a mapped fire more frequently.
 
 ## What we measure
 
