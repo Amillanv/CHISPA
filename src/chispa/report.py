@@ -13,13 +13,17 @@ from chispa import config
 LIMITS = """Limits of these results:
 
 - The sources are satellites only. There are no camera detections or community reports.
-- The burn scar map gives the month of an image, not the day of a fire.
-  Thus a delay is relative to the first detection from all sources, not to the start of the fire.
-- An unmatched detection is not always a false alarm. The fire can be too small for the map.
+- A fire is a group of burned cells that touch and burned in near days (`docs/method.md`).
+- The burn day of a fire is uncertain by some days. A fire with no burn day has only a month.
+- A delay is relative to the first detection from all sources, not to the start of the fire.
+- Only isolated fires give a delay. `delay_fires` is their number. It is a small sample.
+- The precision against the map is 1 minus the unmatched share. It is a lower limit:
+  an unmatched detection is not always a false alarm. The fire can be too small for the map.
+- A fire that burned for many days matches the detections of all those days.
 - GOES has no low-probability detections, and has holes in late September to November 2024.
 - The availability delay of each sensor family is an estimate in `config.py`.
 - Smoke level is not in these tables yet.
-- A scar in January can have detections in December of the year before. We do not count those.
+- A fire in January can have detections in December of the year before. We do not count those.
 """
 
 

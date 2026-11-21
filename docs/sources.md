@@ -130,21 +130,11 @@ What we store, from the download of 2026-11-20:
 - `fetch scars` reads the layer on its own 30 m grid, with no resampling, as 130 tiles for each year. The tiles for two years are 8 MB.
 - The Pantanal box is a grid of 25 975 rows and 18 554 columns.
 - `build` keeps the pixels in the biome border and groups pixels that touch and have the same month into scars.
-- 2023: 66 349 scars, 627 508 hectares. 2024: 703 889 scars, 2 212 767 hectares.
-- Most scars are very small. In 2024, 631 033 scars are smaller than 1 hectare. Together they hold 6 percent of the burned area.
-- A cause is the month split: one burned area with two image dates becomes pieces with different months.
-- Thus the evaluation must report by scar size and by area, and must use a minimum scar size.
+- Then `build` groups the scars into fires. `docs/method.md` section 11.3 gives the rule. The store holds the fires, not the scars.
+- 2023: 66 349 scars, 29 210 fires, 627 508 hectares. 2024: 703 889 scars, 380 530 fires, 2 212 767 hectares.
+- Most scars are very small. A cause is the month split: one burned area with two image dates becomes pieces with different months.
+- Thus the evaluation uses fires, reports by fire size and by area, and uses a minimum fire size.
 - `build` needs approximately 5.5 GB of memory for the scar step.
-
-### 8.8 IBGE biome border
-
-Checked 2026-11-20 with a live request.
-
-- Content: the border of the six biomes of Brazil at the scale 1:250 000, from the IBGE map service (layer `CREN:lm_bioma_250`).
-- The Pantanal has the code 6 and an area of 150 961 km2. Our grid mask of the border has 150 761 km2.
-- The file is GeoJSON in the datum SIRGAS 2000, which is less than one metre from WGS84.
-- The terms of IBGE for a public copy are `UNVERIFIED`. The owner decided on 2026-11-20 to put the border file in the bucket with attribution.
-- The citation in the bucket file is from memory. `UNVERIFIED`
 
 Independence from hotspots:
 
@@ -179,14 +169,25 @@ Known errors of the ground truth:
 9. The bucket `gs://chispa_raw` holds raw files only. Never put the store, code or a key in it.
 10. A file in the bucket never changes. To correct a raw file, give the new file a new name.
 11. The code reads the bucket with plain HTTPS and no login. Only the function `push` uses a Google login.
-12. Do not use `--push` for a new source until the owner agrees. The owner agreed for FIRMS, GOES and INPE.
-14. The file `README.txt` in the bucket gives the terms of each source. Update it when a source is added.
+12. Do not use `--push` for a new source until the owner agrees. The owner agreed for each source that is in the bucket now.
 13. The store is a result. Do not edit it by hand. Change the parser or the raw files, then build again.
+14. The file `README.txt` in the bucket gives the terms of each source. Update it when a source is added.
+
+### 8.8 IBGE biome border
+
+Checked 2026-11-20 with a live request.
+
+- Content: the border of the six biomes of Brazil at the scale 1:250 000, from the IBGE map service (layer `CREN:lm_bioma_250`).
+- The Pantanal has the code 6 and an area of 150 961 km2. Our grid mask of the border has 150 761 km2.
+- The file is GeoJSON in the datum SIRGAS 2000, which is less than one metre from WGS84.
+- The terms of IBGE for a public copy are `UNVERIFIED`. The owner decided on 2026-11-20 to put the border file in the bucket with attribution.
+- The citation in the bucket file is from memory. `UNVERIFIED`
 
 ### 8.9 Burn day products
 
 Checked 2026-11-20 with live requests, and against the user guides and Giglio et al. 2018 and 2025.
 We use MCD64A1: `fetch burnday` saves one file for each month on a grid of 0.004 degrees. We do not use VNP64A1.
+`build` uses the burn days to group the scars into fires.
 
 Access:
 

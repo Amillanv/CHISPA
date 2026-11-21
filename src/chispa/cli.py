@@ -38,7 +38,7 @@ def main(arguments: list[str] | None = None) -> None:
     build.add_argument("--offline", action="store_true", help="Do not get files from the bucket.")
     fusion = commands.add_parser("fuse", help="Replay one year of detections into events.")
     fusion.add_argument("--year", type=int, required=True)
-    evaluation = commands.add_parser("evaluate", help="Compare one fused year with the scars.")
+    evaluation = commands.add_parser("evaluate", help="Compare one fused year with the fires.")
     evaluation.add_argument("--year", type=int, required=True)
     evaluation.add_argument("--test-run", action="store_true", help="Permit the test year.")
     for name, text in NOT_BUILT.items():

@@ -14,14 +14,18 @@ Use each term only with this meaning.
 | Hotspot | A detection from a satellite thermal sensor. |
 | Source | A provider of detections, for example FIRMS or INPE. |
 | Sensor family | One type of instrument: VIIRS, MODIS, ABI, AVHRR, camera or person. |
-| Event | A group of detections that Chispa assigns to one fire. |
-| Alert | The message that Chispa makes for an event. One event has one alert. |
+| Event | A group of detections that CHISPA assigns to one fire. |
+| Alert | The message that CHISPA makes for an event. One event has one alert. |
 | Confidence level | LOW, MEDIUM or HIGH. Section 10.3 gives the rules. |
 | Burn scar | A connected area that MapBiomas Fogo maps as burned in one month. |
-| Matched alert | An alert that agrees in space and time with a burn scar. |
-| Unmatched alert | An alert with no burn scar that agrees. |
-| Scar recall | Scars with a minimum of one matched alert, divided by all scars. |
-| Relative delay | First alert time minus first detection time from all sources. |
+| Fire | A group of burned cells that touch and burned in near days. Section 11.3 gives the rule. |
+| Counted fire | A fire of the minimum area in `config.py` or more. |
+| Isolated fire | A counted fire that shares no detection with a different counted fire. |
+| Match | A detection matches a fire if it agrees with the fire in space and time (section 11.4). |
+| Unmatched alert | An alert with no detection that matches a fire. |
+| Unmatched share | The detections that match no fire, divided by all detections of a configuration. |
+| Fire recall | The counted fires with a minimum of one match, divided by all counted fires. |
+| Relative delay | The first match of a configuration minus the first match from all sources, for one fire. |
 | Footprint | The ground area that one detection can represent, as a radius in metres. |
 | FRP | Fire radiative power, in megawatts. A measure of fire intensity. |
 | AOD | Aerosol optical depth. We use it as the measure of smoke level. |
@@ -112,7 +116,7 @@ The first version uses rules, not a model.
 - HIGH: passes from two or more sensor families.
 
 These rules are a first proposal. Tune them only on the development period.
-A confidence level is useful only if HIGH alerts match scars more frequently than LOW alerts.
+A confidence level is useful only if HIGH alerts match fires more frequently than LOW alerts.
 The evaluation must report the matched share for each level.
 
 ### 10.4 Fusion output
@@ -144,33 +148,39 @@ This lets the same text go through SMS and voice radio.
 - Record each 2024 run in `results/`, with the configuration hash and the date.
 - If you change a threshold after a 2024 run, the next result must say so.
 
-### 11.3 Burn scar units
+### 11.3 Fires
 
-- A burn scar is a connected group of burned pixels in one month.
-- Ignore scars smaller than the minimum area in `config.py`. Report how many scars this removes.
-- Report results by scar size class, by count and by area.
+A burn scar is a connected group of burned pixels with one map month.
+The map cuts one fire into many scars, because it splits a burn by the month of the image.
+Thus the unit of the evaluation is the fire, not the scar. The command `build` makes the fires:
+
+1. Each burned pixel gets the burn day of its cell of approximately 445 m (MCD64A1). `build` reads the day of the map month, or of the month before.
+2. Two cells that touch, also at a corner, are one fire if their first burn days are not more than the day margin apart.
+3. A pixel with no burn day goes to the fire that holds most of the dated pixels of its scar.
+4. A scar with no dated pixel is one fire. That fire has only the map month.
+
+- The burn scar map stays the truth for where. The burn day product says only when.
+- Count only fires of the minimum area in `config.py` or more. Report how many fires that is.
+- Report results by fire size class, by count and by area.
+- In 2023 the 66 349 scars make 29 210 fires. 969 fires have 10 hectares or more, and 382 of those have burn days.
 
 ### 11.4 Match rule
 
-The match is between a detection and a scar, not between an event and a scar.
+The match is between a detection and a fire, not between an event and a fire.
 An event can be very large, thus its centre says little.
 
-A detection matches a scar if these two conditions are true:
+A detection matches a fire if these two conditions are true:
 
-- Space: a pixel of the scar is in the square of the detection footprint plus the margin in `config.py`.
-- Time: the scar burned near the time of the detection.
+- Space: a pixel of the fire is in the square of the detection footprint plus the margin in `config.py`.
+- Time: the fire burned near the time of the detection.
 
 The time condition has two forms:
 
-- A scar with burn days (from MCD64A1): the day of the detection is from the first burn day of the scar minus the day margin, to the last burn day plus the day margin.
-- A scar with no burn day: the detection is in the scar month or in the month before it. It is not in the month after it.
+- A fire with burn days: the day of the detection is from the first burn day of the fire minus the day margin, to the last burn day plus the day margin.
+- A fire with no burn day: the detection is in the map month or in the month before it. It is not in the month after it.
 
-`build` gives each scar its first and last burn day. For each pixel of the scar, it reads the burn day of the scar month, or of the month before.
-The burn scar map stays the truth for where. The burn day product says only when.
-In 2023, 1821 of the 2408 scars of 10 hectares or more have a burn day. They hold 95 percent of the burned area.
-
-One scar can match many detections. One detection can match many scars.
-Only detections in the biome border count. Only scars in the biome border exist in the store.
+One fire can match many detections. One detection can match many fires.
+Only detections in the biome border count. Only fires in the biome border exist in the store.
 A merged row uses the level of the event immediately after each detection (table `memberships`).
 
 ### 11.5 Why "unmatched" is not "false"
@@ -185,22 +195,20 @@ Possible causes are:
 - The detection was an industrial heat source or sun glint. Only this cause is a true false alarm.
 
 Report the unmatched share. Do not call it the false alarm rate.
+The precision against the map is 1 minus the unmatched share. It is a lower limit of the true precision.
 
 ### 11.6 Delay
 
-- MapBiomas gives the month, not the minute.
-- Thus the reference time for a scar is the first detection from all sources that matches the scar.
+- No source gives the start time of a fire. The burn day is uncertain by some days.
+- Thus the reference time for a fire is the first detection from all sources that matches the fire.
 - Relative delay for a configuration is its first matched detection time minus the reference time.
 - Calculate the delay two times: one time with `observed_at` and one time with `available_at`.
-- The `available_at` number is the honest number for operations.
+- The `available_at` number is the honest number for operations. It depends on the delay estimates in `config.py`.
 
-Known problem, found on 2023: the delay depends on the reach of each sensor. Do not give one number.
-
-- The burn day rule removed most of the worst cases. GOES is first by more than 7 days for 88 of 2058 scars. Before the rule it was 233 of 2073.
-- But a GOES detection reaches a scar from 1.5 km. A GOES pixel is approximately 500 hectares. Most scars are smaller.
-- With the real footprints, GOES is before VIIRS by a median of 17.5 hours.
-- With the same reach of 450 m for each sensor, the median is 6.6 hours. For scars of 100 hectares or more it is 3.7 hours, and VIIRS is first for 102 of 346 scars.
-- Thus the honest statement at this time is a range, not a number. A possible rule: measure delay only on scars that are larger than the largest footprint.
+Only isolated fires give a delay.
+A sensor with a large footprint reaches the fires near its fire. Then it seems to see each of them early.
+For an isolated fire, each detection that matches it matches no other counted fire, for each footprint size.
+Each result row gives the number of isolated fires that it used (`delay_fires`). The sample is small.
 
 ### 11.7 Baselines
 
@@ -225,6 +233,13 @@ The merged row has value only in comparison with the best single row.
 - Each table is a CSV file in `results/` with a header that gives the configuration hash.
 - `results/SUMMARY.md` is generated by code. Do not edit it by hand.
 - Give counts adjacent to shares. Give the median and the 90th percentile for delays.
+
+The tables are:
+
+- `configurations`: fire recall, area recall, unmatched share and delay for each source, sensor family and merged level.
+- `fire_sizes`: fire recall for each configuration and fire size class.
+- `fire_events`: for each fire size class, into how many events the fusion split a fire.
+- `events`: for each final level, the share of events that match a fire, and how many counted fires one event holds.
 
 ## 12. Agent and MCP rules
 
@@ -282,11 +297,14 @@ When a choice changes, change its row in the same step.
 | Choice | Reason | Pitfall |
 |---|---|---|
 | The MapBiomas map says where a fire burned. | It is a published map of 30 m from Landsat. Its model does not use hotspots (section 8.5). | It does not map small burns. It has commission errors in wetlands and dry lagoons. |
-| A scar is a group of pixels that touch and have the same month. | The map gives no other unit. | The month split cuts one fire into many scars. One scar can hold two fires. |
-| The MCD64A1 product says when a scar burned. | It is the only source of a burn day. The day comes from reflectance, not from a hotspot (section 8.9). | Its pixels are 463 m. The day is uncertain by some days. Small scars frequently have no burn day. |
+| The MCD64A1 product says when a pixel burned. | It is the only source of a burn day. The day comes from reflectance, not from a hotspot (section 8.9). | Its pixels are 463 m. The day is uncertain by some days. Small scars frequently have no burn day. |
+| The unit is a fire: burned cells that touch and have burn days not more than 7 days apart. | A scar is not a fire: the month split cuts one fire into many scars. | Fires that burn into each other are one fire. A fire can be very large and counts one time. |
+| The limit between two fires is the day margin of the match. | We cannot divide in time what we cannot match in time. | A different limit gives a different number of fires. |
+| A scar with no burn day stays a fire with only a month. | We have no day to group it. | These fires are small and many. By count they weigh as much as a very large fire. |
 | The day margin is 7 days. | Two burn day products agree to 7 days for 95 percent of cells (section 8.9). | A detection of a different fire, near in space and in these days, can match. |
-| A scar with no burn day uses its month and the month before. | The map month is almost never before the burn, and frequently one month after it (section 8.9). | A burn two months before the map month does not match. A January scar loses its December detections. |
-| Scar recall counts scars of 10 hectares or more. | Most smaller scars are pieces from the month split. | The results say nothing about small fires. |
+| A fire matches from its first burn day to its last burn day. | One time range for each fire is simple. | A fire that burned for many days matches a detection in each of those days, at each place. |
+| A fire with no burn day uses its month and the month before. | The map month is almost never before the burn, and frequently one month after it (section 8.9). | A burn two months before the map month does not match. A January fire loses its December detections. |
+| Fire recall counts fires of 10 hectares or more. | Most smaller fires are scars with no burn day: pieces from the month split. | The results say nothing about small fires. |
 | Only the biome border in Brazil counts. | MapBiomas Fogo for Brazil does not map Bolivia and Paraguay. | The results are not for the full Pantanal. |
 | We tune on 2023 and score on 2024. | A threshold that saw the test data gives a result that is too good. | The two years are different: 2024 has more than three times the burned area (section 8.5). |
 
@@ -309,27 +327,17 @@ When a choice changes, change its row in the same step.
 | A detection occupies a square: its footprint plus a margin, on cells of approximately 550 m. | It is simple and quick, and a person can calculate it. | The join distance is approximate. A sensor with a large footprint joins more. |
 | The time window is 24 hours. | A polar-orbit satellite sees a fire that continues a minimum of one time in 24 hours. | A large fire that continues becomes one very large event (section 10.2). |
 | The level counts passes and sensor families. | It needs no trained model, and a person can explain each alert. | An event that lasts long becomes HIGH. HIGH does not mean a large or dangerous fire. |
-| The thresholds are a first proposal. | A check on 2023 with shorter windows and margins did not divide the largest event. | One event is not always one fire. An alert for new ground in an event is not built. |
+| The thresholds are a first proposal. | A check on 2023 with shorter windows and margins did not divide the largest event. | One event is not always one fire: see the tables `fire_events` and `events`. An alert for new ground in an event is not built. |
 
 ### 13.4 Evaluation
 
 | Choice | Reason | Pitfall |
 |---|---|---|
-| We grade against burn scars, not against active fires. | No independent record of active fires exists. Hotspots are the data that we grade. | The truth is exact in space and coarse in time. A fire with no mapped scar is invisible. |
-| The match is between a detection and a scar. | An event can be very large, thus its centre says little. | The glossary defines the measures for alerts. The tables count detections (section 11.4). |
-| The match reach is the footprint plus a margin. | A detection can be anywhere in its pixel. | A sensor with a large footprint reaches more scars. Its recall and its delay look better (section 11.6). |
+| We grade against mapped fires, not against active fires. | No independent record of active fires exists. Hotspots are the data that we grade. | The truth is exact in space and coarse in time. A fire with no mapped scar is invisible. |
+| The match is between a detection and a fire. | An event can be very large, thus its centre says little. | The tables count detections. A table of alerts for each fire is not built. |
+| The match reach is the footprint plus a margin. | A detection can be anywhere in its pixel. | A sensor with a large footprint reaches more fires. Its recall looks better. |
+| Recall, unmatched share and delay all use the fire. | One unit for all measures. The pieces of a large fire counted many times in the scar recall. | The fire recall is lower than the scar recall of earlier runs. The two are not comparable. |
 | Delay is relative to the first detection from all sources. | No source gives the start time of a fire. | We cannot give the time from ignition to alert. |
+| Delay counts only isolated fires. | Only there each detection belongs to one fire, for each footprint size (section 11.6). | The sample is small and holds a small share of the burned area. Isolated fires can differ from other fires. |
 | A merged row and a single-source row use the same detections. | Then the rows differ only in the selection. | A single-source row is not a separate fusion run of that source. |
-| An unmatched detection is not a false alarm. | Section 11.5 gives the causes. | The unmatched share alone rewards a system that sends few alerts. Read it with scar recall. |
-
-### 13.5 Decisions of 2026-11-21 that are not built
-
-The owner agreed to these changes. When the code has them, move each row to its section and update section 11.
-
-| Choice | Reason | Pitfall |
-|---|---|---|
-| The unit of the truth becomes a fire: burned cells that touch and have burn days not more than 7 days apart. | A scar is not a fire. We cannot divide in time what we cannot match in time, thus the limit is the day margin. | Fires that burn into each other are one fire. A fire can be very large and counts one time. |
-| A scar with no burn day stays a fire with only a month. | We have no day to group it. | These fires are small and many. By count they weigh as much as a very large fire. |
-| Recall, unmatched share and delay all use the fire. | One unit for all measures. The pieces of a large fire counted many times in scar recall. | The new recall is lower and is not comparable with the scar recall of earlier runs. |
-| Delay counts only isolated fires: no detection matches the fire and also a different fire. | Only there the detection belongs to one fire, for each footprint size. | The sample is small and holds a small share of the burned area. Isolated fires can differ from other fires. |
-| The fusion thresholds do not change. | See section 13.3. | See section 13.3. |
+| An unmatched detection is not a false alarm. | Section 11.5 gives the causes. | The unmatched share alone rewards a system that sends few alerts. Read it with fire recall. |
