@@ -38,6 +38,7 @@ def replace_sources(monkeypatch, firms_rows, scans):
         "chispa.sources.goes.read_live",
         lambda new: [(start, published, [[-17.5, -57.5, 10, 20.7]]) for _, start, published in new],
     )
+    monkeypatch.setattr("chispa.sources.inpe.list_live", lambda now: [])
 
 
 def test_listing_gives_the_scan_time_and_the_publication_time():
@@ -99,3 +100,28 @@ def test_source_that_fails_does_not_stop_the_pass(tmp_path, monkeypatch):
         ("firms", "failed"),
         ("goes", "ok"),
     ]
+
+
+def test_inpe_file_is_read_one_time(tmp_path, monkeypatch):
+    replace_sources(monkeypatch, [], [])
+    name = "focos_10min_20261121_1920.csv"
+    published_at = datetime(2026, 11, 21, 19, 20, 6, tzinfo=UTC)
+    row = {"lat": "-17.5", "lon": "-57.5", "satelite": "NOAA-21", "data": "2026-11-21 16:56:00"}
+    monkeypatch.setattr("chispa.sources.inpe.list_live", lambda now: [name])
+    monkeypatch.setattr("chispa.sources.inpe.read_live", lambda name: (published_at, [row]))
+    first = live.poll(tmp_path, "key", NOW)
+    again = live.poll(tmp_path, "key", NOW + timedelta(minutes=5))
+    log = read(tmp_path / "live" / "inpe" / "2026-11-21.csv")
+    assert [result["item"] for result in first if result["source"] == "inpe"] == [name]
+    assert [result for result in again if result["source"] == "inpe"] == []
+    assert (log[0]["satelite"], log[0]["published_at"]) == ("NOAA-21", "2026-11-21T19:20:06+00:00")
+
+
+def test_only_a_log_that_gets_no_more_rows_is_complete(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.LIVE_COMPLETE_AFTER", timedelta(days=2))
+    for day in ("2026-11-19", "2026-11-20", "2026-11-21"):
+        path = tmp_path / "live" / "goes" / f"{day}.csv"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("observed_at\n")
+    # At 19:30 on 21 November, the log of 19 November is 2 days old. The log of 20 November is not.
+    assert [path.stem for path in live.complete_logs(tmp_path, NOW)] == ["2026-11-19"]
