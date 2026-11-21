@@ -109,7 +109,7 @@ def parse_file(path: Path, product: str) -> tuple[list[Detection], int]:
             if row["satellite"] not in PLATFORMS:
                 continue
             try:
-                detections.append(parse_row(row, PRODUCTS[product]))
+                detections.append(parse_row(row, (PRODUCTS | LIVE_PRODUCTS)[product]))
             except (ValueError, KeyError):
                 rejected += 1
     return detections, rejected
@@ -126,13 +126,20 @@ def parse_row(row: dict, sensor_family: str) -> Detection:
         sensor_family=sensor_family,
         platform=PLATFORMS[row["satellite"]],
         observed_at=observed_at,
-        available_at=observed_at + config.AVAILABLE_DELAY[sensor_family],
+        available_at=_available_at(row, observed_at, sensor_family),
         lat=float(row["latitude"]),
         lon=float(row["longitude"]),
         footprint_m=_footprint_m(row, sensor_family),
         frp_mw=frp_mw if frp_mw >= 0 else None,  # FIRMS writes -999 for "no value".
         source_confidence=_confidence(row["confidence"], sensor_family),
     )
+
+
+def _available_at(row: dict, observed_at: datetime, sensor_family: str) -> datetime:
+    # A live row has the time when we first saw it. A recorded row has only an estimate.
+    if row.get("first_seen_at"):
+        return datetime.fromisoformat(row["first_seen_at"])
+    return observed_at + config.AVAILABLE_DELAY[sensor_family]
 
 
 def _footprint_m(row: dict, sensor_family: str) -> float:

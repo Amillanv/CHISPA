@@ -11,6 +11,7 @@ import re
 import zipfile
 from collections import Counter
 from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 import requests
@@ -19,6 +20,8 @@ from chispa import config
 from chispa.models import Detection
 
 FOLDER = "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/mensal/Brasil/"
+# One file for each 10 minutes, for all of South America. The server keeps some days of files.
+LIVE_FOLDER = "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/10min/"
 
 # The `satelite` field -> (sensor family, platform). We ignore `MSG-03`:
 # it is a Meteosat satellite that sees the Pantanal at a bad angle.
@@ -32,6 +35,7 @@ SATELLITES = {
     "TERRA_M-T": ("modis", "TERRA"),
     "TERRA_M-M": ("modis", "TERRA"),
     "GOES-16": ("abi", "GOES16"),
+    "GOES-19": ("abi", "GOES19"),
     "METOP-B": ("avhrr", "METOPB"),
     "METOP-C": ("avhrr", "METOPC"),
     "NOAA-18": ("avhrr", "NOAA18"),
@@ -70,6 +74,28 @@ def _download(name: str, raw_dir: Path) -> Path:
     return path
 
 
+def list_live(now: datetime) -> list[str]:
+    """Return the names of the files of 10 minutes of the last hours. `config.py` gives how many."""
+    listing = requests.get(LIVE_FOLDER, timeout=60)
+    listing.raise_for_status()
+    names = sorted(set(re.findall(r"focos_10min_\d{8}_\d{4}\.csv", listing.text)))
+    return [name for name in names if now - config.LIVE_LOOKBACK <= live_time(name) <= now]
+
+
+def live_time(name: str) -> datetime:
+    """Return the time in the name of a file of 10 minutes."""
+    return datetime.strptime(name, "focos_10min_%Y%m%d_%H%M.csv").replace(tzinfo=UTC)
+
+
+def read_live(name: str) -> tuple[datetime, list[dict]]:
+    """Return the publication time of one file of 10 minutes, and its rows in the Pantanal box."""
+    answer = requests.get(LIVE_FOLDER + name, timeout=60)
+    answer.raise_for_status()
+    published_at = parsedate_to_datetime(answer.headers["Last-Modified"])
+    rows = csv.DictReader(io.StringIO(answer.text))
+    return published_at, [row for row in rows if _in_box(float(row["lat"]), float(row["lon"]))]
+
+
 def parse_file(path: Path) -> tuple[list[Detection], int, Counter]:
     """Return the detections in the Pantanal box, the number of rejected rows,
     and a count of the rows in the box from satellites that we do not use."""
@@ -103,13 +129,20 @@ def _in_box(lat: float, lon: float) -> bool:
 def parse_row(row: dict) -> Detection:
     """Make one detection from one CSV row. A bad row raises an error."""
     sensor_family, platform = SATELLITES[row["satelite"]]
-    observed_at = datetime.fromisoformat(row["data_hora_gmt"]).replace(tzinfo=UTC)
+    # A monthly file has the field `data_hora_gmt`. A file of 10 minutes has the field `data`.
+    observed_at = datetime.fromisoformat(row.get("data_hora_gmt") or row["data"]).replace(
+        tzinfo=UTC
+    )
+    # A live row has the time when we first saw it. A recorded row has only an estimate.
+    seen = row.get("first_seen_at")
     return Detection(
         source="inpe",
         sensor_family=sensor_family,
         platform=platform,
         observed_at=observed_at,
-        available_at=observed_at + config.AVAILABLE_DELAY[sensor_family],
+        available_at=datetime.fromisoformat(seen)
+        if seen
+        else observed_at + config.AVAILABLE_DELAY[sensor_family],
         lat=float(row["lat"]),
         lon=float(row["lon"]),
         footprint_m=config.INPE_FOOTPRINT_M[sensor_family],
