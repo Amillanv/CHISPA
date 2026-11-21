@@ -6,7 +6,7 @@ The detail is in `docs/`. Read the applicable file before you work on its subjec
 | Subject | File |
 |---|---|
 | Checked facts and rules for each data source (section 8) | `docs/sources.md` |
-| Glossary, data conventions, fusion, evaluation, agent (sections 6, 9 to 12) | `docs/method.md` |
+| Glossary, data conventions, fusion, evaluation, agent, assumptions (sections 6, 9 to 13) | `docs/method.md` |
 | ASD-STE100 writing rules and word list (section 5) | `docs/language.md` |
 | Build plan, open decisions and progress | `PLAN.md` |
 

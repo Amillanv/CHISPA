@@ -11,13 +11,14 @@ from dotenv import load_dotenv
 
 from chispa import bucket, config
 from chispa.build import build_store
+from chispa.evaluate import evaluate
 from chispa.fusion import LEVELS, fuse
 from chispa.grid import pantanal_grid
-from chispa.sources import border, firms, goes, inpe, scars
+from chispa.report import write_summary, write_tables
+from chispa.sources import border, burnday, firms, goes, inpe, scars
 from chispa.store import open_store, read_detections, replace_fusion
 
 NOT_BUILT = {
-    "evaluate": "Compare alerts with burn scars and write the result tables.",
     "serve": "Start the dashboard.",
     "mcp": "Start the MCP server.",
     "grade": "Run the gold questions and grade the answers.",
@@ -30,13 +31,16 @@ def main(arguments: list[str] | None = None) -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("check", help="Do a check of the keys and the logins.")
     fetch = commands.add_parser("fetch", help="Get the raw files of one source for one year.")
-    fetch.add_argument("source", choices=["firms", "goes", "inpe", "scars", "border"])
+    fetch.add_argument("source", choices=["firms", "goes", "inpe", "scars", "burnday", "border"])
     fetch.add_argument("--year", type=int, help="Necessary for each source apart from border.")
     fetch.add_argument("--push", action="store_true", help="Also copy new files to the bucket.")
     build = commands.add_parser("build", help="Make the store from the raw files.")
     build.add_argument("--offline", action="store_true", help="Do not get files from the bucket.")
     fusion = commands.add_parser("fuse", help="Replay one year of detections into events.")
     fusion.add_argument("--year", type=int, required=True)
+    evaluation = commands.add_parser("evaluate", help="Compare one fused year with the scars.")
+    evaluation.add_argument("--year", type=int, required=True)
+    evaluation.add_argument("--test-run", action="store_true", help="Permit the test year.")
     for name, text in NOT_BUILT.items():
         commands.add_parser(name, help=f"{text} Not built.")
     chosen = parser.parse_args(arguments)
@@ -49,6 +53,8 @@ def main(arguments: list[str] | None = None) -> None:
         run_build(chosen.offline)
     elif chosen.command == "fuse":
         run_fuse(chosen.year)
+    elif chosen.command == "evaluate":
+        run_evaluate(chosen.year, chosen.test_run)
     else:
         parser.exit(1, f"The command '{chosen.command}' is not built.\n")
 
@@ -82,6 +88,8 @@ def run_fetch(source: str, year: int | None, push: bool) -> None:
     elif source == "scars":
         project = read_setting("EE_PROJECT")
         files = scars.download_year(year, project, config.RAW_DIR, pantanal_grid())
+    elif source == "burnday":
+        files = burnday.download_year(year, read_setting("EE_PROJECT"), config.RAW_DIR)
     elif source == "border":
         files = [border.download(config.RAW_DIR)]
     elif year == config.GOES_GAP_START.year:
@@ -113,3 +121,14 @@ def run_fuse(year: int) -> None:
     replace_fusion(store, (first_id, first_id + 10_000_000), events, alerts, memberships)
     levels = {level: sum(event.level == level for event in events) for level in LEVELS}
     print(f"{year}: {len(memberships)} detections, {len(events)} events, {levels}.")
+
+
+def run_evaluate(year: int, test_run: bool) -> None:
+    """Write the result tables of one year. The test year needs a clear decision."""
+    if year == config.TEST_YEAR and not test_run:
+        raise SystemExit(
+            f"{year} is the test year. Freeze the configuration first, then add --test-run."
+        )
+    write_tables(evaluate(year, config.STORE_PATH, config.RAW_DIR), year, config.RESULTS_DIR)
+    write_summary(config.RESULTS_DIR)
+    print(f"{year}: the tables are in {config.RESULTS_DIR / str(year)}. See results/SUMMARY.md.")

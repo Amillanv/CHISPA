@@ -1,0 +1,4 @@
+final_level,events,events_matched,matched_share,scars_per_matched_event_median,scars_per_matched_event_max,config,run_date
+LOW,2739,592,0.2161,4.0,150,8acfb595b00c,2026-11-21
+MEDIUM,2072,756,0.3649,6.0,763,8acfb595b00c,2026-11-21
+HIGH,1079,655,0.607,10.0,22199,8acfb595b00c,2026-11-21
