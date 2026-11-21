@@ -79,6 +79,10 @@ SCAR_TILE_PX = 2048
 # 8: pixels that touch at a corner are one scar. 4: only pixels that share a side.
 SCAR_CONNECTIVITY = 8
 
+# The pixel of the grid on which we save the burn days, in degrees (approximately 445 m).
+# The product has pixels of 463 m.
+BURNDAY_PIXEL_DEG = 0.004
+
 # --- Fusion ---
 # These values are a first proposal. Tune them only on the development year.
 
@@ -100,3 +104,28 @@ PASS_GAP = timedelta(minutes=30)
 # GOES makes one scan each 10 minutes. FIRMS gives the start of the scan. INPE gives a time
 # approximately 7 minutes later. We move each GOES time back to the start of its scan.
 GOES_SCAN = timedelta(minutes=10)
+
+# --- Evaluation ---
+# Tune these values only on the development year.
+
+# A scar smaller than this is not counted in scar recall. Most of them are pieces
+# that the month split of the map makes.
+EVAL_MIN_SCAR_HA = 10.0
+
+# A detection matches a scar in time if its day is not farther than this from the
+# burn days of the scar. Two burn day products agree to 7 days for 95 percent of cells.
+EVAL_DAY_MARGIN = 7
+
+# The scar map gives the month of an image. For 60 percent of the burned area that is one
+# month after the burn, and almost never before it. Thus we look this many months back:
+# for the burn day of a scar, and for the month of a detection when a scar has no burn day.
+EVAL_MONTHS_BEFORE = 1
+
+# A detection matches a scar if a pixel of the scar is in the square of the footprint
+# plus this margin, in metres.
+EVAL_MARGIN_M = 250.0
+
+# The limits of the scar size classes in hectares.
+EVAL_SIZE_CLASSES_HA = (10.0, 100.0, 1000.0, 10000.0)
+
+RESULTS_DIR = Path("results")

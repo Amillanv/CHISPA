@@ -4,13 +4,14 @@ The store is a result, not a source. This module makes it again from the raw fol
 Thus a change in a parser, or a new raw file, needs only a new build.
 """
 
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
 
 from chispa import config
 from chispa.grid import pantanal_grid
-from chispa.sources import border, firms, goes, inpe, scars
+from chispa.sources import border, burnday, firms, goes, inpe, scars
 from chispa.store import add_detections, add_scars, open_store
 
 
@@ -44,6 +45,15 @@ def build_scars(year: int, raw_dir: Path, data_dir: Path, store) -> int:
     in_biome = border.rasterize(border.read_rings(raw_dir / "border" / "pantanal.geojson"), grid)
     months = scars.read_year(year, raw_dir, grid) * in_biome
     found, numbers = scars.find_scars(months, grid, year)
+    first, last = burnday.scar_burn_days(
+        numbers, months, grid, burnday.read_year(year, raw_dir), burnday.burnday_grid(), len(found)
+    )
+    found = [
+        replace(scar, first_burn_day=int(first[scar.number]), last_burn_day=int(last[scar.number]))
+        if first[scar.number]
+        else scar
+        for scar in found
+    ]
     add_scars(store, found)
     path = data_dir / "scars" / f"numbers_{year}.npz"
     path.parent.mkdir(parents=True, exist_ok=True)

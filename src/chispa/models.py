@@ -61,6 +61,8 @@ class Scar:
     west: float
     north: float
     east: float
+    first_burn_day: int | None = None  # day of the year, from the burn day product
+    last_burn_day: int | None = None
 
 
 @dataclass(frozen=True)
