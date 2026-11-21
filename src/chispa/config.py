@@ -130,4 +130,10 @@ EVAL_MARGIN_M = 250.0
 # The limits of the fire size classes in hectares.
 EVAL_SIZE_CLASSES_HA = (10.0, 100.0, 1000.0, 10000.0)
 
+# --- Live operation ---
+
+# One pass of the poller reads the GOES scans of this many hours before it.
+# Thus a short stop of the poller loses no scan. A scan that is older is not read.
+LIVE_GOES_LOOKBACK = timedelta(hours=3)
+
 RESULTS_DIR = Path("results")

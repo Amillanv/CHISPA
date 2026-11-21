@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 
 from dotenv import load_dotenv
 
-from chispa import bucket, config
+from chispa import bucket, config, live
 from chispa.build import build_store
 from chispa.evaluate import evaluate
 from chispa.fusion import LEVELS, fuse
@@ -41,6 +41,7 @@ def main(arguments: list[str] | None = None) -> None:
     evaluation = commands.add_parser("evaluate", help="Compare one fused year with the fires.")
     evaluation.add_argument("--year", type=int, required=True)
     evaluation.add_argument("--test-run", action="store_true", help="Permit the test year.")
+    commands.add_parser("poll", help="Do one pass of the live poller.")
     for name, text in NOT_BUILT.items():
         commands.add_parser(name, help=f"{text} Not built.")
     chosen = parser.parse_args(arguments)
@@ -55,6 +56,8 @@ def main(arguments: list[str] | None = None) -> None:
         run_fuse(chosen.year)
     elif chosen.command == "evaluate":
         run_evaluate(chosen.year, chosen.test_run)
+    elif chosen.command == "poll":
+        run_poll()
     else:
         parser.exit(1, f"The command '{chosen.command}' is not built.\n")
 
@@ -132,3 +135,16 @@ def run_evaluate(year: int, test_run: bool) -> None:
     write_tables(evaluate(year, config.STORE_PATH, config.RAW_DIR), year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
     print(f"{year}: the tables are in {config.RESULTS_DIR / str(year)}. See results/SUMMARY.md.")
+
+
+def run_poll() -> None:
+    """Do one pass of the live poller and show what it found."""
+    now = datetime.now(UTC)
+    results = live.poll(config.RAW_DIR, read_setting("FIRMS_API_KEY"), now)
+    for source in ("firms", "goes"):
+        of_source = [result for result in results if result["source"] == source]
+        failed = [result["result"] for result in of_source if result["result"] != "ok"]
+        new_rows = sum(result["new_rows"] for result in of_source)
+        print(f"{source}: {len(of_source)} items, {new_rows} new rows, {len(failed)} failed.")
+        for text in sorted(set(failed)):
+            print(f"  {text}")

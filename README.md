@@ -45,11 +45,11 @@ We will not ask a brigade to trust a number that we did not measure.
 ## Status
 
 - `chispa build` gets the raw files from a public bucket and makes a SQLite store: 4.1 million detections and the mapped fires of 2023 and 2024.
-- `chispa fuse` groups the detections of one year into events with a confidence level.
-- `chispa evaluate` compares one fused year with the mapped fires and writes the result tables.
+- `chispa fuse` groups the detections of one year into events with a confidence level. `chispa evaluate` compares them with the mapped fires.
+- `chispa poll` does one pass of the live poller: it records each new detection with the time of the pass. It needs a FIRMS key.
 - [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
 
-The live system, the weather, the agent and the dashboard do not exist yet.
+The live delay report, the live alerts, the weather, the agent and the dashboard do not exist yet.
 
 ## What we measure
 
