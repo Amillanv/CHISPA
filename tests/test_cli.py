@@ -14,6 +14,6 @@ def test_help_lists_each_command(capsys):
 
 def test_command_that_is_not_built_fails(capsys):
     with pytest.raises(SystemExit) as stop:
-        main(["evaluate"])
+        main(["serve"])
     assert stop.value.code == 1
     assert "not built" in capsys.readouterr().err

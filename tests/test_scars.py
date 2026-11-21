@@ -4,6 +4,7 @@ import numpy as np
 
 from chispa.grid import Grid
 from chispa.sources.border import rasterize
+from chispa.sources.burnday import scar_burn_days
 from chispa.sources.scars import find_scars
 
 # A grid of 6 x 6 pixels of 1 degree. The north-west corner is at lon 0, lat 6.
@@ -52,3 +53,21 @@ def test_scar_area_is_the_sum_of_the_pixel_areas():
     scar = find_scars(months, GRID, 2024)[0][0]
     expected_ha = 111_320 * np.cos(np.deg2rad(0.5)) * 110_574 / 1e4
     assert abs(scar.area_ha - expected_ha) < 1e-6
+
+
+def test_burn_days_of_a_scar(monkeypatch):
+    monkeypatch.setattr("chispa.config.EVAL_MONTHS_BEFORE", 1)
+    # The burn day grid has 2 x 2 pixels of 3 degrees on the same area as GRID.
+    coarse = Grid(west=0.0, north=6.0, pixel_deg=3.0, width=2, height=2)
+    days = np.zeros((12, 2, 2), dtype=np.uint16)
+    days[7, 0, 0] = 220  # August layer, north-west pixel
+    days[6, 0, 1] = 200  # July layer, north-east pixel
+    days[5, 1, 0] = 170  # June layer, south-west pixel
+    months = np.zeros((6, 6), dtype=np.uint8)
+    numbers = np.zeros((6, 6), dtype=np.int32)
+    months[0, 0], numbers[0, 0] = 8, 1  # scar 1: one pixel in the north-west, one in the north-east
+    months[0, 5], numbers[0, 5] = 8, 1
+    months[5, 0], numbers[5, 0] = 8, 2  # scar 2: August, but the only burn day is in June
+    first, last = scar_burn_days(numbers, months, GRID, days, coarse, count=2)
+    assert (first[1], last[1]) == (200, 220)  # the July day counts: one month before
+    assert (first[2], last[2]) == (0, 0)  # June is two months before: no burn day
