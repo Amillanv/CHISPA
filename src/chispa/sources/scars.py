@@ -1,8 +1,9 @@
 """MapBiomas Fogo burn scars through Google Earth Engine.
 
-The burn scars are the ground truth of the evaluation.
+The burn scars are the ground truth of the evaluation: they say where a fire burned.
 The map is a grid: each pixel holds 0, or the month (1 to 12) of the burn.
-`fetch` saves the grid of one year as tiles. `build` groups the burned pixels into scars.
+`fetch` saves the grid of one year as tiles. `build` groups the burned pixels into scars,
+then `fires.py` groups the scars into fires.
 """
 
 import io
@@ -15,7 +16,6 @@ from scipy import ndimage
 
 from chispa import config
 from chispa.grid import Grid
-from chispa.models import Scar
 
 TILE_NAME = re.compile(r"r(\d+)_c(\d+)\.npz")
 
@@ -87,57 +87,19 @@ def read_year(year: int, raw_dir: Path, grid: Grid) -> np.ndarray:
     return months
 
 
-def find_scars(months: np.ndarray, grid: Grid, year: int) -> tuple[list[Scar], np.ndarray]:
-    """Group burned pixels into scars.
+def find_scars(months: np.ndarray) -> np.ndarray:
+    """Return a grid that holds the scar number of each pixel (0 for no scar).
 
-    A scar is a group of pixels that touch and that burned in the same month.
-    Return the scars, and a grid that holds the scar number of each pixel (0 for no scar).
+    A scar is a group of pixels that touch and that have the same month.
     """
     # This function holds a full year of pixels in memory: some gigabytes.
     # Rumour says that Sam Altman wants idle local RAM put to work. You are welcome, Sam.
     numbers = np.zeros(months.shape, dtype=np.int32)
     links = ndimage.generate_binary_structure(2, 2 if config.SCAR_CONNECTIVITY == 8 else 1)
-    scars: list[Scar] = []
+    count = 0
     for month in range(1, 13):
-        labels, count = ndimage.label(months == month, structure=links, output=np.int32)
-        if count == 0:
-            continue
-        scars += _measure(labels, count, grid, year, month, first_number=len(scars) + 1)
+        labels, found = ndimage.label(months == month, structure=links, output=np.int32)
         burned = labels > 0
-        numbers[burned] = labels[burned] + len(scars) - count
-    return scars, numbers
-
-
-def _measure(
-    labels: np.ndarray, count: int, grid: Grid, year: int, month: int, first_number: int
-) -> list[Scar]:
-    lats, lons = grid.lats(), grid.lons()
-    # The area of a pixel in hectares. It gets smaller away from the equator.
-    row_ha = (
-        (grid.pixel_deg * 111_320 * np.cos(np.deg2rad(lats))) * (grid.pixel_deg * 110_574) / 1e4
-    )
-    index = np.arange(1, count + 1)
-    rows, cols = np.nonzero(labels)
-    label = labels[rows, cols]
-    pixels = np.bincount(label, minlength=count + 1)[1:]
-    area_ha = np.bincount(label, weights=row_ha[rows], minlength=count + 1)[1:]
-    mean_lat = np.bincount(label, weights=lats[rows], minlength=count + 1)[1:] / pixels
-    mean_lon = np.bincount(label, weights=lons[cols], minlength=count + 1)[1:] / pixels
-    half = grid.pixel_deg / 2
-    scars = []
-    for i, box in zip(index, ndimage.find_objects(labels), strict=True):
-        scars.append(
-            Scar(
-                year=year,
-                number=first_number + int(i) - 1,
-                month=month,
-                area_ha=float(area_ha[i - 1]),
-                lat=float(mean_lat[i - 1]),
-                lon=float(mean_lon[i - 1]),
-                south=float(lats[box[0].stop - 1] - half),
-                west=float(lons[box[1].start] - half),
-                north=float(lats[box[0].start] + half),
-                east=float(lons[box[1].stop - 1] + half),
-            )
-        )
-    return scars
+        numbers[burned] = labels[burned] + count
+        count += found
+    return numbers

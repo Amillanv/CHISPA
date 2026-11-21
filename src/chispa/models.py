@@ -44,25 +44,18 @@ class Detection:
 
 
 @dataclass(frozen=True)
-class Scar:
-    """A connected area that MapBiomas Fogo maps as burned in one month.
+class Fire:
+    """A group of burned pixels that the evaluation counts as one fire.
 
-    `number` identifies the scar in its year. The scar grid of that year holds this number
-    in each pixel of the scar. The position is the mean of the pixel centres.
+    `number` identifies the fire in its year. The fire grid of that year holds this number
+    in each pixel of the fire. A fire has burn days, or only the month of the burn scar map.
     """
 
-    year: int
     number: int
-    month: int
     area_ha: float
-    lat: float
-    lon: float
-    south: float
-    west: float
-    north: float
-    east: float
-    first_burn_day: int | None = None  # day of the year, from the burn day product
-    last_burn_day: int | None = None
+    month: int | None
+    first_burn_day: int | None  # day of the year, from the burn day product
+    last_burn_day: int | None
 
 
 @dataclass(frozen=True)

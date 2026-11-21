@@ -1,4 +1,4 @@
-"""The SQLite store: one file that holds all detections.
+"""The SQLite store: one file that holds the detections, the fires and the fusion results.
 
 A database file lets each step read the result of the step before it.
 SQLite is part of Python, thus the store adds no dependency and no server.
@@ -9,7 +9,7 @@ from dataclasses import astuple, fields
 from datetime import UTC, datetime
 from pathlib import Path
 
-from chispa.models import Alert, Detection, Event, Scar
+from chispa.models import Alert, Detection, Event, Fire
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS detections (
@@ -27,17 +27,11 @@ CREATE TABLE IF NOT EXISTS detections (
     UNIQUE (source, platform, observed_at, lat, lon)
 );
 CREATE INDEX IF NOT EXISTS detections_available_at ON detections (available_at);
-CREATE TABLE IF NOT EXISTS scars (
+CREATE TABLE IF NOT EXISTS fires (
     year INTEGER NOT NULL,
     number INTEGER NOT NULL,
-    month INTEGER NOT NULL,
     area_ha REAL NOT NULL,
-    lat REAL NOT NULL,
-    lon REAL NOT NULL,
-    south REAL NOT NULL,
-    west REAL NOT NULL,
-    north REAL NOT NULL,
-    east REAL NOT NULL,
+    month INTEGER,
     first_burn_day INTEGER,
     last_burn_day INTEGER,
     PRIMARY KEY (year, number)
@@ -146,19 +140,22 @@ def _times_to_text(row: tuple, positions: tuple[int, ...]) -> tuple:
     return tuple(values)
 
 
-def add_scars(connection: sqlite3.Connection, scars: list[Scar]) -> None:
-    """Save the burn scars of one year."""
+def add_fires(connection: sqlite3.Connection, year: int, fires: list[Fire]) -> None:
+    """Save the fires of one year."""
     connection.executemany(
-        "INSERT INTO scars VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [astuple(scar) for scar in scars],
+        "INSERT INTO fires VALUES (?, ?, ?, ?, ?, ?)", [(year, *astuple(fire)) for fire in fires]
     )
     connection.commit()
 
 
-def read_scars(connection: sqlite3.Connection, year: int) -> list[Scar]:
-    """Return the burn scars of one year, in number sequence."""
-    cursor = connection.execute("SELECT * FROM scars WHERE year = ? ORDER BY number", (year,))
-    return [Scar(*row) for row in cursor]
+def read_fires(connection: sqlite3.Connection, year: int) -> list[Fire]:
+    """Return the fires of one year, in number sequence."""
+    cursor = connection.execute(
+        "SELECT number, area_ha, month, first_burn_day, last_burn_day FROM fires "
+        "WHERE year = ? ORDER BY number",
+        (year,),
+    )
+    return [Fire(*row) for row in cursor]
 
 
 def _to_row(detection: Detection) -> tuple:
