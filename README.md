@@ -19,7 +19,7 @@ What works at this time:
 Two known limits are open:
 
 - Only isolated fires give a delay. In 2023 that is a small sample.
-- One event is not always one fire. The fusion splits a very large fire into many events, and one event can hold many fires.
+- One event is not always one fire. The results give the purity and the completeness of the events.
 
 [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
 The weather, the smoke level, the agent and the dashboard do not exist yet.

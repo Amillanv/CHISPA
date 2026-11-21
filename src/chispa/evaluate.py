@@ -6,7 +6,6 @@ The fusion never reads this module or the fires. The evaluation runs after the f
 """
 
 import sqlite3
-from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -104,37 +103,55 @@ def configurations(detections: Fields) -> Fields:
     return chosen
 
 
-def _links(detections: Fields, pairs: Pairs, fires: Fields) -> np.ndarray:
-    """Return each different (event, counted fire) that a match connects, as two rows."""
+def _links(detections: Fields, pairs: Pairs, fires: Fields) -> tuple[np.ndarray, ...]:
+    """Return each different (event, counted fire) that a match connects, as three arrays:
+    the event, the fire, and the number of matches between the two."""
     counted = fires["counted"][pairs[1]]
-    events = detections["event"][pairs[0][counted]]
-    return np.unique(np.stack([events, pairs[1][counted]]), axis=1)
+    both = np.stack([detections["event"][pairs[0][counted]], pairs[1][counted]])
+    (events, numbers), matches = np.unique(both, axis=1, return_counts=True)
+    return events, numbers, matches
+
+
+def _main_share(group: np.ndarray, matches: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Return, for each group number, all its matches and the matches of its largest link."""
+    total = np.bincount(group, weights=matches)
+    main = np.zeros(len(total))
+    np.maximum.at(main, group, matches)
+    return total, main
 
 
 def event_table(detections: Fields, pairs: Pairs, fires: Fields, final_level: dict) -> list[dict]:
     """Return, for each final level, how many events match a fire and how many fires.
 
-    `matched_share` is the precision against the map. An event on more than one counted
-    fire shows that the fusion merged fires.
+    `matched_share` is the precision against the map. `purity` is the share of the matches
+    of an event that are on its main fire. A low purity shows that the fusion merged fires.
     """
     matched = np.zeros(len(detections["event"]), dtype=bool)
     matched[pairs[0]] = True
     matched_events = set(np.unique(detections["event"][matched]).tolist())
-    fires_of = Counter(_links(detections, pairs, fires)[0].tolist())
+    link_event, _, matches = _links(detections, pairs, fires)
+    on_fires, position = np.unique(link_event, return_inverse=True)
+    total, main = _main_share(position, matches)
+    fires_of = np.bincount(position)
     rows = []
-    for level in LEVELS:
-        events = [e for e in np.unique(detections["event"]).tolist() if final_level[e] == level]
+    for level in (*LEVELS, "all"):
+        of_level = [level == "all" or final_level[event] == level for event in on_fires.tolist()]
+        events = [
+            event
+            for event in np.unique(detections["event"]).tolist()
+            if level == "all" or final_level[event] == level
+        ]
         hits = sum(event in matched_events for event in events)
-        per_event = [fires_of[event] for event in events if event in fires_of]
         rows.append(
             {
                 "final_level": level,
                 "events": len(events),
                 "events_matched": hits,
                 "matched_share": _share(hits, len(events)),
-                "events_on_counted_fires": len(per_event),
-                "events_on_one_fire": per_event.count(1),
-                "fires_per_event_max": max(per_event, default=None),
+                "events_on_counted_fires": sum(of_level),
+                "events_on_one_fire": int((fires_of[of_level] == 1).sum()),
+                "fires_per_event_max": int(fires_of[of_level].max()) if any(of_level) else None,
+                "purity": _share(main[of_level].sum(), total[of_level].sum()),
             }
         )
     return rows
@@ -169,21 +186,30 @@ def size_table(detections: Fields, pairs: Pairs, fires: Fields, chosen: Fields) 
 
 
 def split_table(detections: Fields, pairs: Pairs, fires: Fields) -> list[dict]:
-    """Return, for each fire size class, into how many events the fusion split a fire."""
-    events_of = np.bincount(_links(detections, pairs, fires)[1], minlength=len(fires["area_ha"]))
+    """Return, for each fire size class, into how many events the fusion split a fire.
+
+    `completeness` is the share of the matches of a fire that are in its main event.
+    """
+    _, link_fire, matches = _links(detections, pairs, fires)
+    count = len(fires["area_ha"])
+    events_of = np.bincount(link_fire, minlength=count)
+    total, main = (
+        np.pad(values, (0, count - len(values))) for values in _main_share(link_fire, matches)
+    )
     rows = []
-    for label, in_class in _size_classes(fires):
-        per_fire = events_of[in_class & (events_of > 0)]
+    for label, in_class in (*_size_classes(fires), ("all", fires["counted"])):
+        found = in_class & (events_of > 0)
         rows.append(
             {
                 "size_class_ha": label,
                 "fires": int(in_class.sum()),
                 "fires_with_burn_day": int((in_class & (fires["first_day"] > 0)).sum()),
                 "fires_isolated": int((in_class & fires["isolated"]).sum()),
-                "fires_found": len(per_fire),
-                "fires_in_one_event": int((per_fire == 1).sum()),
-                "events_per_fire_median": _percentile(per_fire, 50),
-                "events_per_fire_max": int(per_fire.max()) if len(per_fire) else None,
+                "fires_found": int(found.sum()),
+                "fires_in_one_event": int((events_of[found] == 1).sum()),
+                "events_per_fire_median": _percentile(events_of[found], 50),
+                "events_per_fire_max": int(events_of[found].max()) if found.any() else None,
+                "completeness": _share(main[found].sum(), total[found].sum()),
             }
         )
     return rows
