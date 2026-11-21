@@ -105,7 +105,8 @@ Checked 2026-11-19 with live requests.
 - Use the archive API for 2023 and 2024. Use the forecast API for burn conditions.
 - The air quality API gives hourly `aerosol_optical_depth` for 2022, 2023 and 2024 in the Pantanal.
 - The weather grid is coarse. A value is for a grid cell, not for a point.
-- The grid size of the AOD data is `UNVERIFIED`.
+- The AOD grid has cells of approximately 0.4 degrees (44 km). Checked 2026-11-21: five points on one latitude gave three different series.
+- One request accepts a list of positions.
 
 ### 8.5 MapBiomas Fogo
 
