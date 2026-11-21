@@ -91,7 +91,7 @@ def parse_listing(listing: str) -> list[tuple[str, datetime, datetime]]:
 def list_live(now: datetime) -> list[tuple[str, datetime, datetime]]:
     """Return the GOES-19 scans of the last hours, in time sequence. `config.py` gives how many."""
     scans = {}
-    for back in range(int(config.LIVE_GOES_LOOKBACK / timedelta(hours=1)), -1, -1):
+    for back in range(int(config.LIVE_LOOKBACK / timedelta(hours=1)), -1, -1):
         hour = now - timedelta(hours=back)
         prefix = f"ABI-L2-FDCF/{hour.year}/{hour.timetuple().tm_yday:03d}/{hour.hour:02d}/"
         for scan in parse_listing(_get(f"{LIVE_BUCKET}/?list-type=2&prefix={prefix}").text):

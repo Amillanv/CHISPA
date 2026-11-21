@@ -132,8 +132,12 @@ EVAL_SIZE_CLASSES_HA = (10.0, 100.0, 1000.0, 10000.0)
 
 # --- Live operation ---
 
-# One pass of the poller reads the GOES scans of this many hours before it.
-# Thus a short stop of the poller loses no scan. A scan that is older is not read.
-LIVE_GOES_LOOKBACK = timedelta(hours=3)
+# One pass of the poller reads the GOES scans and the INPE files of this many hours before it.
+# Thus a short stop of the poller loses no data. A scan or a file that is older is not read.
+LIVE_LOOKBACK = timedelta(hours=3)
+
+# A live log of a day can get new rows for this long after the start of that day:
+# a FIRMS request for 2 days gives rows of the day before. Then the log is complete.
+LIVE_COMPLETE_AFTER = timedelta(days=2)
 
 RESULTS_DIR = Path("results")

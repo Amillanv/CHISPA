@@ -41,7 +41,8 @@ def main(arguments: list[str] | None = None) -> None:
     evaluation = commands.add_parser("evaluate", help="Compare one fused year with the fires.")
     evaluation.add_argument("--year", type=int, required=True)
     evaluation.add_argument("--test-run", action="store_true", help="Permit the test year.")
-    commands.add_parser("poll", help="Do one pass of the live poller.")
+    poll = commands.add_parser("poll", help="Do one pass of the live poller.")
+    poll.add_argument("--push", action="store_true", help="Also copy complete logs to the bucket.")
     for name, text in NOT_BUILT.items():
         commands.add_parser(name, help=f"{text} Not built.")
     chosen = parser.parse_args(arguments)
@@ -57,7 +58,7 @@ def main(arguments: list[str] | None = None) -> None:
     elif chosen.command == "evaluate":
         run_evaluate(chosen.year, chosen.test_run)
     elif chosen.command == "poll":
-        run_poll()
+        run_poll(chosen.push)
     else:
         parser.exit(1, f"The command '{chosen.command}' is not built.\n")
 
@@ -101,7 +102,8 @@ def run_fetch(source: str, year: int | None, push: bool) -> None:
         raise SystemExit(f"FIRMS has no known GOES gap in {year}. There is nothing to get.")
     print(f"{source}: {len(files)} raw files are on disk.")
     if push:
-        print(f"{source}: {bucket.push(config.RAW_DIR, source)} new files copied to the bucket.")
+        new_files = bucket.push(config.RAW_DIR, bucket.source_files(config.RAW_DIR, source))
+        print(f"{source}: {new_files} new files copied to the bucket.")
 
 
 def run_build(offline: bool) -> None:
@@ -137,14 +139,17 @@ def run_evaluate(year: int, test_run: bool) -> None:
     print(f"{year}: the tables are in {config.RESULTS_DIR / str(year)}. See results/SUMMARY.md.")
 
 
-def run_poll() -> None:
+def run_poll(push: bool) -> None:
     """Do one pass of the live poller and show what it found."""
     now = datetime.now(UTC)
     results = live.poll(config.RAW_DIR, read_setting("FIRMS_API_KEY"), now)
-    for source in ("firms", "goes"):
+    for source in ("firms", "goes", "inpe"):
         of_source = [result for result in results if result["source"] == source]
         failed = [result["result"] for result in of_source if result["result"] != "ok"]
         new_rows = sum(result["new_rows"] for result in of_source)
         print(f"{source}: {len(of_source)} items, {new_rows} new rows, {len(failed)} failed.")
         for text in sorted(set(failed)):
             print(f"  {text}")
+    if push:
+        new_files = bucket.push(config.RAW_DIR, live.complete_logs(config.RAW_DIR, now))
+        print(f"live: {new_files} complete logs copied to the bucket.")
