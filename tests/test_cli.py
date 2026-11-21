@@ -9,7 +9,7 @@ def test_help_lists_each_command(capsys):
     with pytest.raises(SystemExit):
         main(["--help"])
     text = capsys.readouterr().out
-    assert all(name in text for name in ["check", "fetch", *NOT_BUILT])
+    assert all(name in text for name in ["check", "fetch", "poll", *NOT_BUILT])
 
 
 def test_command_that_is_not_built_fails(capsys):

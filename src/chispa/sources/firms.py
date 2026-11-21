@@ -5,6 +5,7 @@ The download and the parse are separate steps. A raw file on disk is never reque
 """
 
 import csv
+import io
 import time
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
@@ -25,6 +26,11 @@ PRODUCTS = {
     "MODIS_SP": "modis",
     "GOES_NRT": "abi",
 }
+# The live products. Suomi NPP has no live product: its data stopped on 2026-11-02.
+# We do not use the live GOES product of FIRMS: the raw GOES files are quicker.
+LIVE_PRODUCTS = {"VIIRS_NOAA20_NRT": "viirs", "VIIRS_NOAA21_NRT": "viirs", "MODIS_NRT": "modis"}
+# A pass asks for 2 days, thus it also gets a late row of the day before.
+LIVE_DAYS = 2
 # The maximum number of days that the API gives in one request.
 MAX_DAYS = {"viirs": 5, "modis": 5, "abi": 2}
 # The `satellite` field -> our platform name. We ignore rows with other values:
@@ -71,6 +77,15 @@ def _download(product: str, start: date, days: int, key: str, raw_dir: Path) -> 
     path.write_text(text)
     time.sleep(config.FIRMS_PAUSE_S)
     return path
+
+
+def download_live(product: str, key: str) -> list[dict]:
+    """Return the rows of the last days of one live product, with the fields that FIRMS gives."""
+    box = ",".join(str(value) for value in config.PANTANAL_BOX)
+    text = _get(f"{API}/api/area/csv/{key}/{product}/{box}/{LIVE_DAYS}", product).text
+    if not text.startswith(HEADER_START):
+        raise RuntimeError(f"FIRMS gave no CSV for {product}: {text[:200]!r}")
+    return list(csv.DictReader(io.StringIO(text)))
 
 
 def _get(url: str, label: str) -> requests.Response:

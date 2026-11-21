@@ -1,6 +1,7 @@
 """Raw GOES fire files from the NOAA open data bucket.
 
 FIRMS has no GOES-16 rows for part of the 2024 season. This module fills that gap.
+It also reads the live GOES-19 files for the poller.
 A raw file holds the full disk. We keep only the fire pixels in the Pantanal box,
 with the same mask classes that FIRMS keeps, and save them as one CSV file for each day.
 We do not keep the raw files: the gap is approximately 11 GB.
@@ -22,6 +23,13 @@ from chispa.models import Detection
 BUCKET = "https://noaa-goes16.s3.amazonaws.com"
 SCAN_START = re.compile(r"<Key>(ABI-L2-FDCF/[^<]*_s(\d{4})(\d{3})(\d{2})(\d{2})[^<]*\.nc)</Key>")
 COLUMNS = ["observed_at", "lat", "lon", "mask", "frp_mw"]
+
+# GOES-19 replaced GOES-16 in 2025. Its bucket gives the time when each file arrived.
+LIVE_BUCKET = "https://noaa-goes19.s3.amazonaws.com"
+LISTED = re.compile(
+    r"<Key>(ABI-L2-FDCF/[^<]*_s(\d{4})(\d{3})(\d{2})(\d{2})[^<]*\.nc)</Key>"
+    r"<LastModified>([^<]*)</LastModified>"
+)
 
 
 def download_gap(raw_dir: Path) -> list[Path]:
@@ -68,6 +76,37 @@ def _list_scans(day: date) -> list[tuple[str, datetime]]:
         start = datetime(int(year), 1, 1, int(hour), int(minute), tzinfo=UTC)
         scans[start + timedelta(days=int(day_of_year) - 1)] = key
     return [(key, start) for start, key in sorted(scans.items())]
+
+
+def parse_listing(listing: str) -> list[tuple[str, datetime, datetime]]:
+    """Return (file key, scan start time, publication time) for each file in a bucket listing."""
+    scans = []
+    for key, year, day_of_year, hour, minute, modified in LISTED.findall(listing):
+        start = datetime(int(year), 1, 1, int(hour), int(minute), tzinfo=UTC)
+        published_at = datetime.fromisoformat(modified.replace("Z", "+00:00"))
+        scans.append((key, start + timedelta(days=int(day_of_year) - 1), published_at))
+    return scans
+
+
+def list_live(now: datetime) -> list[tuple[str, datetime, datetime]]:
+    """Return the GOES-19 scans of the last hours, in time sequence. `config.py` gives how many."""
+    scans = {}
+    for back in range(int(config.LIVE_GOES_LOOKBACK / timedelta(hours=1)), -1, -1):
+        hour = now - timedelta(hours=back)
+        prefix = f"ABI-L2-FDCF/{hour.year}/{hour.timetuple().tm_yday:03d}/{hour.hour:02d}/"
+        for scan in parse_listing(_get(f"{LIVE_BUCKET}/?list-type=2&prefix={prefix}").text):
+            scans.setdefault(scan[1], scan)  # If a scan has two files, the first file stays.
+    return [scans[start] for start in sorted(scans)]
+
+
+def read_live(scans: list[tuple[str, datetime, datetime]]):
+    """Give (scan start time, publication time, fire pixels) for each scan."""
+    window = None
+    for key, observed_at, published_at in scans:
+        content = _get(f"{LIVE_BUCKET}/{key}").content
+        with netCDF4.Dataset("scan.nc", memory=content) as dataset:
+            window = window or find_window(dataset)
+            yield observed_at, published_at, read_pixels(dataset, window)
 
 
 def _get(url: str) -> requests.Response:
