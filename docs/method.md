@@ -149,6 +149,7 @@ This lets the same text go through SMS and voice radio.
 - Run the 2024 evaluation one time for each frozen configuration.
 - Record each 2024 run in `results/`, with the configuration hash and the date.
 - If you change a threshold after a 2024 run, the next result must say so.
+- The table `merge_gain` came after the first 2024 run of 2026-11-21. It changed no threshold and no number of the other tables.
 
 ### 11.3 Fires
 
@@ -242,6 +243,7 @@ The tables are:
 - `fire_sizes`: fire recall for each configuration and fire size class.
 - `fire_events`: for each fire size class, into how many events the fusion split a fire, and the completeness.
 - `events`: for each final level, the share of events that match a fire, how many counted fires one event holds, and the purity.
+- `merge_gain`: for each sensor family and fire size class, the fires that only the merge finds, and the isolated fires that the family finds later than the merge.
 
 Purity and completeness count matches with counted fires. A detection that matches two fires counts two times.
 
