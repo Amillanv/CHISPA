@@ -240,3 +240,19 @@ Checked 2026-11-21 at 20:13 UTC with live requests. The command `chispa poll` re
 - A raw GOES-19 file is approximately 2.1 MB. One day of scans is approximately 300 MB. The poller reads the files and does not keep them.
 - In 21 scans from 17:00 to 20:20 UTC on 2026-11-21, the Pantanal box had no fire pixel of the four classes.
 - In the scan of 20:20, the mask had the class "processed, no fire" for only 3 percent of the pixels near the box. 43 percent were cloud, and 51 percent had no background value. Thus "no detection" was not "no fire".
+
+### 8.11 Sentinel-2 images
+
+Checked 2026-11-22 with live requests to Earth Engine.
+
+- Asset: `COPERNICUS/S2_SR_HARMONIZED`. The same Google login as for the burn scars reads it.
+- One point in the Pantanal had 12 images from 2024-07-15 to 2024-09-15: one image each 5 days.
+- The bands B12, B8 and B4 show a new burn as a dark red area. The pixels are 10 m (B4, B8) and 20 m (B12).
+- `CLOUDY_PIXEL_PERCENTAGE` is for the full image tile, not for a small box in it.
+- A search must have a filter on the position first. A search with no such filter took approximately one minute.
+- The band `SCL` gives a class for each pixel: cloud, cloud shadow, water and others. The burn check uses it to keep clear pixels.
+- A band name in a request cannot have a point.
+- One measure of the burn check for one box took approximately 2 seconds, and 6 seconds for a box of 50 km.
+- The 152 pictures of the 2024 image check are 181 MB. They are in `data/images/`, not in the bucket.
+- For the 90 events of the 2024 sample, 69 have a picture before and a picture after. 13 have no picture before, and 15 have no picture after.
+- `UNVERIFIED`: the terms. We believe that Copernicus Sentinel data is free and open with an attribution. Do a check before we publish a picture.

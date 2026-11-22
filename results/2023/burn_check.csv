@@ -1,0 +1,49 @@
+group,events,sample,clear,dnbr_step,min_ha,burned,burned_share,chosen,config,run_date
+"HIGH events, unmatched",424,424,420,0.1,1.0,404,0.9619,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched, no mapped fire in the box",,350,346,0.1,1.0,332,0.9595,,0ea7b8f424c7,2026-11-22
+"HIGH events, matched",655,100,99,0.1,1.0,99,1.0,,0ea7b8f424c7,2026-11-22
+"boxes, no fire",,100,99,0.1,1.0,83,0.8384,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched",424,424,420,0.1,10.0,366,0.8714,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched, no mapped fire in the box",,350,346,0.1,10.0,295,0.8526,,0ea7b8f424c7,2026-11-22
+"HIGH events, matched",655,100,99,0.1,10.0,97,0.9798,,0ea7b8f424c7,2026-11-22
+"boxes, no fire",,100,99,0.1,10.0,70,0.7071,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched",424,424,420,0.1,25.0,313,0.7452,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched, no mapped fire in the box",,350,346,0.1,25.0,247,0.7139,,0ea7b8f424c7,2026-11-22
+"HIGH events, matched",655,100,99,0.1,25.0,97,0.9798,,0ea7b8f424c7,2026-11-22
+"boxes, no fire",,100,99,0.1,25.0,59,0.596,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched",424,424,420,0.2,1.0,346,0.8238,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched, no mapped fire in the box",,350,346,0.2,1.0,277,0.8006,,0ea7b8f424c7,2026-11-22
+"HIGH events, matched",655,100,99,0.2,1.0,98,0.9899,,0ea7b8f424c7,2026-11-22
+"boxes, no fire",,100,99,0.2,1.0,55,0.5556,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched",424,424,420,0.2,10.0,266,0.6333,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched, no mapped fire in the box",,350,346,0.2,10.0,206,0.5954,,0ea7b8f424c7,2026-11-22
+"HIGH events, matched",655,100,99,0.2,10.0,95,0.9596,,0ea7b8f424c7,2026-11-22
+"boxes, no fire",,100,99,0.2,10.0,38,0.3838,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched",424,424,420,0.2,25.0,196,0.4667,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched, no mapped fire in the box",,350,346,0.2,25.0,149,0.4306,,0ea7b8f424c7,2026-11-22
+"HIGH events, matched",655,100,99,0.2,25.0,94,0.9495,,0ea7b8f424c7,2026-11-22
+"boxes, no fire",,100,99,0.2,25.0,24,0.2424,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched",424,424,420,0.3,1.0,284,0.6762,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched, no mapped fire in the box",,350,346,0.3,1.0,226,0.6532,,0ea7b8f424c7,2026-11-22
+"HIGH events, matched",655,100,99,0.3,1.0,97,0.9798,,0ea7b8f424c7,2026-11-22
+"boxes, no fire",,100,99,0.3,1.0,34,0.3434,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched",424,424,420,0.3,10.0,184,0.4381,yes,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched, no mapped fire in the box",,350,346,0.3,10.0,139,0.4017,yes,0ea7b8f424c7,2026-11-22
+"HIGH events, matched",655,100,99,0.3,10.0,91,0.9192,yes,0ea7b8f424c7,2026-11-22
+"boxes, no fire",,100,99,0.3,10.0,21,0.2121,yes,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched",424,424,420,0.3,25.0,122,0.2905,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched, no mapped fire in the box",,350,346,0.3,25.0,88,0.2543,,0ea7b8f424c7,2026-11-22
+"HIGH events, matched",655,100,99,0.3,25.0,79,0.798,,0ea7b8f424c7,2026-11-22
+"boxes, no fire",,100,99,0.3,25.0,11,0.1111,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched",424,424,420,0.4,1.0,216,0.5143,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched, no mapped fire in the box",,350,346,0.4,1.0,171,0.4942,,0ea7b8f424c7,2026-11-22
+"HIGH events, matched",655,100,99,0.4,1.0,89,0.899,,0ea7b8f424c7,2026-11-22
+"boxes, no fire",,100,99,0.4,1.0,22,0.2222,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched",424,424,420,0.4,10.0,102,0.2429,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched, no mapped fire in the box",,350,346,0.4,10.0,75,0.2168,,0ea7b8f424c7,2026-11-22
+"HIGH events, matched",655,100,99,0.4,10.0,73,0.7374,,0ea7b8f424c7,2026-11-22
+"boxes, no fire",,100,99,0.4,10.0,8,0.0808,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched",424,424,420,0.4,25.0,62,0.1476,,0ea7b8f424c7,2026-11-22
+"HIGH events, unmatched, no mapped fire in the box",,350,346,0.4,25.0,41,0.1185,,0ea7b8f424c7,2026-11-22
+"HIGH events, matched",655,100,99,0.4,25.0,65,0.6566,,0ea7b8f424c7,2026-11-22
+"boxes, no fire",,100,99,0.4,25.0,5,0.0505,,0ea7b8f424c7,2026-11-22
