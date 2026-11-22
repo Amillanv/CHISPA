@@ -416,6 +416,17 @@ If this is false, cloud is not the main cause, and the fire was too small or too
   A fire with only a month has scans of two months, and most of them are not at the time of the fire.
 - The 2024 table came after the 2024 run of 2026-11-21. It has no threshold that we set on data.
 
+The result for 2024 (table `visibility`, 2026-11-22): the hypothesis is false.
+
+- GOES examined the place of a typical fire with no detection in 76 percent of its scans. Cloud had 21 percent.
+- 100 of the 1382 fires with no detection had an examined share below one half. 50 had no examined scan.
+- The fires with a GOES detection have almost the same values: 74 percent examined and 23 percent cloud.
+- Thus cloud is not the main cause of a fire with no detection. GOES looked and found no fire: these fires were too small,
+  too cool or too short for the sensors.
+- 116 of the 1382 fires with no detection had a scan with a possible-fire class, which FIRMS does not give.
+- The largest limit: most of these fires have only a month. Their scans are from two months, and the fire burned in a part
+  of that time. A fire that burned on one day with cloud can have a high examined share.
+
 ### 11.12 Why growth has no area
 
 We do not give the burned area of an event. A VIIRS detection covers its full pixel, and the fire is in a part of it.
