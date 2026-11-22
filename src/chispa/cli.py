@@ -11,10 +11,10 @@ from dotenv import load_dotenv
 
 from chispa import bucket, config, live
 from chispa.build import build_store
-from chispa.evaluate import evaluate
+from chispa.evaluation.report import write_summary, write_tables
+from chispa.evaluation.run import evaluate
 from chispa.fusion import LEVELS, fuse
 from chispa.grid import pantanal_grid
-from chispa.report import write_summary, write_tables
 from chispa.sources import border, burnday, firms, goes, inpe, scars
 from chispa.store import open_store, read_detections, replace_fusion
 

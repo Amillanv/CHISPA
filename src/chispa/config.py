@@ -1,7 +1,8 @@
-"""All fixed values of the project: the region, the periods and the paths.
+"""All fixed values of the project: the region, the periods, the thresholds and the paths.
 
 Each threshold goes in this file and in no other file.
 Thus one file shows all the choices that can change a result.
+The first part holds those choices. A marker line ends it. The second part holds the other values.
 """
 
 from datetime import UTC, datetime, timedelta
@@ -15,17 +16,7 @@ PANTANAL_BOX = (-59.5, -22.5, -54.5, -15.5)
 DEVELOPMENT_YEAR = 2023
 TEST_YEAR = 2024
 
-DATA_DIR = Path("data")
-RAW_DIR = DATA_DIR / "raw"
-STORE_PATH = DATA_DIR / "chispa.sqlite"
-
-# The public bucket with a copy of all raw files. A fork can use a different bucket.
-BUCKET = "chispa_raw"
-
 # --- FIRMS ---
-
-# Seconds between two requests, to stay far below the limit of the API.
-FIRMS_PAUSE_S = 1.0
 
 # FIRMS does not give the time when a detection became available.
 # These delays are estimates, not measurements. They change each delay result.
@@ -72,9 +63,6 @@ SCAR_ASSET = (
 # west and north edges of the full grid. These values come from the asset.
 SCAR_PIXEL_DEG = 0.0002694945852358564
 SCAR_ORIGIN = (-74.54354974916409, 6.761619143567639)
-
-# The side of a download tile in pixels. Earth Engine limits the size of one request.
-SCAR_TILE_PX = 2048
 
 # 8: pixels that touch at a corner are one scar. 4: only pixels that share a side.
 SCAR_CONNECTIVITY = 8
@@ -130,6 +118,26 @@ EVAL_MARGIN_M = 250.0
 # The limits of the fire size classes in hectares.
 EVAL_SIZE_CLASSES_HA = (10.0, 100.0, 1000.0, 10000.0)
 
+# === The values above this line can change a result. The configuration hash covers them. ===
+# The values below this line change no number in a result table.
+
+# --- Paths and downloads ---
+
+DATA_DIR = Path("data")
+RAW_DIR = DATA_DIR / "raw"
+STORE_PATH = DATA_DIR / "chispa.sqlite"
+
+# The public bucket with a copy of all raw files. A fork can use a different bucket.
+BUCKET = "chispa_raw"
+
+RESULTS_DIR = Path("results")
+
+# Seconds between two requests, to stay far below the limit of the API.
+FIRMS_PAUSE_S = 1.0
+
+# The side of a download tile in pixels. Earth Engine limits the size of one request.
+SCAR_TILE_PX = 2048
+
 # --- Live operation ---
 
 # One pass of the poller reads the GOES scans and the INPE files of this many hours before it.
@@ -147,5 +155,3 @@ TOOL_MAX_RADIUS_KM = 500.0
 
 # The largest number of detections that a tool returns for one event.
 TOOL_MAX_DETECTIONS = 200
-
-RESULTS_DIR = Path("results")
