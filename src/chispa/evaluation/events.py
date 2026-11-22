@@ -21,12 +21,19 @@ def _links(detections: Fields, pairs: Pairs, fires: Fields) -> tuple[np.ndarray,
     return events, numbers, matches
 
 
-def _mainshare(group: np.ndarray, matches: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def _main_share(group: np.ndarray, matches: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Return, for each group number, all its matches and the matches of its largest link."""
     total = np.bincount(group, weights=matches)
     main = np.zeros(len(total))
     np.maximum.at(main, group, matches)
     return total, main
+
+
+def events_with_a_match(detections: Fields, pairs: Pairs) -> set[int]:
+    """Return each event that has a minimum of one detection that matches a fire."""
+    matched = np.zeros(len(detections["event"]), dtype=bool)
+    matched[pairs[0]] = True
+    return set(np.unique(detections["event"][matched]).tolist())
 
 
 def event_table(detections: Fields, pairs: Pairs, fires: Fields, final_level: dict) -> list[dict]:
@@ -35,12 +42,10 @@ def event_table(detections: Fields, pairs: Pairs, fires: Fields, final_level: di
     `matched_share` is the precision against the map. `purity` is the share of the matches
     of an event that are on its main fire. A low purity shows that the fusion merged fires.
     """
-    matched = np.zeros(len(detections["event"]), dtype=bool)
-    matched[pairs[0]] = True
-    matched_events = set(np.unique(detections["event"][matched]).tolist())
+    matched_events = events_with_a_match(detections, pairs)
     link_event, _, matches = _links(detections, pairs, fires)
     on_fires, position = np.unique(link_event, return_inverse=True)
-    total, main = _mainshare(position, matches)
+    total, main = _main_share(position, matches)
     fires_of = np.bincount(position)
     rows = []
     for level in (*LEVELS, "all"):
@@ -75,7 +80,7 @@ def split_table(detections: Fields, pairs: Pairs, fires: Fields) -> list[dict]:
     count = len(fires["area_ha"])
     events_of = np.bincount(link_fire, minlength=count)
     total, main = (
-        np.pad(values, (0, count - len(values))) for values in _mainshare(link_fire, matches)
+        np.pad(values, (0, count - len(values))) for values in _main_share(link_fire, matches)
     )
     rows = []
     for label, in_class in (*size_classes(fires), ("all", fires["counted"])):

@@ -4,6 +4,69 @@ Code makes this file. Do not edit it by hand.
 
 ## 2023 (development year)
 
+### burn_check
+
+Configuration `0ea7b8f424c7`, run on 2026-11-22.
+
+| group | events | sample | clear | dnbr_step | min_ha | burned | burned_share | chosen |
+|---|---|---|---|---|---|---|---|---|
+| HIGH events, unmatched | 424 | 424 | 420 | 0.1 | 1.0 | 404 | 0.9619 |  |
+| HIGH events, unmatched, no mapped fire in the box |  | 350 | 346 | 0.1 | 1.0 | 332 | 0.9595 |  |
+| HIGH events, matched | 655 | 100 | 99 | 0.1 | 1.0 | 99 | 1.0 |  |
+| boxes, no fire |  | 100 | 99 | 0.1 | 1.0 | 83 | 0.8384 |  |
+| HIGH events, unmatched | 424 | 424 | 420 | 0.1 | 10.0 | 366 | 0.8714 |  |
+| HIGH events, unmatched, no mapped fire in the box |  | 350 | 346 | 0.1 | 10.0 | 295 | 0.8526 |  |
+| HIGH events, matched | 655 | 100 | 99 | 0.1 | 10.0 | 97 | 0.9798 |  |
+| boxes, no fire |  | 100 | 99 | 0.1 | 10.0 | 70 | 0.7071 |  |
+| HIGH events, unmatched | 424 | 424 | 420 | 0.1 | 25.0 | 313 | 0.7452 |  |
+| HIGH events, unmatched, no mapped fire in the box |  | 350 | 346 | 0.1 | 25.0 | 247 | 0.7139 |  |
+| HIGH events, matched | 655 | 100 | 99 | 0.1 | 25.0 | 97 | 0.9798 |  |
+| boxes, no fire |  | 100 | 99 | 0.1 | 25.0 | 59 | 0.596 |  |
+| HIGH events, unmatched | 424 | 424 | 420 | 0.2 | 1.0 | 346 | 0.8238 |  |
+| HIGH events, unmatched, no mapped fire in the box |  | 350 | 346 | 0.2 | 1.0 | 277 | 0.8006 |  |
+| HIGH events, matched | 655 | 100 | 99 | 0.2 | 1.0 | 98 | 0.9899 |  |
+| boxes, no fire |  | 100 | 99 | 0.2 | 1.0 | 55 | 0.5556 |  |
+| HIGH events, unmatched | 424 | 424 | 420 | 0.2 | 10.0 | 266 | 0.6333 |  |
+| HIGH events, unmatched, no mapped fire in the box |  | 350 | 346 | 0.2 | 10.0 | 206 | 0.5954 |  |
+| HIGH events, matched | 655 | 100 | 99 | 0.2 | 10.0 | 95 | 0.9596 |  |
+| boxes, no fire |  | 100 | 99 | 0.2 | 10.0 | 38 | 0.3838 |  |
+| HIGH events, unmatched | 424 | 424 | 420 | 0.2 | 25.0 | 196 | 0.4667 |  |
+| HIGH events, unmatched, no mapped fire in the box |  | 350 | 346 | 0.2 | 25.0 | 149 | 0.4306 |  |
+| HIGH events, matched | 655 | 100 | 99 | 0.2 | 25.0 | 94 | 0.9495 |  |
+| boxes, no fire |  | 100 | 99 | 0.2 | 25.0 | 24 | 0.2424 |  |
+| HIGH events, unmatched | 424 | 424 | 420 | 0.3 | 1.0 | 284 | 0.6762 |  |
+| HIGH events, unmatched, no mapped fire in the box |  | 350 | 346 | 0.3 | 1.0 | 226 | 0.6532 |  |
+| HIGH events, matched | 655 | 100 | 99 | 0.3 | 1.0 | 97 | 0.9798 |  |
+| boxes, no fire |  | 100 | 99 | 0.3 | 1.0 | 34 | 0.3434 |  |
+| HIGH events, unmatched | 424 | 424 | 420 | 0.3 | 10.0 | 184 | 0.4381 | yes |
+| HIGH events, unmatched, no mapped fire in the box |  | 350 | 346 | 0.3 | 10.0 | 139 | 0.4017 | yes |
+| HIGH events, matched | 655 | 100 | 99 | 0.3 | 10.0 | 91 | 0.9192 | yes |
+| boxes, no fire |  | 100 | 99 | 0.3 | 10.0 | 21 | 0.2121 | yes |
+| HIGH events, unmatched | 424 | 424 | 420 | 0.3 | 25.0 | 122 | 0.2905 |  |
+| HIGH events, unmatched, no mapped fire in the box |  | 350 | 346 | 0.3 | 25.0 | 88 | 0.2543 |  |
+| HIGH events, matched | 655 | 100 | 99 | 0.3 | 25.0 | 79 | 0.798 |  |
+| boxes, no fire |  | 100 | 99 | 0.3 | 25.0 | 11 | 0.1111 |  |
+| HIGH events, unmatched | 424 | 424 | 420 | 0.4 | 1.0 | 216 | 0.5143 |  |
+| HIGH events, unmatched, no mapped fire in the box |  | 350 | 346 | 0.4 | 1.0 | 171 | 0.4942 |  |
+| HIGH events, matched | 655 | 100 | 99 | 0.4 | 1.0 | 89 | 0.899 |  |
+| boxes, no fire |  | 100 | 99 | 0.4 | 1.0 | 22 | 0.2222 |  |
+| HIGH events, unmatched | 424 | 424 | 420 | 0.4 | 10.0 | 102 | 0.2429 |  |
+| HIGH events, unmatched, no mapped fire in the box |  | 350 | 346 | 0.4 | 10.0 | 75 | 0.2168 |  |
+| HIGH events, matched | 655 | 100 | 99 | 0.4 | 10.0 | 73 | 0.7374 |  |
+| boxes, no fire |  | 100 | 99 | 0.4 | 10.0 | 8 | 0.0808 |  |
+| HIGH events, unmatched | 424 | 424 | 420 | 0.4 | 25.0 | 62 | 0.1476 |  |
+| HIGH events, unmatched, no mapped fire in the box |  | 350 | 346 | 0.4 | 25.0 | 41 | 0.1185 |  |
+| HIGH events, matched | 655 | 100 | 99 | 0.4 | 25.0 | 65 | 0.6566 |  |
+| boxes, no fire |  | 100 | 99 | 0.4 | 25.0 | 5 | 0.0505 |  |
+
+### burn_rule
+
+Configuration `0ea7b8f424c7`, run on 2026-11-22.
+
+| reference_fires | called_burned | recall | reference_boxes_no_fire | boxes_called_burned | false_share | precision | f1 |
+|---|---|---|---|---|---|---|---|
+| 99 | 91 | 0.9192 | 99 | 21 | 0.2121 | 0.8125 | 0.8626 |
+
 ### configurations
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
@@ -115,6 +178,25 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 
 ## 2024 (test year)
 
+### burn_check
+
+Configuration `0ea7b8f424c7`, run on 2026-11-22.
+
+| group | events | sample | clear | dnbr_step | min_ha | burned | burned_share | chosen |
+|---|---|---|---|---|---|---|---|---|
+| HIGH events, unmatched | 309 | 309 | 298 | 0.3 | 10.0 | 153 | 0.5134 | yes |
+| HIGH events, unmatched, no mapped fire in the box |  | 218 | 209 | 0.3 | 10.0 | 94 | 0.4498 | yes |
+| HIGH events, matched | 1273 | 100 | 97 | 0.3 | 10.0 | 82 | 0.8454 | yes |
+| boxes, no fire |  | 100 | 98 | 0.3 | 10.0 | 22 | 0.2245 | yes |
+
+### burn_rule
+
+Configuration `0ea7b8f424c7`, run on 2026-11-22.
+
+| reference_fires | called_burned | recall | reference_boxes_no_fire | boxes_called_burned | false_share | precision | f1 |
+|---|---|---|---|---|---|---|---|
+| 97 | 82 | 0.8454 | 98 | 22 | 0.2245 | 0.7885 | 0.8159 |
+
 ### configurations
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
@@ -202,6 +284,25 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | merged, level HIGH | 1000 to 10000 | 102 | 98 | 0.9608 |
 | merged, level HIGH | 10000 to inf | 25 | 25 | 1.0 |
 
+### image_agreement
+
+Configuration `0ea7b8f424c7`, run on 2026-11-22.
+
+| person | chips | rule_burned | rule_not_burned | rule_no_clear_view |
+|---|---|---|---|---|
+| burned | 0 | 0 | 0 | 0 |
+| not burned | 0 | 0 | 0 | 0 |
+| cannot tell | 0 | 0 | 0 | 0 |
+
+### image_check
+
+Configuration `0ea7b8f424c7`, run on 2026-11-22.
+
+| group | sample | burned | not_burned | cannot_tell | no_answer | burned_share |
+|---|---|---|---|---|---|---|
+| HIGH events, unmatched | 60 | 0 | 0 | 0 | 60 |  |
+| HIGH events, matched | 30 | 0 | 0 | 0 | 30 |  |
+
 ### merge_gain
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
@@ -242,5 +343,4 @@ Limits of these results:
 - A fire that burned for many days matches the detections of all those days.
 - GOES has no low-probability detections, and has holes in late September to November 2024.
 - The availability delay of each sensor family is an estimate in `config.py`.
-- Smoke level is not in these tables yet.
 - A fire in January can have detections in December of the year before. We do not count those.

@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 from chispa import bucket, config, live
 from chispa.build import build_store
+from chispa.evaluation import burn, images
 from chispa.evaluation.report import write_summary, write_tables
 from chispa.evaluation.run import evaluate
 from chispa.fusion import LEVELS, fuse
@@ -41,6 +42,9 @@ def main(arguments: list[str] | None = None) -> None:
     evaluation = commands.add_parser("evaluate", help="Compare one fused year with the fires.")
     evaluation.add_argument("--year", type=int, required=True)
     evaluation.add_argument("--test-run", action="store_true", help="Permit the test year.")
+    for name, text in (("burn", "burn check"), ("images", "image check")):
+        check = commands.add_parser(name, help=f"Make the {text} of one fused year.")
+        check.add_argument("--year", type=int, required=True)
     poll = commands.add_parser("poll", help="Do one pass of the live poller.")
     poll.add_argument("--push", action="store_true", help="Also copy complete logs to the bucket.")
     for name, text in NOT_BUILT.items():
@@ -57,6 +61,10 @@ def main(arguments: list[str] | None = None) -> None:
         run_fuse(chosen.year)
     elif chosen.command == "evaluate":
         run_evaluate(chosen.year, chosen.test_run)
+    elif chosen.command == "burn":
+        run_burn(chosen.year)
+    elif chosen.command == "images":
+        run_images(chosen.year)
     elif chosen.command == "poll":
         run_poll(chosen.push)
     else:
@@ -137,6 +145,58 @@ def run_evaluate(year: int, test_run: bool) -> None:
     write_tables(evaluate(year, config.STORE_PATH, config.RAW_DIR), year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
     print(f"{year}: the tables are in {config.RESULTS_DIR / str(year)}. See results/SUMMARY.md.")
+
+
+def run_burn(year: int) -> None:
+    """Make the burn check of one fused year: the targets, their measures and the table.
+
+    The first run makes the targets. A later run keeps them and measures only what is absent.
+    """
+    if year == config.TEST_YEAR and config.BURN_DNBR_MIN is None:
+        raise SystemExit(
+            f"{year} is the test year. Set BURN_DNBR_MIN on {config.DEVELOPMENT_YEAR} first."
+        )
+    folder = config.RESULTS_DIR / str(year) / "burn_check"
+    if not (folder / "targets.csv").exists():
+        burn.write(
+            folder / "targets.csv", burn.make_targets(year, config.STORE_PATH, config.RAW_DIR)
+        )
+    scars.check_access(read_setting("EE_PROJECT"))
+    targets = burn.read(folder / "targets.csv")
+    burn.measure(targets, folder / "measures.csv")
+    all_pairs = year == config.DEVELOPMENT_YEAR
+    measures = burn.read(folder / "measures.csv")
+    tables = {"burn_check": burn.table(targets, measures, all_pairs)}
+    if config.BURN_DNBR_MIN is not None:
+        tables["burn_rule"] = burn.rule_table(targets, measures)
+    write_tables(tables, year, config.RESULTS_DIR)
+    write_summary(config.RESULTS_DIR)
+    print(f"{year}: {len(targets)} boxes measured. See results/SUMMARY.md, table burn_check.")
+
+
+def run_images(year: int) -> None:
+    """Make the pictures of the image check, then count the answers of the person.
+
+    The first run makes the sample from the targets of the burn check. A later run keeps it.
+    """
+    burn_folder = config.RESULTS_DIR / str(year) / "burn_check"
+    folder = config.RESULTS_DIR / str(year) / "image_check"
+    if not (burn_folder / "measures.csv").exists():
+        raise SystemExit(f"Run `chispa burn --year {year}` first.")
+    if not (folder / "sample.csv").exists():
+        scars.check_access(read_setting("EE_PROJECT"))
+        sample, key = images.draw(burn.read(burn_folder / "targets.csv"))
+        images.get_pictures(sample, config.IMAGE_DIR / str(year))
+        images.write_sample(folder, sample, key)
+        print(f"{year}: {len(sample)} events. The pictures are in {config.IMAGE_DIR / str(year)}.")
+        print(f"Write one answer for each chip in {folder / 'answers.csv'}: {images.ANSWERS}.")
+    answers = images.read_answers(folder)
+    tables = {"image_check": images.count(answers)}
+    if config.BURN_DNBR_MIN is not None:
+        measures = burn.read(burn_folder / "measures.csv")
+        tables["image_agreement"] = images.agreement(answers, measures)
+    write_tables(tables, year, config.RESULTS_DIR)
+    write_summary(config.RESULTS_DIR)
 
 
 def run_poll(push: bool) -> None:

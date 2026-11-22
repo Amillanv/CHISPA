@@ -10,14 +10,15 @@ import numpy as np
 
 from chispa.evaluation.events import event_table, split_table
 from chispa.evaluation.inputs import load_detections, load_fires
-from chispa.evaluation.match import isolated, match
+from chispa.evaluation.match import Fields, Pairs, isolated, match
 from chispa.evaluation.recall import configurations, gain_table, measure, size_table
 from chispa.grid import pantanal_grid
 from chispa.sources import border
 
 
-def evaluate(year: int, store_path: Path, raw_dir: Path) -> dict[str, list[dict]]:
-    """Return the result tables of one fused year."""
+def prepare(year: int, store_path: Path, raw_dir: Path) -> tuple[Fields, Pairs, Fields, dict]:
+    """Return what each table reads: the detections in the biome, the matches, the fires
+    and the final level of each event."""
     store = sqlite3.connect(store_path)
     grid = pantanal_grid()
     detections = load_detections(store, year)
@@ -30,8 +31,13 @@ def evaluate(year: int, store_path: Path, raw_dir: Path) -> dict[str, list[dict]
     fires = load_fires(store, year)
     pairs = match(detections, numbers, grid, fires)
     fires["isolated"] = isolated(pairs, fires)
+    return detections, pairs, fires, dict(store.execute("SELECT id, level FROM events"))
+
+
+def evaluate(year: int, store_path: Path, raw_dir: Path) -> dict[str, list[dict]]:
+    """Return the result tables of one fused year."""
+    detections, pairs, fires, final_level = prepare(year, store_path, raw_dir)
     chosen = configurations(detections)
-    final_level = dict(store.execute("SELECT id, level FROM events"))
     return {
         "configurations": [
             measure(name, selection, detections, pairs, fires) for name, selection in chosen.items()
