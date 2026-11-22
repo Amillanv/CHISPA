@@ -330,6 +330,7 @@ The tables are:
 - `burn_check`, `burn_rule`, `image_check` and `image_agreement`: the burn check of HIGH events and its check by a person (section 11.10).
 - `visibility`: how frequently GOES examined the place of a fire (section 11.11).
 - `growth_steps`: the advance and the speed of the steps of the events, by the time between passes (section 11.13).
+- `severity_inputs`, `severity` and `severity_rank`: the severity of the events against the mapped area (section 11.14).
 
 Purity and completeness count matches with counted fires. A detection that matches two fires counts two times.
 
@@ -487,6 +488,64 @@ The hypothesis is true only in part: the measure has a meaning for the large ste
 
 A check against Sentinel-2 images of large fires, over 5 to 10 days, agreed with the advance and the direction.
 It is a study outside the repository (`PLAN.md`), not a result. The speed of one step of 12 hours has no check.
+
+### 11.14 Severity
+
+A brigade with few people must know which alert to go to first. The severity is one number from 0 to 100 for an event
+at an as-of time, with the facts that give it. `severity.py` makes it. The command `chispa severity --year` makes the tables.
+The severity does not contain the confidence level. Give the level adjacent to it.
+
+The facts, each from data that exists at the as-of time:
+
+- Fire power: the largest FRP of the detections of the event.
+- Extent: the longer side of the box of the detections, in kilometres.
+- Advance: the advance of the newest step, if that step has a new pixel (section 11.13).
+- Land cover: the group that most detections are on, from the map of the year before (section 8.14).
+- People: the number of people in a square of approximately 10 km around a detection, the largest value of the event.
+- Protected land and indigenous land: the nearest area of each kind, with its name and its distance.
+
+The number is a sum of points. `config.py` has each point value.
+
+| Part | Points | Rule |
+|---|---|---|
+| Fire power | 0 to 20 | One third of the points for each step that the value reaches |
+| Extent | 0 to 15 | The same, with its steps |
+| Advance | 0 to 15 | The same, with its steps. No points with no measured advance |
+| Land cover | 0 to 20 | A fixed number of points for each group |
+| People | 0 to 15 | The same as the fire power, with its steps |
+| Protected or indigenous land | 0 to 15 | All points if a detection is in an area. A part if an area is near |
+
+- The steps of the fire power, the extent and the advance come from the development year: the 50th, 75th and 90th percentile
+  of the events with a value, at the evaluation time. The table `severity_inputs` gives them.
+- The points of the land cover, the steps of the people and the points of the land are choices of the owner. They are not measured.
+- An alert must give the parts of the number, not only the number.
+
+The check. The evaluation time is a fixed number of hours after the first detection of an event became available.
+The outcome is the mapped area of the counted fires that the event matches at the end of the year: 0 for an event with no match.
+
+The hypothesis, written before the first run: the rank correlation of the severity with the outcome is larger than that
+of the number of detections at the same time. The number of detections is the baseline: it needs no layer and no rule.
+If this is false, the number adds nothing to a count, and the facts stay with no number.
+
+- Limits: the outcome is an area, not damage. The people and the land get points, but no reference says that they matter.
+  An event that merges with a second event later has the outcome of the two. The land cover is a year old.
+  The population is an estimate for 2020 on a grid of 100 m.
+
+The result (tables `severity` and `severity_rank`, 2026-11-22): the hypothesis is true on 2023 and false on 2024.
+
+- Rank correlation with the outcome, for all events: the severity 0.275 and the number of detections 0.2547 in 2023 (5890 events).
+  In 2024 the severity 0.2684 and the number of detections 0.2857 (6260 events). The two are almost equal, and the sequence changes.
+- Thus the severity does not say more about the final burned area than a count of detections.
+- For the events with a match only, each rank correlation is near zero. Many small events match one very large fire,
+  thus the outcome of an event says little about that event.
+- The severity does separate the events that match a mapped fire. In 2024 the matched share was 1080 of 3288 events with a
+  severity below 25, 1345 of 2599 from 25 to 50, 309 of 357 from 50 to 75, and 15 of 16 from 75.
+  This was not the hypothesis. It is a property of a confidence, not of a severity (PLAN.md, C4).
+- The check was weak in one way: people, land and land cover have no relation to the burned area by design.
+  They are the priorities of the owner. Only the fire parts can agree with the outcome.
+
+The rule of the hypothesis says: with a false result, the facts stay with no number.
+The owner decides if the number stays as a statement of priorities. It must not be called a forecast of the burned area.
 
 ## 12. Agent and MCP rules
 

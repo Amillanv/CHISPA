@@ -301,3 +301,37 @@ object-based tracking system", Scientific Data. Open copy: Europe PMC, `PMC91517
 - The active fire line comes from the outline and the new pixels of the step.
 - Against the mapped perimeters, precision, recall, overlap and F1 for each fire were between 0.71 and 0.93.
 - We use the ideas, not the code: the outline from all pixels with a set distance, and the new pixels as the active part.
+
+### 8.14 Layers for the severity: land cover, protected land, people
+
+Checked 2026-11-22 with live requests to Earth Engine. The same Google login as for the burn scars reads each layer.
+`earthengine.py` reads an image in tiles of 512 pixels: one request for the full grid went over the memory limit.
+The layer grid has cells of 10 scar pixels (approximately 298 m): 1855 columns and 2597 rows.
+
+Land cover, MapBiomas:
+
+- Asset: `projects/mapbiomas-public/assets/brazil/lulc/collection10/mapbiomas_brazil_collection10_integration_v2`.
+  One band for each year from 1985 to 2024: `classification_{year}`. Pixels of 30 m.
+- We save the most frequent class of each layer cell. For 2023, that class is the class at the cell centre for 89 percent of the cells.
+- 29 percent of the cells of the Pantanal box have no class: they are not in Brazil.
+- The class names come from the legend file of MapBiomas for collection 11, read on 2026-11-22:
+  `legend_code_mapbiomas_brazil_collection_11.csv` on brasil.mapbiomas.org. We did not find a legend file for collection 10.
+  The classes in the box are 3 Forest Formation, 4 Savanna Formation, 6 Floodable Forest, 9 Forest Plantation, 11 Wetland,
+  12 Grassland Formation, 15 Pasture, 20 Sugar cane, 21 Mosaic of Uses, 24 Urban Area, 25 Other non Vegetated Areas,
+  29 Rocky Outcrop, 30 Mining, 31 Aquaculture, 33 River, Lake and Ocean, 39 Soybean, 40 Rice and 41 Other Temporary Crops.
+- The folder also has `collection10_1` and `collection11`. Not examined.
+
+Protected land and indigenous land, World Database on Protected Areas (WDPA):
+
+- Asset: `WCMC/WDPA/current/polygons`. 166 areas touch the Pantanal box. The identifier field is `SITE_ID`, not `WDPAID`.
+- The field `DESIG_ENG` gives the designation, and `DESIG_TYPE` says if it is national or international.
+- The asset is the current list. It has no list for a past year.
+
+People, Global Human Settlement Layer (GHSL):
+
+- Asset: `JRC/GHSL/P2023A/GHS_POP/2020`: the number of people in each cell of 100 m, in an equal-area projection.
+  The asset also has 2025 and 2030: those years are a projection, and we do not use them.
+- The Pantanal box has 3 492 696 people in this layer.
+- A sum of the cells on our grid gave 6 499 476: wrong. Use the mean of the cells, then the area of our cell.
+
+`UNVERIFIED`: the terms of the three layers. Do a check before we publish a copy of a layer.

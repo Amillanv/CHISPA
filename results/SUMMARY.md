@@ -188,6 +188,39 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | viirs | 10000 to inf | 9 | 9 | 0 | 0 | 0 | 0 |  |  |
 | viirs | all | 786 | 652 | 134 | 4454 | 110 | 76 | 4.06 | 56.65 |
 
+### severity
+
+Configuration `add29633057e`, run on 2026-11-22.
+
+| severity | events | events_matched | matched_share | area_ha_median | area_ha_p90 |
+|---|---|---|---|---|---|
+| 0 to 25 | 3006 | 363 | 0.1208 | 244.56 | 209570.0 |
+| 25 to 50 | 2552 | 649 | 0.2543 | 1705.99 | 209570.0 |
+| 50 to 75 | 321 | 198 | 0.6168 | 1911.96 | 209570.0 |
+| 75 to 100 | 11 | 10 | 0.9091 | 7399.58 | 209583.54 |
+| all | 5890 | 1220 | 0.2071 | 1134.19 | 209570.0 |
+
+### severity_inputs
+
+Configuration `add29633057e`, run on 2026-11-22.
+
+| input | events | events_with_a_value | p50 | p75 | p90 |
+|---|---|---|---|---|---|
+| fire power, MW | 5890 | 5844 | 54.0 | 82.7 | 107.9 |
+| extent, km | 5890 | 3588 | 2.2 | 4.42 | 8.82 |
+| advance, m | 5890 | 143 | 1289.59 | 1978.79 | 2921.57 |
+
+### severity_rank
+
+Configuration `add29633057e`, run on 2026-11-22.
+
+| measure | events | rank_correlation | events_matched | rank_correlation_matched |
+|---|---|---|---|---|
+| severity | 5890 | 0.275 | 1220 | 0.1136 |
+| detections | 5890 | 0.2547 | 1220 | -0.167 |
+| max_frp_mw | 5890 | 0.2348 | 1220 | 0.0972 |
+| extent_km | 5890 | 0.2345 | 1220 | -0.0137 |
+
 ## 2024 (test year)
 
 ### burn_check
@@ -353,6 +386,29 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | viirs | 1000 to 10000 | 101 | 98 | 3 | 11511 | 6 | 5 | 3.4 | 18.92 |
 | viirs | 10000 to inf | 25 | 25 | 0 | 0 | 0 | 0 |  |  |
 | viirs | all | 2864 | 1564 | 1300 | 74698 | 101 | 51 | 4.97 | 26.88 |
+
+### severity
+
+Configuration `add29633057e`, run on 2026-11-22.
+
+| severity | events | events_matched | matched_share | area_ha_median | area_ha_p90 |
+|---|---|---|---|---|---|
+| 0 to 25 | 3288 | 1080 | 0.3285 | 1964.54 | 181441.58 |
+| 25 to 50 | 2599 | 1345 | 0.5175 | 3054.29 | 181747.89 |
+| 50 to 75 | 357 | 309 | 0.8655 | 3493.81 | 181219.45 |
+| 75 to 100 | 16 | 15 | 0.9375 | 11356.93 | 206694.97 |
+| all | 6260 | 2749 | 0.4391 | 2544.71 | 181489.92 |
+
+### severity_rank
+
+Configuration `add29633057e`, run on 2026-11-22.
+
+| measure | events | rank_correlation | events_matched | rank_correlation_matched |
+|---|---|---|---|---|
+| severity | 6260 | 0.2684 | 2749 | 0.0248 |
+| detections | 6260 | 0.2857 | 2749 | 0.0898 |
+| max_frp_mw | 6260 | 0.1304 | 2749 | -0.1072 |
+| extent_km | 6260 | 0.2195 | 2749 | 0.0273 |
 
 ### visibility
 

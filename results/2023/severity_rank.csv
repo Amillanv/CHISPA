@@ -1,0 +1,5 @@
+measure,events,rank_correlation,events_matched,rank_correlation_matched,config,run_date
+severity,5890,0.275,1220,0.1136,add29633057e,2026-11-22
+detections,5890,0.2547,1220,-0.167,add29633057e,2026-11-22
+max_frp_mw,5890,0.2348,1220,0.0972,add29633057e,2026-11-22
+extent_km,5890,0.2345,1220,-0.0137,add29633057e,2026-11-22
