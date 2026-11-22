@@ -12,16 +12,16 @@ from chispa.evaluation.match import Fields
 from chispa.store import read_fires
 
 QUERY = """
-SELECT d.source, d.sensor_family, m.level, m.event_id,
+SELECT d.source, d.sensor_family, m.level, d.platform, m.event_id,
        CAST(strftime('%s', d.observed_at) AS INTEGER),
        CAST(strftime('%s', d.available_at) AS INTEGER),
        CAST(substr(d.observed_at, 6, 2) AS INTEGER),
-       CAST(strftime('%j', d.observed_at) AS INTEGER), d.lat, d.lon, d.footprint_m
+       CAST(strftime('%j', d.observed_at) AS INTEGER), d.lat, d.lon, d.footprint_m, d.frp_mw
 FROM detections d JOIN memberships m ON m.detection_id = d.id
 WHERE m.event_id >= ? AND m.event_id < ?
 """
-TEXT = ("source", "family", "level")
-NUMBERS = ("event", "observed", "available", "month", "day", "lat", "lon", "footprint_m")
+TEXT = ("source", "family", "level", "platform")
+NUMBERS = ("event", "observed", "available", "month", "day", "lat", "lon", "footprint_m", "frp_mw")
 
 
 def load_detections(store: sqlite3.Connection, year: int) -> Fields:
@@ -32,7 +32,8 @@ def load_detections(store: sqlite3.Connection, year: int) -> Fields:
     while chunk := cursor.fetchmany(200_000):
         columns = list(zip(*chunk, strict=True))
         for name, column in zip(TEXT + NUMBERS, columns, strict=True):
-            parts[name].append(np.array(column))
+            # A detection with no fire power has None. In an array of numbers it is NaN.
+            parts[name].append(np.array(column, dtype=float if name == "frp_mw" else None))
     if not parts["lat"]:
         raise RuntimeError(f"The store has no fusion results for {year}. Run `chispa fuse` first.")
     return {name: np.concatenate(chunks) for name, chunks in parts.items()}

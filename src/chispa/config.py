@@ -187,6 +187,62 @@ GROWTH_SPEED_MIN_H = 6.0
 # The limits of the classes of the time between two passes, in hours.
 GROWTH_HOUR_CLASSES = (0.0, 2.0, 6.0, 18.0, 24.5)
 
+# --- Severity ---
+
+# The side of a cell of the layer grid, in scar pixels: approximately 300 m.
+LAYER_CELLS = 10
+
+# The MapBiomas land cover classes in groups. `docs/sources.md` section 8.14 gives the class names.
+COVER_GROUPS = {
+    "forest": (3, 5, 6, 49),
+    "savanna": (4,),
+    "wetland": (11,),
+    "grassland": (12,),
+    "pasture": (15,),
+    "farming": (9, 20, 21, 39, 40, 41, 46, 47, 48, 62),
+    "built": (24, 30),
+    "water": (31, 33),
+}
+
+# The points of each part of the severity. The sum of the largest values is 100.
+# The points of the land cover, of the people and of the land are choices of the owner.
+# They are not measured.
+SEVERITY_POWER_POINTS = 20
+SEVERITY_EXTENT_POINTS = 15
+SEVERITY_ADVANCE_POINTS = 15
+SEVERITY_COVER_POINTS = {
+    "forest": 20,
+    "savanna": 16,
+    "wetland": 16,
+    "built": 20,
+    "grassland": 12,
+    "pasture": 8,
+    "farming": 8,
+    "water": 0,
+    "other": 4,
+}
+SEVERITY_PEOPLE_POINTS = 15
+SEVERITY_LAND_POINTS = 15  # A detection in protected or indigenous land.
+SEVERITY_LAND_NEAR_POINTS = 8  # Such land is not farther than SEVERITY_NEAR_KM.
+SEVERITY_NEAR_KM = 5.0
+
+# A value gets one third of its points for each step that it reaches.
+# Fire power in megawatts, extent in kilometres and advance in metres: set them on the development
+# year, as the 50th, 75th and 90th percentile of the events with a value (table `severity_inputs`).
+# Set on 2023 on 2026-11-22.
+SEVERITY_POWER_STEPS_MW: tuple | None = (54.0, 82.7, 107.9)
+SEVERITY_EXTENT_STEPS_KM: tuple | None = (2.2, 4.42, 8.82)
+SEVERITY_ADVANCE_STEPS_M: tuple | None = (1289.59, 1978.79, 2921.57)
+# The number of people in the square around a detection. A choice of the owner.
+SEVERITY_PEOPLE_STEPS = (10.0, 100.0, 1000.0)
+# The side of that square in layer cells: approximately 10 km.
+SEVERITY_PEOPLE_CELLS = 33
+
+# The check of the severity uses the detections that were available this many hours
+# after the first detection of an event.
+SEVERITY_EVAL_HOURS = 24.0
+SEVERITY_SCORE_CLASSES = (0.0, 25.0, 50.0, 75.0, 100.1)
+
 # === The values above this line can change a result. The configuration hash covers them. ===
 # The values below this line change no number in a result table.
 

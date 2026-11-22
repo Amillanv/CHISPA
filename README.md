@@ -66,6 +66,7 @@ Each other new part gets its hypothesis in the same way, before its result. We d
 - `tools.py` answers three questions for a given time: the alerts near a position, the detail of one event, and the measured quality of the alerts.
 - `chispa burn` asks Sentinel-2 if the ground at each unmatched HIGH event burned. `chispa images` lets a person check a sample. The check by a person is not complete.
 - `chispa visibility` says how frequently GOES examined the place of each mapped fire. `chispa growth` gives the advance, the direction and the speed of each event between two VIIRS passes.
+- `chispa severity` gives each event one number from 0 to 100, with its facts: fire power, extent, advance, land cover, people and protected land. The number is a heuristic. In 2024 it did not say more about the final burned area than the number of detections.
 - [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
 - Not built: the parts that the stage table marks, the live delay report, the MCP server, the agent and the dashboard.
 
@@ -91,17 +92,15 @@ Each other new part gets its hypothesis in the same way, before its result. We d
 | [MODIS MCD64A1](https://doi.org/10.5067/MODIS/MCD64A1.061) | Burn days: when a fire burned | Open |
 | [IBGE](https://www.ibge.gov.br/) | Border of the Pantanal biome | Open |
 | [Sentinel-2](https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED) | Images of 10 m to 20 m, for the burn check of events | Open |
+| MapBiomas land cover, [WDPA](https://www.protectedplanet.net/) and [GHSL](https://human-settlement.emergency.copernicus.eu/) | Land cover, protected and indigenous land, and people, for the severity | Open. Terms not checked. |
 
 Each source owns its data. The public bucket has a file `README.txt` with the terms of each source.
 
 - FIRMS: we acknowledge the use of data from NASA's Fire Information for Resource Management System (FIRMS) (https://earthdata.nasa.gov/firms), part of NASA's Earth Science Data and Information System (ESDIS).
 - GOES: NOAA GOES-16 ABI Level 2 Fire/Hot Spot Characterization, from the NOAA Open Data Dissemination Program.
-- INPE: INPE. Banco de Dados de queimadas. Disponível em: http://www.inpe.br/queimadas/bdqueimadas. Acesso em: 20 nov. 2026.
+- INPE: INPE. Banco de Dados de queimadas. Disponível em: http://www.inpe.br/queimadas/bdqueimadas. Acesso em: 20 nov. 2026. INPE gives no named licence: it publishes its files as open data. Our copy is not an official INPE service.
 - MapBiomas Fogo: CC BY 4.0. Alencar et al. 2022, Remote Sensing 14(11), 2510.
-- Burn days: NASA MODIS MCD64A1 Version 6.1. https://doi.org/10.5067/MODIS/MCD64A1.061
-- IBGE: Biomas e Sistema Costeiro-Marinho do Brasil, 1:250 000. Rio de Janeiro: IBGE, 2019.
-
-INPE gives no named licence for its files: it publishes them as open data. Our copy is not an official INPE service.
+- Burn days: NASA MODIS MCD64A1 Version 6.1. https://doi.org/10.5067/MODIS/MCD64A1.061. IBGE: Biomas e Sistema Costeiro-Marinho do Brasil, 1:250 000. Rio de Janeiro: IBGE, 2019.
 
 ## How the data moves
 
@@ -179,12 +178,15 @@ venv/bin/chispa fetch burnday --year 2024 --push
 venv/bin/chispa fetch border --push
 venv/bin/chispa fetch goes_mask --year 2024
 venv/bin/chispa fetch passes --year 2024
+venv/bin/chispa fetch landcover --year 2023
+venv/bin/chispa fetch protected
+venv/bin/chispa fetch settlements
 ```
 
 - `fetch` saves raw files in `data/raw/`. It does not download a file that is there, and it does not change the store. `--push` copies the new files of that source to the bucket.
 - The GOES masks and the pass times are not in the bucket. `chispa visibility` needs the masks: `fetch goes_mask` reads approximately 14 GB in 2 hours and keeps 46 MB. `chispa growth` needs the pass times.
-- `fetch goes` fills a gap of 50 days in the FIRMS record of GOES-16. It reads approximately 11 GB of raw files.
-- `fetch inpe` downloads approximately 1.4 GB for the two years. The INPE server is slow.
+- `fetch goes` fills a gap of 50 days in the FIRMS record of GOES-16. It reads approximately 11 GB of raw files. `fetch inpe` downloads approximately 1.4 GB for the two years. The INPE server is slow.
+- `chispa severity` needs the three layers, and the land cover of the year before the events. They are not in the bucket.
 - `fetch scars` and `fetch burnday` read from Earth Engine. Then run `venv/bin/chispa build` to make the store again.
 
 ## Later work
