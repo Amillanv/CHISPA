@@ -4,13 +4,30 @@ CHISPA merges fire detections from different sources into one alert for each fir
 It measures how good those alerts are, and it publishes the result: good or bad.
 Each part of an alert must say how we know it.
 
-## The problem
+## The vision
 
-A brigade gets fire data from many places.
-Polar-orbit satellites see small fires, but only a few times each day.
-Geostationary satellites look every 10 minutes, but with large pixels.
-The same fire can show as many records, and some records are not fires.
-A brigade must also know how much to trust an alert, and what the satellites could not see.
+A brigade gets fire data from many places. Polar-orbit satellites see small fires, but only a few times each day.
+Geostationary satellites look every 10 minutes, but with large pixels. The same fire can show as many records, and some records are not fires.
+
+CHISPA gives one alert for each fire. The alert says how much to trust it, with a measured track record.
+It says what the fire does, what it can reach, and what the satellites could not see.
+We do not tell a brigade a thing that we did not measure.
+
+## What we found
+
+Each finding has a hypothesis that we wrote before the run, and a command that makes it again.
+A negative result is here in the same way as a positive result.
+The numbers are for 2024, the test year, with satellite sources only, in the Brazilian part of the Pantanal.
+The rules come from 2023. Each link goes to the table in [results/SUMMARY.md](results/SUMMARY.md). [docs/method.md](docs/method.md) has each method, in the section that the finding names.
+
+1. **The merge finds more fires, by a small amount.** It found 2864 of 4246 mapped fires. GOES, the best single sensor family, found 2668. Almost all of the gain is fires smaller than 100 hectares. ([configurations](results/SUMMARY.md#2024-configurations), method 11.4)
+2. **The merge is not earlier for the typical fire.** It is earlier where GOES was late: on 30 of 140 isolated fires, a polar-orbit satellite was first. A simple comparison showed GOES hours before VIIRS. That lead came from the large GOES pixel, which reaches the fires adjacent to its fire. ([merge_gain](results/SUMMARY.md#2024-merge_gain), method 11.6)
+3. **The confidence level has a measured meaning.** 1273 of 1582 HIGH events matched a mapped fire, and 1511 of 2914 LOW events. ([events](results/SUMMARY.md#2024-events), method 10.3)
+4. **An alert with no mapped fire is not always a false alarm.** Sentinel-2 showed a burn at 94 of 209 HIGH events with no mapped fire, at 82 of 97 with a mapped fire, and at 22 of 98 boxes with no fire. The rule of this check is weak: read the three numbers together. ([burn_check](results/SUMMARY.md#2024-burn_check), method 11.10)
+5. **Cloud is not the main cause of a fire with no detection.** GOES examined the place of a typical such fire in 76 percent of the hourly scans of its months (1382 fires). Most of these fires were too small or too short for the sensor. ([visibility](results/SUMMARY.md#2024-visibility), method 11.11)
+6. **We can measure where a fire goes, not how much it burned.** A VIIRS pixel is as large as a small fire, thus we give no burned area. In 1736 of 4546 steps of 6 to 18 hours, new pixels were farther than the error of the positions. ([growth_steps](results/SUMMARY.md#2024-growth_steps), method 11.12 and 11.13)
+7. **The first day separates the events.** 24 hours after its first detection, 324 of 373 events with a severity of 50 or more matched a mapped fire, and 224 of those had a later detection. Below 25, 1080 of 3288 matched, and 95 of those had one. The number of detections alone separates the events as well. ([severity](results/SUMMARY.md#2024-severity), method 11.14)
+8. **A severity number shows priorities. It is not a forecast.** Its rank correlation with the final burned area was 0.2684. For the number of detections alone it was 0.2857. ([severity_rank](results/SUMMARY.md#2024-severity_rank), method 11.14)
 
 ## The stages of a fire
 
@@ -32,34 +49,12 @@ All the work follows eight stages. Each stage gives one part of the alert, and e
 - We cannot make stages 1 to 3 quicker. We read each source by its quickest route, at intervals of 5 minutes.
 - Our work is stage 4 and the stages after it: what the alert says, and how we know it.
 
-## The first hypothesis: the merge
-
-A merged alert finds the same mapped fires earlier than one source alone.
-It does this without a larger share of alerts that have no mapped fire.
-
-We measured it against fires that a different satellite mapped after the season.
-We set the rules on 2023. Then we ran 2024 one time, on the frozen configuration `e03804b1c89a`.
-The 2024 result, with satellite sources only, supports the hypothesis only in part:
-
-- The merge finds more fires than each sensor family alone. The gain on GOES, the best family, is small: almost all of it is fires smaller than 100 hectares.
-- The merge is not earlier for the typical fire. It is earlier for some fires: where GOES was late, a polar-orbit satellite was first.
-- The unmatched share of the merge is between the shares of the single families.
-- A higher confidence level matches a mapped fire more frequently: 80 percent of 1582 HIGH events, and 52 percent of 2914 LOW events.
-- A second satellite examined the HIGH events with no mapped fire. They are between a fire and no fire: Sentinel-2 showed a burn at 94 of 209 such events, at 82 of 97 events with a mapped fire, and at 22 of 98 boxes with no fire. The rule of this check is weak: read the three numbers together.
-
-We also found an error that is easy to make. A simple comparison showed GOES hours before VIIRS. That lead came from the large GOES pixel, which reaches the fires adjacent to its fire. With a clear match, the two are equal for the typical fire.
-[results/SUMMARY.md](results/SUMMARY.md) has each number, adjacent to its limits.
-
 ## The next hypothesis: the first alert
 
 The first alert of an event is LOW, and it is the quickest alert that we can make.
 HIGH needs a second sensor family. On 93 isolated fires of 2024, it came a median of 2.8 hours later.
 The hypothesis: data that exists at the first detection can say which first alerts will match a mapped fire.
 It is not measured. We will learn on 2023, tune on 2024 and do the test one time on 2025.
-
-Each other new part gets its hypothesis in the same way, before its result. We do not report a value that we did not measure.
-
-**What the first day says.** We found this after the run, thus it is a description and not a tested forecast. 24 hours after its first detection, an event with a severity of 50 or more is a fire that continues: in 2024, 324 of 373 such events matched a mapped fire, and 224 of those had later detections, for a median of 2 more days. Below 25, 95 of 1080 matched events had one. The number of detections alone separates the events as well. The severity adds what the fire can reach.
 
 ## Status
 
@@ -74,11 +69,10 @@ Each other new part gets its hypothesis in the same way, before its result. We d
 
 ## Limits you must know
 
-- The evaluation uses satellite sources only, in the Brazilian part of the Pantanal. The reference gives the day of a burn, with an uncertainty of some days. Thus we measure delay between sources, not delay from ignition.
+- The reference is a map of burned ground. It gives the day of a burn with an uncertainty of some days, and it does not show each small fire. Thus we measure delay between sources, not delay from ignition.
 - Only isolated fires give a delay: a small sample. One event is not always one fire: the results give the purity.
-- An alert with no mapped fire is not always a false alarm. The map does not show each small fire.
-- A place with no detection is not a place with no fire. In 2024, GOES examined the place of a typical mapped fire with no detection in 76 percent of the hourly scans of its months. Thus most such fires were too small or too short for the sensor, not under cloud.
-- We give no burned area for an event: a VIIRS pixel is as large as a small fire. Less than half of the steps of 6 to 18 hours show an advance that is larger than the error of the positions.
+- A place with no detection is not a place with no fire. A step with no measured advance is not a fire that stopped.
+- Finding 7 came after the run. It is a description of two years, not a tested forecast.
 - We cannot measure the true goal yet: the minutes to brigade acknowledgment, and the share of alerts that brigades say were worth action.
 
 ## Data sources

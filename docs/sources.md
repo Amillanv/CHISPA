@@ -306,7 +306,8 @@ object-based tracking system", Scientific Data. Open copy: Europe PMC, `PMC91517
 
 Checked 2026-11-22 with live requests to Earth Engine. The same Google login as for the burn scars reads each layer.
 `earthengine.py` reads an image in tiles of 512 pixels: one request for the full grid went over the memory limit.
-The layer grid has cells of 10 scar pixels (approximately 298 m): 1855 columns and 2597 rows.
+The layer grid has cells of 10 scar pixels (approximately 298 m): 1856 columns and 2598 rows.
+The last column and the last row go past the scar grid, thus each scar pixel is in a cell.
 
 Land cover, MapBiomas:
 

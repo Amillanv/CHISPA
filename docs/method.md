@@ -501,6 +501,7 @@ The facts, each from data that exists at the as-of time:
 - Extent: the longer side of the box of the detections, in kilometres.
 - Advance: the advance of the newest step, if that step has a new pixel (section 11.13).
 - Land cover: the group that most detections are on, from the map of the year before (section 8.14).
+  A cell with no class in the map does not count.
 - People: the number of people in a square of approximately 10 km around a detection, the largest value of the event.
 - Protected land and indigenous land: the nearest area of each kind, with its name and its distance.
 
@@ -516,7 +517,8 @@ The number is a sum of points. `config.py` has each point value.
 | Protected or indigenous land | 0 to 15 | All points if a detection is in an area. A part if an area is near |
 
 - The steps of the fire power, the extent and the advance come from the development year: the 50th, 75th and 90th percentile
-  of the events with a value, at the evaluation time. The table `severity_inputs` gives them.
+  of the events with a value larger than zero, at the evaluation time. An event at one position has an extent of zero.
+  The table `severity_inputs` gives them.
 - The points of the land cover, the steps of the people and the points of the land are choices of the owner. They are not measured.
 - An alert must give the parts of the number, not only the number.
 
@@ -530,6 +532,11 @@ If this is false, the number adds nothing to a count, and the facts stay with no
 - Limits: the outcome is an area, not damage. The people and the land get points, but no reference says that they matter.
   An event that merges with a second event later has the outcome of the two. The land cover is a year old.
   The population is an estimate for 2020 on a grid of 100 m.
+- The check uses the events as they are at the end of the year. Two events that were separate at the evaluation time and
+  merged later are one event in the check. A brigade did not have that grouping at that time. A correct check needs
+  a replay that stops at the evaluation time: not built.
+- The list of protected land is the list of today (section 8.14). An area that got its status after an event still
+  gives points to that event. A new download can give a different list.
 
 The result (tables `severity` and `severity_rank`, 2026-11-22): the hypothesis is true on 2023 and false on 2024.
 
@@ -537,7 +544,8 @@ The result (tables `severity` and `severity_rank`, 2026-11-22): the hypothesis i
   In 2024 the severity 0.2684 and the number of detections 0.2857 (6260 events). The two are almost equal, and the sequence changes.
 - Thus the severity does not say more about the final burned area than a count of detections.
 - For the events with a match only, each rank correlation is near zero. Many small events match one very large fire,
-  thus the outcome of an event says little about that event.
+  thus the outcome of an event says little about that event. Thus the rank correlation for all events shows mostly
+  one thing: an event with many detections matches a fire more frequently. It does not show a ranking of the burned area.
 - The severity does separate the events that match a mapped fire. In 2024 the matched share was 1080 of 3288 events with a
   severity below 25, 1345 of 2599 from 25 to 50, 309 of 357 from 50 to 75, and 15 of 16 from 75.
   This was not the hypothesis. It is a property of a confidence, not of a severity (PLAN.md, C4).
@@ -546,7 +554,9 @@ The result (tables `severity` and `severity_rank`, 2026-11-22): the hypothesis i
 - The time after the evaluation time. Of the 324 matched events with a severity of 50 or more in 2024, 224 had a detection
   after the evaluation time: 211 of 309 from 50 to 75, for a median of 2.2 more days, and 13 of 15 from 75, for a median of 6.23.
   Below 25, 95 of 1080 matched events had one. In 2023: 117 of 208 from 50, and 38 of 363 below 25.
-  Thus a high value at 24 hours says that a fire continues, with one day or more to act. A low value says that it is over.
+  Thus more of the events with a high value at 24 hours have a later detection, and fewer of the events with a low value.
+  A later detection does not say that the same fire burns, and it gives no time for a brigade to act.
+  No later detection does not say that a fire is out: the sensors do not see each fire.
   This is a description of two years, found after the first run. It is not a tested forecast.
 - The check was weak in one way: people, land and land cover have no relation to the burned area by design.
   They are the priorities of the owner. Only the fire parts can agree with the outcome.

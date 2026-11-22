@@ -63,10 +63,15 @@ def event_rows(detections: Fields, areas: dict[int, float], layers: severity.Lay
 
 
 def inputs_table(rows: list[dict]) -> list[dict]:
-    """Return the percentiles of each input that gets its steps from the development year."""
+    """Return the percentiles of each input that gets its steps from the development year.
+
+    An event has a value if the value is larger than zero. An event with no fire power or no
+    measured advance has None. An event at one position has an extent of zero: it has no extent.
+    """
     table = []
     for name, label in INPUTS.items():
-        values = np.array([row[name] for row in rows if row[name]], dtype=float)
+        values = [row[name] for row in rows if row[name] is not None and row[name] > 0]
+        values = np.array(values, dtype=float)
         table.append(
             {
                 "input": label,

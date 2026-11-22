@@ -37,11 +37,16 @@ class Grid:
 
 
 def layer_grid() -> Grid:
-    """Return the grid of the severity layers: each cell is a square of scar pixels."""
+    """Return the grid of the severity layers: each cell is a square of scar pixels.
+
+    The last column and the last row can go past the scar grid. Thus no scar pixel is outside.
+    """
     grid, cells = pantanal_grid(), config.LAYER_CELLS
-    return Grid(
-        grid.west, grid.north, grid.pixel_deg * cells, grid.width // cells, grid.height // cells
-    )
+    width, height = (
+        -(-grid.width // cells),
+        -(-grid.height // cells),
+    )  # Division to the next integer.
+    return Grid(grid.west, grid.north, grid.pixel_deg * cells, width, height)
 
 
 def pantanal_grid() -> Grid:

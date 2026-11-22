@@ -51,6 +51,21 @@ def test_detection_with_no_fire_power_gives_no_value():
     assert (found["max_frp_mw"], found["cover"], found["extent_km"]) == (None, "pasture", 0.0)
 
 
+def test_cell_with_no_land_cover_class_does_not_count(monkeypatch):
+    set_steps(monkeypatch)
+    ground = layers()
+    ground.cover[1, 1] = 0  # no class
+    lat, lon = np.array([2.5, 2.5, 3.5]), np.array([1.5, 1.5, 0.5])  # Two detections on that cell.
+    found = severity.facts(lat, lon, np.array([1.0, 1.0, 1.0]), None, ground)
+    assert (found["cover"], found["cover_share"]) == ("forest", 1.0)
+    none = severity.facts(lat[:2], lon[:2], np.array([1.0, 1.0]), None, ground)
+    assert (none["cover"], none["cover_share"], severity.score(none)[1]["cover"]) == (
+        None,
+        None,
+        0.0,
+    )
+
+
 def test_severity_is_the_sum_of_the_points_of_its_parts(monkeypatch):
     set_steps(monkeypatch)
     lat, lon = np.array([3.5, 3.5]), np.array([0.5, 1.5])
