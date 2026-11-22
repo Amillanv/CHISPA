@@ -77,7 +77,8 @@ def write_summary(results_dir: Path) -> None:
             with path.open(newline="") as file:
                 rows = list(csv.DictReader(file))
             columns = [name for name in rows[0] if name not in ("config", "run_date")]
-            lines += [f"### {path.stem}", ""]
+            # The year is in the heading. Thus a link to one table of one year is possible.
+            lines += [f"### {folder.name} {path.stem}", ""]
             lines += [f"Configuration `{rows[0]['config']}`, run on {rows[0]['run_date']}.", ""]
             lines += ["| " + " | ".join(columns) + " |", "|" + "---|" * len(columns)]
             lines += ["| " + " | ".join(row[name] for name in columns) + " |" for row in rows]

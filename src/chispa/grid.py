@@ -36,6 +36,19 @@ class Grid:
         return rows, cols
 
 
+def layer_grid() -> Grid:
+    """Return the grid of the severity layers: each cell is a square of scar pixels.
+
+    The last column and the last row can go past the scar grid. Thus no scar pixel is outside.
+    """
+    grid, cells = pantanal_grid(), config.LAYER_CELLS
+    width, height = (
+        -(-grid.width // cells),
+        -(-grid.height // cells),
+    )  # Division to the next integer.
+    return Grid(grid.west, grid.north, grid.pixel_deg * cells, width, height)
+
+
 def pantanal_grid() -> Grid:
     """Return the part of the MapBiomas grid that covers the Pantanal box."""
     west, south, east, north = config.PANTANAL_BOX

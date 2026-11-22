@@ -4,13 +4,30 @@ CHISPA merges fire detections from different sources into one alert for each fir
 It measures how good those alerts are, and it publishes the result: good or bad.
 Each part of an alert must say how we know it.
 
-## The problem
+## The vision
 
-A brigade gets fire data from many places.
-Polar-orbit satellites see small fires, but only a few times each day.
-Geostationary satellites look every 10 minutes, but with large pixels.
-The same fire can show as many records, and some records are not fires.
-A brigade must also know how much to trust an alert, and what the satellites could not see.
+A brigade gets fire data from many places. Polar-orbit satellites see small fires, but only a few times each day.
+Geostationary satellites look every 10 minutes, but with large pixels. The same fire can show as many records, and some records are not fires.
+
+CHISPA gives one alert for each fire. The alert says how much to trust it, with a measured track record.
+It says what the fire does, what it can reach, and what the satellites could not see.
+We do not tell a brigade a thing that we did not measure.
+
+## What we found
+
+Each finding has a hypothesis that we wrote before the run, and a command that makes it again.
+A negative result is here in the same way as a positive result.
+The numbers are for 2024, the test year, with satellite sources only, in the Brazilian part of the Pantanal.
+The rules come from 2023. Each link goes to the table in [results/SUMMARY.md](results/SUMMARY.md). [docs/method.md](docs/method.md) has each method, in the section that the finding names.
+
+1. **The merge finds more fires, by a small amount.** It found 2864 of 4246 mapped fires. GOES, the best single sensor family, found 2668. Almost all of the gain is fires smaller than 100 hectares. ([configurations](results/SUMMARY.md#2024-configurations), method 11.4)
+2. **The merge is not earlier for the typical fire.** It is earlier where GOES was late: on 30 of 140 isolated fires, a polar-orbit satellite was first. A simple comparison showed GOES hours before VIIRS. That lead came from the large GOES pixel, which reaches the fires adjacent to its fire. ([merge_gain](results/SUMMARY.md#2024-merge_gain), method 11.6)
+3. **The confidence level has a measured meaning.** 1273 of 1582 HIGH events matched a mapped fire, and 1511 of 2914 LOW events. ([events](results/SUMMARY.md#2024-events), method 10.3)
+4. **An alert with no mapped fire is not always a false alarm.** Sentinel-2 showed a burn at 94 of 209 HIGH events with no mapped fire, at 82 of 97 with a mapped fire, and at 22 of 98 boxes with no fire. The rule of this check is weak: read the three numbers together. ([burn_check](results/SUMMARY.md#2024-burn_check), method 11.10)
+5. **Cloud is not the main cause of a fire with no detection.** GOES examined the place of a typical such fire in 76 percent of the hourly scans of its months (1382 fires). Most of these fires were too small or too short for the sensor. ([visibility](results/SUMMARY.md#2024-visibility), method 11.11)
+6. **We can measure where a fire goes, not how much it burned.** A VIIRS pixel is as large as a small fire, thus we give no burned area. In 1736 of 4546 steps of 6 to 18 hours, new pixels were farther than the error of the positions. ([growth_steps](results/SUMMARY.md#2024-growth_steps), method 11.12 and 11.13)
+7. **The first day separates the events.** 24 hours after its first detection, 324 of 373 events with a severity of 50 or more matched a mapped fire, and 224 of those had a later detection. Below 25, 1080 of 3288 matched, and 95 of those had one. The number of detections alone separates the events as well. ([severity](results/SUMMARY.md#2024-severity), method 11.14)
+8. **A severity number shows priorities. It is not a forecast.** Its rank correlation with the final burned area was 0.2684. For the number of detections alone it was 0.2857. ([severity_rank](results/SUMMARY.md#2024-severity_rank), method 11.14)
 
 ## The stages of a fire
 
@@ -32,32 +49,12 @@ All the work follows eight stages. Each stage gives one part of the alert, and e
 - We cannot make stages 1 to 3 quicker. We read each source by its quickest route, at intervals of 5 minutes.
 - Our work is stage 4 and the stages after it: what the alert says, and how we know it.
 
-## The first hypothesis: the merge
-
-A merged alert finds the same mapped fires earlier than one source alone.
-It does this without a larger share of alerts that have no mapped fire.
-
-We measured it against fires that a different satellite mapped after the season.
-We set the rules on 2023. Then we ran 2024 one time, on the frozen configuration `e03804b1c89a`.
-The 2024 result, with satellite sources only, supports the hypothesis only in part:
-
-- The merge finds more fires than each sensor family alone. The gain on GOES, the best family, is small: almost all of it is fires smaller than 100 hectares.
-- The merge is not earlier for the typical fire. It is earlier for some fires: where GOES was late, a polar-orbit satellite was first.
-- The unmatched share of the merge is between the shares of the single families.
-- A higher confidence level matches a mapped fire more frequently: 80 percent of 1582 HIGH events, and 52 percent of 2914 LOW events.
-- A second satellite examined the HIGH events with no mapped fire. They are between a fire and no fire: Sentinel-2 showed a burn at 94 of 209 such events, at 82 of 97 events with a mapped fire, and at 22 of 98 boxes with no fire. The rule of this check is weak: read the three numbers together.
-
-We also found an error that is easy to make. A simple comparison showed GOES hours before VIIRS. That lead came from the large GOES pixel, which reaches the fires adjacent to its fire. With a clear match, the two are equal for the typical fire.
-[results/SUMMARY.md](results/SUMMARY.md) has each number, adjacent to its limits.
-
 ## The next hypothesis: the first alert
 
 The first alert of an event is LOW, and it is the quickest alert that we can make.
 HIGH needs a second sensor family. On 93 isolated fires of 2024, it came a median of 2.8 hours later.
 The hypothesis: data that exists at the first detection can say which first alerts will match a mapped fire.
 It is not measured. We will learn on 2023, tune on 2024 and do the test one time on 2025.
-
-Each other new part gets its hypothesis in the same way, before its result. We do not report a value that we did not measure.
 
 ## Status
 
@@ -66,17 +63,16 @@ Each other new part gets its hypothesis in the same way, before its result. We d
 - `tools.py` answers three questions for a given time: the alerts near a position, the detail of one event, and the measured quality of the alerts.
 - `chispa burn` asks Sentinel-2 if the ground at each unmatched HIGH event burned. `chispa images` lets a person check a sample. The check by a person is not complete.
 - `chispa visibility` says how frequently GOES examined the place of each mapped fire. `chispa growth` gives the advance, the direction and the speed of each event between two VIIRS passes.
+- `chispa severity` gives each event one number from 0 to 100, with its facts: fire power, extent, advance, land cover, people and protected land. The number is a heuristic: it shows priorities, and it is not a forecast of the burned area.
 - [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
 - Not built: the parts that the stage table marks, the live delay report, the MCP server, the agent and the dashboard.
 
 ## Limits you must know
 
-- The evaluation uses satellite sources only, in the Brazilian part of the Pantanal.
-- The reference gives the day of a burn, with an uncertainty of some days. Thus we measure delay between sources, not delay from ignition.
+- The reference is a map of burned ground. It gives the day of a burn with an uncertainty of some days, and it does not show each small fire. Thus we measure delay between sources, not delay from ignition.
 - Only isolated fires give a delay: a small sample. One event is not always one fire: the results give the purity.
-- An alert with no mapped fire is not always a false alarm. The map does not show each small fire.
-- A place with no detection is not a place with no fire. In 2024, GOES examined the place of a typical mapped fire with no detection in 76 percent of the hourly scans of its months. Thus most such fires were too small or too short for the sensor, not under cloud.
-- We give no burned area for an event: a VIIRS pixel is as large as a small fire. Less than half of the steps of 6 to 18 hours show an advance that is larger than the error of the positions.
+- A place with no detection is not a place with no fire. A step with no measured advance is not a fire that stopped.
+- Finding 7 came after the run. It is a description of two years, not a tested forecast.
 - We cannot measure the true goal yet: the minutes to brigade acknowledgment, and the share of alerts that brigades say were worth action.
 
 ## Data sources
@@ -91,17 +87,15 @@ Each other new part gets its hypothesis in the same way, before its result. We d
 | [MODIS MCD64A1](https://doi.org/10.5067/MODIS/MCD64A1.061) | Burn days: when a fire burned | Open |
 | [IBGE](https://www.ibge.gov.br/) | Border of the Pantanal biome | Open |
 | [Sentinel-2](https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED) | Images of 10 m to 20 m, for the burn check of events | Open |
+| MapBiomas land cover, [WDPA](https://www.protectedplanet.net/) and [GHSL](https://human-settlement.emergency.copernicus.eu/) | Land cover, protected and indigenous land, and people, for the severity | Open. Terms not checked. |
 
 Each source owns its data. The public bucket has a file `README.txt` with the terms of each source.
 
 - FIRMS: we acknowledge the use of data from NASA's Fire Information for Resource Management System (FIRMS) (https://earthdata.nasa.gov/firms), part of NASA's Earth Science Data and Information System (ESDIS).
 - GOES: NOAA GOES-16 ABI Level 2 Fire/Hot Spot Characterization, from the NOAA Open Data Dissemination Program.
-- INPE: INPE. Banco de Dados de queimadas. Disponível em: http://www.inpe.br/queimadas/bdqueimadas. Acesso em: 20 nov. 2026.
+- INPE: INPE. Banco de Dados de queimadas. Disponível em: http://www.inpe.br/queimadas/bdqueimadas. Acesso em: 20 nov. 2026. INPE gives no named licence: it publishes its files as open data. Our copy is not an official INPE service.
 - MapBiomas Fogo: CC BY 4.0. Alencar et al. 2022, Remote Sensing 14(11), 2510.
-- Burn days: NASA MODIS MCD64A1 Version 6.1. https://doi.org/10.5067/MODIS/MCD64A1.061
-- IBGE: Biomas e Sistema Costeiro-Marinho do Brasil, 1:250 000. Rio de Janeiro: IBGE, 2019.
-
-INPE gives no named licence for its files: it publishes them as open data. Our copy is not an official INPE service.
+- Burn days: NASA MODIS MCD64A1 Version 6.1. https://doi.org/10.5067/MODIS/MCD64A1.061. IBGE: Biomas e Sistema Costeiro-Marinho do Brasil, 1:250 000. Rio de Janeiro: IBGE, 2019.
 
 ## How the data moves
 
@@ -179,19 +173,21 @@ venv/bin/chispa fetch burnday --year 2024 --push
 venv/bin/chispa fetch border --push
 venv/bin/chispa fetch goes_mask --year 2024
 venv/bin/chispa fetch passes --year 2024
+venv/bin/chispa fetch landcover --year 2023
+venv/bin/chispa fetch protected
+venv/bin/chispa fetch settlements
 ```
 
 - `fetch` saves raw files in `data/raw/`. It does not download a file that is there, and it does not change the store. `--push` copies the new files of that source to the bucket.
 - The GOES masks and the pass times are not in the bucket. `chispa visibility` needs the masks: `fetch goes_mask` reads approximately 14 GB in 2 hours and keeps 46 MB. `chispa growth` needs the pass times.
-- `fetch goes` fills a gap of 50 days in the FIRMS record of GOES-16. It reads approximately 11 GB of raw files.
-- `fetch inpe` downloads approximately 1.4 GB for the two years. The INPE server is slow.
+- `fetch goes` fills a gap of 50 days in the FIRMS record of GOES-16. It reads approximately 11 GB of raw files. `fetch inpe` downloads approximately 1.4 GB for the two years. The INPE server is slow.
+- `chispa severity` needs the three layers, and the land cover of the year before the events. They are not in the bucket.
 - `fetch scars` and `fetch burnday` read from Earth Engine. Then run `venv/bin/chispa build` to make the store again.
 
 ## Later work
 
 - A dashboard, an MCP server and a small agent. The agent will not say that a burn is safe.
-- Delivery of alerts by SMS, radio or an offline app. Camera detections and community reports.
-- A growth forecast, only after a test against measured growth. Other regions.
+- Delivery of alerts by SMS, radio or an offline app. Camera detections and community reports. A growth forecast, only after a test against measured growth. Other regions.
 
 ## Language and licence
 
