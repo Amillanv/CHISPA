@@ -354,6 +354,16 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | viirs | 10000 to inf | 25 | 25 | 0 | 0 | 0 | 0 |  |  |
 | viirs | all | 2864 | 1564 | 1300 | 74698 | 101 | 51 | 4.97 | 26.88 |
 
+### visibility
+
+Configuration `7b93a5ff742a`, run on 2026-11-22.
+
+| fires | count | with_scans | scans_median | examined_share_median | cloud_share_median | examined_under_half | never_examined | with_possible_fire |
+|---|---|---|---|---|---|---|---|---|
+| counted fires with no detection | 1382 | 1382 | 1455.0 | 0.76 | 0.21 | 100 | 50 | 116 |
+| counted fires with a detection, not from GOES | 196 | 196 | 1440.0 | 0.76 | 0.21 | 10 | 8 | 28 |
+| counted fires with a GOES detection | 2668 | 2668 | 1440.0 | 0.74 | 0.23 | 120 | 61 | 1168 |
+
 Limits of these results:
 
 - The sources are satellites only. There are no camera detections or community reports.

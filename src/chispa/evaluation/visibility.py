@@ -52,7 +52,8 @@ def read_series(folder: Path, pixels: dict) -> tuple[np.ndarray, np.ndarray]:
     for path in sorted(folder.glob("????-??-??.npz")):
         day = np.load(path)
         if len(day["times"]):
-            times.append(day["times"].astype("datetime64[s]"))
+            # The times are UTC text with an offset. NumPy times have no offset.
+            times.append(np.array([time[:19] for time in day["times"]], dtype="datetime64[s]"))
             classes.append(day["mask"][:, rows, cols])
     return np.concatenate(times), np.concatenate(classes)
 
