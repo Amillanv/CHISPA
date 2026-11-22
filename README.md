@@ -1,46 +1,64 @@
 # CHISPA
 
 CHISPA merges fire detections from different sources into one alert for each fire.
-Then it measures how good those alerts are, and it publishes the result: good or bad.
+It measures how good those alerts are, and it publishes the result: good or bad.
+Each part of an alert must say how we know it.
 
 ## The problem
 
 A brigade gets fire data from many places.
 Polar-orbit satellites see small fires, but only a few times each day.
 Geostationary satellites look every 10 minutes, but with large pixels.
-Cameras and people see a fire quickly, but only near them.
 The same fire can show as many records, and some records are not fires.
+A brigade must also know how much to trust an alert, and what the satellites could not see.
 
-## The hypothesis
+## The stages of a fire
+
+All the work follows eight stages. Each stage gives one part of the alert, and each part has its own measure.
+[docs/method.md](docs/method.md) section 7 gives the rules.
+
+| Stage | What occurs | What drives it | Part of the alert | Measure | State |
+|---|---|---|---|---|---|
+| 1. Ignition | The fire starts. No source records this. | Nothing | The earliest possible start | Not possible directly. Visibility can give a limit. | Not built |
+| 2. Observation | A sensor sees heat on the ground. | The VIIRS, MODIS, ABI and AVHRR satellites | Position, time and fire power | Fire recall of each sensor family | Built |
+| 3. Publication | A source publishes the detection. | FIRMS, NOAA and INPE. `sources/`, `live.py` | The age of the data | Source delay, from the live poller | Built. Measured only live. |
+| 4. Alert | CHISPA puts the detection into an event with a confidence level. | `fusion.py` | The event and its level | Fire recall, unmatched share, purity, completeness | Built. Scored on 2024. |
+| 5. Growth | The fire gets larger. | Not built | The area of the event at each pass | Not decided | Not built |
+| 6. Confirmation | More passes see the event. The level can go up. | `fusion.py` | The change of the level | Matched share of each level, delay to each level | Built. Scored on 2024. |
+| 7. End | The fire stops. | Not built | "No detection", with the visibility | Not decided | Not built |
+| 8. Mapping | Months later, a map shows the burned ground. | MapBiomas and MCD64A1. `fires.py`, `evaluate.py` | The track record of the alerts | It is the reference for the other stages. | Built |
+
+- Stages 2 to 6 repeat for each new observation. Visibility is part of each stage: could a sensor examine this place? It is not built.
+- We cannot make stages 1 to 3 quicker. We read each source by its quickest route, at intervals of 5 minutes.
+- Our work is stage 4 and the stages after it: what the alert says, and how we know it.
+
+## The first hypothesis: the merge
 
 A merged alert finds the same mapped fires earlier than one source alone.
 It does this without a larger share of alerts that have no mapped fire.
 
-## The result
-
-We did not assume that the merge helps. We measured it against fires that a different satellite mapped after the season.
+We measured it against fires that a different satellite mapped after the season.
 We set the rules on 2023. Then we ran 2024 one time, on the frozen configuration `e03804b1c89a`.
 The 2024 result, with satellite sources only, supports the hypothesis only in part:
 
 - The merge finds more fires than each sensor family alone. The gain on GOES, the best family, is small: almost all of it is fires smaller than 100 hectares.
 - The merge is not earlier for the typical fire. It is earlier for some fires: where GOES was late, a polar-orbit satellite was first.
 - The unmatched share of the merge is between the shares of the single families.
-- A higher confidence level matches a mapped fire more frequently.
+- A higher confidence level matches a mapped fire more frequently: 80 percent of 1582 HIGH events, and 52 percent of 2914 LOW events.
 
 We also found an error that is easy to make. A simple comparison showed GOES hours before VIIRS.
 That lead came from the large GOES pixel, which reaches the fires adjacent to its fire. With a clear match, the two are equal for the typical fire.
 [results/SUMMARY.md](results/SUMMARY.md) has each number, adjacent to its limits.
 
-## Why we build the live system
+## The next hypothesis: the first alert
 
-The gain of the merge alone is not the reason. The result gives three better reasons:
+The first alert of an event is LOW, and it is the quickest alert that we can make.
+HIGH needs a second sensor family. On 93 isolated fires of 2024, it came a median of 2.8 hours later.
+The hypothesis: data that exists at the first detection can say which first alerts will match a mapped fire.
+It is not measured. We will learn on 2023, tune on 2024 and do the test one time on 2025.
 
-1. **No one sensor is sufficient.** GOES is quick and finds the large fires. The polar-orbit satellites find small fires that GOES does not find, and they are first when GOES is late.
-2. **The confidence level has a measured meaning.** In 2024, 80 percent of 1582 HIGH events matched a mapped fire, and 52 percent of 2914 LOW events. A brigade with few people can go to the HIGH alerts first.
-3. **Recorded data cannot answer the two most important questions.** How many minutes go by from a satellite scan to an alert? Does a brigade say that the alert was worth action?
-
-Only a live system can measure these. Thus we build one that measures itself from the first day.
-We will not ask a brigade to trust a number that we did not measure.
+Each other new part gets its hypothesis in the same way, before its result.
+We do not report a value that we did not measure.
 
 ## Status
 
@@ -49,30 +67,16 @@ We will not ask a brigade to trust a number that we did not measure.
 - `chispa poll` does one pass of the live poller: it records each new detection with the time of the pass, then updates the store and the events. It needs a FIRMS key.
 - `tools.py` answers three questions for a given time: the alerts near a position, the detail of one event, and the measured quality of the alerts.
 - [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
-- Not built yet: the live delay report, the weather, the MCP server, the agent and the dashboard.
-
-## What we measure
-
-The evaluation uses recorded data from the Brazilian Pantanal.
-The truth is a map of burn scars. We group the scars into fires with a map of burn days.
-
-| Measure | Meaning |
-|---|---|
-| Fire recall | The share of mapped fires that got a minimum of one detection. |
-| Relative delay | The time from the first detection by all sources to the first detection of one configuration. |
-| Unmatched share | The share of detections with no mapped fire. Precision against the map is 1 minus this share. |
-
-We report each measure by source, by sensor family, by confidence level and by fire size.
-We cannot measure the true goal yet: the minutes to brigade acknowledgment, and the share of alerts that brigades say were worth action.
-We will not report these two measures until brigades use a live system.
+- Not built: the parts that the stage table marks, the live delay report, the MCP server, the agent and the dashboard.
 
 ## Limits you must know
 
-- The first evaluation uses satellite sources only. We have no recorded camera data or community reports for 2024.
-- The ground truth gives the day of a burn, with an uncertainty of some days. Thus we measure delay between sources, not delay from the true start of a fire.
+- The evaluation uses satellite sources only, in the Brazilian part of the Pantanal.
+- The reference gives the day of a burn, with an uncertainty of some days. Thus we measure delay between sources, not delay from ignition.
 - Only isolated fires give a delay: a small sample. One event is not always one fire: the results give the purity.
-- An alert with no mapped fire is not always a false alarm. The fire can be too small for the map.
-- Some sources use the same satellites. We count one satellite pass as one observation.
+- An alert with no mapped fire is not always a false alarm. The map does not show each small fire.
+- A place with no detection is not a place with no fire. Cloud, smoke and a small fire hide it.
+- We cannot measure the true goal yet: the minutes to brigade acknowledgment, and the share of alerts that brigades say were worth action.
 
 ## Data sources
 
@@ -81,7 +85,6 @@ We will not report these two measures until brigades use a live system.
 | [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) | VIIRS and MODIS hotspots | Free key |
 | [GOES-16 and GOES-19](https://registry.opendata.aws/noaa-goes/) | Fire product at intervals of 10 minutes | Open |
 | [INPE Queimadas](https://terrabrasilis.dpi.inpe.br/queimadas/portal/) | Hotspot database for Brazil | Open |
-| [Open-Meteo](https://open-meteo.com/) | Weather and air quality. Not built yet. | Open, non-commercial |
 | [MapBiomas Fogo](https://brasil.mapbiomas.org/) | Burn scar maps: where a fire burned | Open |
 | [MODIS MCD64A1](https://doi.org/10.5067/MODIS/MCD64A1.061) | Burn days: when a fire burned | Open |
 | [IBGE](https://www.ibge.gov.br/) | Border of the Pantanal biome | Open |
@@ -153,8 +156,6 @@ gcloud auth application-default login
 gcloud auth application-default set-quota-project YOUR_PROJECT_ID
 ```
 
-Google blocked the usual command `earthengine authenticate` for one of our accounts. The `gcloud` login worked.
-
 To write to the bucket, the login must also have write access to the bucket.
 There is no other key for the bucket: the Google permission is the lock.
 
@@ -188,10 +189,9 @@ Then run `venv/bin/chispa build` to make the store again.
 
 ## Later work
 
-- An MCP server with a small agent, gold questions and a Flask dashboard. The agent will not say that a burn is safe.
-- Delivery of alerts by SMS, radio or an offline app.
-- Camera detections and community reports.
-- Burn scar maps from Ai2 OlmoEarth on Sentinel-2 imagery, for areas that MapBiomas does not map.
+- A dashboard, an MCP server and a small agent. The agent will not say that a burn is safe.
+- Delivery of alerts by SMS, radio or an offline app. Camera detections and community reports.
+- A growth forecast, only after a test against measured growth.
 - Other regions.
 
 ## Language and licence
