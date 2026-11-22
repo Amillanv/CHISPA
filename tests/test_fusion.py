@@ -61,6 +61,8 @@ def test_detection_between_two_events_merges_them_into_the_older():
     assert [(event.id, event.detections) for event in events] == [(100, 3)]
     assert {event_id for _, event_id, _ in members} == {100}
     assert {alert.event_id for alert in alerts} == {100}
+    # Each of the two first events was LOW. The merged event has LOW one time, then MEDIUM.
+    assert [alert.level for alert in alerts] == ["LOW", "MEDIUM"]
 
 
 def test_one_nominal_detection_is_low():

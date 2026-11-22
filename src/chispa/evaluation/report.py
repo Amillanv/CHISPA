@@ -1,6 +1,7 @@
 """Write the result tables as CSV files and as one summary document.
 
 Code makes each number in the summary. A person does not edit the summary by hand.
+This module also gives the one format of a share and of a percentile in all tables.
 """
 
 import csv
@@ -8,7 +9,12 @@ import hashlib
 from datetime import UTC, datetime
 from pathlib import Path
 
+import numpy as np
+
 from chispa import config
+
+# The start of the marker line in `config.py`. The hash covers the text before it.
+HASH_END = "# === The values above this line can change a result."
 
 LIMITS = """Limits of these results:
 
@@ -23,14 +29,30 @@ LIMITS = """Limits of these results:
 - A fire that burned for many days matches the detections of all those days.
 - GOES has no low-probability detections, and has holes in late September to November 2024.
 - The availability delay of each sensor family is an estimate in `config.py`.
-- Smoke level is not in these tables yet.
 - A fire in January can have detections in December of the year before. We do not count those.
 """
 
 
+def share(part: float, total: float) -> float | None:
+    """Return part divided by total, or no value if the total is zero."""
+    return round(float(part) / float(total), 4) if total else None
+
+
+def percentile(values: np.ndarray, percent: int) -> float | None:
+    """Return a percentile of the values, or no value if there are none."""
+    return round(float(np.percentile(values, percent)), 2) if len(values) else None
+
+
 def config_hash() -> str:
-    """Return a short hash of `config.py`. Two runs with the same hash used the same settings."""
-    return hashlib.sha256(Path(config.__file__).read_bytes()).hexdigest()[:12]
+    """Return a short hash of the first part of `config.py`: the values that can change a result.
+
+    Two runs with the same hash used the same settings. A new path or a new live value
+    is below the marker line, thus it does not change the hash of a frozen evaluation.
+    """
+    text = Path(config.__file__).read_text()
+    if HASH_END not in text:
+        raise RuntimeError("config.py has no marker line. Put the line back, then run again.")
+    return hashlib.sha256(text.split(HASH_END)[0].encode()).hexdigest()[:12]
 
 
 def write_tables(tables: dict[str, list[dict]], year: int, results_dir: Path) -> None:

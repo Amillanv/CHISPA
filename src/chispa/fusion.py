@@ -64,9 +64,27 @@ def fuse(
     final = [_find(parent, number) for number in range(len(parent))]
     events = [_event(first_id + number, state) for number, state in sorted(states.items())]
     alerts = [
-        Alert(first_id + final[n], at, level, fam, passes) for n, at, level, fam, passes in changes
+        Alert(first_id + number, at, level, fam, passes)
+        for number, at, level, fam, passes in _rises(changes, final)
     ]
     return events, alerts, [(d, first_id + final[n], level) for d, n, level in members]
+
+
+def _rises(changes: list[tuple], final: list[int]) -> list[tuple]:
+    """Return the changes that make the level of a final event go up, with the final number.
+
+    A merged event holds the changes of each event that it absorbed. Without this step,
+    its alert has the same level two times. The changes are in `available_at` sequence.
+    The families and the passes of a row are those of the part that gave the new level.
+    """
+    highest: dict[int, int] = {}
+    rises = []
+    for number, at, level, families, passes in changes:
+        event = final[number]
+        if LEVELS.index(level) > highest.get(event, -1):
+            highest[event] = LEVELS.index(level)
+            rises.append((event, at, level, families, passes))
+    return rises
 
 
 def _cells(detection: Detection) -> list[tuple[int, int]]:
