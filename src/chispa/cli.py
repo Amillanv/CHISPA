@@ -14,6 +14,7 @@ from chispa.build import build_store
 from chispa.evaluation import burn, images
 from chispa.evaluation.report import write_summary, write_tables
 from chispa.evaluation.run import evaluate
+from chispa.evaluation.visibility import visibility
 from chispa.fusion import LEVELS, fuse
 from chispa.grid import pantanal_grid
 from chispa.sources import border, burnday, firms, goes, inpe, scars
@@ -32,7 +33,9 @@ def main(arguments: list[str] | None = None) -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("check", help="Do a check of the keys and the logins.")
     fetch = commands.add_parser("fetch", help="Get the raw files of one source for one year.")
-    fetch.add_argument("source", choices=["firms", "goes", "inpe", "scars", "burnday", "border"])
+    fetch.add_argument(
+        "source", choices=["firms", "goes", "goes_mask", "inpe", "scars", "burnday", "border"]
+    )
     fetch.add_argument("--year", type=int, help="Necessary for each source apart from border.")
     fetch.add_argument("--push", action="store_true", help="Also copy new files to the bucket.")
     build = commands.add_parser("build", help="Make the store from the raw files.")
@@ -42,7 +45,8 @@ def main(arguments: list[str] | None = None) -> None:
     evaluation = commands.add_parser("evaluate", help="Compare one fused year with the fires.")
     evaluation.add_argument("--year", type=int, required=True)
     evaluation.add_argument("--test-run", action="store_true", help="Permit the test year.")
-    for name, text in (("burn", "burn check"), ("images", "image check")):
+    checks = (("burn", "burn check"), ("images", "image check"), ("visibility", "visibility table"))
+    for name, text in checks:
         check = commands.add_parser(name, help=f"Make the {text} of one fused year.")
         check.add_argument("--year", type=int, required=True)
     poll = commands.add_parser("poll", help="Do one pass of the live poller.")
@@ -63,6 +67,10 @@ def main(arguments: list[str] | None = None) -> None:
         run_evaluate(chosen.year, chosen.test_run)
     elif chosen.command == "burn":
         run_burn(chosen.year)
+    elif chosen.command == "visibility":
+        table = visibility(chosen.year, config.STORE_PATH, config.RAW_DIR)
+        write_tables({"visibility": table}, chosen.year, config.RESULTS_DIR)
+        write_summary(config.RESULTS_DIR)
     elif chosen.command == "images":
         run_images(chosen.year)
     elif chosen.command == "poll":
@@ -97,6 +105,8 @@ def run_fetch(source: str, year: int | None, push: bool) -> None:
         files = firms.download_year(year, read_setting("FIRMS_API_KEY"), config.RAW_DIR)
     elif source == "inpe":
         files = inpe.download_year(year, config.RAW_DIR)
+    elif source == "goes_mask":
+        files = goes.download_masks(year, config.RAW_DIR)
     elif source == "scars":
         project = read_setting("EE_PROJECT")
         files = scars.download_year(year, project, config.RAW_DIR, pantanal_grid())
