@@ -318,8 +318,76 @@ The tables are:
 - `fire_events`: for each fire size class, into how many events the fusion split a fire, and the completeness.
 - `events`: for each final level, the share of events that match a fire, how many counted fires one event holds, and the purity.
 - `merge_gain`: for each sensor family and fire size class, the fires that only the merge finds, and the isolated fires that the family finds later than the merge.
+- `burn_check`, `burn_rule`, `image_check` and `image_agreement`: the burn check of HIGH events and its check by a person (section 11.10).
 
 Purity and completeness count matches with counted fires. A detection that matches two fires counts two times.
+
+### 11.10 Burn check and image check
+
+The match gives only a lower limit of the precision (section 11.5). The burn check measures a part of the gap:
+it asks a second satellite, Sentinel-2, if the ground at an event burned. The image check lets a person verify it.
+`config.py` has each value. The two commands are `chispa burn --year` and `chispa images --year`.
+
+The burn check:
+
+1. A box is the box of the detections of an event plus a margin.
+2. The burn ratio of a pixel is NBR = (B8A - B12) / (B8A + B12). Healthy plants give a high value. A burn gives a low value.
+3. dNBR is the NBR before minus the NBR after. "Before" is the last clear view of the pixel from a day before the
+   first detection. "After" is the first clear view after the last detection. A view with cloud, shadow or water is not clear.
+4. The background of a box is its median dNBR. We subtract it: plants that dry change all of the box, and a burn changes a part.
+5. A pixel is burned if its dNBR is the chosen step or more, and it is in a patch of the minimum size.
+6. The rule says "burned" if the burned pixels of the box are the chosen area or more.
+7. A box gives no answer if less than the minimum share of it has a clear view before and after.
+
+A dNBR is not only a burn: a wetland that dries, and plants that die in the dry season, also decrease the NBR.
+Thus the rule has two reference groups, and the result of the events has a meaning only adjacent to them:
+
+- Matched: a sample of HIGH events that match a mapped fire. Its burned share says how many burns the rule finds.
+- No fire: boxes with the sizes and the times of unmatched events, at random positions in the biome with no mapped fire
+  of the year and no detection near the time. Its burned share says how frequently the rule says "burned" with no fire.
+- Unmatched: each HIGH event with no match. This is the group that we want to know.
+
+The chosen step and the chosen area come from the development year: the pair with the largest difference between
+the burned share of the matched group and that of the no-fire group. If two pairs are equal, the smaller area.
+Then the test year uses that pair with no change.
+The table `burn_check` of the development year gives the counts for each pair. The chosen pair has a mark.
+The table of a different year has only the chosen pair.
+
+An unmatched event can have a mapped fire in its box: a fire of a different time, or outside the reach of the match.
+Thus the table has one more row: the unmatched events with no mapped fire of the year in their box.
+Compare this row with the no-fire group. The two have the same condition.
+
+The first rule had no background, no water mask and no minimum area. On 2023 it said "burned" for 40 of 99
+no-fire boxes at its highest step. We changed the rule on 2023, before the 2024 run.
+The rule is weak for one event: read only the share of a group, adjacent to the two reference shares.
+
+The table `burn_rule` gives the quality of the chosen rule on the two reference groups: the recall on the matched
+events, the false share on the no-fire boxes, and the precision and the F1 of the two groups together.
+The precision and the F1 are true only for this mix: the two groups have almost the same size. Real events do not.
+Do not compare these values with a published value for burned pixels. Our unit is a box, and our reference is not exact.
+
+The image check:
+
+1. The sample is the start of the unmatched group and of the matched group of the burn check, in the random sequence of that check.
+2. Each event gets a chip number in a new random sequence. The number does not show the group.
+3. Each event gets two pictures of its box (bands B12, B8, B4): the last image with little cloud from before the event,
+   and the first after it. A yellow line shows the box of the detections.
+4. A person writes one answer for each chip in `answers.csv`: `burned`, `not burned` or `cannot tell`.
+5. The person does not open `key.csv`, or the measures of the burn check, before all answers are complete.
+6. The table `image_check` counts the answers. The table `image_agreement` compares each answer with the rule.
+
+Limits:
+
+- The burn check is not independent of the map in its physics: the two read a burn from reflected light.
+  It has a different sensor, smaller pixels and more images.
+- The no-fire boxes can have a burn that no satellite detected and the map does not show. Then their burned share is too high.
+- A box where more than half of the area burned has a high background. Then the rule can miss the burn.
+- The matched fires are larger than the fires that we look for. The rule sees only a burned area of the chosen size or more.
+- Large boxes rarely have a position with no fire. Thus the no-fire group has few large boxes.
+- The picture of the person is one image. The rule uses the clear pixels of all images. The two can differ.
+- One person makes the answers. The two checks have only HIGH events.
+- The files are in `results/{year}/burn_check/` and `results/{year}/image_check/`. Only `answers.csv` is made by hand.
+- The 2024 burn check came after the 2024 run of 2026-11-21. It changed no threshold of the fusion or of the match.
 
 ## 12. Agent and MCP rules
 

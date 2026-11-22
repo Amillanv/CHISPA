@@ -45,9 +45,9 @@ The 2024 result, with satellite sources only, supports the hypothesis only in pa
 - The merge is not earlier for the typical fire. It is earlier for some fires: where GOES was late, a polar-orbit satellite was first.
 - The unmatched share of the merge is between the shares of the single families.
 - A higher confidence level matches a mapped fire more frequently: 80 percent of 1582 HIGH events, and 52 percent of 2914 LOW events.
+- A second satellite examined the HIGH events with no mapped fire. They are between a fire and no fire: Sentinel-2 showed a burn at 94 of 209 such events, at 82 of 97 events with a mapped fire, and at 22 of 98 boxes with no fire. The rule of this check is weak: read the three numbers together.
 
-We also found an error that is easy to make. A simple comparison showed GOES hours before VIIRS.
-That lead came from the large GOES pixel, which reaches the fires adjacent to its fire. With a clear match, the two are equal for the typical fire.
+We also found an error that is easy to make. A simple comparison showed GOES hours before VIIRS. That lead came from the large GOES pixel, which reaches the fires adjacent to its fire. With a clear match, the two are equal for the typical fire.
 [results/SUMMARY.md](results/SUMMARY.md) has each number, adjacent to its limits.
 
 ## The next hypothesis: the first alert
@@ -57,8 +57,7 @@ HIGH needs a second sensor family. On 93 isolated fires of 2024, it came a media
 The hypothesis: data that exists at the first detection can say which first alerts will match a mapped fire.
 It is not measured. We will learn on 2023, tune on 2024 and do the test one time on 2025.
 
-Each other new part gets its hypothesis in the same way, before its result.
-We do not report a value that we did not measure.
+Each other new part gets its hypothesis in the same way, before its result. We do not report a value that we did not measure.
 
 ## Status
 
@@ -66,6 +65,7 @@ We do not report a value that we did not measure.
 - `chispa fuse` groups the detections of one year into events with a confidence level. `chispa evaluate` compares them with the mapped fires.
 - `chispa poll` does one pass of the live poller: it records each new detection with the time of the pass, then updates the store and the events. It needs a FIRMS key.
 - `tools.py` answers three questions for a given time: the alerts near a position, the detail of one event, and the measured quality of the alerts.
+- `chispa burn` asks Sentinel-2 if the ground at each unmatched HIGH event burned. `chispa images` lets a person check a sample. The check by a person is not complete.
 - [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
 - Not built: the parts that the stage table marks, the live delay report, the MCP server, the agent and the dashboard.
 
@@ -88,6 +88,7 @@ We do not report a value that we did not measure.
 | [MapBiomas Fogo](https://brasil.mapbiomas.org/) | Burn scar maps: where a fire burned | Open |
 | [MODIS MCD64A1](https://doi.org/10.5067/MODIS/MCD64A1.061) | Burn days: when a fire burned | Open |
 | [IBGE](https://www.ibge.gov.br/) | Border of the Pantanal biome | Open |
+| [Sentinel-2](https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED) | Images of 10 m to 20 m, for the burn check of events | Open |
 
 Each source owns its data. The public bucket has a file `README.txt` with the terms of each source.
 
@@ -126,9 +127,8 @@ venv/bin/chispa evaluate --year 2023
 ```
 
 The command `build` downloads each raw file that is absent from `data/raw/`. The first run gets approximately 1.8 GB.
+With `--offline` it uses only the local raw files.
 Then it makes `data/chispa.sqlite`. This needs approximately 5.5 GB of memory and 3 minutes.
-
-Use `venv/bin/chispa build --offline` to make the store from the local raw files only.
 
 ## For maintainers: get new raw files
 
