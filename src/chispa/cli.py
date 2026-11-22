@@ -15,12 +15,26 @@ from chispa.evaluation import burn, images
 from chispa.evaluation.growth import step_rows
 from chispa.evaluation.report import write_summary, write_tables
 from chispa.evaluation.run import evaluate
+from chispa.evaluation.severity import severity_tables
 from chispa.evaluation.visibility import visibility
 from chispa.fusion import LEVELS, fuse
-from chispa.grid import pantanal_grid
-from chispa.sources import border, burnday, firms, goes, inpe, passes, scars
+from chispa.grid import layer_grid, pantanal_grid
+from chispa.sources import (
+    border,
+    burnday,
+    firms,
+    goes,
+    inpe,
+    landcover,
+    passes,
+    protected,
+    scars,
+    settlements,
+)
 from chispa.store import open_store, read_detections, replace_fusion
 
+YEAR_SOURCES = ("firms", "goes", "goes_mask", "inpe", "passes", "scars", "burnday", "landcover")
+FIXED_SOURCES = ("border", "protected", "settlements")
 NOT_BUILT = {
     "serve": "Start the dashboard.",
     "mcp": "Start the MCP server.",
@@ -36,9 +50,9 @@ def main(arguments: list[str] | None = None) -> None:
     fetch = commands.add_parser("fetch", help="Get the raw files of one source for one year.")
     fetch.add_argument(
         "source",
-        choices=["firms", "goes", "goes_mask", "inpe", "passes", "scars", "burnday", "border"],
+        choices=[*YEAR_SOURCES, *FIXED_SOURCES],
     )
-    fetch.add_argument("--year", type=int, help="Necessary for each source apart from border.")
+    fetch.add_argument("--year", type=int, help="Necessary for a source that has years.")
     fetch.add_argument("--push", action="store_true", help="Also copy new files to the bucket.")
     build = commands.add_parser("build", help="Make the store from the raw files.")
     build.add_argument("--offline", action="store_true", help="Do not get files from the bucket.")
@@ -48,7 +62,7 @@ def main(arguments: list[str] | None = None) -> None:
     evaluation.add_argument("--year", type=int, required=True)
     evaluation.add_argument("--test-run", action="store_true", help="Permit the test year.")
     checks = {"burn": "burn check", "images": "image check", "visibility": "visibility table"}
-    for name, text in (checks | {"growth": "growth table"}).items():
+    for name, text in (checks | {"growth": "growth table", "severity": "severity tables"}).items():
         check = commands.add_parser(name, help=f"Make the {text} of one fused year.")
         check.add_argument("--year", type=int, required=True)
     poll = commands.add_parser("poll", help="Do one pass of the live poller.")
@@ -69,7 +83,7 @@ def main(arguments: list[str] | None = None) -> None:
         run_evaluate(chosen.year, chosen.test_run)
     elif chosen.command == "burn":
         run_burn(chosen.year)
-    elif chosen.command in ("visibility", "growth"):
+    elif chosen.command in ("visibility", "growth", "severity"):
         run_table(chosen.command, chosen.year)
     elif chosen.command == "images":
         run_images(chosen.year)
@@ -99,12 +113,20 @@ def check() -> None:
 
 def run_fetch(source: str, year: int | None, push: bool) -> None:
     """Download the raw files of one source from its origin. This does not change the store."""
-    if source != "border" and year is None:
+    if source in YEAR_SOURCES and year is None:
         raise SystemExit("Give the year: --year 2024.")
     if source == "firms":
         files = firms.download_year(year, read_setting("FIRMS_API_KEY"), config.RAW_DIR)
     elif source == "inpe":
         files = inpe.download_year(year, config.RAW_DIR)
+    elif source == "landcover":
+        files = landcover.download_year(
+            year, read_setting("EE_PROJECT"), config.RAW_DIR, layer_grid()
+        )
+    elif source == "protected":
+        files = protected.download(read_setting("EE_PROJECT"), config.RAW_DIR, layer_grid())
+    elif source == "settlements":
+        files = settlements.download(read_setting("EE_PROJECT"), config.RAW_DIR, layer_grid())
     elif source == "passes":
         files = passes.download_year(year, config.RAW_DIR)
     elif source == "goes_mask":
@@ -160,13 +182,21 @@ def run_evaluate(year: int, test_run: bool) -> None:
 
 
 def run_table(name: str, year: int) -> None:
-    """Make the visibility table or the growth table of one fused year."""
-    make = {"visibility": visibility, "growth": step_rows}
-    table_name = {"visibility": "visibility", "growth": "growth_steps"}[name]
-    tables = {table_name: make[name](year, config.STORE_PATH, config.RAW_DIR)}
+    """Make the tables of one check of one fused year: visibility, growth or severity."""
+    if name == "severity" and year == config.TEST_YEAR and config.SEVERITY_POWER_STEPS_MW is None:
+        raise SystemExit(
+            f"{year} is the test year. Set the severity steps on {config.DEVELOPMENT_YEAR} first."
+        )
+    arguments = (year, config.STORE_PATH, config.RAW_DIR)
+    if name == "severity":
+        tables = severity_tables(*arguments)
+    elif name == "growth":
+        tables = {"growth_steps": step_rows(*arguments)}
+    else:
+        tables = {"visibility": visibility(*arguments)}
     write_tables(tables, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
-    print(f"{year}: see results/SUMMARY.md, table {table_name}.")
+    print(f"{year}: see results/SUMMARY.md, tables {', '.join(tables)}.")
 
 
 def run_burn(year: int) -> None:

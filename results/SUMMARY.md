@@ -4,7 +4,7 @@ Code makes this file. Do not edit it by hand.
 
 ## 2023 (development year)
 
-### burn_check
+### 2023 burn_check
 
 Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
@@ -59,7 +59,7 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 | HIGH events, matched | 655 | 100 | 99 | 0.4 | 25.0 | 65 | 0.6566 |  |
 | boxes, no fire |  | 100 | 99 | 0.4 | 25.0 | 5 | 0.0505 |  |
 
-### burn_rule
+### 2023 burn_rule
 
 Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
@@ -67,7 +67,7 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 |---|---|---|---|---|---|---|---|
 | 99 | 91 | 0.9192 | 99 | 21 | 0.2121 | 0.8125 | 0.8626 |
 
-### configurations
+### 2023 configurations
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
 
@@ -83,7 +83,7 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | merged, level MEDIUM or higher | 700649 | 98621 | 0.1408 | 969 | 768 | 0.7926 | 0.9893 | 120 | 0.17 | 23.32 | 0.17 | 21.98 |
 | merged, level HIGH | 657438 | 74103 | 0.1127 | 969 | 724 | 0.7472 | 0.9871 | 105 | 0.52 | 48.79 | 2.68 | 48.79 |
 
-### events
+### 2023 events
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
 
@@ -94,7 +94,7 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | HIGH | 1079 | 655 | 0.607 | 470 | 232 | 125 | 0.7383 |
 | all | 5890 | 2050 | 0.348 | 1220 | 790 | 125 | 0.7378 |
 
-### fire_events
+### 2023 fire_events
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
 
@@ -106,7 +106,7 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | 10000 to inf | 9 | 9 | 0 | 9 | 0 | 14.0 | 256 | 0.8786 |
 | all | 969 | 382 | 313 | 786 | 270 | 2.0 | 256 | 0.8641 |
 
-### fire_sizes
+### 2023 fire_sizes
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
 
@@ -149,7 +149,7 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | merged, level HIGH | 1000 to 10000 | 44 | 44 | 1.0 |
 | merged, level HIGH | 10000 to inf | 9 | 9 | 1.0 |
 
-### growth_steps
+### 2023 growth_steps
 
 Configuration `7b93a5ff742a`, run on 2026-11-22.
 
@@ -161,7 +161,7 @@ Configuration `7b93a5ff742a`, run on 2026-11-22.
 | 18 to 24.5 | 570 | 477.91 | 2380.62 | 850.0 | 185 | 0.3246 | 69.0 | 236.22 | 570 |
 | all | 7278 | 344.53 | 1318.89 | 850.0 | 1842 | 0.2531 | 105.39 | 290.44 | 1775 |
 
-### merge_gain
+### 2023 merge_gain
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
 
@@ -188,9 +188,42 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | viirs | 10000 to inf | 9 | 9 | 0 | 0 | 0 | 0 |  |  |
 | viirs | all | 786 | 652 | 134 | 4454 | 110 | 76 | 4.06 | 56.65 |
 
+### 2023 severity
+
+Configuration `add29633057e`, run on 2026-11-22.
+
+| severity | events | events_matched | matched_share | area_ha_median | area_ha_p90 | detected_after | days_after_median | days_after_p90 |
+|---|---|---|---|---|---|---|---|---|
+| 0 to 25 | 3006 | 363 | 0.1208 | 244.56 | 209570.0 | 38 | 1.14 | 3.91 |
+| 25 to 50 | 2552 | 649 | 0.2543 | 1705.99 | 209570.0 | 214 | 1.11 | 7.05 |
+| 50 to 75 | 321 | 198 | 0.6168 | 1911.96 | 209570.0 | 109 | 1.16 | 8.09 |
+| 75 to 100 | 11 | 10 | 0.9091 | 7399.58 | 209583.54 | 8 | 2.19 | 4.23 |
+| all | 5890 | 1220 | 0.2071 | 1134.19 | 209570.0 | 369 | 1.15 | 7.18 |
+
+### 2023 severity_inputs
+
+Configuration `add29633057e`, run on 2026-11-22.
+
+| input | events | events_with_a_value | p50 | p75 | p90 |
+|---|---|---|---|---|---|
+| fire power, MW | 5890 | 5844 | 54.0 | 82.7 | 107.9 |
+| extent, km | 5890 | 3588 | 2.2 | 4.42 | 8.82 |
+| advance, m | 5890 | 143 | 1289.59 | 1978.79 | 2921.57 |
+
+### 2023 severity_rank
+
+Configuration `add29633057e`, run on 2026-11-22.
+
+| measure | events | rank_correlation | events_matched | match_separation | rank_correlation_matched |
+|---|---|---|---|---|---|
+| severity | 5890 | 0.275 | 1220 | 0.692 | 0.1136 |
+| detections | 5890 | 0.2547 | 1220 | 0.688 | -0.167 |
+| max_frp_mw | 5890 | 0.2348 | 1220 | 0.6641 | 0.0972 |
+| extent_km | 5890 | 0.2345 | 1220 | 0.6659 | -0.0137 |
+
 ## 2024 (test year)
 
-### burn_check
+### 2024 burn_check
 
 Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
@@ -201,7 +234,7 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 | HIGH events, matched | 1273 | 100 | 97 | 0.3 | 10.0 | 82 | 0.8454 | yes |
 | boxes, no fire |  | 100 | 98 | 0.3 | 10.0 | 22 | 0.2245 | yes |
 
-### burn_rule
+### 2024 burn_rule
 
 Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
@@ -209,7 +242,7 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 |---|---|---|---|---|---|---|---|
 | 97 | 82 | 0.8454 | 98 | 22 | 0.2245 | 0.7885 | 0.8159 |
 
-### configurations
+### 2024 configurations
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
 
@@ -226,7 +259,7 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | merged, level MEDIUM or higher | 1459439 | 52150 | 0.0357 | 4246 | 2654 | 0.6251 | 0.9724 | 137 | 0.17 | 23.26 | 0.17 | 23.4 |
 | merged, level HIGH | 1423724 | 42735 | 0.03 | 4246 | 2287 | 0.5386 | 0.9591 | 93 | 0.67 | 70.36 | 2.8 | 70.5 |
 
-### events
+### 2024 events
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
 
@@ -237,7 +270,7 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | HIGH | 1582 | 1273 | 0.8047 | 1062 | 379 | 170 | 0.7877 |
 | all | 6260 | 3877 | 0.6193 | 2749 | 1433 | 170 | 0.7853 |
 
-### fire_events
+### 2024 fire_events
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
 
@@ -249,7 +282,7 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | 10000 to inf | 25 | 25 | 0 | 25 | 0 | 24.0 | 191 | 0.6868 |
 | all | 4246 | 609 | 1555 | 2864 | 1104 | 2.0 | 191 | 0.7229 |
 
-### fire_sizes
+### 2024 fire_sizes
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
 
@@ -296,7 +329,7 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | merged, level HIGH | 1000 to 10000 | 102 | 98 | 0.9608 |
 | merged, level HIGH | 10000 to inf | 25 | 25 | 1.0 |
 
-### growth_steps
+### 2024 growth_steps
 
 Configuration `7b93a5ff742a`, run on 2026-11-22.
 
@@ -308,7 +341,7 @@ Configuration `7b93a5ff742a`, run on 2026-11-22.
 | 18 to 24.5 | 910 | 485.17 | 2167.69 | 850.0 | 296 | 0.3253 | 66.75 | 159.39 | 910 |
 | all | 16245 | 328.32 | 1237.44 | 850.0 | 3778 | 0.2326 | 110.35 | 328.93 | 3508 |
 
-### image_agreement
+### 2024 image_agreement
 
 Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
@@ -318,7 +351,7 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 | not burned | 0 | 0 | 0 | 0 |
 | cannot tell | 0 | 0 | 0 | 0 |
 
-### image_check
+### 2024 image_check
 
 Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
@@ -327,7 +360,7 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 | HIGH events, unmatched | 60 | 0 | 0 | 0 | 60 |  |
 | HIGH events, matched | 30 | 0 | 0 | 0 | 30 |  |
 
-### merge_gain
+### 2024 merge_gain
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
 
@@ -354,7 +387,30 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | viirs | 10000 to inf | 25 | 25 | 0 | 0 | 0 | 0 |  |  |
 | viirs | all | 2864 | 1564 | 1300 | 74698 | 101 | 51 | 4.97 | 26.88 |
 
-### visibility
+### 2024 severity
+
+Configuration `add29633057e`, run on 2026-11-22.
+
+| severity | events | events_matched | matched_share | area_ha_median | area_ha_p90 | detected_after | days_after_median | days_after_p90 |
+|---|---|---|---|---|---|---|---|---|
+| 0 to 25 | 3288 | 1080 | 0.3285 | 1964.54 | 181441.58 | 95 | 1.38 | 6.13 |
+| 25 to 50 | 2599 | 1345 | 0.5175 | 3054.29 | 181747.89 | 378 | 1.87 | 6.77 |
+| 50 to 75 | 357 | 309 | 0.8655 | 3493.81 | 181219.45 | 211 | 2.2 | 8.36 |
+| 75 to 100 | 16 | 15 | 0.9375 | 11356.93 | 206694.97 | 13 | 6.23 | 21.4 |
+| all | 6260 | 2749 | 0.4391 | 2544.71 | 181489.92 | 697 | 1.93 | 7.52 |
+
+### 2024 severity_rank
+
+Configuration `add29633057e`, run on 2026-11-22.
+
+| measure | events | rank_correlation | events_matched | match_separation | rank_correlation_matched |
+|---|---|---|---|---|---|
+| severity | 6260 | 0.2684 | 2749 | 0.6613 | 0.0248 |
+| detections | 6260 | 0.2857 | 2749 | 0.6612 | 0.0898 |
+| max_frp_mw | 6260 | 0.1304 | 2749 | 0.5954 | -0.1072 |
+| extent_km | 6260 | 0.2195 | 2749 | 0.6272 | 0.0273 |
+
+### 2024 visibility
 
 Configuration `7b93a5ff742a`, run on 2026-11-22.
 
