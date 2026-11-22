@@ -118,6 +118,57 @@ EVAL_MARGIN_M = 250.0
 # The limits of the fire size classes in hectares.
 EVAL_SIZE_CLASSES_HA = (10.0, 100.0, 1000.0, 10000.0)
 
+# --- Burn check ---
+
+# The burn check asks Sentinel-2 if the ground at an event burned.
+# The seed makes the same samples each time.
+BURN_SEED = 1
+
+# A box of the burn check is the box of the event plus this margin in metres. The margin is
+# the reach of a GOES detection in the match rule: its footprint plus the match margin.
+BURN_MARGIN_M = 1500.0
+
+# The view before an event is not older than this many days before the first detection.
+# The view after an event is not newer than this many days after the last detection.
+BURN_DAYS = 30
+
+# dNBR is the burn ratio before minus the burn ratio after.
+# We count the burned area at each of these steps.
+BURN_DNBR_STEPS = (0.1, 0.2, 0.3, 0.4)
+
+# A burned pixel counts only in a patch of this many hectares or more.
+BURN_PATCH_HA = 1.0
+
+# The rule says "burned" if the burned area of a box is one of these hectares or more.
+BURN_HA_STEPS = (1.0, 10.0, 25.0)
+
+# The dNBR step and the hectares that say "burned". Set them on the development year: the pair with
+# the largest difference between the burned share of matched events and that of boxes with no fire.
+# If two pairs are equal, the pair with the smaller area. Set on 2023 on 2026-11-22: two pairs
+# had the difference 0.7071 (table `burn_check` of 2023).
+BURN_DNBR_MIN: float | None = 0.3
+BURN_HA_MIN: float | None = 10.0
+
+# A box gives an answer only if this share of it, or more, has a clear view before and after.
+BURN_MIN_CLEAR = 0.5
+
+# The number of matched HIGH events, and of boxes with no fire, that give the two reference shares.
+BURN_CONTROL = 100
+
+# --- Image check ---
+
+# The number of HIGH events with no match that a person examines, and the number of HIGH
+# events with a match in the same sample. The person checks the answers of the burn check.
+IMAGE_SAMPLE = 60
+IMAGE_CONTROL = 30
+
+# A picture must come from an image with less cloud than this percentage of its tile.
+IMAGE_MAX_CLOUD = 20.0
+
+# The ground size of one pixel of a picture in metres, and the largest side of a picture in pixels.
+IMAGE_M_PER_PX = 10.0
+IMAGE_MAX_PX = 2048
+
 # === The values above this line can change a result. The configuration hash covers them. ===
 # The values below this line change no number in a result table.
 
@@ -131,6 +182,9 @@ STORE_PATH = DATA_DIR / "chispa.sqlite"
 BUCKET = "chispa_raw"
 
 RESULTS_DIR = Path("results")
+
+# The pictures of the image check. Earth Engine can make them again, thus they are not raw files.
+IMAGE_DIR = DATA_DIR / "images"
 
 # Seconds between two requests, to stay far below the limit of the API.
 FIRMS_PAUSE_S = 1.0
