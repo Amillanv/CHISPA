@@ -28,7 +28,7 @@ All the work follows eight stages. Each stage gives one part of the alert, and e
 | 7. End | The fire stops. | Not built | "No detection", with the visibility | Not decided | Not built |
 | 8. Mapping | Months later, a map shows the burned ground. | MapBiomas and MCD64A1. `fires.py`, `evaluation/` | The track record of the alerts | It is the reference for the other stages. | Built |
 
-- Stages 2 to 6 repeat for each new observation. Visibility is part of each stage: could a sensor examine this place? It is not built.
+- Stages 2 to 6 repeat for each new observation. Visibility is part of each stage: could a sensor examine this place? It is built for GOES and for mapped fires. It is not in the alert.
 - We cannot make stages 1 to 3 quicker. We read each source by its quickest route, at intervals of 5 minutes.
 - Our work is stage 4 and the stages after it: what the alert says, and how we know it.
 

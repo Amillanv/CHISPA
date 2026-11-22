@@ -71,11 +71,17 @@ Stages 2 to 6 repeat for each new observation.
 
 ### 7.2 Visibility
 
-Visibility is not built. It is necessary at each stage: for a fire with no detection, for a place with no alert,
+Visibility is necessary at each stage: for a fire with no detection, for a place with no alert,
 for the earliest possible start and for the end.
 
-- GOES: each scan has a mask with a class for each pixel: examined with no fire, cloud, no background value and others (section 8.10).
-- Polar-orbit sensors: we must know when a satellite passed and if cloud hid the place. This is not checked against a source.
+- GOES: each scan has a mask with a class for each pixel (section 8.12). The classes are in groups:
+  fire, possible fire, no fire, cloud, no background, water, blocked and not processed.
+- "Examined" is the groups no fire, fire and possible fire: the sensor made a decision for the pixel.
+- Recorded: `chispa fetch goes_mask` saves the mask of the Pantanal box for one scan of each hour.
+  Section 11.11 gives the table that uses it.
+- Live: each pass of the poller saves the number of pixels of each group for each scan, in the log `live/goes_mask/`.
+- Polar-orbit sensors: a NASA service gives the time of each pass (section 8.12). We do not read it yet.
+  A pass time does not say if cloud hid a place.
 - An answer from the visibility must name the sensor and the time. "Examined, no fire" from GOES says nothing about a small fire.
 
 ### 7.3 The event record
@@ -319,6 +325,7 @@ The tables are:
 - `events`: for each final level, the share of events that match a fire, how many counted fires one event holds, and the purity.
 - `merge_gain`: for each sensor family and fire size class, the fires that only the merge finds, and the isolated fires that the family finds later than the merge.
 - `burn_check`, `burn_rule`, `image_check` and `image_agreement`: the burn check of HIGH events and its check by a person (section 11.10).
+- `visibility`: how frequently GOES examined the place of a fire (section 11.11).
 
 Purity and completeness count matches with counted fires. A detection that matches two fires counts two times.
 
@@ -388,6 +395,22 @@ Limits:
 - One person makes the answers. The two checks have only HIGH events.
 - The files are in `results/{year}/burn_check/` and `results/{year}/image_check/`. Only `answers.csv` is made by hand.
 - The 2024 burn check came after the 2024 run of 2026-11-21. It changed no threshold of the fusion or of the match.
+
+### 11.11 Visibility of fires
+
+Question: when a counted fire has no detection, could GOES examine its place?
+The hypothesis, written before the first run: GOES examined the place of most such fires in less than half of their scans.
+If this is false, cloud is not the main cause, and the fire was too small or too cool for the sensors.
+
+1. The place of a fire is the GOES pixel that holds most of its burned pixels.
+2. The scans of a fire are the hourly scans in the days when it burned, by the time rule of the match (section 11.4).
+3. For each fire we count its scans in each mask group. Its examined share is its examined scans divided by all its scans.
+4. The table `visibility` has three rows: the counted fires with no detection, with a detection but not from GOES,
+   and with a GOES detection. The command `chispa visibility --year` makes it.
+
+- Limits: one pixel stands for a fire. One scan of each hour stands for six. The table has only GOES.
+  A fire with only a month has scans of two months, and most of them are not at the time of the fire.
+- The 2024 table came after the 2024 run of 2026-11-21. It has no threshold that we set on data.
 
 ## 12. Agent and MCP rules
 
