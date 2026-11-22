@@ -1,6 +1,6 @@
 # Method
 
-This file gives the glossary, the data conventions and the rules for the fusion, the evaluation and the agent.
+This file gives the glossary, the stages, the data conventions and the rules for the fusion, the evaluation and the agent.
 Section 13 gives the assumptions behind the rules, with the reason and the pitfall of each.
 The section numbers are fixed. Other files refer to them.
 
@@ -14,7 +14,12 @@ Use each term only with this meaning.
 | Hotspot | A detection from a satellite thermal sensor. |
 | Source | A provider of detections, for example FIRMS or INPE. |
 | Sensor family | One type of instrument: VIIRS, MODIS, ABI, AVHRR, camera or person. |
+| Stage | One of the eight steps in the life of a fire. `README.md` has the table. Section 7 has the rules. |
 | Event | A group of detections that CHISPA assigns to one fire. |
+| Event record | All that CHISPA knows about one event at an as-of time, stage by stage (section 7.3). |
+| First alert | The alert of an event immediately after its first detection. |
+| Visibility | The answer to: could a sensor examine this place at this time? (section 7.2) |
+| Measured growth | The change of the area of an event between two passes. It is not a forecast. |
 | Alert | The message that CHISPA makes for an event. One event has one alert. |
 | Confidence level | LOW, MEDIUM or HIGH. Section 10.3 gives the rules. |
 | Burn scar | A connected area that MapBiomas Fogo maps as burned in one month. |
@@ -30,16 +35,80 @@ Use each term only with this meaning.
 | Completeness | The share of the matches of a fire that are in its main event. A low value shows that the fusion split a fire. |
 | Footprint | The ground area that one detection can represent, as a radius in metres. |
 | FRP | Fire radiative power, in megawatts. A measure of fire intensity. |
-| AOD | Aerosol optical depth. We use it as the measure of smoke level. |
-| Smoke level | A class of AOD: CLEAR, MODERATE or HEAVY. |
-| Development period | 2023. We set thresholds on this period. |
-| Test period | 2024. We report results on this period. |
+| Development period | 2023. We set rules and train on this period. |
+| Test period | The year that scores a hypothesis one time: 2024 for the merge, 2025 for each later part (section 11.2). |
 | Replay | A run that gives recorded detections to the fusion in time sequence. |
 | As-of time | The time that a replay or a question uses as "now". |
 | Gold question | A question for the agent with a known correct answer. |
 | Brigade | A team that fights fires on the ground. |
 | Acknowledgment | The signal from a brigade that it received an alert. |
 | Burn conditions | The weather-based class for a planned burn: LOW, ELEVATED or EXTREME risk. |
+
+## 7. Stages and the event record
+
+`README.md` has the table of the eight stages: what drives each stage, its part of the alert, its measure and its state.
+This section gives what we can know at each stage, and the rules for the parts that we build on the stages.
+
+### 7.1 What we can know at each stage
+
+1. **Ignition.** No source records it. We know only that it is not after the first `observed_at`.
+   Visibility can give a second limit: the last time that a sensor examined the place and saw no fire.
+   That limit is true only for a fire that the sensor can detect at its size.
+2. **Observation.** A detection says that a pixel had heat at `observed_at`. It does not give the size of the fire.
+   A pixel is much larger than a small fire.
+3. **Publication.** `available_at` is the time when we can use a detection (section 9.2).
+   We cannot make the source quicker. We can only read its quickest route.
+4. **Alert.** The first alert goes out at the first detection. Its level is LOW, or MEDIUM for a high source confidence.
+   Our delay after the publication is not more than the interval of the poller.
+5. **Growth.** We see a fire only at a pass. Measured growth is the change between two passes.
+   A polar-orbit pass gives the position. A GOES pixel is too large for the position.
+6. **Confirmation.** The level goes up only when a new pass sees the event (section 10.3). We cannot make a pass come earlier.
+7. **End.** We do not see the end of a fire. We see "no detection", and that has a meaning only with the visibility.
+   Do not give a cause for the end, such as a brigade or rain, without a record of that cause.
+8. **Mapping.** The map of a year comes in the next year (section 11.3). Thus it is never an input of a live event.
+
+Stages 2 to 6 repeat for each new observation.
+
+### 7.2 Visibility
+
+Visibility is not built. It is necessary at each stage: for a fire with no detection, for a place with no alert,
+for the earliest possible start and for the end.
+
+- GOES: each scan has a mask with a class for each pixel: examined with no fire, cloud, no background value and others (section 8.10).
+- Polar-orbit sensors: we must know when a satellite passed and if cloud hid the place. This is not checked against a source.
+- An answer from the visibility must name the sensor and the time. "Examined, no fire" from GOES says nothing about a small fire.
+
+### 7.3 The event record
+
+The event record is the one object that an alert, a tool and a report read.
+It holds, for one event at an as-of time, what we know at each stage and how we know it.
+
+| Stage | Field today (`tools.py`) | Field not built |
+|---|---|---|
+| Ignition | | The limits of the start time |
+| Observation | `first_observed_at`, `last_observed_at`, `max_frp_mw`, `detections` | The land cover at the event |
+| Publication | `newest_available_at`, `newest_observation_age_h` | |
+| Alert | `level`, `sensor_families` | The probability of a match at the first alert |
+| Growth | | The area at each pass |
+| Confirmation | `alert_changes` | |
+| End | | The visibility after the last detection |
+| Mapping | The track record of the level (`evaluation_summary`) | |
+
+- A field with no value is `None`. Do not fill it with an estimate.
+- Add a field only with its measure: how do we know that the field is correct, and on which data?
+- A fire has no "type" in the record. No source gives a label for a controlled burn.
+
+### 7.4 Rules for a new part
+
+These rules are for each part that we add to a stage, with a trained model or without.
+
+1. Write the hypothesis of the part before its result. Give the baseline: the rule that the part must be better than.
+2. Train on 2023. Tune on 2024, which we know now. Do the test one time on 2025.
+3. The burn scar map can be the label for training. It is never an input at the time of an alert.
+4. The label has the errors of the map (section 11.5). Say this adjacent to each result.
+5. A person must be able to explain the output. Give the inputs that had the largest effect.
+6. A growth forecast is permitted only after a test against measured growth. Publish the test with the forecast.
+7. A negative result is a valid result. Then the rule that exists stays.
 
 ## 9. Data conventions
 
@@ -64,7 +133,7 @@ Each source module returns records with these fields and no others.
 | `sensor_family` | text | `viirs`, `modis`, `abi`, `avhrr`, `camera`, `person`. |
 | `platform` | text | The satellite or device name. |
 | `observed_at` | time | The time of the observation. |
-| `available_at` | time | The time when the source published the detection. |
+| `available_at` | time | The time when CHISPA can use the detection. |
 | `lat`, `lon` | number | The centre of the detection. |
 | `footprint_m` | number | The radius of position uncertainty. |
 | `frp_mw` | number or none | Fire radiative power. |
@@ -72,7 +141,8 @@ Each source module returns records with these fields and no others.
 
 `available_at` is important.
 A satellite observation is not available at the moment of the observation.
-If a source does not give the publication time, use a fixed delay from `config.py` and say so in the results.
+For a recorded detection it is an estimate: `observed_at` plus a fixed delay from `config.py`. Say so in the results.
+For a live detection it is a measurement: the time of the pass of the poller that first saw it.
 
 ### 9.3 Missing values
 
@@ -83,7 +153,7 @@ If a source does not give the publication time, use a fixed delay from `config.p
 
 ### 10.1 Principles
 
-- The fusion is deterministic. It has no random step and no trained model in the first version.
+- The fusion is deterministic. It has no random step and no trained model. Section 7.4 gives the rules for a change.
 - The fusion is causal. At time T it uses only detections with `available_at` at or before T.
 - A person must be able to explain each alert from its detections and the rules.
 
@@ -117,7 +187,7 @@ The first version uses rules, not a model.
 - MEDIUM: a high source confidence, or two or more passes of one sensor family.
 - HIGH: passes from two or more sensor families.
 
-These rules are a first proposal. Tune them only on the development period.
+The first alert of an event goes out at its first detection. A higher level needs a new pass.
 A confidence level is useful only if HIGH alerts match fires more frequently than LOW alerts.
 The evaluation must report the matched share for each level.
 
@@ -146,10 +216,14 @@ This lets the same text go through SMS and voice radio.
 
 - Set all thresholds on 2023.
 - Freeze the configuration. Record its hash.
-- Run the 2024 evaluation one time for each frozen configuration.
-- Record each 2024 run in `results/`, with the configuration hash and the date.
-- If you change a threshold after a 2024 run, the next result must say so.
-- The table `merge_gain` came after the first 2024 run of 2026-11-21. It changed no threshold and no number of the other tables.
+- Run the evaluation of the test period one time for each frozen configuration.
+- Record each run in `results/`, with the configuration hash and the date.
+- If you change a threshold after a run on the test period, the next result must say so.
+
+The test period of the merge hypothesis was 2024. We ran it on 2026-11-21, thus 2024 is not new data now.
+The table `merge_gain` came after that first run. It changed no threshold and no number of the other tables.
+Each later part uses 2024 only to tune, and 2025 as its test period (section 7.4).
+The 2025 data is not in the store.
 
 ### 11.3 Fires
 
@@ -225,10 +299,9 @@ The merged row has value only in comparison with the best single row.
 
 ### 11.8 Smoke level
 
-- Get AOD for the event position and time.
-- Assign CLEAR, MODERATE or HEAVY with the limits in `config.py`.
-- Report each measure by smoke level.
-- AOD comes from a coarse model. It is an estimate of smoke, not a measurement at the fire.
+Not built and not planned. The owner decided on 2026-11-21 to skip it.
+The AOD grid is approximately 44 km (section 8.4): too coarse to say what hid one event.
+Visibility (section 7.2) has this purpose now.
 
 ### 11.9 Result format
 
@@ -267,7 +340,7 @@ The agent must:
 3. Say when the data is old. Give the age of the newest detection.
 4. Say "no detection" and not "no fire". A satellite does not see through thick cloud.
 5. Give intensity as FRP in megawatts, with the sensor name.
-6. Give growth as the change in event radius between two times. Call it "measured growth", not "spread rate forecast".
+6. Give growth only as measured growth. Do not call it a forecast.
 7. Refuse to estimate a value that no tool gives.
 
 ### 12.3 Burn questions
@@ -321,7 +394,7 @@ When a choice changes, change its row in the same step.
 | Choice | Reason | Pitfall |
 |---|---|---|
 | Satellites are the only sources. | We have no recorded camera data or community reports. | The results do not show what the other sensor families add. |
-| `available_at` is `observed_at` plus a fixed delay for each sensor family. | No source gives its publication time. | The delays are estimates. Each result that uses `available_at` depends on them. |
+| For recorded data, `available_at` is `observed_at` plus a fixed delay for each sensor family. | The archive files give no publication time. The live poller measures it (section 8.10). | The delays are estimates. Each result that uses `available_at` depends on them. |
 | The archive files stand for the live files. | The live files of 2023 and 2024 do not exist now (section 8.1). | A live detection can be different or absent. |
 | GOES has only the mask classes 10, 11, 30 and 31, all as "nominal". | FIRMS gives only these classes (section 8.2). | A live system can read the low-probability classes. We cannot measure their effect. |
 | The footprint of GOES and of each INPE sensor is one fixed radius. | The sources give no pixel size for these detections. | A real pixel changes with the view angle. The radius changes the fusion and the match. |
@@ -351,3 +424,12 @@ When a choice changes, change its row in the same step.
 | Delay counts only isolated fires. | Only there each detection belongs to one fire, for each footprint size (section 11.6). | The sample is small and holds a small share of the burned area. Isolated fires can differ from other fires. |
 | A merged row and a single-source row use the same detections. | Then the rows differ only in the selection. | A single-source row is not a separate fusion run of that source. |
 | An unmatched detection is not a false alarm. | Section 11.5 gives the causes. | The unmatched share alone rewards a system that sends few alerts. Read it with fire recall. |
+
+### 13.5 Stages
+
+| Choice | Reason | Pitfall |
+|---|---|---|
+| The first alert goes out at the first detection, before a confirmation. | A second sensor family can come hours or days later. | Approximately half of the LOW events of 2024 matched no mapped fire (`results/SUMMARY.md`). |
+| The burn scar map can train a rule, but it is never an input of an event. | The map comes the next year. A rule that saw the fires of its test gives a result that is too good. | The labels have the errors of the map. |
+| We do not count precision only for large fires. | A detection gives a pixel, not the size of the fire. | The precision stays a lower limit until a check against images (`PLAN.md`). |
+| The end of a fire has no cause in the record. | We have no record of brigades. Rain, water and fuel also stop a fire. | We cannot measure the effect of a brigade. |
