@@ -92,18 +92,24 @@ def _times(now: datetime, published_at: datetime) -> dict:
 
 
 def _poll_goes(live: Path, now: datetime) -> list[dict]:
-    """Read each GOES scan that no pass read before. Append its fire pixels to a log."""
+    """Read each GOES scan that no pass read before. Append its fire pixels to a log,
+    and its mask counts to a second log."""
     done = _done(live, "goes", now)
     results = []
     try:
         new_scans = [scan for scan in goes.list_live(now) if scan[1].isoformat() not in done]
-        for observed_at, published_at, pixels in goes.read_live(new_scans):
+        for observed_at, published_at, pixels, mask_counts in goes.read_live(new_scans):
             rows = [
                 dict(zip(goes.COLUMNS, [observed_at.isoformat(), *pixel], strict=True))
                 | _times(now, published_at)
                 for pixel in pixels
             ]
             _append(live / "goes" / f"{observed_at.date()}.csv", rows)
+            # A scan with no fire pixel gives no row above. This row says what the scan could see.
+            seen = (
+                {"observed_at": observed_at.isoformat()} | mask_counts | _times(now, published_at)
+            )
+            _append(live / "goes_mask" / f"{observed_at.date()}.csv", [seen])
             results.append(_result(now, "goes", observed_at.isoformat(), "ok", len(rows)))
     except requests.RequestException as error:
         results.append(_result(now, "goes", "request", f"failed: {type(error).__name__}", 0))

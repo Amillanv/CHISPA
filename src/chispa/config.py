@@ -169,6 +169,24 @@ IMAGE_MAX_CLOUD = 20.0
 IMAGE_M_PER_PX = 10.0
 IMAGE_MAX_PX = 2048
 
+# --- Measured growth ---
+
+# The advance of a step is this percentile of the distances of its pixels to the older pixels.
+GROWTH_ADVANCE_PERCENT = 90
+
+# A pixel is a new pixel if it is farther than this from each older pixel, in metres. Set it on the
+# development year: the 90th percentile of the advance of the steps with less than GROWTH_SHORT_H
+# hours from the pass before, to the next 50 m. Those steps show the error of the positions.
+# Set on 2023 on 2026-11-22: that percentile was 836.55 m (table `growth_steps` of 2023).
+GROWTH_FLOOR_M = 850.0
+GROWTH_SHORT_H = 2.0
+
+# A step has a speed only if the time from the pass before is this many hours or more.
+GROWTH_SPEED_MIN_H = 6.0
+
+# The limits of the classes of the time between two passes, in hours.
+GROWTH_HOUR_CLASSES = (0.0, 2.0, 6.0, 18.0, 24.5)
+
 # === The values above this line can change a result. The configuration hash covers them. ===
 # The values below this line change no number in a result table.
 

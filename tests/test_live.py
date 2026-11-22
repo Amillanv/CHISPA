@@ -36,7 +36,10 @@ def replace_sources(monkeypatch, firms_rows, scans):
     monkeypatch.setattr("chispa.sources.goes.list_live", lambda now: scans)
     monkeypatch.setattr(
         "chispa.sources.goes.read_live",
-        lambda new: [(start, published, [[-17.5, -57.5, 10, 20.7]]) for _, start, published in new],
+        lambda new: [
+            (start, published, [[-17.5, -57.5, 10, 20.7]], {"no_fire": 90, "cloud": 10})
+            for _, start, published in new
+        ],
     )
     monkeypatch.setattr("chispa.sources.inpe.list_live", lambda now: [])
 
@@ -69,6 +72,9 @@ def test_goes_scan_is_read_one_time(tmp_path, monkeypatch):
     live.poll(tmp_path, "key", NOW)
     again = live.poll(tmp_path, "key", NOW + timedelta(minutes=5))
     log = read(tmp_path / "live" / "goes" / "2026-11-21.csv")
+    seen = read(tmp_path / "live" / "goes_mask" / "2026-11-21.csv")
+    assert [(row["no_fire"], row["cloud"]) for row in seen] == [("90", "10")] * len(seen)
+    assert len(seen) == len({row["observed_at"] for row in log})
     assert [result for result in again if result["source"] == "goes"] == []
     assert len(log) == 1
     assert (log[0]["observed_at"], log[0]["published_at"]) == (
