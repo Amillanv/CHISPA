@@ -26,7 +26,7 @@ All the work follows eight stages. Each stage gives one part of the alert, and e
 | 5. Growth | The fire gets larger. | Not built | The area of the event at each pass | Not decided | Not built |
 | 6. Confirmation | More passes see the event. The level can go up. | `fusion.py` | The change of the level | Matched share of each level, delay to each level | Built. Scored on 2024. |
 | 7. End | The fire stops. | Not built | "No detection", with the visibility | Not decided | Not built |
-| 8. Mapping | Months later, a map shows the burned ground. | MapBiomas and MCD64A1. `fires.py`, `evaluate.py` | The track record of the alerts | It is the reference for the other stages. | Built |
+| 8. Mapping | Months later, a map shows the burned ground. | MapBiomas and MCD64A1. `fires.py`, `evaluation/` | The track record of the alerts | It is the reference for the other stages. | Built |
 
 - Stages 2 to 6 repeat for each new observation. Visibility is part of each stage: could a sensor examine this place? It is not built.
 - We cannot make stages 1 to 3 quicker. We read each source by its quickest route, at intervals of 5 minutes.
