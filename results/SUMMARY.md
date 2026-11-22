@@ -149,6 +149,18 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | merged, level HIGH | 1000 to 10000 | 44 | 44 | 1.0 |
 | merged, level HIGH | 10000 to inf | 9 | 9 | 1.0 |
 
+### growth_steps
+
+Configuration `7b93a5ff742a`, run on 2026-11-22.
+
+| hours_between_passes | steps | advance_m_median | advance_m_p90 | floor_m | steps_with_new_pixels | new_pixel_share | speed_m_h_median | speed_m_h_p90 | steps_after_empty_pass |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 to 2 | 4877 | 302.18 | 836.55 | 850.0 | 879 | 0.1802 |  |  | 126 |
+| 2 to 6 | 0 |  |  | 850.0 | 0 |  |  |  | 0 |
+| 6 to 18 | 1769 | 580.21 | 2033.99 | 850.0 | 743 | 0.42 | 113.05 | 335.36 | 1017 |
+| 18 to 24.5 | 570 | 477.91 | 2380.62 | 850.0 | 185 | 0.3246 | 69.0 | 236.22 | 570 |
+| all | 7278 | 344.53 | 1318.89 | 850.0 | 1842 | 0.2531 | 105.39 | 290.44 | 1775 |
+
 ### merge_gain
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
@@ -283,6 +295,18 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 | merged, level HIGH | 100 to 1000 | 462 | 337 | 0.7294 |
 | merged, level HIGH | 1000 to 10000 | 102 | 98 | 0.9608 |
 | merged, level HIGH | 10000 to inf | 25 | 25 | 1.0 |
+
+### growth_steps
+
+Configuration `7b93a5ff742a`, run on 2026-11-22.
+
+| hours_between_passes | steps | advance_m_median | advance_m_p90 | floor_m | steps_with_new_pixels | new_pixel_share | speed_m_h_median | speed_m_h_p90 | steps_after_empty_pass |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 to 2 | 10697 | 293.23 | 669.06 | 850.0 | 1691 | 0.1581 |  |  | 236 |
+| 2 to 6 | 0 |  |  | 850.0 | 0 |  |  |  | 0 |
+| 6 to 18 | 4546 | 517.42 | 2048.86 | 850.0 | 1736 | 0.3819 | 118.36 | 354.08 | 2270 |
+| 18 to 24.5 | 910 | 485.17 | 2167.69 | 850.0 | 296 | 0.3253 | 66.75 | 159.39 | 910 |
+| all | 16245 | 328.32 | 1237.44 | 850.0 | 3778 | 0.2326 | 110.35 | 328.93 | 3508 |
 
 ### image_agreement
 

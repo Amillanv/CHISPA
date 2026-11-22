@@ -66,6 +66,9 @@ This section gives what we can know at each stage, and the rules for the parts t
 7. **End.** We do not see the end of a fire. We see "no detection", and that has a meaning only with the visibility.
    Do not give a cause for the end, such as a brigade or rain, without a record of that cause.
 8. **Mapping.** The map of a year comes in the next year (section 11.3). Thus it is never an input of a live event.
+   Sentinel-2 can show the burned ground some days after a fire: a new image comes each 5 days (section 8.11).
+   That is too late for an alert. It can give the burned area for the record of a fire, and it can score a forecast.
+   It is not built as a measure of area: the burn check (section 11.10) gives only "burned" or "not burned" for a box.
 
 Stages 2 to 6 repeat for each new observation.
 
@@ -326,6 +329,7 @@ The tables are:
 - `merge_gain`: for each sensor family and fire size class, the fires that only the merge finds, and the isolated fires that the family finds later than the merge.
 - `burn_check`, `burn_rule`, `image_check` and `image_agreement`: the burn check of HIGH events and its check by a person (section 11.10).
 - `visibility`: how frequently GOES examined the place of a fire (section 11.11).
+- `growth_steps`: the advance and the speed of the steps of the events, by the time between passes (section 11.13).
 
 Purity and completeness count matches with counted fires. A detection that matches two fires counts two times.
 
@@ -411,6 +415,67 @@ If this is false, cloud is not the main cause, and the fire was too small or too
 - Limits: one pixel stands for a fire. One scan of each hour stands for six. The table has only GOES.
   A fire with only a month has scans of two months, and most of them are not at the time of the fire.
 - The 2024 table came after the 2024 run of 2026-11-21. It has no threshold that we set on data.
+
+### 11.12 Why growth has no area
+
+We do not give the burned area of an event. A VIIRS detection covers its full pixel, and the fire is in a part of it.
+One pixel is approximately 14 hectares or more: as large as a small fire.
+A test on 2023 made an outline from the pixels of each isolated fire, as the method of FEDS does (section 8.13).
+The area of the outline was some times the area of the mapped fire, and no setting corrected it.
+The code of that test is not in the repository. `PLAN.md` has its numbers.
+
+- A distance has a smaller error than an area: the position of a pixel is wrong by a part of one pixel,
+  and that error does not grow with the fire. Thus section 11.13 gives growth as a distance and a direction.
+- A GOES pixel is too large for the two.
+
+### 11.13 Advance, direction and speed
+
+Growth has no area (section 11.12). It has a distance. `growth.py` makes the steps of an event.
+The command `chispa growth --year` makes the table `growth_steps`.
+
+1. A pass is the VIIRS detections of one event from one satellite at one time (the pass gap of section 10.3).
+2. A step is one pass after the first pass of the event. Its older pixels are the detections of all passes before it.
+3. The distance of a pixel is the distance from its centre to the centre of the nearest older pixel.
+4. The advance of a step is a high percentile of the distances of its pixels (`config.py`). One far pixel does not set it.
+5. A pixel is a new pixel if its distance is more than the floor. A step with no new pixel has "no measured advance", not zero.
+6. The direction of a step is the direction of the mean line from the nearest older pixel to each new pixel, in degrees from north.
+7. The speed of a step is its advance divided by the time from the pass before it, in metres for each hour.
+   A step has a speed only if it has a new pixel, and the time from the pass before is the minimum in `config.py` or more.
+8. An empty pass is a pass of a VIIRS satellite over the event, between two steps, with no detection of the event (section 8.12).
+
+The floor comes from the development year. Two VIIRS satellites pass approximately 50 minutes apart.
+A fire moves little in that time, thus the advance of such a step is mostly the error of the positions.
+The floor is the 90th percentile of the advance of the steps with less than 2 hours from the pass before, to the next 50 m.
+
+The hypothesis, written before the first run: the median advance of the steps with less than 2 hours is less than half
+of the median advance of the steps with 6 to 18 hours. If this is false, the advance is mostly error, and we give no speed.
+
+- The speed is a mean of the time between two passes. A fire that moves for two hours and then stops gives a low speed.
+- The speed has no reference. No source gives the position of a fire front at a known time. It is a defined measure, not a checked one.
+- The fusion joins a new fire near an event to that event. Then the advance is the distance to that fire, not a movement.
+- An empty pass does not say "the fire is out". Cloud can hide the fire. The pass list has no cloud data.
+- A GOES detection gives no step. Its pixel is too large.
+- Only detections in the biome border count, as in the other tables.
+
+The result (table `growth_steps`, 2026-11-22): the hypothesis is false in 2023 and in 2024.
+
+- The median advance of the steps with less than 2 hours was 302 m in 2023 and 293 m in 2024.
+  For the steps with 6 to 18 hours it was 580 m and 517 m: less than two times as much.
+- Thus the advance of a typical step is not larger than the error of the positions. We give no advance and no speed for it.
+- The floor from 2023 is 850 m. In the steps with 6 to 18 hours, 743 of 1769 (2023) and 1736 of 4546 (2024) had a new pixel
+  past the floor. In the steps with less than 2 hours, 879 of 4877 and 1691 of 10 697 had one.
+- For the steps with 6 to 18 hours and a new pixel, the median speed was 113 m and 118 m for each hour.
+  The 90th percentile was 335 m and 354 m. The two years agree.
+- A speed for a step with less than 2 hours has no meaning: the error of the positions, divided by a short time, gives a high value.
+  Thus a step has a speed only with 6 hours or more from the pass before.
+- More than half of the steps with 6 to 18 hours came after an empty pass: a satellite passed and gave no detection of the event.
+
+What a step can say: "new pixels past the floor, this far, in this direction", or "no measured advance".
+The first is true for less than half of the steps. "No measured advance" does not say that the fire did not move.
+The hypothesis is true only in part: the measure has a meaning for the large steps, not for the typical step.
+
+A check against Sentinel-2 images of large fires, over 5 to 10 days, agreed with the advance and the direction.
+It is a study outside the repository (`PLAN.md`), not a result. The speed of one step of 12 hours has no check.
 
 ## 12. Agent and MCP rules
 
