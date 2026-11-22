@@ -96,6 +96,7 @@ def event(score, area_ha, detections=1):
     return {
         "severity": score,
         "area_ha": area_ha,
+        "days_after": score / 10 - 5,
         "detections": detections,
         "max_frp_mw": score * 2 if score > 50 else None,
         "extent_km": score / 10,
@@ -115,9 +116,14 @@ def test_tables_of_the_severity(monkeypatch):
     )
     assert (high["events"], high["events_matched"], high["area_ha_median"]) == (2, 2, 500.0)
     assert everything["events"] == 4
+    # The two matched events of the high class have detections 1 day and 4 days after.
+    assert (high["detected_after"], high["days_after_median"], low["detected_after"]) == (2, 2.5, 0)
     by_name = {row["measure"]: row for row in rank_table(rows)}
     assert by_name["severity"]["rank_correlation"] == 1.0
     assert by_name["detections"]["rank_correlation"] == 0.4
+    # One event has no match, with the lowest severity: each matched event has a larger value.
+    assert by_name["severity"]["match_separation"] == 1.0
+    assert by_name["detections"]["match_separation"] == 0.3333
     power, extent, advance = inputs_table(rows)
     assert (power["events"], power["events_with_a_value"], power["p50"]) == (4, 2, 150.0)
     assert (advance["events_with_a_value"], advance["p50"]) == (0, None)

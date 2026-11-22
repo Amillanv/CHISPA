@@ -59,6 +59,8 @@ It is not measured. We will learn on 2023, tune on 2024 and do the test one time
 
 Each other new part gets its hypothesis in the same way, before its result. We do not report a value that we did not measure.
 
+**What the first day says.** We found this after the run, thus it is a description and not a tested forecast. 24 hours after its first detection, an event with a severity of 50 or more is a fire that continues: in 2024, 324 of 373 such events matched a mapped fire, and 224 of those had later detections, for a median of 2 more days. Below 25, 95 of 1080 matched events had one. The number of detections alone separates the events as well. The severity adds what the fire can reach.
+
 ## Status
 
 - `chispa build` gets the raw files from a public bucket and makes a SQLite store: 4.1 million detections and the mapped fires of 2023 and 2024. `chispa fuse` groups the detections of one year into events with a confidence level. `chispa evaluate` compares them with the mapped fires.
@@ -66,14 +68,13 @@ Each other new part gets its hypothesis in the same way, before its result. We d
 - `tools.py` answers three questions for a given time: the alerts near a position, the detail of one event, and the measured quality of the alerts.
 - `chispa burn` asks Sentinel-2 if the ground at each unmatched HIGH event burned. `chispa images` lets a person check a sample. The check by a person is not complete.
 - `chispa visibility` says how frequently GOES examined the place of each mapped fire. `chispa growth` gives the advance, the direction and the speed of each event between two VIIRS passes.
-- `chispa severity` gives each event one number from 0 to 100, with its facts: fire power, extent, advance, land cover, people and protected land. The number is a heuristic. In 2024 it did not say more about the final burned area than the number of detections.
+- `chispa severity` gives each event one number from 0 to 100, with its facts: fire power, extent, advance, land cover, people and protected land. The number is a heuristic: it shows priorities, and it is not a forecast of the burned area.
 - [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
 - Not built: the parts that the stage table marks, the live delay report, the MCP server, the agent and the dashboard.
 
 ## Limits you must know
 
-- The evaluation uses satellite sources only, in the Brazilian part of the Pantanal.
-- The reference gives the day of a burn, with an uncertainty of some days. Thus we measure delay between sources, not delay from ignition.
+- The evaluation uses satellite sources only, in the Brazilian part of the Pantanal. The reference gives the day of a burn, with an uncertainty of some days. Thus we measure delay between sources, not delay from ignition.
 - Only isolated fires give a delay: a small sample. One event is not always one fire: the results give the purity.
 - An alert with no mapped fire is not always a false alarm. The map does not show each small fire.
 - A place with no detection is not a place with no fire. In 2024, GOES examined the place of a typical mapped fire with no detection in 76 percent of the hourly scans of its months. Thus most such fires were too small or too short for the sensor, not under cloud.
@@ -192,8 +193,7 @@ venv/bin/chispa fetch settlements
 ## Later work
 
 - A dashboard, an MCP server and a small agent. The agent will not say that a burn is safe.
-- Delivery of alerts by SMS, radio or an offline app. Camera detections and community reports.
-- A growth forecast, only after a test against measured growth. Other regions.
+- Delivery of alerts by SMS, radio or an offline app. Camera detections and community reports. A growth forecast, only after a test against measured growth. Other regions.
 
 ## Language and licence
 
