@@ -192,13 +192,13 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 
 Configuration `add29633057e`, run on 2026-11-22.
 
-| severity | events | events_matched | matched_share | area_ha_median | area_ha_p90 |
-|---|---|---|---|---|---|
-| 0 to 25 | 3006 | 363 | 0.1208 | 244.56 | 209570.0 |
-| 25 to 50 | 2552 | 649 | 0.2543 | 1705.99 | 209570.0 |
-| 50 to 75 | 321 | 198 | 0.6168 | 1911.96 | 209570.0 |
-| 75 to 100 | 11 | 10 | 0.9091 | 7399.58 | 209583.54 |
-| all | 5890 | 1220 | 0.2071 | 1134.19 | 209570.0 |
+| severity | events | events_matched | matched_share | area_ha_median | area_ha_p90 | detected_after | days_after_median | days_after_p90 |
+|---|---|---|---|---|---|---|---|---|
+| 0 to 25 | 3006 | 363 | 0.1208 | 244.56 | 209570.0 | 38 | 1.14 | 3.91 |
+| 25 to 50 | 2552 | 649 | 0.2543 | 1705.99 | 209570.0 | 214 | 1.11 | 7.05 |
+| 50 to 75 | 321 | 198 | 0.6168 | 1911.96 | 209570.0 | 109 | 1.16 | 8.09 |
+| 75 to 100 | 11 | 10 | 0.9091 | 7399.58 | 209583.54 | 8 | 2.19 | 4.23 |
+| all | 5890 | 1220 | 0.2071 | 1134.19 | 209570.0 | 369 | 1.15 | 7.18 |
 
 ### severity_inputs
 
@@ -214,12 +214,12 @@ Configuration `add29633057e`, run on 2026-11-22.
 
 Configuration `add29633057e`, run on 2026-11-22.
 
-| measure | events | rank_correlation | events_matched | rank_correlation_matched |
-|---|---|---|---|---|
-| severity | 5890 | 0.275 | 1220 | 0.1136 |
-| detections | 5890 | 0.2547 | 1220 | -0.167 |
-| max_frp_mw | 5890 | 0.2348 | 1220 | 0.0972 |
-| extent_km | 5890 | 0.2345 | 1220 | -0.0137 |
+| measure | events | rank_correlation | events_matched | match_separation | rank_correlation_matched |
+|---|---|---|---|---|---|
+| severity | 5890 | 0.275 | 1220 | 0.692 | 0.1136 |
+| detections | 5890 | 0.2547 | 1220 | 0.688 | -0.167 |
+| max_frp_mw | 5890 | 0.2348 | 1220 | 0.6641 | 0.0972 |
+| extent_km | 5890 | 0.2345 | 1220 | 0.6659 | -0.0137 |
 
 ## 2024 (test year)
 
@@ -391,24 +391,24 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 
 Configuration `add29633057e`, run on 2026-11-22.
 
-| severity | events | events_matched | matched_share | area_ha_median | area_ha_p90 |
-|---|---|---|---|---|---|
-| 0 to 25 | 3288 | 1080 | 0.3285 | 1964.54 | 181441.58 |
-| 25 to 50 | 2599 | 1345 | 0.5175 | 3054.29 | 181747.89 |
-| 50 to 75 | 357 | 309 | 0.8655 | 3493.81 | 181219.45 |
-| 75 to 100 | 16 | 15 | 0.9375 | 11356.93 | 206694.97 |
-| all | 6260 | 2749 | 0.4391 | 2544.71 | 181489.92 |
+| severity | events | events_matched | matched_share | area_ha_median | area_ha_p90 | detected_after | days_after_median | days_after_p90 |
+|---|---|---|---|---|---|---|---|---|
+| 0 to 25 | 3288 | 1080 | 0.3285 | 1964.54 | 181441.58 | 95 | 1.38 | 6.13 |
+| 25 to 50 | 2599 | 1345 | 0.5175 | 3054.29 | 181747.89 | 378 | 1.87 | 6.77 |
+| 50 to 75 | 357 | 309 | 0.8655 | 3493.81 | 181219.45 | 211 | 2.2 | 8.36 |
+| 75 to 100 | 16 | 15 | 0.9375 | 11356.93 | 206694.97 | 13 | 6.23 | 21.4 |
+| all | 6260 | 2749 | 0.4391 | 2544.71 | 181489.92 | 697 | 1.93 | 7.52 |
 
 ### severity_rank
 
 Configuration `add29633057e`, run on 2026-11-22.
 
-| measure | events | rank_correlation | events_matched | rank_correlation_matched |
-|---|---|---|---|---|
-| severity | 6260 | 0.2684 | 2749 | 0.0248 |
-| detections | 6260 | 0.2857 | 2749 | 0.0898 |
-| max_frp_mw | 6260 | 0.1304 | 2749 | -0.1072 |
-| extent_km | 6260 | 0.2195 | 2749 | 0.0273 |
+| measure | events | rank_correlation | events_matched | match_separation | rank_correlation_matched |
+|---|---|---|---|---|---|
+| severity | 6260 | 0.2684 | 2749 | 0.6613 | 0.0248 |
+| detections | 6260 | 0.2857 | 2749 | 0.6612 | 0.0898 |
+| max_frp_mw | 6260 | 0.1304 | 2749 | 0.5954 | -0.1072 |
+| extent_km | 6260 | 0.2195 | 2749 | 0.6272 | 0.0273 |
 
 ### visibility
 

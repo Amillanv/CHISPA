@@ -541,6 +541,13 @@ The result (tables `severity` and `severity_rank`, 2026-11-22): the hypothesis i
 - The severity does separate the events that match a mapped fire. In 2024 the matched share was 1080 of 3288 events with a
   severity below 25, 1345 of 2599 from 25 to 50, 309 of 357 from 50 to 75, and 15 of 16 from 75.
   This was not the hypothesis. It is a property of a confidence, not of a severity (PLAN.md, C4).
+- The number of detections separates these events as well as the severity: the match separation in the table
+  `severity_rank` is 0.6613 for the severity and 0.6612 for the number of detections in 2024, and 0.692 and 0.688 in 2023.
+- The time after the evaluation time. Of the 324 matched events with a severity of 50 or more in 2024, 224 had a detection
+  after the evaluation time: 211 of 309 from 50 to 75, for a median of 2.2 more days, and 13 of 15 from 75, for a median of 6.23.
+  Below 25, 95 of 1080 matched events had one. In 2023: 117 of 208 from 50, and 38 of 363 below 25.
+  Thus a high value at 24 hours says that a fire continues, with one day or more to act. A low value says that it is over.
+  This is a description of two years, found after the first run. It is not a tested forecast.
 - The check was weak in one way: people, land and land cover have no relation to the burned area by design.
   They are the priorities of the owner. Only the fire parts can agree with the outcome.
 

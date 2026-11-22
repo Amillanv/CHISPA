@@ -55,6 +55,9 @@ def event_rows(detections: Fields, areas: dict[int, float], layers: severity.Lay
         event = int(detections["event"][members[0]])
         found["severity"] = severity.score(found)[0]
         found["area_ha"] = areas.get(event, 0.0)
+        # The time from the evaluation time to the last detection of the event, in days.
+        last_s = detections["observed"][members].max()
+        found["days_after"] = float(last_s - available.min() - limit_s) / 86_400
         rows.append(found)
     return rows
 
@@ -78,9 +81,14 @@ def inputs_table(rows: list[dict]) -> list[dict]:
 
 
 def score_table(rows: list[dict]) -> list[dict]:
-    """Return, for each class of the severity, how many events match a fire and how much burned."""
+    """Return, for each class of the severity, how many events match a fire and how much burned.
+
+    `detected_after` counts the matched events with a detection after the evaluation time.
+    `days_after` is the time from the evaluation time to the last detection of those events.
+    """
     scores = np.array([row["severity"] for row in rows])
     areas = np.array([row["area_ha"] for row in rows])
+    days = np.array([row["days_after"] for row in rows])
     limits = config.SEVERITY_SCORE_CLASSES
     classes = [
         (f"{low:g} to {min(high, 100):g}", (scores >= low) & (scores < high))
@@ -97,24 +105,35 @@ def score_table(rows: list[dict]) -> list[dict]:
                 "matched_share": share(matched.sum(), part.sum()),
                 "area_ha_median": percentile(areas[matched], 50),
                 "area_ha_p90": percentile(areas[matched], 90),
+                "detected_after": int((matched & (days > 0)).sum()),
+                "days_after_median": percentile(days[matched & (days > 0)], 50),
+                "days_after_p90": percentile(days[matched & (days > 0)], 90),
             }
         )
     return table
 
 
 def rank_table(rows: list[dict]) -> list[dict]:
-    """Return the rank correlation of the outcome with the severity and with each simple measure."""
+    """Return how well the severity and each simple measure agree with the outcome.
+
+    `match_separation` is the probability that an event with a match has a larger value than
+    an event with no match. 0.5 is no separation.
+    """
     areas = np.array([row["area_ha"] for row in rows])
+    matched = areas > 0
     table = []
     for name in BASELINES:
         values = np.array([row[name] or 0.0 for row in rows], dtype=float)
-        matched = areas > 0
+        ranks = stats.rankdata(values)
+        pairs = matched.sum() * (~matched).sum()
+        higher = ranks[matched].sum() - matched.sum() * (matched.sum() + 1) / 2
         table.append(
             {
                 "measure": name,
                 "events": len(rows),
                 "rank_correlation": round(float(stats.spearmanr(values, areas).statistic), 4),
                 "events_matched": int(matched.sum()),
+                "match_separation": share(higher, pairs),
                 "rank_correlation_matched": round(
                     float(stats.spearmanr(values[matched], areas[matched]).statistic), 4
                 ),

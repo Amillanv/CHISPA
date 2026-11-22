@@ -33,7 +33,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
           BASE_REF: ${{ github.base_ref }}
-          MODEL: ${{ vars.OPENAI_REVIEW_MODEL || 'gpt-4o-mini' }}
+          MODEL: ${{ vars.OPENAI_REVIEW_MODEL || 'gpt-6.2-astra' }}
           # The largest number of characters of the diff and of each document that we send.
           MAX_DIFF: 120000
           MAX_DOC: 60000
@@ -59,9 +59,9 @@ jobs:
             printf '\n[The diff was cut at %s characters.]\n' "$MAX_DIFF" >> diff.txt
           fi
 
-          # The prompt comes from the base branch. Thus a pull request cannot change its own review.
-          git show "origin/$BASE_REF:.github/review-prompt.txt" > prompt.txt 2>/dev/null \
-            || cp .github/review-prompt.txt prompt.txt
+          # The prompt and the program come from the pull request. A pull request from a fork
+          # has no key, thus only a branch of the owner gets a review.
+          cp .github/review-prompt.txt prompt.txt
 
           # Each document is one part of the message, between marks.
           : > context.txt
@@ -76,8 +76,9 @@ jobs:
             cat diff.txt; printf '\n<<<END DIFF>>>\n'; } >> context.txt
 
           jq -n --arg model "$MODEL" --rawfile system prompt.txt --rawfile user context.txt \
-            '{model: $model, messages: [{role: "system", content: $system},
-                                        {role: "user", content: $user}]}' > payload.json
+            '{model: $model, response_format: {type: "json_object"},
+              messages: [{role: "system", content: $system},
+                         {role: "user", content: $user}]}' > payload.json
 
           HTTP_STATUS=$(curl -sS -w "%{http_code}" -o response.json \
             https://api.openai.com/v1/chat/completions \
@@ -93,8 +94,9 @@ jobs:
           {
             printf '### AI review (%s)\n\n' "$MODEL"
             printf 'A model wrote this comment. It read the diff, the rules, the documents and the result summary. '
-            printf 'It cannot run code, read data or open a web page. A person must do a check of each finding.\n\n'
-            jq -r '.choices[0].message.content // "The answer had no text."' response.json
+            printf 'It cannot run code, read data or open a web page. A program deleted each finding with a quote '
+            printf 'that is not in the text. A person must do a check of each finding that stays.\n\n'
+            python3 .github/review.py response.json context.txt
           } > comment.md
 
           # One comment for each pull request: a new push replaces it.
