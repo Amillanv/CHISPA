@@ -256,3 +256,48 @@ Checked 2026-11-22 with live requests to Earth Engine.
 - The 152 pictures of the 2024 image check are 181 MB. They are in `data/images/`, not in the bucket.
 - For the 90 events of the 2024 sample, 69 have a picture before and a picture after. 13 have no picture before, and 15 have no picture after.
 - `UNVERIFIED`: the terms. We believe that Copernicus Sentinel data is free and open with an attribution. Do a check before we publish a picture.
+
+### 8.12 GOES mask and polar-orbit pass times
+
+Checked 2026-11-22 with live requests.
+
+GOES mask:
+
+- Each raw GOES fire file has the variable `Mask`: one class for each pixel. The file gives the name of each of its 45 classes (`flag_meanings`).
+- `sources/goes.py` puts the classes in groups: fire (10, 11, 30, 31), possible fire (12 to 15, 32 to 35), no fire (100), cloud (200 to 245),
+  no background (170), water (150 to 153), blocked (40, 50, 60) and not processed (all others).
+- The Pantanal box is 356 rows by 285 columns of the GOES-16 grid.
+- In the scan of 2024-08-15 15:00 UTC, 100 741 of the 101 460 pixels of this window had the class "no fire". 162 had a fire class, and 557 were water.
+- `chispa fetch goes_mask` reads one scan of each hour and keeps only the mask of the window. One day of January 2024 is approximately 0.2 MB, and takes approximately 25 seconds.
+- The file reader (HDF5) is not safe in threads. Only the downloads can run in threads.
+
+Polar-orbit pass times:
+
+- The NASA Common Metadata Repository (CMR) gives each granule of a product for a box and a time range. No key is necessary.
+  Request: `https://cmr.earthdata.nasa.gov/search/granules.json` with `short_name`, `bounding_box` and `temporal`.
+- A granule has its start time, its end time, a day or night flag and the outline of its swath.
+- The fire products are `VNP14IMG` (SNPP), `VJ114IMG` (NOAA-20), `VJ214IMG` (NOAA-21), `MOD14` (Terra) and `MYD14` (Aqua).
+- For 2024-08-15 and the Pantanal box: 2, 4, 2, 3 and 3 granules. A VIIRS granule has 6 minutes. A MODIS granule has 5 minutes.
+- The start times agree with our detections of that day. Example: SNPP granules start at 05:12 and 17:42, and our SNPP detections are at 05:13 to 05:15 and 17:43 to 17:45.
+- For 2026-11-20 the three VIIRS products gave no granule. `MOD14` and `MYD14` gave granules, some of them two times.
+- The near-real-time products `VJ114IMG_NRT` and `VJ214IMG_NRT` gave granules for 2026-11-21, changed 2 to 6 hours after the pass. `VNP14IMG_NRT` gave none: SNPP has no live data now (section 8.10).
+- A granule says that the satellite passed. It does not say if cloud hid a place. The granule file has a mask for that. It needs an Earthdata login: not checked.
+- `chispa fetch passes` saves the granule list of the three VIIRS products for one year: one request for each product. One year of one product has approximately 1400 granules.
+- We do not read the MODIS granules, and we do not read the cloud of a pass.
+
+### 8.13 NASA FEDS, a method for fire growth
+
+Read 2026-11-22: Chen et al. 2022, "California wildfire spread derived using VIIRS satellite observations and an
+object-based tracking system", Scientific Data. Open copy: Europe PMC, `PMC9151742`. We read parts of the text, not all of it.
+
+- Input: VIIRS active fire pixels of 375 m with nominal or high confidence, at steps of 12 hours.
+- At each step the pixels go into groups by distance. A group joins a fire if it is in the outline of that fire plus a buffer:
+  5 km for a forest fire, 1 km for other fire types. If not, it starts a new fire. Fires that come near merge.
+- The outline of a fire is an alpha shape of all its pixels. The authors compared alpha from 500 m to 10 km with mapped
+  perimeters of California and chose 1 km. A large alpha gave too much area. A small alpha cut a large fire into parts.
+- A fire stays active if it had a pixel in the last 5 days.
+- The fire type comes from the main land cover in the outline. The authors also record a fuel moisture value,
+  because prescribed fires had wetter fuel on average than wildfires.
+- The active fire line comes from the outline and the new pixels of the step.
+- Against the mapped perimeters, precision, recall, overlap and F1 for each fire were between 0.71 and 0.93.
+- We use the ideas, not the code: the outline from all pixels with a set distance, and the new pixels as the active part.

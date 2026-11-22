@@ -5,6 +5,10 @@ It also reads the live GOES-19 files for the poller.
 A raw file holds the full disk. We keep only the fire pixels in the Pantanal box,
 with the same mask classes that FIRMS keeps, and save them as one CSV file for each day.
 We do not keep the raw files: the gap is approximately 11 GB.
+
+Each raw file also has a mask: one class for each pixel, with or without a fire.
+The mask says if the sensor could examine a place. We save the mask of the box for one scan
+of each hour. Thus "no detection" can become "examined, no fire" or "not examined".
 """
 
 import csv
@@ -16,6 +20,8 @@ from pathlib import Path
 import netCDF4
 import numpy as np
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 
 from chispa import config
 from chispa.models import Detection
@@ -24,12 +30,72 @@ BUCKET = "https://noaa-goes16.s3.amazonaws.com"
 SCAN_START = re.compile(r"<Key>(ABI-L2-FDCF/[^<]*_s(\d{4})(\d{3})(\d{2})(\d{2})[^<]*\.nc)</Key>")
 COLUMNS = ["observed_at", "lat", "lon", "mask", "frp_mw"]
 
+# The part of the GOES-16 grid that holds the Pantanal box: rows, then columns.
+# `find_window` gave it for a file of 2024-08-15. The grid of one satellite does not change.
+MASK_WINDOW = (slice(3542, 3898), slice(3481, 3766))
+
 # GOES-19 replaced GOES-16 in 2025. Its bucket gives the time when each file arrived.
 LIVE_BUCKET = "https://noaa-goes19.s3.amazonaws.com"
 LISTED = re.compile(
     r"<Key>(ABI-L2-FDCF/[^<]*_s(\d{4})(\d{3})(\d{2})(\d{2})[^<]*\.nc)</Key>"
     r"<LastModified>([^<]*)</LastModified>"
 )
+
+
+# The mask classes in groups. The names of the classes are in each raw file (`flag_meanings`).
+# A class that is in no group is an error of the input or of the processing: "not_processed".
+MASK_GROUPS = {
+    "fire": (10, 11, 30, 31),
+    "possible_fire": (12, 13, 14, 15, 32, 33, 34, 35),  # FIRMS does not give these classes.
+    "no_fire": (100,),  # The sensor examined the pixel and found no fire.
+    "cloud": (200, 201, 205, 210, 215, 220, 225, 230, 240, 245),
+    "no_background": (170,),  # No clear pixels near it to compare with.
+    "water": (150, 151, 152, 153),
+    "blocked": (40, 50, 60),  # Off the Earth, a view angle too large, or sun glint.
+}
+
+
+def mask_groups(mask: np.ndarray) -> np.ndarray:
+    """Return the group name of each mask class in an array."""
+    names = np.full(256, "not_processed", dtype="U13")
+    for name, classes in MASK_GROUPS.items():
+        names[list(classes)] = name
+    return names[mask]
+
+
+def download_masks(year: int, raw_dir: Path) -> list[Path]:
+    """Save the mask of the Pantanal box for one scan of each hour, as one file for each day.
+
+    A file holds the scan times and one mask for each time. `grid.npz` holds the position of
+    each pixel. The grid of one satellite does not change.
+    """
+    folder = raw_dir / "goes_mask" / str(year)
+    folder.mkdir(parents=True, exist_ok=True)
+    paths, day = [], date(year, 1, 1)
+    while day.year == year:
+        path = folder / f"{day}.npz"
+        if not path.exists():
+            hourly = {start.hour: (key, start) for key, start in reversed(_list_scans(day))}
+            scans = [hourly[hour] for hour in sorted(hourly)]  # The first scan of each hour.
+            # The file reader is not safe in threads. Only the downloads run in threads.
+            with ThreadPoolExecutor(max_workers=24) as pool:
+                contents = pool.map(lambda scan: _get(f"{BUCKET}/{scan[0]}").content, scans)
+                masks = [_read_mask(content, folder.parent) for content in contents]
+            times = np.array([start.isoformat() for _, start in scans])
+            np.savez_compressed(path, times=times, mask=np.array(masks, dtype=np.uint8))
+        paths.append(path)
+        day += timedelta(days=1)
+    return paths
+
+
+def _read_mask(content: bytes, folder: Path) -> np.ndarray:
+    with netCDF4.Dataset("scan.nc", memory=content) as dataset:
+        rows, columns = MASK_WINDOW
+        if not (folder / "grid.npz").exists():
+            x, y = np.meshgrid(dataset["x"][columns].filled(), dataset["y"][rows].filled())
+            lat, lon = to_lat_lon(x, y, dataset["goes_imager_projection"])
+            np.savez_compressed(folder / "grid.npz", lat=lat, lon=lon)
+        return dataset["Mask"][rows, columns].filled(0).astype(np.uint8)
 
 
 def download_gap(raw_dir: Path) -> list[Path]:
@@ -100,17 +166,33 @@ def list_live(now: datetime) -> list[tuple[str, datetime, datetime]]:
 
 
 def read_live(scans: list[tuple[str, datetime, datetime]]):
-    """Give (scan start time, publication time, fire pixels) for each scan."""
+    """Give (scan start time, publication time, fire pixels, mask counts) for each scan.
+
+    The mask counts say how many pixels of the Pantanal box each mask group has.
+    """
     window = None
     for key, observed_at, published_at in scans:
         content = _get(f"{LIVE_BUCKET}/{key}").content
         with netCDF4.Dataset("scan.nc", memory=content) as dataset:
             window = window or find_window(dataset)
-            yield observed_at, published_at, read_pixels(dataset, window)
+            counts = count_mask(dataset, window)
+            yield observed_at, published_at, read_pixels(dataset, window), counts
+
+
+def count_mask(dataset: netCDF4.Dataset, window: tuple[slice, slice]) -> dict[str, int]:
+    """Return the number of pixels of the Pantanal box in each mask group."""
+    rows, columns = window
+    x, y = np.meshgrid(dataset["x"][columns].filled(), dataset["y"][rows].filled())
+    lat, lon = to_lat_lon(x, y, dataset["goes_imager_projection"])
+    groups = mask_groups(dataset["Mask"][rows, columns].filled(0))[_in_box(lat, lon)]
+    return {name: int((groups == name).sum()) for name in (*MASK_GROUPS, "not_processed")}
 
 
 def _get(url: str) -> requests.Response:
-    answer = requests.get(url, timeout=180)
+    """Get one URL. A connection that drops is tried again: a year of scans is many requests."""
+    with requests.Session() as session:
+        session.mount("https://", HTTPAdapter(max_retries=Retry(total=5, backoff_factor=2)))
+        answer = session.get(url, timeout=180)
     answer.raise_for_status()
     return answer
 
