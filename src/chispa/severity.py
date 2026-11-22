@@ -68,9 +68,9 @@ def facts(
     newest step, or None for no measured advance.
     """
     rows, cols = layers.grid.rows_cols(lat, lon)
-    rows = np.clip(rows, 0, layers.grid.height - 1)
-    cols = np.clip(cols, 0, layers.grid.width - 1)
-    groups, counts = np.unique(cover_groups(layers.cover[rows, cols]), return_counts=True)
+    classes = layers.cover[rows, cols]
+    # A cell with the class 0 has no land cover: it is not in the map. It does not count.
+    groups, counts = np.unique(cover_groups(classes[classes > 0]), return_counts=True)
     north_km = (lat.max() - lat.min()) * 110.574
     east_km = (lon.max() - lon.min()) * 111.32 * float(np.cos(np.deg2rad(lat.mean())))
     found = {
@@ -78,8 +78,8 @@ def facts(
         "max_frp_mw": None if np.isnan(frp_mw).all() else float(np.nanmax(frp_mw)),
         "extent_km": float(max(north_km, east_km)),
         "advance_m": advance_m,
-        "cover": str(groups[counts.argmax()]),
-        "cover_share": float(counts.max() / counts.sum()),
+        "cover": str(groups[counts.argmax()]) if len(groups) else None,
+        "cover_share": float(counts.max() / counts.sum()) if len(groups) else None,
         "people_near": float(layers.people_near[rows, cols].max()),
     }
     for kind, distance in layers.distance_km.items():
@@ -114,7 +114,7 @@ def score(found: dict) -> tuple[float, dict[str, float]]:
         "advance": step_points(
             found["advance_m"], config.SEVERITY_ADVANCE_STEPS_M, config.SEVERITY_ADVANCE_POINTS
         ),
-        "cover": float(config.SEVERITY_COVER_POINTS[found["cover"]]),
+        "cover": float(config.SEVERITY_COVER_POINTS.get(found["cover"], 0)),
         "people": step_points(
             found["people_near"], config.SEVERITY_PEOPLE_STEPS, config.SEVERITY_PEOPLE_POINTS
         ),
