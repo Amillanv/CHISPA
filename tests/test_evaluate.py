@@ -2,9 +2,10 @@
 
 import numpy as np
 
-from chispa.evaluate import event_table, gain_table, measure, split_table
+from chispa.evaluation.events import event_table, split_table
+from chispa.evaluation.match import first_times, isolated, match
+from chispa.evaluation.recall import gain_table, measure
 from chispa.grid import Grid
-from chispa.match import first_times, isolated, match
 
 # A grid of 10 x 10 pixels of 0.001 degree (approximately 110 m) at the equator.
 GRID = Grid(west=0.0, north=0.01, pixel_deg=0.001, width=10, height=10)
@@ -171,3 +172,16 @@ def test_merge_gain_counts_fires_that_a_family_does_not_find_or_finds_later(monk
     assert (goes["fires_gained"], goes["gained_area_ha"], goes["fires_later"]) == (1, 300, 0)
     assert (viirs["fires_gained"], viirs["delay_fires"], viirs["fires_later"]) == (0, 2, 1)
     assert viirs["later_h_median"] == 3.0  # VIIRS is 3 hours after GOES for fire 1
+
+
+def test_configuration_hash_covers_only_the_values_before_the_marker(monkeypatch, tmp_path):
+    from chispa.evaluation import report
+
+    path = tmp_path / "config.py"
+    monkeypatch.setattr("chispa.config.__file__", str(path))
+    path.write_text(f"LIMIT = 1\n{report.HASH_END}\nPATH = 'a'\n")
+    first = report.config_hash()
+    path.write_text(f"LIMIT = 1\n{report.HASH_END}\nPATH = 'b'\n")
+    assert report.config_hash() == first
+    path.write_text(f"LIMIT = 2\n{report.HASH_END}\nPATH = 'b'\n")
+    assert report.config_hash() != first
