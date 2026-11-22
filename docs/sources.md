@@ -282,4 +282,22 @@ Polar-orbit pass times:
 - For 2026-11-20 the three VIIRS products gave no granule. `MOD14` and `MYD14` gave granules, some of them two times.
 - The near-real-time products `VJ114IMG_NRT` and `VJ214IMG_NRT` gave granules for 2026-11-21, changed 2 to 6 hours after the pass. `VNP14IMG_NRT` gave none: SNPP has no live data now (section 8.10).
 - A granule says that the satellite passed. It does not say if cloud hid a place. The granule file has a mask for that. It needs an Earthdata login: not checked.
-- Not built: we do not read the pass times yet.
+- `chispa fetch passes` saves the granule list of the three VIIRS products for one year: one request for each product. One year of one product has approximately 1400 granules.
+- We do not read the MODIS granules, and we do not read the cloud of a pass.
+
+### 8.13 NASA FEDS, a method for fire growth
+
+Read 2026-11-22: Chen et al. 2022, "California wildfire spread derived using VIIRS satellite observations and an
+object-based tracking system", Scientific Data. Open copy: Europe PMC, `PMC9151742`. We read parts of the text, not all of it.
+
+- Input: VIIRS active fire pixels of 375 m with nominal or high confidence, at steps of 12 hours.
+- At each step the pixels go into groups by distance. A group joins a fire if it is in the outline of that fire plus a buffer:
+  5 km for a forest fire, 1 km for other fire types. If not, it starts a new fire. Fires that come near merge.
+- The outline of a fire is an alpha shape of all its pixels. The authors compared alpha from 500 m to 10 km with mapped
+  perimeters of California and chose 1 km. A large alpha gave too much area. A small alpha cut a large fire into parts.
+- A fire stays active if it had a pixel in the last 5 days.
+- The fire type comes from the main land cover in the outline. The authors also record a fuel moisture value,
+  because prescribed fires had wetter fuel on average than wildfires.
+- The active fire line comes from the outline and the new pixels of the step.
+- Against the mapped perimeters, precision, recall, overlap and F1 for each fire were between 0.71 and 0.93.
+- We use the ideas, not the code: the outline from all pixels with a set distance, and the new pixels as the active part.
