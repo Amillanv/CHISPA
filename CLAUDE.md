@@ -6,7 +6,7 @@ The detail is in `docs/`. Read the applicable file before you work on its subjec
 | Subject | File |
 |---|---|
 | Checked facts and rules for each data source (section 8) | `docs/sources.md` |
-| Glossary, data conventions, fusion, evaluation, agent, assumptions (sections 6, 9 to 13) | `docs/method.md` |
+| Glossary, stages, data conventions, fusion, evaluation, agent, assumptions (sections 6, 7, 9 to 13) | `docs/method.md` |
 | ASD-STE100 writing rules and word list (section 5) | `docs/language.md` |
 | Build plan, open decisions and progress | `PLAN.md` |
 
@@ -16,16 +16,20 @@ If a rule and a request are in conflict, tell the owner before you continue.
 
 CHISPA merges fire detections from different sources into one alert for each fire.
 Each alert has a confidence level.
-CHISPA then measures how good the alerts are against mapped burn scars.
+CHISPA then measures how good the alerts are against mapped fires.
+All the work follows the eight stages of a fire in `README.md`. Each part of an alert has its stage and its measure.
 
-- The first region is the Brazilian Pantanal. We tune on 2023 and score on 2024.
+- The first region is the Brazilian Pantanal. We set rules on 2023. 2024 scored the merge. 2025 scores each later part.
 - The evaluation is the primary product. The agent and the dashboard show it. They do not replace it.
 - The owner must be able to understand each part. A part that the owner cannot understand is a defect.
 
 ## Hypothesis
 
-A merged alert finds the same burn scars earlier than one source alone.
-It does this without a larger share of alerts that have no mapped scar.
+A merged alert finds the same mapped fires earlier than one source alone.
+It does this without a larger share of alerts that have no mapped fire.
+The 2024 result supports this only in part. `README.md` gives the result.
+
+Each new part gets its own hypothesis before its result. `docs/method.md` section 7.4 gives the rules.
 A negative result is a valid result. Publish it the same way as a positive result.
 
 We can calculate fire recall, relative delay and unmatched alert share from recorded data.
@@ -48,9 +52,12 @@ These rules have priority over all other rules.
 
 ## Scope
 
-- Now: recorded satellite detections, fusion, evaluation, live operation, MCP server, agent, gold questions, dashboard.
-- Later: delivery by SMS or radio, cameras, community reports, OlmoEarth, other regions.
-- Never: a fire spread forecast, a permission to burn, a replacement for official alert systems.
+- Now: recorded satellite detections, fusion, evaluation, live operation, and the parts of the stages: visibility,
+  the content of the alert, measured growth and the confidence of the first alert.
+- Parked: the tools, the MCP server, the agent, the gold questions and the dashboard. Do not change them without the owner.
+- Later: delivery by SMS or radio, cameras, community reports, other regions, and a growth forecast.
+  A growth forecast needs a published test against measured growth.
+- Never: a permission to burn, a replacement for official alert systems.
 - The first evaluation uses satellite sources only. Say this in each result.
 
 ## Language

@@ -184,26 +184,6 @@ Checked 2026-11-20 with a live request.
 - The terms of IBGE for a public copy are `UNVERIFIED`. The owner decided on 2026-11-20 to put the border file in the bucket with attribution.
 - The citation in the bucket file is from memory. `UNVERIFIED`
 
-### 8.10 Live products
-
-Checked 2026-11-21 at 20:13 UTC with live requests. The command `chispa poll` reads raw GOES-19, the three FIRMS products and the INPE files of 10 minutes.
-
-- FIRMS has the near-real-time products `VIIRS_NOAA20_NRT`, `VIIRS_NOAA21_NRT`, `MODIS_NRT` and `GOES_NRT` to the present day.
-- `VIIRS_SNPP_NRT` stops on 2026-11-02. Suomi NPP is not a live source.
-- In `GOES_NRT`, the `satellite` field now has `G19`, `G19FRP`, `Met12` and `Met10`. GOES-19 replaced GOES-16.
-- The near-real-time rows have the same fields as the archive rows, and no publication time.
-- The newest row of each FIRMS product for the Pantanal box was 3 to 15 hours old. This says little: it depends on the passes and on the fires of that day.
-- Raw GOES-19 files: bucket `noaa-goes19`, same prefix as GOES-16. The bucket `noaa-goes16` has no new files.
-- For 12 of 12 scans in two hours, the raw GOES-19 file was in the bucket 10 minutes after the start of its scan. The bucket gives this time for each file.
-- INPE has one CSV file for each 10 minutes in `focos/csv/10min/`. The file of 20:10 UTC was on the server at 20:10 UTC.
-- An INPE file of 10 minutes has only the fields `lat`, `lon`, `satelite` and `data` (the observation time, UTC). It has no FRP. It is for all of South America.
-- In 40 files, the satellites were NOAA-21, NOAA-20, GOES-19, AQUA, TERRA and MSG-03. The server keeps approximately 4 days of files.
-- The answer to a file request gives the publication time (`Last-Modified`). One sample: INPE published a NOAA-21 pass of 16:56 UTC at 20:20 UTC.
-- Thus two sources give a publication time that we can measure: raw GOES and the INPE files of 10 minutes. FIRMS gives none: we must record when we first see a row.
-- A raw GOES-19 file is approximately 2.1 MB. One day of scans is approximately 300 MB. The poller reads the files and does not keep them.
-- In 21 scans from 17:00 to 20:20 UTC on 2026-11-21, the Pantanal box had no fire pixel of the four classes.
-- In the scan of 20:20, the mask had the class "processed, no fire" for only 3 percent of the pixels near the box. 43 percent were cloud, and 51 percent had no background value. Thus "no detection" was not "no fire".
-
 ### 8.9 Burn day products
 
 Checked 2026-11-20 with live requests, and against the user guides and Giglio et al. 2018 and 2025.
@@ -240,3 +220,23 @@ Our comparison in the Pantanal biome, 2023, on a grid of 0.004 degrees:
 - The two products agree on the burn day to 1 day for 48 percent of cells, to 3 days for 77 percent and to 7 days for 95 percent.
 - MapBiomas gives the same month as the burn day for 37 percent of the area, one month later for 60 percent, two months later for 1.5 percent. It almost never gives an earlier month. The two products give the same numbers.
 - Thus the month margin of the evaluation must be on one side: the detection is in the scar month or the month before.
+
+### 8.10 Live products
+
+Checked 2026-11-21 at 20:13 UTC with live requests. The command `chispa poll` reads raw GOES-19, the three FIRMS products and the INPE files of 10 minutes.
+
+- FIRMS has the near-real-time products `VIIRS_NOAA20_NRT`, `VIIRS_NOAA21_NRT`, `MODIS_NRT` and `GOES_NRT` to the present day.
+- `VIIRS_SNPP_NRT` stops on 2026-11-02. Suomi NPP is not a live source.
+- In `GOES_NRT`, the `satellite` field now has `G19`, `G19FRP`, `Met12` and `Met10`. GOES-19 replaced GOES-16.
+- The near-real-time rows have the same fields as the archive rows, and no publication time.
+- The newest row of each FIRMS product for the Pantanal box was 3 to 15 hours old. This says little: it depends on the passes and on the fires of that day.
+- Raw GOES-19 files: bucket `noaa-goes19`, same prefix as GOES-16. The bucket `noaa-goes16` has no new files.
+- For 12 of 12 scans in two hours, the raw GOES-19 file was in the bucket 10 minutes after the start of its scan. The bucket gives this time for each file.
+- INPE has one CSV file for each 10 minutes in `focos/csv/10min/`. The file of 20:10 UTC was on the server at 20:10 UTC.
+- An INPE file of 10 minutes has only the fields `lat`, `lon`, `satelite` and `data` (the observation time, UTC). It has no FRP. It is for all of South America.
+- In 40 files, the satellites were NOAA-21, NOAA-20, GOES-19, AQUA, TERRA and MSG-03. The server keeps approximately 4 days of files.
+- The answer to a file request gives the publication time (`Last-Modified`). One sample: INPE published a NOAA-21 pass of 16:56 UTC at 20:20 UTC.
+- Thus two sources give a publication time that we can measure: raw GOES and the INPE files of 10 minutes. FIRMS gives none: we must record when we first see a row.
+- A raw GOES-19 file is approximately 2.1 MB. One day of scans is approximately 300 MB. The poller reads the files and does not keep them.
+- In 21 scans from 17:00 to 20:20 UTC on 2026-11-21, the Pantanal box had no fire pixel of the four classes.
+- In the scan of 20:20, the mask had the class "processed, no fire" for only 3 percent of the pixels near the box. 43 percent were cloud, and 51 percent had no background value. Thus "no detection" was not "no fire".
