@@ -115,7 +115,7 @@ def _poll_goes(live: Path, now: datetime) -> list[dict]:
                 {"observed_at": observed_at.isoformat()} | mask_counts | _times(now, published_at)
             )
             _append(live / "goes_mask" / f"{observed_at.date()}.csv", [seen])
-            _add_mask(live / "goes_mask" / str(observed_at.year), observed_at, mask)
+            _add_mask(live / "goes_mask" / str(observed_at.year), observed_at, now, mask)
             results.append(_result(now, "goes", observed_at.isoformat(), "ok", len(rows)))
     except requests.RequestException as error:
         results.append(_result(now, "goes", "request", f"failed: {type(error).__name__}", 0))
@@ -139,22 +139,24 @@ def _poll_inpe(live: Path, now: datetime) -> list[dict]:
     return results
 
 
-def _add_mask(folder: Path, observed_at: datetime, mask: np.ndarray) -> None:
-    """Add the mask of one scan to the mask file of its day.
+def _add_mask(folder: Path, observed_at: datetime, seen_at: datetime, mask: np.ndarray) -> None:
+    """Add the mask of one scan to the mask file of its day, with the time when we first had it.
 
     The file has the form of the recorded masks. Thus the event record reads the two in one way:
     for a place, it can say if GOES examined it, or if cloud hid it.
     """
     path = folder / f"{observed_at.date()}.npz"
-    times, masks = np.array([], dtype="U25"), np.empty((0, *mask.shape), dtype=np.uint8)
+    times, seen = np.array([], dtype="U25"), np.array([], dtype="U25")
+    masks = np.empty((0, *mask.shape), dtype=np.uint8)
     if path.exists():
         day = np.load(path)
-        times, masks = day["times"], day["mask"]
+        times, seen, masks = day["times"], day["seen"], day["mask"]
     folder.mkdir(parents=True, exist_ok=True)
     part = path.with_suffix(".part.npz")  # A pass that stops in the middle does not break the file.
     np.savez_compressed(
         part,
         times=np.append(times, observed_at.isoformat()),
+        seen=np.append(seen, seen_at.isoformat(timespec="seconds")),
         mask=np.concatenate([masks, mask[None]]),
     )
     part.replace(path)

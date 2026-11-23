@@ -52,7 +52,7 @@ All the work follows eight stages. Each stage gives one part of the alert, and e
 
 ## Status
 
-- `chispa build` gets the raw files from a public bucket and makes a SQLite store: 4.1 million detections and the mapped fires of 2023 and 2024. `chispa fuse` groups the detections of one year into events with a confidence level. `chispa evaluate` compares them with the mapped fires.
+- `chispa build` gets the raw files from a public bucket and makes a SQLite store. The bucket has the raw files of 2023 and 2024: 4.1 million detections and their mapped fires. The files of 2025 and 2026 are not in the bucket: `chispa fetch` gets them. `chispa fuse` groups the detections of one year into events with a confidence level. `chispa evaluate` compares them with the mapped fires.
 - `chispa poll` does one pass of the live poller: it records each new detection with the time of the pass, then updates the store and the events. It needs a FIRMS key.
 - `tools.py` answers three questions for a given time: the alerts near a position, the record of one event, and the measured quality of the alerts. The event record has the level, the rank of the confidence, the severity with its facts, the newest growth step and what GOES examined, for the event as it was at that time.
 - `chispa burn` asks Sentinel-2 if the ground at each unmatched HIGH event burned. `chispa images` lets a person check a sample. The check by a person is not complete.

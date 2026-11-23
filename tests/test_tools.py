@@ -84,18 +84,53 @@ def test_event_record_says_what_it_cannot_give(store):
     assert "chispa fetch" in found["notes"][0]
 
 
-def test_event_record_reads_the_live_mask_of_the_poller(store, tmp_path):
+def test_event_record_reads_a_live_mask_only_after_the_poller_got_it(store, tmp_path):
     folder = tmp_path / "live" / "goes_mask"
     (folder / str(T0.year)).mkdir(parents=True)
-    # Two pixels: the event is at the first. Scan 1: examined, no fire. Scan 2: cloud.
+    # Two pixels: the event is at the first. Scan of 5 hours: no fire. Scan of 6 hours: cloud.
     np.savez(folder / "grid.npz", lat=np.array([[-17.5, -17.5]]), lon=np.array([[-57.5, -50.0]]))
-    times = np.array([(T0 + timedelta(hours=5)).isoformat(), (T0 + timedelta(hours=6)).isoformat()])
+    scans = [T0 + timedelta(hours=5), T0 + timedelta(hours=6)]
+    times = np.array([scan.isoformat() for scan in scans])
+    seen = np.array([(scan + timedelta(minutes=12)).isoformat() for scan in scans])
     mask = np.array([[[100, 100]], [[200, 100]]], dtype=np.uint8)
-    np.savez(folder / str(T0.year) / f"{T0.date()}.npz", times=times, mask=mask)
-    at_5 = tools.event_record(100, as_of=T0 + timedelta(hours=5, minutes=30))["goes_view"]
-    at_6 = tools.event_record(100, as_of=T0 + timedelta(hours=6))["goes_view"]
-    assert (at_5["group"], at_6["group"]) == ("no_fire", "cloud")
-    assert at_6["scan_at"] == "2024-08-15T11:00:00+00:00"
+    np.savez(folder / str(T0.year) / f"{T0.date()}.npz", times=times, seen=seen, mask=mask)
+
+    def view_at(**after):
+        return tools.event_record(100, as_of=T0 + timedelta(**after))["goes_view"]
+
+    # At 6 hours and 5 minutes the poller did not have the scan of 6 hours.
+    assert view_at(hours=6, minutes=5)["group"] == "no_fire"
+    assert view_at(hours=6, minutes=12) == {
+        "scan_at": "2024-08-15T11:00:00+00:00",
+        "group": "cloud",
+    }
+    # The day after, with no scan of that day, the record gives the last scan of the day before.
+    assert view_at(days=1, hours=1)["group"] == "cloud"
+
+
+def test_level_changes_are_the_history_of_the_event_itself(tmp_path, monkeypatch):
+    path = tmp_path / "levels.sqlite"
+    monkeypatch.setattr("chispa.config.STORE_PATH", path)
+    monkeypatch.setattr("chispa.config.RAW_DIR", tmp_path)
+    connection = open_store(path)
+    north = VIIRS.lat + 2.4 * KM
+    start = VIIRS.available_at
+    # Alert 100: one VIIRS detection, LOW. Alert 101 at the north: VIIRS then MODIS, HIGH.
+    second = replace(VIIRS, lat=north, platform="NOAA20", available_at=start + timedelta(minutes=1))
+    third = replace(second, sensor_family="modis", platform="TERRA")
+    third = replace(third, available_at=start + timedelta(minutes=2))
+    # One hour later a detection between the two merges alert 101 into alert 100.
+    bridge = replace(VIIRS, lat=VIIRS.lat + 1.2 * KM, observed_at=T0 + timedelta(hours=1))
+    bridge = replace(bridge, available_at=start + timedelta(hours=1))
+    add_detections(connection, [VIIRS, second, third, bridge])
+    found = read_detections(connection, T0, T0 + timedelta(days=1))
+    replace_fusion(connection, (100, 200), fuse(found, first_id=100))
+    record = tools.event_record(100, as_of=start + timedelta(hours=2))
+    changes = [(change["level"], change["at"]) for change in record["level_changes"]]
+    assert (record["detections"], record["level"]) == (4, "HIGH")
+    # The absorbed alert was HIGH after two minutes. This event was HIGH only at the merge.
+    high_at = (start + timedelta(hours=1)).isoformat()
+    assert changes == [("LOW", start.isoformat()), ("HIGH", high_at)]
 
 
 def test_two_alerts_are_two_events_before_their_merge_and_one_after(tmp_path, monkeypatch):

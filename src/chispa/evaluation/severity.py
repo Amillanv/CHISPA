@@ -158,7 +158,7 @@ def severity_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, lis
     """Return the tables of the severity for one fused year."""
     detections, pairs, fires, _ = prepare(year, store_path, raw_dir)
     # The newest land cover that exists at the time of an alert is the map of the year before.
-    layers = severity.load_layers(raw_dir, year - 1)
+    layers = severity.load_layers(raw_dir, severity.cover_year(year))
     merges = load_merges(sqlite3.connect(store_path), year)
     rows = alert_rows(detections, merges, outcomes(detections, pairs, fires), layers)
     if year == config.DEVELOPMENT_YEAR and config.SEVERITY_POWER_STEPS_MW is None:
