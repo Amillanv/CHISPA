@@ -6,12 +6,14 @@ The GOES mask gives a class for each pixel in each scan. We read the class of th
 that holds most of a fire, for one scan of each hour, in the days when the fire burned.
 """
 
+from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
 from scipy import ndimage
 from scipy.spatial import cKDTree
 
+from chispa import config
 from chispa.evaluation.match import Fields, first_times, near_in_time
 from chispa.evaluation.report import percentile
 from chispa.evaluation.run import prepare
@@ -95,7 +97,7 @@ def table(counts: Fields, parts: dict[str, np.ndarray]) -> list[dict]:
                 "scans_median": percentile(scans[has], 50),
                 "examined_share_median": percentile(share_examined, 50),
                 "cloud_share_median": percentile(counts["cloud"][part][has] / scans[has], 50),
-                "examined_under_half": int((share_examined < 0.5).sum()),
+                "examined_under_half": int((share_examined < config.VISIBILITY_FIRE_LOW).sum()),
                 "never_examined": int((examined[has] == 0).sum()),
                 "with_possible_fire": int((counts["possible_fire"][part] > 0).sum()),
             }
@@ -106,19 +108,24 @@ def table(counts: Fields, parts: dict[str, np.ndarray]) -> list[dict]:
 def month_table(year: int, raw_dir: Path) -> list[dict]:
     """Return, for each month, how much of the mask window GOES examined.
 
-    A day with no scan is a hole in the record. A day with a small examined share is a day
-    of cloud. Thus the table separates "no data" from "the sensor could not see".
+    A day with no scan is a hole in the record: its file is absent, or its file has no scan.
+    A day with a small examined share is a day of cloud. Thus the table separates "no data"
+    from "the sensor could not see". Each day of the year is in the table.
     """
     days: dict[str, list] = {}
-    for path in sorted((raw_dir / "goes_mask" / str(year)).glob("????-??-??.npz")):
-        day = np.load(path)
-        groups = goes.mask_groups(day["mask"]) if len(day["times"]) else np.empty((0, 1, 1), "U13")
-        examined = float(np.isin(groups, EXAMINED).mean()) if groups.size else None
-        cloud = float((groups == "cloud").mean()) if groups.size else None
-        days.setdefault(path.stem[:7], []).append((len(day["times"]), examined, cloud))
+    day = date(year, 1, 1)
+    while day.year == year:
+        path = raw_dir / "goes_mask" / str(year) / f"{day}.npz"
+        mask = np.load(path)["mask"] if path.exists() else np.empty((0, 1, 1), dtype=np.uint8)
+        groups = goes.mask_groups(mask)
+        examined = float(np.isin(groups, EXAMINED).mean()) if len(mask) else None
+        cloud = float((groups == "cloud").mean()) if len(mask) else None
+        days.setdefault(day.isoformat()[:7], []).append((len(mask), examined, cloud))
+        day += timedelta(days=1)
     rows = []
     for month, values in days.items():
         with_scans = [(examined, cloud) for scans, examined, cloud in values if scans]
+        low = sum(examined < config.VISIBILITY_DAY_LOW for examined, _ in with_scans)
         rows.append(
             {
                 "month": month,
@@ -127,7 +134,7 @@ def month_table(year: int, raw_dir: Path) -> list[dict]:
                 "scans": sum(scans for scans, _, _ in values),
                 "examined_share": percentile(np.array([e for e, _ in with_scans]), 50),
                 "cloud_share": percentile(np.array([c for _, c in with_scans]), 50),
-                "days_examined_under_quarter": sum(e < 0.25 for e, _ in with_scans),
+                "days_examined_under_quarter": low,
             }
         )
     return rows

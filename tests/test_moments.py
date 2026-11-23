@@ -31,3 +31,8 @@ def test_alert_gives_its_own_detections():
     assert own == {("m", 1): [0, 2], ("m", 2): [1], ("n", 1): [0, 2]}
     members = {(moment, alert): sorted(found.tolist()) for moment, alert, _, found in rows}
     assert members[("n", 1)] == [0, 1, 2]  # At 100 s the event of alert 1 holds alert 2.
+
+
+def test_year_with_no_detection_gives_no_alert():
+    detections = {"issued": np.array([], dtype=int), "available": np.array([])}
+    assert list(at_moments(detections, [], {"m": 10.0})) == []

@@ -444,7 +444,8 @@ A day with no scan is a hole in the record. A day with a small examined share is
 - 2023, 2024 and 2025 have no day with no scan in the hourly masks. They have 8741, 8739 and 8717 scans.
 - The examined share follows the season: in 2024 it is 0.91 to 0.96 from May to September, and 0.42 to 0.72 in the other months.
 - April 2025 has an examined share of 0.63, and 4 days below one quarter. FIRMS had GOES rows on only 14 days of that month.
-  Thus that month is a month of cloud and few fires, not a hole (section 8.1).
+  The NOAA files exist for each hour of that month. In the scans that we examined on four days, the fire pixels were few (section 8.1).
+  Thus we found no sign of a hole. We did not compare each NOAA fire pixel of that month with the FIRMS rows.
 
 ### 11.12 Why growth has no area
 
@@ -592,8 +593,9 @@ The confidence level of section 10.3 counts passes and sensor families. At the f
 This part gives a probability that an event will match a mapped fire, at two moments. `confidence.py` makes it.
 The command `chispa confidence --year` makes the tables.
 
-- Moment 0: the first alert. It uses the detections that were available not later than one pass gap (section 10.3)
-  after the first detection of the event: the same pass from two sources has times that differ by some minutes.
+- Moment 0: one pass gap (30 minutes, section 10.3) after the first detection of an alert. It uses the detections that
+  were available up to that time: the same pass from two sources has times that differ by some minutes.
+  An alert that merged into an older event in those minutes gives no row. Thus moment 0 is near the first alert, not at it.
 - Moment 24: the detections that were available 24 hours after that time (the evaluation time of section 11.14).
 
 The inputs. Each exists at its moment:
@@ -632,17 +634,18 @@ The measures in the table `confidence`, for the probability and for the level:
   is the matched share of that level in the development year.
 - Brier skill: 1 minus the Brier value divided by the Brier value of one constant, the matched share of the development year.
   More than 0 is better than that constant.
-- Top tenth: of the tenth of the events with the largest values, how many match. A brigade goes to these first.
-  `top_tenth_fires` is the number of different counted fires that those events match. Many events can match one
-  large fire, thus a count of events alone can look better than it is.
+- Top tenth: of the tenth of the alerts with the largest values, how many match. A brigade goes to these first.
+  `top_tenth_fires` is the number of different counted fires of the events that hold those alerts at the end of the year.
+  `top_tenth_own_fires` counts only the fires that the detections of each alert at the moment match.
+  Many alerts can match one large fire, thus a count of alerts alone can look better than it is.
 
 The unit is an alert as it was at the moment (`evaluation/moments.py`). The numbers below are for that unit.
 
 What 2023 and 2024 show. This is tuning, not the test. The weights are from 2023:
 
-- The first model had no input for the fire activity near an event. We examined the inputs on 2024, outside the repository.
-  No group of inputs alone gave a match separation of more than 0.74. Each group that we removed decreased it by 0.04 or less.
-  The activity of all the region did not help.
+- The first model had no input for the fire activity near an event. We examined the inputs on 2024, outside the repository:
+  each group of inputs alone, and the model with one group removed. No group alone was near the full model, and no
+  group was necessary. The activity of all the region did not help. These checks have no table, thus we give no number for them.
 - We made one change: the input "activity near the event". Fires come in groups in space and time, and the input
   uses only the days before the first alert. We made no other change, and the penalty stays at its first value.
 - On 2024: the match separation is 0.8658 at moment 0 and 0.8752 at moment 24. That of the level is 0.5652 and 0.648.
@@ -666,9 +669,11 @@ The history of the test on 2025, all on 2026-11-23. No run changed an input, the
    Hypotheses 1 and 2 were true. Hypothesis 3 was false at moment 0.
 2. Two more runs added a column each: `observed_to_predicted` and `top_tenth_fires`. They changed no other number.
 3. A review said that the unit was wrong: a brigade gets alerts as they are at that time. We corrected the unit in the code.
-   A check outside the repository used the frozen model of run 1 on the alerts as they were issued:
-   the match separation at moment 0 was 0.8401 for the probability and 0.6273 for the level.
+   A check outside the repository used the frozen model of run 1 on the alerts as they were issued.
+   The probability again separated the alerts better than the level. That check has no table, thus we give no number for it.
 4. With the corrected unit, the weights came from 2023 again, and 2025 ran again. The tables have this last run.
+   It is a second analysis of 2025, not a new test: we knew the result of run 1 when we made it.
+   A new test needs a year that we did not use: 2026, when its map of burn scars exists.
 
 The result of the test (tables `confidence` and `confidence_calibration` of 2025), with the corrected unit.
 2025 has 1755 alerts at moment 0, and 354 of them match a mapped fire. At moment 24 it has 1729 and 332.
@@ -679,14 +684,21 @@ The result of the test (tables `confidence` and `confidence_calibration` of 2025
   At moment 24 each group is in 0.1. But in 9 of the 10 groups the probability is too low: at moment 24 the matched share
   is 1.2 to 4.6 times the probability. The limit of 0.1 was too wide for small probabilities. Thus we give a rank at the two moments.
 - The Brier skill of the probability is 0.2651 at moment 0 and 0.2827 at moment 24. That of the level is 0.0338 and 0.0911.
-- Top tenth at moment 0: 126 of 175 alerts match, and they match 161 different counted fires. For the level: 35 of 175, and 52 fires.
-  Thus the model does not only put many alerts of one large fire at the top.
+- Top tenth at moment 0: 126 of 175 alerts match. For the level: 35 of 175.
+- The different counted fires of those alerts. With the fires of the event of the end of the year (`top_tenth_fires`):
+  161 for the probability and 52 for the level. A later merge can add fires to an alert. With only the fires that the
+  detections of the alert at the moment match (`top_tenth_own_fires`): 125 and 43.
+  Thus in 2025 the model does not only put many alerts of one large fire at the top.
+- This is not true in each year. At moment 0 in 2024, the detections of the top tenth matched 437 different fires for the
+  probability and 624 for the level. In 2023 they matched 192 and 179. At moment 24 the probability has more in each year.
+  Thus at moment 0 the model finds more alerts with a match, but in a year with very large fires those alerts are
+  more frequently on the same fires.
 - Thus the model puts the alerts in a better sequence than the level, at the first alert and one day later, in a year
   that it did not see. Its number is not a correct probability.
 - 2025 is a small year. We give no range for the values: a different year can give a different result.
 
-- Limits: the label of an alert is the match of the event that holds it at the end of the year. The GOES detections of 2025 are from GOES-19,
-  and those of 2023 and 2024 from GOES-16. The year 2025 can have holes in its GOES record that we did not find.
+- Limits: the label of an alert is the match of the event that holds it at the end of the year. The GOES detections of 2025 are from GOES-16
+  to 7 April and from GOES-19 after that day. Those of 2023 and 2024 are from GOES-16. The year 2025 can have holes in its GOES record that we did not find.
   2025 had few fires: 589 counted fires, and 4246 in 2024. Thus the test has fewer events with a match.
   The layers have the limits of section 11.14.
 

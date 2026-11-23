@@ -1,4 +1,4 @@
 fires,count,with_scans,scans_median,examined_share_median,cloud_share_median,examined_under_half,never_examined,with_possible_fire,config,run_date
-counted fires with no detection,1382,1382,1455.0,0.76,0.21,100,50,116,ff28cb069294,2026-11-23
-"counted fires with a detection, not from GOES",196,196,1440.0,0.76,0.21,10,8,28,ff28cb069294,2026-11-23
-counted fires with a GOES detection,2668,2668,1440.0,0.74,0.23,120,61,1168,ff28cb069294,2026-11-23
+counted fires with no detection,1382,1382,1455.0,0.76,0.21,100,50,116,1c24a22bc94c,2026-11-23
+"counted fires with a detection, not from GOES",196,196,1440.0,0.76,0.21,10,8,28,1c24a22bc94c,2026-11-23
+counted fires with a GOES detection,2668,2668,1440.0,0.74,0.23,120,61,1168,1c24a22bc94c,2026-11-23

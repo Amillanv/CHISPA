@@ -58,13 +58,15 @@ def near_count(counts: np.ndarray, place: tuple, time_s: float, lat: float, lon:
     return int(before.sum())
 
 
-def moment_rows(detections: Fields, merges: list, fires_of: dict, layers: severity.Layers):
+def moment_rows(detections: Fields, merges: list, links: tuple, layers: severity.Layers):
     """Return, for each moment, one row for each alert: its inputs, its level and its label.
 
-    An alert is the event as it was at the moment (`moments.py`). `fires_of` gives the counted
-    fires that each event of the end of the year matches. An alert has a match if the event
-    that holds it at the end of the year has one.
+    An alert is the event as it was at the moment (`moments.py`). `links` has the counted fires
+    that each event of the end of the year matches, and the counted fires of each detection.
+    An alert has a match if the event that holds it at the end of the year has one.
+    `own_fires` has only the fires that the detections of the alert at the moment match.
     """
+    fires_of, (first_link, link_fire) = links
     limits = {"0": config.PASS_GAP.total_seconds(), "24": config.SEVERITY_EVAL_HOURS * 3600}
     counts, place = activity(detections)
     rows = {moment: [] for moment in MOMENTS}
@@ -74,6 +76,8 @@ def moment_rows(detections: Fields, merges: list, fires_of: dict, layers: severi
         near = near_count(counts, place, detections["available"][first], *position)
         row = _alert_row(detections, chosen, layers, near)
         row["fires"] = fires_of.get(int(detections["event"][first]), frozenset())
+        spans = [link_fire[first_link[d] : first_link[d + 1]] for d in chosen.tolist()]
+        row["own_fires"] = frozenset(np.concatenate(spans).tolist())
         row["matched"] = bool(row["fires"])
         rows[moment].append(row)
     return rows
@@ -162,10 +166,11 @@ def result_tables(rows: dict[str, list], models: dict[str, dict]) -> dict[str, l
         ):
             row = scores(name, values.astype(float), given, matched, model["base_rate"])
             # Many events can match one large fire. Thus we also count the different fires.
-            fires = [
-                rows[moment][position]["fires"] for position in top_tenth(values.astype(float))
-            ]
-            row["top_tenth_fires"] = len(frozenset().union(*fires))
+            top = [rows[moment][position] for position in top_tenth(values.astype(float))]
+            row["top_tenth_fires"] = len(frozenset().union(*(alert["fires"] for alert in top)))
+            # The fires above come from the event of the end of the year: a later merge can
+            # add them. These fires come only from the detections of the alert at the moment.
+            row["top_tenth_own_fires"] = len(frozenset().union(*(a["own_fires"] for a in top)))
             compare.append({"moment_h": moment, **row})
         for number, part in enumerate(np.array_split(np.argsort(chance, kind="stable"), FIFTHS), 1):
             calibration.append(
@@ -211,6 +216,20 @@ def event_fires(detections: Fields, pairs: Pairs, fires: Fields) -> dict[int, fr
     return {event: frozenset(numbers) for event, numbers in found.items()}
 
 
+def detection_fires(
+    detections: Fields, pairs: Pairs, fires: Fields
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return the counted fires of each detection, as two arrays.
+
+    The fires of the detection at position d are `fire[first[d] : first[d + 1]]`.
+    """
+    counted = fires["counted"][pairs[1]]
+    order = np.argsort(pairs[0][counted], kind="stable")
+    positions, fire = pairs[0][counted][order], pairs[1][counted][order]
+    first = np.searchsorted(positions, np.arange(len(detections["event"]) + 1))
+    return first, fire
+
+
 def confidence_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, list[dict]]:
     """Return the tables of the confidence for one fused year.
 
@@ -219,7 +238,8 @@ def confidence_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, l
     detections, pairs, fires, _ = prepare(year, store_path, raw_dir)
     layers = severity.load_layers(raw_dir, year - 1)
     merges = load_merges(sqlite3.connect(store_path), year)
-    rows = moment_rows(detections, merges, event_fires(detections, pairs, fires), layers)
+    links = (event_fires(detections, pairs, fires), detection_fires(detections, pairs, fires))
+    rows = moment_rows(detections, merges, links, layers)
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
     if year == config.DEVELOPMENT_YEAR:
         models = {}
