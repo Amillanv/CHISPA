@@ -82,30 +82,43 @@ for the earliest possible start and for the end.
 - "Examined" is the groups no fire, fire and possible fire: the sensor made a decision for the pixel.
 - Recorded: `chispa fetch goes_mask` saves the mask of the Pantanal box for one scan of each hour.
   Section 11.11 gives the table that uses it.
-- Live: each pass of the poller saves the number of pixels of each group for each scan, in the log `live/goes_mask/`.
+- Live: each pass of the poller saves, for each scan, the number of pixels of each group and the mask of the window,
+  in `live/goes_mask/`. The mask files have the form of the recorded masks.
 - Polar-orbit sensors: a NASA service gives the time of each pass (section 8.12). We do not read it yet.
   A pass time does not say if cloud hid a place.
 - An answer from the visibility must name the sensor and the time. "Examined, no fire" from GOES says nothing about a small fire.
 
 ### 7.3 The event record
 
-The event record is the one object that an alert, a tool and a report read.
-It holds, for one event at an as-of time, what we know at each stage and how we know it.
+The event record is the one object that an alert, a tool and a report read. `record.py` makes it, and the tool
+`event_record` gives it. It holds, for one event at an as-of time, what we know at each stage and how we know it.
+The event is the event as it was at that time (`issued.py`), not the event of the end of the year.
 
-| Stage | Field today (`tools.py`) | Field not built |
+| Stage | Field of the record | Not in the record |
 |---|---|---|
 | Ignition | | The limits of the start time |
-| Observation | `first_observed_at`, `last_observed_at`, `max_frp_mw`, `detections` | The land cover at the event |
+| Observation | `first_observed_at`, `last_observed_at`, `max_frp_mw`, `detections`, `sensor_families`, `newest_detections`, the land cover in `severity` | |
 | Publication | `newest_available_at`, `newest_observation_age_h` | |
-| Alert | `level`, `sensor_families` | The probability of a match at the first alert |
-| Growth | | The area at each pass |
-| Confirmation | `alert_changes` | |
-| End | | The visibility after the last detection |
+| Alert | `level`, `confidence`: the rank and the inputs with the largest effect (section 11.15) | |
+| Growth | `growth`: the newest step (section 11.13) | A burned area (section 11.12) |
+| Confirmation | `level_changes` | |
+| End | `goes_view`: what GOES said for the place in its newest saved scan. `viirs_passes_after_last_detection` | A cause of the end |
 | Mapping | The track record of the level (`evaluation_summary`) | |
 
-- A field with no value is `None`. Do not fill it with an estimate.
+`severity` has the number, the points of each part and the facts (section 11.14).
+
+- A field with no value is `None`. Do not fill it with an estimate. `notes` says why a part is absent.
 - Add a field only with its measure: how do we know that the field is correct, and on which data?
-- A fire has no "type" in the record. No source gives a label for a controlled burn.
+- A fire has no "type" in the record. No source gives a label for a controlled burn. The land cover is in the facts.
+- The confidence rank is the share of the alerts of the development year with a smaller value. It is not a probability.
+  The record uses the model of moment 0 in the first 24 hours of an event, and the model of moment 24 after that.
+  We examined the model only at those two moments. At a different time, the rank is the best value that we have, not a checked value.
+- `goes_view` reads the saved masks: one scan of each hour for the years that `chispa fetch goes_mask` got,
+  and each scan that the live poller read. It gives the group of the pixel of the event centre in the newest scan:
+  `no_fire` says that GOES examined the pixel and found no fire, and `cloud` says that it could not examine it (section 7.2).
+  It is one pixel at one time. It does not say that a fire is out.
+- The level and the confidence rank say if an event is a real fire. `goes_view`, `growth` and the passes after the
+  last detection say what the sensors see now. Do not use one for the other.
 
 ### 7.4 Rules for a new part
 
@@ -706,12 +719,18 @@ The result of the test (tables `confidence` and `confidence_calibration` of 2025
 
 ### 12.1 Tools
 
-- Keep the number of tools small. The target is six or fewer. Three exist: `alerts_near`, `event_detail` and `evaluation_summary`.
-- Each tool that reads events has an as-of time. It uses only detections with `available_at` at or before that time.
-- Known limit: if two events merged after the as-of time, the tool shows them as one event.
-- Each tool is one function in `tools.py` with typed arguments and a typed return value.
-- Each tool returns data with units, times and source names.
-- The MCP server and the agent expose the same functions. Do not write a tool two times.
+Three tools exist: `alerts_near`, `event_record` and `evaluation_summary`. The maximum is six.
+Read these rules before you write or change a tool. A test does a check of the rules that a program can examine.
+
+1. A tool is one function in `tools.py` with typed arguments, a typed return value and a docstring.
+2. A tool has no logic. It does a check of its arguments, opens the store and calls a module that has the logic
+   and its tests. If a tool needs a new calculation, write it in that module first.
+3. Each tool that reads events has an as-of time. It uses only detections with `available_at` at or before that time,
+   and the events as they were at that time (`issued.py`). Two tools give the same id for the same event at the same time.
+4. A tool returns plain data with units in the names, times as UTC text and source names. A value that is absent is `None`.
+5. A tool gives no value that has no measure in `results/SUMMARY.md` or no rule in this document.
+6. A new tool, or a new field of the event record, needs the agreement of the owner. Ask before you add one.
+7. The MCP server, the agent and the dashboard expose the same functions. Do not write a tool two times.
 
 ### 12.2 Answers
 
