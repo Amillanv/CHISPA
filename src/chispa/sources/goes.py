@@ -63,16 +63,17 @@ def mask_groups(mask: np.ndarray) -> np.ndarray:
     return names[mask]
 
 
-def download_masks(year: int, raw_dir: Path) -> list[Path]:
+def download_masks(year: int, raw_dir: Path, last: date) -> list[Path]:
     """Save the mask of the Pantanal box for one scan of each hour, as one file for each day.
 
     A file holds the scan times and one mask for each time. `grid.npz` holds the position of
-    each pixel. The grid of one satellite does not change.
+    each pixel. The grid of one satellite does not change. `last` is the last day to save:
+    a day in progress is not complete, and a raw file does not change.
     """
     folder = raw_dir / "goes_mask" / str(year)
     folder.mkdir(parents=True, exist_ok=True)
     paths, day = [], date(year, 1, 1)
-    while day.year == year:
+    while day <= min(last, date(year, 12, 31)):
         path = folder / f"{day}.npz"
         if not path.exists():
             hourly = {start.hour: (key, start) for key, start in reversed(_list_scans(day))}
@@ -172,9 +173,10 @@ def list_live(now: datetime) -> list[tuple[str, datetime, datetime]]:
 
 
 def read_live(scans: list[tuple[str, datetime, datetime]]):
-    """Give (scan start time, publication time, fire pixels, mask counts) for each scan.
+    """Give (scan start time, publication time, fire pixels, mask counts, mask) for each scan.
 
     The mask counts say how many pixels of the Pantanal box each mask group has.
+    The mask is the class of each pixel of the mask window, as `download_masks` saves it.
     """
     window = None
     for key, observed_at, published_at in scans:
@@ -182,7 +184,16 @@ def read_live(scans: list[tuple[str, datetime, datetime]]):
         with netCDF4.Dataset("scan.nc", memory=content) as dataset:
             window = window or find_window(dataset)
             counts = count_mask(dataset, window)
-            yield observed_at, published_at, read_pixels(dataset, window), counts
+            mask = dataset["Mask"][MASK_WINDOW[0], MASK_WINDOW[1]].filled(0).astype(np.uint8)
+            yield observed_at, published_at, read_pixels(dataset, window), counts, mask
+
+
+def mask_grid(scan: tuple[str, datetime, datetime]) -> tuple[np.ndarray, np.ndarray]:
+    """Return the latitude and the longitude of each pixel of the mask window, from a live scan."""
+    with netCDF4.Dataset("scan.nc", memory=_get(f"{LIVE_BUCKET}/{scan[0]}").content) as dataset:
+        rows, columns = MASK_WINDOW
+        x, y = np.meshgrid(dataset["x"][columns].filled(), dataset["y"][rows].filled())
+        return to_lat_lon(x, y, dataset["goes_imager_projection"])
 
 
 def count_mask(dataset: netCDF4.Dataset, window: tuple[slice, slice]) -> dict[str, int]:

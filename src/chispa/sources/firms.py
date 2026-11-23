@@ -29,6 +29,15 @@ PRODUCTS = {
 # The live products. Suomi NPP has no live product: its data stopped on 2026-11-02.
 # We do not use the live GOES product of FIRMS: the raw GOES files are quicker.
 LIVE_PRODUCTS = {"VIIRS_NOAA20_NRT": "viirs", "VIIRS_NOAA21_NRT": "viirs", "MODIS_NRT": "modis"}
+# FIRMS makes an archive product some months after the observation. For the days that have
+# no archive product, the year in progress uses the live product of the same satellite.
+LATE_PRODUCTS = {
+    "VIIRS_SNPP_SP": "VIIRS_SNPP_NRT",
+    "VIIRS_NOAA20_SP": "VIIRS_NOAA20_NRT",
+    "VIIRS_NOAA21_SP": "VIIRS_NOAA21_NRT",
+    "MODIS_SP": "MODIS_NRT",
+}
+FAMILIES = PRODUCTS | LIVE_PRODUCTS | {"VIIRS_SNPP_NRT": "viirs"}
 # A pass asks for 2 days, thus it also gets a late row of the day before.
 LIVE_DAYS = 2
 # The maximum number of days that the API gives in one request.
@@ -55,15 +64,32 @@ def key_status(key: str) -> dict:
 
 
 def download_year(year: int, key: str, raw_dir: Path) -> list[tuple[str, Path]]:
-    """Save all raw files of one year and return (product, path) for each file."""
+    """Save all raw files of one year and return (product, path) for each file.
+
+    The year of the live logs stops on the day before the first live log. For its days with
+    no archive product, we get the live product of the same satellite.
+    """
+    last = min(date(year, 12, 31), config.LIVE_START.date() - timedelta(days=1))
+    ends = archive_ends(key) if year == config.LIVE_START.year else {}
     files = []
     for product in PRODUCTS:
+        archive_last = min(ends.get(product, last), last)
         start = date(year, 1, 1)
-        while start.year == year:
-            days = min(MAX_DAYS[PRODUCTS[product]], (date(year + 1, 1, 1) - start).days)
-            files.append((product, _download(product, start, days, key, raw_dir)))
+        while start <= last:
+            in_archive = start <= archive_last or product not in LATE_PRODUCTS
+            name = product if in_archive else LATE_PRODUCTS[product]
+            limit = archive_last if in_archive and product in LATE_PRODUCTS else last
+            days = min(MAX_DAYS[PRODUCTS[product]], (limit - start).days + 1)
+            files.append((name, _download(name, start, days, key, raw_dir)))
             start += timedelta(days=days)
     return files
+
+
+def archive_ends(key: str) -> dict[str, date]:
+    """Return the last day that each product has data, as FIRMS says."""
+    text = _get(f"{API}/api/data_availability/csv/{key}/ALL", "data availability").text
+    rows = [line.split(",") for line in text.splitlines()[1:]]
+    return {row[0]: date.fromisoformat(row[2]) for row in rows if len(row) == 3}
 
 
 def _download(product: str, start: date, days: int, key: str, raw_dir: Path) -> Path:
@@ -111,7 +137,7 @@ def parse_file(path: Path, product: str) -> tuple[list[Detection], int]:
             if row["satellite"] not in PLATFORMS:
                 continue
             try:
-                detections.append(parse_row(row, (PRODUCTS | LIVE_PRODUCTS)[product]))
+                detections.append(parse_row(row, FAMILIES[product]))
             except (ValueError, KeyError):
                 rejected += 1
     return detections, rejected
