@@ -1,6 +1,6 @@
 /* The clock in the bar: the mode, the as-of time, the Pantanal time and the lag of the live data.
    The lag is the time from the newest pass of the poller (tool `live_status`) to the as-of time. */
-import { utc, dur, zoned, offset, counter } from "./format.js";
+import { utc, zoned, offset, counter } from "./format.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -16,33 +16,40 @@ export function drawClock(state) {
   select.innerHTML = `<option value="">Replay a moment</option>${options}`;
 }
 
-/* Each second: the Pantanal time and the lag. Live: the time now and the age of the newest poller pass.
-   Replay: the as-of time, and the age of the newest pass at that time. */
+/* Each second: the Pantanal time and the lag. Live: the time now. Replay: the as-of time.
+   The tool `live_status` gives the times. The page only compares them with its clock. */
 export function tick(state) {
   const zone = state.settings.time_zone, live = state.live;
   const moment = live ? Date.now() : new Date(state.asOf).getTime();
   const local = zoned(moment, zone, live);
   $("local").innerHTML = `<span class="d">${local.date}</span>${local.time}`;
   $("local-label").textContent = `Pantanal, ${offset(moment, zone)}`;
-  const box = $("lag-box"), last = state.pass?.last_pass_at;
   $("lag-label").textContent = live ? "Lag" : "Lag at as-of";
-  if (!state.pass) { $("lag").textContent = "–"; return; }
-  if (!last) {
-    box.className = "reading lag archive";
-    $("lag").textContent = "archive";
-    box.title = "No poller pass before this time. The store has archive data, with an estimate of when each detection became available.";
-    return;
-  }
-  const seconds = (moment - new Date(last).getTime()) / 1000;
-  const failed = Object.values(state.pass.sources).reduce((sum, s) => sum + s.failed, 0);
-  box.className = `reading lag${seconds > state.settings.poll_late_s || failed ? " late" : ""}`;
-  $("lag").textContent = counter(seconds);
-  box.title = passText(state.pass, state.settings);
+  const [text, kind, title] = lag(state.pass, moment);
+  $("lag").textContent = text;
+  $("lag-box").className = `reading lag${kind ? ` ${kind}` : ""}`;
+  $("lag-box").title = title;
 }
 
-function passText(pass, settings) {
+/* The text, the kind and the explanation of the lag, from the answer of `live_status`. */
+function lag(pass, moment) {
+  if (pass === undefined) return ["–", "", "Reading the poll log."];
+  if (pass === null) return ["unknown", "late", "The page could not read the status of the poller."];
+  if (pass.archive) return ["archive", "archive", "Before the live logs. The store has archive data, with an estimate of when each detection became available."];
+  if (!pass.complete_pass_at) return ["no pass", "late", "The poll log has no pass with no failure before this time."];
+  const seconds = (moment - new Date(pass.complete_pass_at).getTime()) / 1000;
+  return [counter(seconds), moment >= new Date(pass.late_at).getTime() ? "late" : "", passText(pass)];
+}
+
+function passText(pass) {
   const names = { firms: "FIRMS", goes: "GOES", inpe: "INPE" };
-  const lines = Object.entries(pass.sources).map(([name, s]) => `${names[name] ?? name}: ${s.items - s.failed} of ${s.items} answered, ${s.new_rows} new rows.`);
-  if (!pass.sources.goes) lines.push("GOES: no new scan in this pass.");
-  return [`Newest poller pass: ${utc(pass.last_pass_at)} UTC.`, ...lines, "The lag is the time since that pass. Late after " + dur(settings.poll_late_s / 3600) + "."].join("\n");
+  const lines = Object.entries(pass.sources).map(([name, s]) => `${names[name] ?? name}: ${s.items - s.failed} of ${s.items} items answered, ${s.new_rows} new rows.`);
+  for (const name of ["goes", "inpe"]) {
+    if (!pass.sources[name]) lines.push(`${names[name]}: no row. No new item was read and no failure was recorded.`);
+  }
+  return [
+    `The lag is the time since the newest pass in which no source failed: ${utc(pass.complete_pass_at)} UTC.`,
+    `The data is late from ${utc(pass.late_at)} UTC.`,
+    `Newest pass: ${utc(pass.newest_pass_at)} UTC.`, ...lines,
+  ].join("\n");
 }

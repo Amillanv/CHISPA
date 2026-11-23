@@ -382,6 +382,6 @@ Checked 2026-11-23 with the IANA time zone database (Python `zoneinfo`, the copy
 The dashboard shows Pantanal time. No result uses it.
 
 - The biome is in Mato Grosso do Sul (`America/Campo_Grande`) and Mato Grosso (`America/Cuiaba`).
-- Each of the two zones was UTC-4 on each day that we examined from 2020 to 2026: the 15th of five months of each year.
-  In 2018 and 2019 each had UTC-3 in summer.
+- Each of the two zones had UTC-4 at each hour from 2020-01-01 to 2026-12-31 (UTC): 61 368 hours with one offset.
+- From 2019-01-01, the only change of each zone was on 2019-02-17 at 03:00 UTC: from UTC-3 to UTC-4, the end of summer time.
 - The page uses the copy of the database in the browser. A very old browser can have different rules. Not checked.

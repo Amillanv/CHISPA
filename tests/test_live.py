@@ -159,29 +159,42 @@ def test_mask_file_with_no_time_of_the_first_view_gets_an_estimate(tmp_path, mon
     assert day["mask"].shape == (2, 1, 2)
 
 
-def test_last_pass_is_the_newest_pass_at_or_before_the_as_of_time(tmp_path):
+def test_status_counts_the_lag_from_the_newest_pass_with_no_failure(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.LIVE_START", datetime(2026, 11, 20, tzinfo=UTC))
+    monkeypatch.setattr("chispa.config.LIVE_POLL_LATE", timedelta(minutes=15))
     folder = tmp_path / "live" / "polls"
     folder.mkdir(parents=True)
     header = "polled_at,source,item,result,new_rows\n"
-    late = "2026-11-21T23:55:00+00:00"
-    (folder / "2026-11-21.csv").write_text(
+    good, failed = "2026-11-21T23:55:00+00:00", "2026-11-22T00:05:00+00:00"
+    (folder / "2026-11-21.csv").write_text(header + f"{good},firms,VIIRS_NOAA20_NRT,ok,5\n")
+    # Ten minutes later each source failed. That pass does not make the data newer.
+    (folder / "2026-11-22.csv").write_text(
         header
-        + f"{late},firms,VIIRS_NOAA20_NRT,ok,5\n"
-        + f"{late},goes,request,failed: ConnectionError,0\n"
+        + f"{failed},firms,VIIRS_NOAA20_NRT,failed: FIRMS request failed,0\n"
+        + f"{failed},goes,request,failed: ConnectionError,0\n"
     )
-    early = "2026-11-22T00:05:00+00:00"
-    (folder / "2026-11-22.csv").write_text(header + f"{early},inpe,focos.csv,ok,2\n")
 
     def at(text):
-        return live.last_pass(tmp_path, datetime.fromisoformat(text))
+        return live.status(tmp_path, datetime.fromisoformat(text))
 
-    # Five minutes after midnight there was no pass yet on the new day: the pass before counts.
-    found = at("2026-11-22T00:00:00+00:00")
-    assert found["last_pass_at"] == late
+    found = at("2026-11-22T00:10:00+00:00")
+    assert (found["archive"], found["newest_pass_at"], found["complete_pass_at"]) == (
+        False,
+        failed,
+        good,
+    )
+    assert found["late_at"] == "2026-11-22T00:10:00+00:00"  # 15 minutes after the good pass
     assert found["sources"] == {
-        "firms": {"items": 1, "failed": 0, "new_rows": 5},
+        "firms": {"items": 1, "failed": 1, "new_rows": 0},
         "goes": {"items": 1, "failed": 1, "new_rows": 0},
     }
-    # A pass at the as-of time counts. Before the first pass there is no live data.
-    assert at(early)["sources"] == {"inpe": {"items": 1, "failed": 0, "new_rows": 2}}
-    assert at("2026-11-21T00:00:00+00:00") == {"last_pass_at": None, "sources": None}
+    # A pass at the as-of time counts. In the live period with no pass, the values are None.
+    assert at(good)["complete_pass_at"] == good
+    empty = at("2026-11-21T00:00:00+00:00")
+    assert (empty["archive"], empty["newest_pass_at"], empty["complete_pass_at"]) == (
+        False,
+        None,
+        None,
+    )
+    # Before the live logs the store has archive data.
+    assert at("2026-11-19T00:00:00+00:00")["archive"] is True

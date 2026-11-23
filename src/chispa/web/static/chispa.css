@@ -340,11 +340,14 @@ details.raw[open] summary::after { content: "−"; }
   .clock { position: absolute; top: calc(56vh - 46px); left: 12px; right: 12px; justify-self: stretch; }
   .reading { padding: 0 8px; flex: 1; }
   .reading .mono { font-size: 11.5px; }
-  .reading .mono .d, .replays { display: none; }
+  .reading .mono .d { display: none; }
+  /* The list of recorded moments goes to a second row of the clock. */
+  .clock { flex-wrap: wrap; height: auto; top: calc(56vh - 78px); }
+  .clock > .mode, .clock > .reading { height: 38px; }
+  .replays { flex-basis: 100%; height: 30px; border-left: 0; border-top: 1px solid var(--hair); max-width: none; }
   .lag { min-width: 0; }
   .status { justify-self: end; }
   .status .tag, .drawer-toggle, .controls .segmented, #zoom-in, #zoom-out { display: none; }
-  .replays { max-width: 112px; }
   .map-ui { position: absolute; top: 0; left: 0; right: 0; height: 56vh; }
   .controls { top: 52px; bottom: auto; right: 12px; flex-direction: column; }
   .readout { display: none; }
@@ -355,6 +358,6 @@ details.raw[open] summary::after { content: "−"; }
   .rows { max-height: 60vh; }
   .history { order: 2; height: 220px; }
   .growth { grid-template-columns: 1fr; justify-items: center; }
-  .maplibregl-ctrl-bottom-right { right: 8px; bottom: 50px; }
-  .maplibregl-ctrl-bottom-left { left: 8px; bottom: 50px; }
+  .maplibregl-ctrl-bottom-right { right: 8px; bottom: 84px; }
+  .maplibregl-ctrl-bottom-left { left: 8px; bottom: 84px; }
 }

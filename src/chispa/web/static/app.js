@@ -11,7 +11,7 @@ import { drawClock, tick } from "./clock.js";
 const $ = (id) => document.getElementById(id);
 const state = {
   settings: null, live: true, anchor: null, asOf: null, windowIndex: 1,
-  events: [], day: null, activity: null, past: null, pass: null, years: {}, year: null, ladderZone: "utc",
+  events: [], day: null, activity: null, past: null, pass: undefined, years: {}, year: null, ladderZone: "utc",
   selectedId: null, record: null, recordError: null, open: null, view: "list",
   sort: "level", filter: new Set(["HIGH", "MEDIUM", "LOW"]),
 };
@@ -107,15 +107,13 @@ async function loadMoment() {
   writeUrl();
   try {
     const past = pastParams();
-    const [alerts, day, steps, pass] = await Promise.all([
+    loadPass(ticket);
+    const [alerts, day, steps] = await Promise.all([
       get("/api/alerts", { as_of: state.asOf }),
       get("/api/activity", { as_of: state.asOf, hours: 24, step_hours: 1 }),
       past ? get("/api/activity", past) : null,
-      get("/api/live", { as_of: state.asOf }),
     ]);
     if (ticket !== tickets.moment) return;
-    state.pass = pass;
-    tick(state);
     state.events = alerts.events;
     state.day = day;
     state.past = steps;
@@ -127,6 +125,17 @@ async function loadMoment() {
   } catch (error) {
     $("right").innerHTML = `<div class="loading">${esc(error.message)}</div>`;
   }
+}
+
+/* The status of the poller, apart from the other answers: a problem with the poll log stops only the lag. */
+async function loadPass(ticket) {
+  state.pass = undefined;
+  tick(state);
+  let pass = null;
+  try { pass = await get("/api/live", { as_of: state.asOf }); } catch (error) { console.error(error); }
+  if (ticket !== tickets.moment) return;
+  state.pass = pass;
+  tick(state);
 }
 
 async function loadRecord(move) {
