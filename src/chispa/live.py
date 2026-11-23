@@ -150,7 +150,10 @@ def _add_mask(folder: Path, observed_at: datetime, seen_at: datetime, mask: np.n
     masks = np.empty((0, *mask.shape), dtype=np.uint8)
     if path.exists():
         day = np.load(path)
-        times, seen, masks = day["times"], day["seen"], day["mask"]
+        times, masks = day["times"], day["mask"]
+        # A file from before 2026-11-23 has no time of the first view. For its scans we use
+        # the scan start plus the delay of a raw file, as for a recorded mask.
+        seen = day["seen"] if "seen" in day else np.array([_had_at(time) for time in times])
     folder.mkdir(parents=True, exist_ok=True)
     part = path.with_suffix(".part.npz")  # A pass that stops in the middle does not break the file.
     np.savez_compressed(
@@ -160,6 +163,10 @@ def _add_mask(folder: Path, observed_at: datetime, seen_at: datetime, mask: np.n
         mask=np.concatenate([masks, mask[None]]),
     )
     part.replace(path)
+
+
+def _had_at(scan_start: str) -> str:
+    return (datetime.fromisoformat(str(scan_start)) + config.GOES_RAW_DELAY).isoformat()
 
 
 def complete_logs(raw_dir: Path, now: datetime) -> list[Path]:
