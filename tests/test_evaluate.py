@@ -119,6 +119,16 @@ def test_measures_of_one_configuration():
     assert row["delay_available_h_median"] == 1.5  # 9000 s against 3600 s
 
 
+def test_configuration_gives_the_first_and_the_last_day_of_its_detections():
+    # Three detections: on day 1, day 3 and day 41 of 1970. The configuration has the last two.
+    day_s = 86_400
+    found = detections([0.0] * 3, [0.0] * 3, [8] * 3, observed=[0, 2 * day_s, 40 * day_s + 60])
+    row = measure("part", np.array([False, True, True]), found, PAIRS, two_fires([True, True]))
+    assert (row["first_day"], row["last_day"]) == ("1970-01-03", "1970-02-10")
+    empty = measure("none", np.array([False, False, False]), found, PAIRS, two_fires([True, True]))
+    assert (empty["first_day"], empty["last_day"]) == (None, None)
+
+
 def test_fire_that_is_not_isolated_gives_no_delay():
     row = measure("late", np.array([False, True, True]), FOUND, PAIRS, two_fires([False, True]))
     assert (row["fires_found"], row["delay_fires"]) == (1, 0)
@@ -130,8 +140,11 @@ def test_tables_count_events_for_each_fire_and_fires_for_each_event(monkeypatch)
     # The detections 0 and 1 are in the events 7 and 8. The two match fire 1 (100 hectares).
     found = {**FOUND, "event": np.array([7, 8, 9])}
     fires = two_fires([True, True])
-    small = split_table(found, PAIRS, fires)[0]
+    split = split_table(found, PAIRS, fires)
+    small = split[0]
     assert (small["fires"], small["fires_found"], small["fires_in_one_event"]) == (1, 1, 0)
+    # Fire 2 (300 hectares) has no detection. It does not count as an isolated fire.
+    assert [row["fires_isolated"] for row in split] == [1, 0, 1]
     assert (small["events_per_fire_median"], small["events_per_fire_max"]) == (2.0, 2)
     low = event_table(found, PAIRS, fires, {7: "LOW", 8: "LOW", 9: "LOW"})[0]
     assert (low["events"], low["events_matched"], low["matched_share"]) == (3, 2, 0.6667)

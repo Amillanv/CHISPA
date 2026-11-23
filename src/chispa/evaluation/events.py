@@ -75,6 +75,8 @@ def split_table(detections: Fields, pairs: Pairs, fires: Fields) -> list[dict]:
     """Return, for each fire size class, into how many events the fusion split a fire.
 
     `completeness` is the share of the matches of a fire that are in its main event.
+    `fires_isolated` counts only fires that the fusion found: a fire with no detection
+    gives no delay.
     """
     _, link_fire, matches = _links(detections, pairs, fires)
     count = len(fires["area_ha"])
@@ -90,7 +92,7 @@ def split_table(detections: Fields, pairs: Pairs, fires: Fields) -> list[dict]:
                 "size_class_ha": label,
                 "fires": int(in_class.sum()),
                 "fires_with_burn_day": int((in_class & (fires["first_day"] > 0)).sum()),
-                "fires_isolated": int((in_class & fires["isolated"]).sum()),
+                "fires_isolated": int((found & fires["isolated"]).sum()),
                 "fires_found": int(found.sum()),
                 "fires_in_one_event": int((events_of[found] == 1).sum()),
                 "events_per_fire_median": percentile(events_of[found], 50),

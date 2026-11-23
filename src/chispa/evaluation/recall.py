@@ -4,6 +4,8 @@ A configuration is a subset of the detections: one source, one sensor family, or
 alerts of a level. Each configuration gets the same measures, thus the rows are comparable.
 """
 
+from datetime import UTC, datetime
+
 import numpy as np
 
 from chispa.evaluation.inputs import size_classes
@@ -12,11 +14,17 @@ from chispa.evaluation.report import percentile, share
 from chispa.fusion import LEVELS
 
 
+def day_text(seconds: float) -> str:
+    """Return the UTC day of a time in seconds, as text."""
+    return datetime.fromtimestamp(float(seconds), UTC).date().isoformat()
+
+
 def measure(name: str, chosen: np.ndarray, detections: Fields, pairs: Pairs, fires: Fields) -> dict:
     """Return the measures of one configuration: one subset of the detections.
 
     A delay is the first time of the configuration minus the first time of all detections.
-    Only isolated fires give a delay.
+    Only isolated fires give a delay. The first and the last day show a configuration
+    that has detections for only a part of the year.
     """
     count = len(fires["area_ha"]) - 1
     counted = fires["counted"]
@@ -41,6 +49,9 @@ def measure(name: str, chosen: np.ndarray, detections: Fields, pairs: Pairs, fir
         delay_h = (first_times(pairs, chosen, detections[time], count)[timed] - reference) / 3600
         row[f"delay_{time}_h_median"] = percentile(delay_h, 50)
         row[f"delay_{time}_h_p90"] = percentile(delay_h, 90)
+    seen = detections["observed"][chosen]
+    row["first_day"] = day_text(seen.min()) if len(seen) else None
+    row["last_day"] = day_text(seen.max()) if len(seen) else None
     return row
 
 
