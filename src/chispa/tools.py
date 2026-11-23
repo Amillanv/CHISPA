@@ -84,10 +84,13 @@ def activity(hours: float, step_hours: float, as_of: datetime) -> dict:
     `newest_observed_at` has the newest observation of each sensor family in the window.
     """
     _check(0.0, 0.0, as_of)
-    count = hours / step_hours if step_hours > 0 else 0.0
-    if hours <= 0 or count != round(count) or not 1 <= count <= config.TOOL_MAX_STEPS:
+    step_s = step_hours * 3600
+    count = hours * 3600 / step_s if step_s >= 1 else 0.0
+    whole = _whole(step_s) and _whole(count)
+    if not (whole and 1 <= round(count) <= config.TOOL_MAX_STEPS):
         raise ValueError(
-            f"hours must be a multiple of step_hours, with 1 to {config.TOOL_MAX_STEPS} steps."
+            "step_hours must be a whole number of seconds, and hours a multiple of it, "
+            f"with 1 to {config.TOOL_MAX_STEPS} steps."
         )
     return region.steps(_open(), config.PANTANAL_BOX, as_of, hours, step_hours)
 
@@ -128,6 +131,11 @@ def _check(lat: float, lon: float, as_of: datetime) -> None:
         raise ValueError(f"Position is not on the Earth: {lat}, {lon}.")
     if as_of.utcoffset() is None:
         raise ValueError("as_of has no timezone. Use a UTC time.")
+
+
+def _whole(value: float) -> bool:
+    """Return True if a value is a whole number. A sum of hours in binary has a small error."""
+    return abs(value - round(value)) < 1e-6
 
 
 def _distance_km(lat_1: float, lon_1: float, lat_2: float, lon_2: float) -> float:

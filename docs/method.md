@@ -99,7 +99,7 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 | Ignition | `hours_from_first_detection`: the fire is this old or older | The start time, and its limits |
 | Observation | `first_observed_at`, `last_observed_at`, `max_frp_mw`, `detections`, `sensor_families`, `newest_detections`, `timeline`: the detections of each day, the land cover in `severity` | |
 | Publication | `newest_available_at`, `newest_observation_age_h` | |
-| Alert | `level`, `confidence`: the rank and the inputs with the largest effect (section 11.15) | |
+| Alert | `level`, `confidence`: the rank, its number of reference alerts and the inputs with the largest effect (section 11.15) | |
 | Growth | `growth`: the newest step. `growth_steps`: each step, the oldest first (section 11.13) | A burned area (section 11.12) |
 | Confirmation | `level_changes` | |
 | End | `goes_view`: what GOES said for the place in its newest saved scan. `viirs_passes_after_last_detection` | A cause of the end |
@@ -790,10 +790,13 @@ The agent must:
 
 1. The page formats values. It calculates no new fact and has no threshold. Each value has its unit and its time.
 2. The page has one as-of time. Live: the time of the request, again each few minutes. Replay: a recorded moment.
-   The history band can show the steps after the as-of time of a replay. It makes them dark.
+   The history band counts the steps to the as-of time with the events of the as-of time. In a replay it can also
+   show the steps after the as-of time, dark, with the events of the end of the window.
 3. The base image is a mosaic. It is not an image of the as-of time. A burn scar in it can be of a different year.
 4. The growth matrix shows the steps of the record on a log scale, with the floor as a ring. A ray is a past step, not a forecast.
 5. The level, the rank and the severity stay separate. The rank and the level say "no check" for an event out of the biome.
+   The matched share of a level is for the level at the end of the year. The rank gives its number of reference alerts
+   and the hours of its model after the first detection.
 6. The text uses the terms of the glossary: "event", "unmatched", "no detection" and not "no fire".
 
 ## 13. Assumptions and decisions

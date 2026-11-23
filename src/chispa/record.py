@@ -206,6 +206,7 @@ def rank(found: dict, facts: dict, near: int, as_of: datetime) -> dict:
         "model_moment_h": moment,
         # The share of the alerts of the development year with a smaller value.
         "rank": round(float(np.searchsorted(reference, value)) / len(reference), 3),
+        "reference_alerts": len(reference),
         "largest_effects": [
             {"input": model["inputs"][i], "effect": round(float(effects[i]), 2)} for i in largest
         ],

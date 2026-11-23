@@ -97,6 +97,10 @@ def settings() -> dict:
         "evaluated_years": [config.DEVELOPMENT_YEAR, config.TEST_YEAR],
         "test_year": config.TEST_YEAR,
         "confidence_year": config.DEVELOPMENT_YEAR,
+        "confidence_moments_h": {
+            "0": config.PASS_GAP.total_seconds() / 3600,
+            "24": config.SEVERITY_EVAL_HOURS,
+        },
         "growth_floor_m": config.GROWTH_FLOOR_M,
         "growth_speed_min_h": config.GROWTH_SPEED_MIN_H,
         "severity_points": {

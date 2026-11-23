@@ -1,8 +1,10 @@
 """Tests of the confidence model and of its tables, with cases small enough for paper."""
 
+from datetime import UTC, datetime
+
 import numpy as np
 
-from chispa import confidence
+from chispa import confidence, record
 from chispa.evaluation.confidence import (
     activity,
     as_table,
@@ -179,3 +181,21 @@ def test_each_detection_gets_its_counted_fires():
     fires = {"counted": np.array([False] * 5 + [True, True, False, False, False])}
     first, fire = detection_fires(detections, pairs, fires)
     assert [fire[first[d] : first[d + 1]].tolist() for d in range(3)] == [[5, 6], [], [6]]
+
+
+def test_record_gives_the_rank_with_its_number_of_reference_alerts(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.RESULTS_DIR", tmp_path)
+    # One input: log(1 + 1 detection) = 0.693. The probability is 1 / (1 + e^-0.693) = 0.667.
+    # Two of the four reference values are smaller, thus the rank is 2 of 4.
+    model = {"inputs": ["detections_log"], "mean": [0.0], "spread": [1.0], "weights": [1.0]}
+    model |= {"start": 0.0, "reference": [0.1, 0.5, 0.9, 0.95]}
+    confidence.save({"0": model, "24": model}, tmp_path / "2023" / "confidence" / "model.json")
+    detections = {
+        "observed": np.array([0.0]),
+        "available": np.array([0.0]),
+        "family": np.array(["viirs"]),
+        "high": np.array([False]),
+        "lon": np.array([-57.0]),
+    }
+    answer = record.rank(detections, found(detections=1), 0, datetime.fromtimestamp(3600, UTC))
+    assert (answer["model_moment_h"], answer["rank"], answer["reference_alerts"]) == ("0", 0.5, 4)

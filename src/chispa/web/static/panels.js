@@ -75,7 +75,7 @@ export function record(root, { summary, years, year, onYear, onLimits }) {
       <span class="v">${pct(Number(r.fire_recall))} <small>${num(Number(r.fires_found))}/${num(Number(r.fires))}</small></span></div>`;
   }).join("");
   root.innerHTML = `${head}
-    <div class="lede" style="margin:-4px 0 12px">Events that matched a mapped fire, by level. ${esc(summary.role)[0].toUpperCase()}${esc(summary.role).slice(1)}.</div>
+    <div class="lede" style="margin:-4px 0 12px">Events that matched a mapped fire, by their level at the end of the year. ${esc(summary.role)[0].toUpperCase()}${esc(summary.role).slice(1)}.</div>
     <div class="bars">${rows}</div>
     <div class="label sub">Mapped fires found</div>
     <div class="bars">${recall}</div>
