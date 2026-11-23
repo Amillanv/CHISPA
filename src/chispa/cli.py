@@ -9,14 +9,10 @@ from datetime import UTC, datetime
 
 from dotenv import load_dotenv
 
-from chispa import bucket, config, live
+from chispa import bucket, checks, config, live
 from chispa.build import build_store
-from chispa.evaluation import burn, images
-from chispa.evaluation.growth import step_rows
 from chispa.evaluation.report import write_summary, write_tables
 from chispa.evaluation.run import evaluate
-from chispa.evaluation.severity import severity_tables
-from chispa.evaluation.visibility import visibility
 from chispa.fusion import LEVELS, fuse
 from chispa.grid import layer_grid, pantanal_grid
 from chispa.sources import (
@@ -61,16 +57,18 @@ def main(arguments: list[str] | None = None) -> None:
     evaluation = commands.add_parser("evaluate", help="Compare one fused year with the fires.")
     evaluation.add_argument("--year", type=int, required=True)
     evaluation.add_argument("--test-run", action="store_true", help="Permit the test year.")
-    checks = {"burn": "burn check", "images": "image check", "visibility": "visibility table"}
-    for name, text in (checks | {"growth": "growth table", "severity": "severity tables"}).items():
+    names = {"burn": "burn check", "images": "image check", "visibility": "visibility table"}
+    for name, text in (names | {"growth": "growth table", "severity": "severity tables"}).items():
         check = commands.add_parser(name, help=f"Make the {text} of one fused year.")
         check.add_argument("--year", type=int, required=True)
+        check.add_argument("--test-run", action="store_true", help="Permit the test year.")
     poll = commands.add_parser("poll", help="Do one pass of the live poller.")
     poll.add_argument("--push", action="store_true", help="Also copy complete logs to the bucket.")
     for name, text in NOT_BUILT.items():
         commands.add_parser(name, help=f"{text} Not built.")
     chosen = parser.parse_args(arguments)
     load_dotenv()
+    permit_year(chosen)
     if chosen.command == "check":
         check()
     elif chosen.command == "fetch":
@@ -80,17 +78,31 @@ def main(arguments: list[str] | None = None) -> None:
     elif chosen.command == "fuse":
         run_fuse(chosen.year)
     elif chosen.command == "evaluate":
-        run_evaluate(chosen.year, chosen.test_run)
+        run_evaluate(chosen.year)
     elif chosen.command == "burn":
-        run_burn(chosen.year)
+        checks.run_burn(chosen.year, lambda: read_setting("EE_PROJECT"))
     elif chosen.command in ("visibility", "growth", "severity"):
-        run_table(chosen.command, chosen.year)
+        checks.run_table(chosen.command, chosen.year)
     elif chosen.command == "images":
-        run_images(chosen.year)
+        checks.run_images(chosen.year, lambda: read_setting("EE_PROJECT"))
     elif chosen.command == "poll":
         run_poll(chosen.push)
     else:
         parser.exit(1, f"The command '{chosen.command}' is not built.\n")
+
+
+def permit_year(chosen: argparse.Namespace) -> None:
+    """Stop a command that makes results for a test year, unless the person asked for that run.
+
+    A test year scores a part one time. A run by accident shows its results too early.
+    """
+    is_result = chosen.command in ("evaluate", "burn", "images", "visibility", "growth", "severity")
+    test_years = (config.TEST_YEAR, config.PART_TEST_YEAR)
+    if is_result and chosen.year in test_years and not chosen.test_run:
+        role = config.YEAR_ROLES[chosen.year]
+        raise SystemExit(
+            f"{chosen.year} is the {role}. Freeze the rules of the part first, then add --test-run."
+        )
 
 
 def read_setting(name: str) -> str:
@@ -170,85 +182,11 @@ def run_fuse(year: int) -> None:
     print(f"{year}: {len(memberships)} detections, {len(events)} events, {levels}.")
 
 
-def run_evaluate(year: int, test_run: bool) -> None:
-    """Write the result tables of one year. The test year needs a clear decision."""
-    if year == config.TEST_YEAR and not test_run:
-        raise SystemExit(
-            f"{year} is the test year. Freeze the configuration first, then add --test-run."
-        )
+def run_evaluate(year: int) -> None:
+    """Write the result tables of one year."""
     write_tables(evaluate(year, config.STORE_PATH, config.RAW_DIR), year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
     print(f"{year}: the tables are in {config.RESULTS_DIR / str(year)}. See results/SUMMARY.md.")
-
-
-def run_table(name: str, year: int) -> None:
-    """Make the tables of one check of one fused year: visibility, growth or severity."""
-    if name == "severity" and year == config.TEST_YEAR and config.SEVERITY_POWER_STEPS_MW is None:
-        raise SystemExit(
-            f"{year} is the test year. Set the severity steps on {config.DEVELOPMENT_YEAR} first."
-        )
-    arguments = (year, config.STORE_PATH, config.RAW_DIR)
-    if name == "severity":
-        tables = severity_tables(*arguments)
-    elif name == "growth":
-        tables = {"growth_steps": step_rows(*arguments)}
-    else:
-        tables = {"visibility": visibility(*arguments)}
-    write_tables(tables, year, config.RESULTS_DIR)
-    write_summary(config.RESULTS_DIR)
-    print(f"{year}: see results/SUMMARY.md, tables {', '.join(tables)}.")
-
-
-def run_burn(year: int) -> None:
-    """Make the burn check of one fused year: the targets, their measures and the table.
-
-    The first run makes the targets. A later run keeps them and measures only what is absent.
-    """
-    if year == config.TEST_YEAR and config.BURN_DNBR_MIN is None:
-        raise SystemExit(
-            f"{year} is the test year. Set BURN_DNBR_MIN on {config.DEVELOPMENT_YEAR} first."
-        )
-    folder = config.RESULTS_DIR / str(year) / "burn_check"
-    if not (folder / "targets.csv").exists():
-        burn.write(
-            folder / "targets.csv", burn.make_targets(year, config.STORE_PATH, config.RAW_DIR)
-        )
-    scars.check_access(read_setting("EE_PROJECT"))
-    targets = burn.read(folder / "targets.csv")
-    burn.measure(targets, folder / "measures.csv")
-    all_pairs = year == config.DEVELOPMENT_YEAR
-    measures = burn.read(folder / "measures.csv")
-    tables = {"burn_check": burn.table(targets, measures, all_pairs)}
-    if config.BURN_DNBR_MIN is not None:
-        tables["burn_rule"] = burn.rule_table(targets, measures)
-    write_tables(tables, year, config.RESULTS_DIR)
-    write_summary(config.RESULTS_DIR)
-    print(f"{year}: {len(targets)} boxes measured. See results/SUMMARY.md, table burn_check.")
-
-
-def run_images(year: int) -> None:
-    """Make the pictures of the image check, then count the answers of the person.
-
-    The first run makes the sample from the targets of the burn check. A later run keeps it.
-    """
-    burn_folder = config.RESULTS_DIR / str(year) / "burn_check"
-    folder = config.RESULTS_DIR / str(year) / "image_check"
-    if not (burn_folder / "measures.csv").exists():
-        raise SystemExit(f"Run `chispa burn --year {year}` first.")
-    if not (folder / "sample.csv").exists():
-        scars.check_access(read_setting("EE_PROJECT"))
-        sample, key = images.draw(burn.read(burn_folder / "targets.csv"))
-        images.get_pictures(sample, config.IMAGE_DIR / str(year))
-        images.write_sample(folder, sample, key)
-        print(f"{year}: {len(sample)} events. The pictures are in {config.IMAGE_DIR / str(year)}.")
-        print(f"Write one answer for each chip in {folder / 'answers.csv'}: {images.ANSWERS}.")
-    answers = images.read_answers(folder)
-    tables = {"image_check": images.count(answers)}
-    if config.BURN_DNBR_MIN is not None:
-        measures = burn.read(burn_folder / "measures.csv")
-        tables["image_agreement"] = images.agreement(answers, measures)
-    write_tables(tables, year, config.RESULTS_DIR)
-    write_summary(config.RESULTS_DIR)
 
 
 def run_poll(push: bool) -> None:

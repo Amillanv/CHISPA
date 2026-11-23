@@ -190,7 +190,7 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 
 ### 2023 severity
 
-Configuration `add29633057e`, run on 2026-11-22.
+Configuration `add29633057e`, run on 2026-11-23.
 
 | severity | events | events_matched | matched_share | area_ha_median | area_ha_p90 | detected_after | days_after_median | days_after_p90 |
 |---|---|---|---|---|---|---|---|---|
@@ -202,7 +202,7 @@ Configuration `add29633057e`, run on 2026-11-22.
 
 ### 2023 severity_inputs
 
-Configuration `add29633057e`, run on 2026-11-22.
+Configuration `add29633057e`, run on 2026-11-23.
 
 | input | events | events_with_a_value | p50 | p75 | p90 |
 |---|---|---|---|---|---|
@@ -212,13 +212,13 @@ Configuration `add29633057e`, run on 2026-11-22.
 
 ### 2023 severity_rank
 
-Configuration `add29633057e`, run on 2026-11-22.
+Configuration `add29633057e`, run on 2026-11-23.
 
 | measure | events | rank_correlation | events_matched | match_separation | rank_correlation_matched |
 |---|---|---|---|---|---|
 | severity | 5890 | 0.275 | 1220 | 0.692 | 0.1136 |
 | detections | 5890 | 0.2547 | 1220 | 0.688 | -0.167 |
-| max_frp_mw | 5890 | 0.2348 | 1220 | 0.6641 | 0.0972 |
+| max_frp_mw | 5845 | 0.2351 | 1215 | 0.664 | 0.0992 |
 | extent_km | 5890 | 0.2345 | 1220 | 0.6659 | -0.0137 |
 
 ## 2024 (test year)
@@ -389,7 +389,7 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 
 ### 2024 severity
 
-Configuration `add29633057e`, run on 2026-11-22.
+Configuration `add29633057e`, run on 2026-11-23.
 
 | severity | events | events_matched | matched_share | area_ha_median | area_ha_p90 | detected_after | days_after_median | days_after_p90 |
 |---|---|---|---|---|---|---|---|---|
@@ -401,13 +401,13 @@ Configuration `add29633057e`, run on 2026-11-22.
 
 ### 2024 severity_rank
 
-Configuration `add29633057e`, run on 2026-11-22.
+Configuration `add29633057e`, run on 2026-11-23.
 
 | measure | events | rank_correlation | events_matched | match_separation | rank_correlation_matched |
 |---|---|---|---|---|---|
 | severity | 6260 | 0.2684 | 2749 | 0.6613 | 0.0248 |
 | detections | 6260 | 0.2857 | 2749 | 0.6612 | 0.0898 |
-| max_frp_mw | 6260 | 0.1304 | 2749 | 0.5954 | -0.1072 |
+| max_frp_mw | 6098 | 0.1186 | 2713 | 0.5883 | -0.1041 |
 | extent_km | 6260 | 0.2195 | 2749 | 0.6272 | 0.0273 |
 
 ### 2024 visibility
