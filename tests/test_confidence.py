@@ -6,6 +6,7 @@ from chispa import confidence
 from chispa.evaluation.confidence import (
     activity,
     as_table,
+    event_fires,
     level_rates,
     near_count,
     result_tables,
@@ -80,7 +81,7 @@ def test_tables_compare_the_probability_with_the_level():
     model = {"inputs": ["x"], "mean": [0.0], "spread": [1.0], "start": 0.0, "weights": [2.0]}
     model |= {"base_rate": 0.6, "level_rates": [0.75, 0.0, 0.6]}
     rows = [
-        {"inputs": {"x": value}, "level": level, "matched": matched}
+        {"inputs": {"x": value}, "level": level, "matched": matched, "fires": frozenset()}
         for value, level, matched in (
             (-2, 0, False),
             (-1, 1, False),
@@ -100,6 +101,7 @@ def test_tables_compare_the_probability_with_the_level():
         by_measure[("0", "probability")]["brier_skill"] > by_measure[("0", "level")]["brier_skill"]
     )
     assert by_measure[("0", "probability")]["top_tenth"] == 0
+    assert by_measure[("0", "probability")]["top_tenth_fires"] == 0
     fifths = [row for row in tables["confidence_calibration"] if row["moment_h"] == "0"]
     assert [row["matched_share"] for row in fifths] == [0.0, 0.0, 1.0, 1.0, 1.0]
     # The model gave 0.5 to the event of the third group, and that event matched: 1 / 0.5.
@@ -135,3 +137,28 @@ def test_level_with_no_event_gets_the_share_of_all_events():
         {"level": 2, "matched": True},
     ]
     assert level_rates(rows, 0.4) == [0.5, 0.4, 1.0]
+
+
+def test_event_gets_each_counted_fire_that_it_matches():
+    detections = {"event": np.array([1, 1, 2, 3])}
+    pairs = (np.array([0, 1, 1, 2, 3]), np.array([5, 5, 6, 5, 9]))
+    fires = {"counted": np.array([False] * 5 + [True, True, False, False, False])}
+    assert event_fires(detections, pairs, fires) == {1: frozenset({5, 6}), 2: frozenset({5})}
+
+
+def test_top_tenth_counts_the_different_fires():
+    model = {"inputs": ["x"], "mean": [0.0], "spread": [1.0], "start": 0.0, "weights": [1.0]}
+    model |= {"base_rate": 0.5, "level_rates": [0.5, 0.5, 0.5]}
+    # 20 events. The two events with the largest values match the same fire.
+    rows = [
+        {
+            "inputs": {"x": float(n)},
+            "level": 0,
+            "matched": n >= 18,
+            "fires": frozenset({7} if n >= 18 else ()),
+        }
+        for n in range(20)
+    ]
+    tables = result_tables({"0": rows, "24": rows}, {"0": model, "24": model})
+    first = tables["confidence"][0]
+    assert (first["top_tenth"], first["top_tenth_matched"], first["top_tenth_fires"]) == (2, 2, 1)

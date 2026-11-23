@@ -613,6 +613,8 @@ The measures in the table `confidence`, for the probability and for the level:
 - Brier skill: 1 minus the Brier value divided by the Brier value of one constant, the matched share of the development year.
   More than 0 is better than that constant.
 - Top tenth: of the tenth of the events with the largest values, how many match. A brigade goes to these first.
+  `top_tenth_fires` is the number of different counted fires that those events match. Many events can match one
+  large fire, thus a count of events alone can look better than it is.
 
 What 2023 and 2024 show (2026-11-23). This is tuning, not the test. The weights are from 2023:
 
@@ -649,6 +651,9 @@ with the frozen model. A second run on the same day added the column `observed_t
   In each group of the two moments the probability is too low: the matched share is 1.2 to 4.3 times the probability.
 - The Brier skill of the probability is 0.21 at moment 0 and 0.2748 at moment 24. That of the level is 0.0281 and 0.0869.
 - Top tenth at moment 0: 114 of 172 events match. For the level: 31 of 172.
+  Those events match 145 different counted fires. For the level: 47. Thus the model does not only put many alerts
+  of one large fire at the top. A review of the pull request asked for this number. A third run on 2025 added it,
+  and changed no other number.
 - Thus the model puts the events in a better sequence than the level, at the first alert and one day later, in a year
   that it did not see. Its number is not a correct probability. By the rule above, we give a rank and not a probability.
 - The values of 2025 are lower than those of 2024 and near those of 2023. 2025 is a small year: 327 events with a match.

@@ -39,6 +39,13 @@ def test_quote_can_have_different_spaces_and_no_diff_mark():
     assert review.keep([spaced], CONTEXT) == ([spaced], 0)
 
 
+def test_quote_with_the_diff_mark_or_with_curved_quote_marks_is_kept():
+    context = '<<<DIFF>>>\n+    name = "the first alert"\n<<<END DIFF>>>\n'
+    with_mark = finding('+    name = "the first alert"')
+    curved = finding("name = \u201cthe first alert\u201d")
+    assert review.keep([with_mark, curved], context) == ([with_mark, curved], 0)
+
+
 def test_quote_from_a_deleted_line_or_from_two_lines_is_deleted():
     deleted = finding("old_line_that_was_removed = 1")
     two_lines = finding("if total else None old_line_that_was_removed")

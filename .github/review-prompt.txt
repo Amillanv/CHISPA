@@ -18,7 +18,8 @@ THE EVIDENCE RULE. This rule has priority over all checks.
 - Review only what the DIFF adds or changes: the lines that start with "+". Use the other parts
   only to do a check of those lines.
 - Each finding must have a quote: one line that you copy with no change from the DIFF or from a
-  document, 20 to 200 characters. A program compares each quote with the text. A finding with
+  document, 20 to 200 characters. Do not copy the "+" at the start of a DIFF line. If a line is
+  longer than 200 characters, copy one part of it with no change and with no "...". A program compares each quote with the text. A finding with
   a quote that is not in the text is deleted, and the pull request shows how many were deleted.
 - If you cannot give a quote, you have no finding. Do not write "may", "might", "possibly",
   "seems" or "various files". Do not say that a word is in the text if you cannot quote it.

@@ -71,12 +71,12 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
 Configuration `004793e1aa29`, run on 2026-11-23.
 
-| moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched |
-|---|---|---|---|---|---|---|---|---|
-| 0 | probability | 5890 | 1220 | 0.8233 | 0.119 | 0.2754 | 589 | 432 |
-| 0 | level | 5890 | 1220 | 0.5688 | 0.162 | 0.0134 | 589 | 154 |
-| 24 | probability | 5890 | 1220 | 0.8538 | 0.1095 | 0.3335 | 589 | 457 |
-| 24 | level | 5890 | 1220 | 0.6532 | 0.1535 | 0.0655 | 589 | 218 |
+| moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched | top_tenth_fires |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | probability | 5890 | 1220 | 0.8233 | 0.119 | 0.2754 | 589 | 432 | 411 |
+| 0 | level | 5890 | 1220 | 0.5688 | 0.162 | 0.0134 | 589 | 154 | 202 |
+| 24 | probability | 5890 | 1220 | 0.8538 | 0.1095 | 0.3335 | 589 | 457 | 584 |
+| 24 | level | 5890 | 1220 | 0.6532 | 0.1535 | 0.0655 | 589 | 218 | 323 |
 
 ### 2023 confidence_calibration
 
@@ -327,12 +327,12 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
 Configuration `004793e1aa29`, run on 2026-11-23.
 
-| moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched |
-|---|---|---|---|---|---|---|---|---|
-| 0 | probability | 6260 | 2749 | 0.8579 | 0.1893 | 0.3693 | 626 | 575 |
-| 0 | level | 6260 | 2749 | 0.5625 | 0.2967 | 0.0114 | 626 | 291 |
-| 24 | probability | 6260 | 2749 | 0.8712 | 0.1835 | 0.3886 | 626 | 592 |
-| 24 | level | 6260 | 2749 | 0.6333 | 0.2783 | 0.0728 | 626 | 320 |
+| moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched | top_tenth_fires |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | probability | 6260 | 2749 | 0.8579 | 0.1893 | 0.3693 | 626 | 575 | 1011 |
+| 0 | level | 6260 | 2749 | 0.5625 | 0.2967 | 0.0114 | 626 | 291 | 860 |
+| 24 | probability | 6260 | 2749 | 0.8712 | 0.1835 | 0.3886 | 626 | 592 | 1618 |
+| 24 | level | 6260 | 2749 | 0.6333 | 0.2783 | 0.0728 | 626 | 320 | 797 |
 
 ### 2024 confidence_calibration
 
@@ -535,12 +535,12 @@ Configuration `7b93a5ff742a`, run on 2026-11-22.
 
 Configuration `004793e1aa29`, run on 2026-11-23.
 
-| moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched |
-|---|---|---|---|---|---|---|---|---|
-| 0 | probability | 1726 | 327 | 0.8245 | 0.1216 | 0.21 | 172 | 114 |
-| 0 | level | 1726 | 327 | 0.6012 | 0.1495 | 0.0281 | 172 | 31 |
-| 24 | probability | 1726 | 327 | 0.8405 | 0.1116 | 0.2748 | 172 | 127 |
-| 24 | level | 1726 | 327 | 0.6814 | 0.1405 | 0.0869 | 172 | 37 |
+| moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched | top_tenth_fires |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | probability | 1726 | 327 | 0.8245 | 0.1216 | 0.21 | 172 | 114 | 145 |
+| 0 | level | 1726 | 327 | 0.6012 | 0.1495 | 0.0281 | 172 | 31 | 47 |
+| 24 | probability | 1726 | 327 | 0.8405 | 0.1116 | 0.2748 | 172 | 127 | 187 |
+| 24 | level | 1726 | 327 | 0.6814 | 0.1405 | 0.0869 | 172 | 37 | 67 |
 
 ### 2025 confidence_calibration
 
