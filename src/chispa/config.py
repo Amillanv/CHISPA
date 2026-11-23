@@ -252,6 +252,12 @@ SEVERITY_PEOPLE_CELLS = 33
 SEVERITY_EVAL_HOURS = 24.0
 SEVERITY_SCORE_CLASSES = (0.0, 25.0, 50.0, 75.0, 100.1)
 
+# --- Confidence ---
+
+# The penalty on the weights of the confidence model. A larger value gives smaller weights.
+# Set it on the test year of the merge, which is the tuning year of this part.
+CONFIDENCE_PENALTY = 0.001
+
 # === The values above this line can change a result. The configuration hash covers them. ===
 # The values below this line change no number in a result table.
 

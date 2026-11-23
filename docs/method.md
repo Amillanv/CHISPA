@@ -332,6 +332,7 @@ The tables are:
 - `visibility`: how frequently GOES examined the place of a fire (section 11.11).
 - `growth_steps`: the advance and the speed of the steps of the events, by the time between passes (section 11.13).
 - `severity_inputs`, `severity` and `severity_rank`: the severity of the events against the mapped area (section 11.14).
+- `confidence` and `confidence_weights`: the probability of a match at two moments, against the level (section 11.15).
 
 Purity and completeness count matches with counted fires. A detection that matches two fires counts two times.
 
@@ -541,20 +542,20 @@ If this is false, the number adds nothing to a count, and the facts stay with no
 
 The result (tables `severity` and `severity_rank`, 2026-11-22): the hypothesis is true on 2023 and false on 2024.
 
-- Rank correlation with the outcome, for all events: the severity 0.275 and the number of detections 0.2547 in 2023 (5890 events).
-  In 2024 the severity 0.2684 and the number of detections 0.2857 (6260 events). The two are almost equal, and the sequence changes.
+- Rank correlation with the outcome, for all events: the severity 0.2749 and the number of detections 0.2547 in 2023 (5890 events).
+  In 2024 the severity 0.2685 and the number of detections 0.2857 (6260 events). The two are almost equal, and the sequence changes.
 - Thus the severity does not say more about the final burned area than a count of detections.
 - For the events with a match only, each rank correlation is near zero. Many small events match one very large fire,
   thus the outcome of an event says little about that event. Thus the rank correlation for all events shows mostly
   one thing: an event with many detections matches a fire more frequently. It does not show a ranking of the burned area.
-- The severity does separate the events that match a mapped fire. In 2024 the matched share was 1080 of 3288 events with a
-  severity below 25, 1345 of 2599 from 25 to 50, 309 of 357 from 50 to 75, and 15 of 16 from 75.
+- The severity does separate the events that match a mapped fire. In 2024 the matched share was 1078 of 3285 events with a
+  severity below 25, 1347 of 2602 from 25 to 50, 309 of 357 from 50 to 75, and 15 of 16 from 75.
   This was not the hypothesis. It is a property of a confidence, not of a severity (PLAN.md, C4).
 - The number of detections separates these events as well as the severity: the match separation in the table
-  `severity_rank` is 0.6613 for the severity and 0.6612 for the number of detections in 2024, and 0.692 and 0.688 in 2023.
+  `severity_rank` is 0.6615 for the severity and 0.6612 for the number of detections in 2024, and 0.692 and 0.688 in 2023.
 - The time after the evaluation time. Of the 324 matched events with a severity of 50 or more in 2024, 224 had a detection
   after the evaluation time: 211 of 309 from 50 to 75, for a median of 2.2 more days, and 13 of 15 from 75, for a median of 6.23.
-  Below 25, 95 of 1080 matched events had one. In 2023: 117 of 208 from 50, and 38 of 363 below 25.
+  Below 25, 95 of 1078 matched events had one. In 2023: 117 of 208 from 50, and 38 of 362 below 25.
   Thus more of the events with a high value at 24 hours have a later detection, and fewer of the events with a low value.
   A later detection does not say that the same fire burns, and it gives no time for a brigade to act.
   No later detection does not say that a fire is out: the sensors do not see each fire.
@@ -564,6 +565,59 @@ The result (tables `severity` and `severity_rank`, 2026-11-22): the hypothesis i
 
 The rule of the hypothesis says: with a false result, the facts stay with no number.
 The owner decides if the number stays as a statement of priorities. It must not be called a forecast of the burned area.
+
+### 11.15 Confidence at two moments
+
+The confidence level of section 10.3 counts passes and sensor families. At the first detection it is almost always LOW.
+This part gives a probability that an event will match a mapped fire, at two moments. `confidence.py` makes it.
+The command `chispa confidence --year` makes the tables.
+
+- Moment 0: the first alert. It uses the detections that were available not later than one pass gap (section 10.3)
+  after the first detection of the event: the same pass from two sources has times that differ by some minutes.
+- Moment 24: the detections that were available 24 hours after that time (the evaluation time of section 11.14).
+
+The inputs. Each exists at its moment:
+
+- From the detections: their number, the number of passes, the sensor families, the largest fire power,
+  and if a source gave a high confidence.
+- From the time: the month, and day or night at the place.
+- From the layers of section 11.14: the land cover group, the distance to protected land and to indigenous land, and the people.
+- Only at moment 24: the extent, and the advance of the newest step.
+
+The model is a logistic regression: a sum of the inputs with one weight for each, then a probability.
+A person can read each weight. It has no dependency: `confidence.py` contains the calculation.
+
+The label is "the event matches a mapped fire at the end of the year". It has errors (sections 11.5 and 11.10):
+an event with no match can be a real fire. Thus the probability is for a match with the map, not for a fire.
+
+The periods: the weights come from 2023. The choice of the inputs and of the penalty comes from 2024.
+Then the model is frozen, and 2025 gives the result one time.
+
+The baseline at each moment is the confidence level at that moment, as a number: LOW 0, MEDIUM 1, HIGH 2.
+
+The hypotheses, written before the first run on 2025:
+
+1. At moment 0, the match separation of the probability is larger than that of the level.
+2. At moment 24, the match separation of the probability is larger than that of the level.
+3. The probability is calibrated: in each fifth of the events by probability, the matched share is not farther
+   than 0.1 from the mean probability.
+
+If hypothesis 1 or 2 is false, the level rule stays at that moment. If hypothesis 3 is false, we give a rank and not a probability.
+
+What 2023 and 2024 show (tables `confidence` and `confidence_calibration`, 2026-11-23). This is tuning, not the test:
+
+- On 2024, with the weights of 2023, the match separation of the probability was 0.8131 at moment 0 and 0.8309 at moment 24.
+  That of the level was 0.5625 and 0.6333 (6260 events, 2749 with a match).
+- On 2024 the probability was too low: in the middle fifth of the events the mean probability was 0.1579,
+  and the matched share was 0.4888. 2024 had more than two times the matched share of 2023. Thus we expect hypothesis 3 to be false.
+- The largest weights at moment 0 are the fire power (more is a match), the season, and the distance to indigenous land
+  and to protected land (near is a match). Pasture, farming and many people go with no match.
+- We made no change after this look: all inputs, and the first penalty. The model is frozen at this state.
+
+- Limits: the events are the events of the end of the year (section 11.14). The GOES detections of 2025 are from GOES-19,
+  and those of 2023 and 2024 from GOES-16. The year 2025 can have holes in its GOES record that we did not find.
+  2025 had few fires: 589 counted fires, and 4246 in 2024. Thus the test has fewer events with a match.
+  The layers have the limits of section 11.14.
 
 ## 12. Agent and MCP rules
 

@@ -37,7 +37,9 @@ Checked 2026-11-23 with live requests, for the 2025 data:
 - In `GOES_NRT`, the `satellite` field changed in 2025. On 2025-03-15 it had `G16`. On 2025-04-10, 2025-08-15 and 2025-12-15 it had `G19`.
   The rows of `G19` have the mask class in the `confidence` field, as the rows of `G16`. We use `G19` with the platform name `GOES19`.
 - The same days also had `G19FRP`, `Met10` and a new value `Met12`. We do not use them, as before.
-- Not checked: holes in the `G19` record of 2025. A hole in 2024 was seven weeks long.
+- Not checked: holes in the `G19` record of 2025. A hole in 2024 was seven weeks long. April 2025, the month of the change,
+  has GOES detections on 14 days. Each other month has them on 26 days or more.
+- The 2025 store has 200 140 detections, 17 146 fires and 589 counted fires: a year with few fires.
 - The burn scar asset has the band `burned_monthly_2025`. The burn day product has one image for each month of 2025.
 
 ### 8.2 GOES fire product
@@ -341,7 +343,8 @@ People, Global Human Settlement Layer (GHSL):
 
 - Asset: `JRC/GHSL/P2023A/GHS_POP/2020`: the number of people in each cell of 100 m, in an equal-area projection.
   The asset also has 2025 and 2030: those years are a projection, and we do not use them.
-- The Pantanal box has 3 492 696 people in this layer.
+- A cell with no data has the value -200. We use 0 for it. Found 2026-11-23: the mean of cells with -200 gave cells with less than zero people.
+- The Pantanal box has 3 507 496 people in this layer, with 0 for the cells with no data. Our grid has 3 473 304.
 - A sum of the cells on our grid gave 6 499 476: wrong. Use the mean of the cells, then the area of our cell.
 
 `UNVERIFIED`: the terms of the three layers. Do a check before we publish a copy of a layer.

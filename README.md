@@ -26,8 +26,8 @@ The numbers are for 2024, with satellite sources only, in the Brazilian part of 
 4. **An alert with no mapped fire is not always a false alarm.** Sentinel-2 showed a burn at 94 of 209 HIGH events with no mapped fire, at 82 of 97 with a mapped fire, and at 22 of 98 boxes with no fire. The rule of this check is weak: read the three numbers together. ([burn_check](results/SUMMARY.md#2024-burn_check), method 11.10)
 5. **We found no sign that cloud is the main cause of a fire with no detection.** GOES examined the place of a typical such fire in 76 percent of the hourly scans of its months (1382 fires). The table uses the months of a fire, not its hours: a short fire under cloud stays possible. ([visibility](results/SUMMARY.md#2024-visibility), method 11.11)
 6. **We can measure where a fire goes, not how much it burned.** A VIIRS pixel is as large as a small fire, thus we give no burned area. In 1736 of 4546 steps of 6 to 18 hours, new pixels were farther than the error of the positions. ([growth_steps](results/SUMMARY.md#2024-growth_steps), method 11.12 and 11.13)
-7. **The first day separates the events (found after the run, not a tested forecast).** 24 hours after its first detection, 324 of 373 events with a severity of 50 or more matched a mapped fire, and 224 of those had a later detection. Below 25, 1080 of 3288 matched, and 95 of those had one. The number of detections alone separates the events as well. ([severity](results/SUMMARY.md#2024-severity), method 11.14)
-8. **A severity number shows priorities. It is not a forecast.** Its rank correlation with the final burned area was 0.2684. For the number of detections alone it was 0.2857. ([severity_rank](results/SUMMARY.md#2024-severity_rank), method 11.14)
+7. **The first day separates the events (found after the run, not a tested forecast).** 24 hours after its first detection, 324 of 373 events with a severity of 50 or more matched a mapped fire, and 224 of those had a later detection. Below 25, 1078 of 3285 matched, and 95 of those had one. The number of detections alone separates the events as well. ([severity](results/SUMMARY.md#2024-severity), method 11.14)
+8. **A severity number shows priorities. It is not a forecast.** Its rank correlation with the final burned area was 0.2685. For the number of detections alone it was 0.2857. ([severity_rank](results/SUMMARY.md#2024-severity_rank), method 11.14)
 
 ## The stages of a fire
 
@@ -53,8 +53,10 @@ All the work follows eight stages. Each stage gives one part of the alert, and e
 
 The first alert of an event is LOW, and it is the quickest alert that we can make.
 HIGH needs a second sensor family. On 93 isolated fires of 2024, it came a median of 2.8 hours later.
-The hypothesis: data that exists at the first detection can say which first alerts will match a mapped fire.
-It is not measured. We will learn on 2023, tune on 2024 and do the test one time on 2025.
+The hypothesis: data that exists at the first detection can say which first alerts will match a mapped fire, better than the level.
+A small model gives that probability at the first alert and 24 hours later (`chispa confidence`, method 11.15). Its weights come from 2023.
+On 2024, the year that we use to tune it, its match separation at the first alert was 0.8131, and that of the level was 0.5625 (6260 events).
+This is not the test. The 2025 data is in the store, and the test on 2025 is not run.
 
 ## Status
 

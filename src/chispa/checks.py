@@ -9,6 +9,7 @@ from collections.abc import Callable
 
 from chispa import config
 from chispa.evaluation import burn, images
+from chispa.evaluation.confidence import confidence_tables
 from chispa.evaluation.growth import step_rows
 from chispa.evaluation.report import write_summary, write_tables
 from chispa.evaluation.severity import severity_tables
@@ -25,6 +26,8 @@ def run_table(name: str, year: int) -> None:
     arguments = (year, config.STORE_PATH, config.RAW_DIR)
     if name == "severity":
         tables = severity_tables(*arguments)
+    elif name == "confidence":
+        tables = confidence_tables(*arguments)
     elif name == "growth":
         tables = {"growth_steps": step_rows(*arguments)}
     else:

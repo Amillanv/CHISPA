@@ -58,7 +58,14 @@ def main(arguments: list[str] | None = None) -> None:
     evaluation.add_argument("--year", type=int, required=True)
     evaluation.add_argument("--test-run", action="store_true", help="Permit the test year.")
     names = {"burn": "burn check", "images": "image check", "visibility": "visibility table"}
-    for name, text in (names | {"growth": "growth table", "severity": "severity tables"}).items():
+    for name, text in (
+        names
+        | {
+            "growth": "growth table",
+            "severity": "severity tables",
+            "confidence": "confidence tables",
+        }
+    ).items():
         check = commands.add_parser(name, help=f"Make the {text} of one fused year.")
         check.add_argument("--year", type=int, required=True)
         check.add_argument("--test-run", action="store_true", help="Permit the test year.")
@@ -81,7 +88,7 @@ def main(arguments: list[str] | None = None) -> None:
         run_evaluate(chosen.year)
     elif chosen.command == "burn":
         checks.run_burn(chosen.year, lambda: read_setting("EE_PROJECT"))
-    elif chosen.command in ("visibility", "growth", "severity"):
+    elif chosen.command in ("visibility", "growth", "severity", "confidence"):
         checks.run_table(chosen.command, chosen.year)
     elif chosen.command == "images":
         checks.run_images(chosen.year, lambda: read_setting("EE_PROJECT"))
@@ -96,7 +103,15 @@ def permit_year(chosen: argparse.Namespace) -> None:
 
     A test year scores a part one time. A run by accident shows its results too early.
     """
-    is_result = chosen.command in ("evaluate", "burn", "images", "visibility", "growth", "severity")
+    is_result = chosen.command in (
+        "evaluate",
+        "burn",
+        "images",
+        "visibility",
+        "growth",
+        "severity",
+        "confidence",
+    )
     test_years = (config.TEST_YEAR, config.PART_TEST_YEAR)
     if is_result and chosen.year in test_years and not chosen.test_run:
         role = config.YEAR_ROLES[chosen.year]

@@ -23,7 +23,9 @@ def download(project: str, raw_dir: Path, grid: Grid) -> list[Path]:
         ee.Initialize(project=project)
         # A sum of source cells counts a cell at an edge two times. Thus we use the mean number
         # of people for each square metre, then the area of our cell.
-        density = ee.Image(ASSET).reduceResolution(ee.Reducer.mean(), maxPixels=64)
+        source = ee.Image(ASSET)
+        # The layer has a negative value for "no data". That is no people, not a number of people.
+        density = source.max(0).reduceResolution(ee.Reducer.mean(), maxPixels=64)
         people = density.multiply(ee.Image.pixelArea()).divide(SOURCE_CELL_M2).unmask(0).toFloat()
         path.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(path, people=read_grid(people, grid))
