@@ -634,6 +634,26 @@ What 2023 and 2024 show (2026-11-23). This is tuning, not the test. The weights 
 A caution for the input "activity near the event": an event near a large fire can match that fire, because the match
 rule has a reach in space and in time. Then the input and the label agree for a reason that is not the event.
 
+The table `confidence_calibration`: we put the events in sequence by their probability and make five equal groups.
+`probability_mean` is what the model said for a group. `matched_share` is what came. `observed_to_predicted` is the
+second divided by the first: 1 is a correct probability, and more than 1 says that the probability is too low.
+
+The result of the test (tables `confidence` and `confidence_calibration` of 2025). The owner ran it one time on 2026-11-23,
+with the frozen model. A second run on the same day added the column `observed_to_predicted`. It changed no other number.
+2025 has 1726 events in the biome, and 327 of them match a mapped fire.
+
+- Hypothesis 1 is true. At moment 0 the match separation of the probability is 0.8245. That of the level is 0.6012.
+- Hypothesis 2 is true. At moment 24 it is 0.8405 for the probability and 0.6814 for the level.
+- Hypothesis 3 is false at moment 0 and true at moment 24. At moment 0 the fourth group had a mean probability of 0.0966
+  and a matched share of 0.2232, and the fifth group 0.3995 and 0.513. At moment 24 each group is in 0.1.
+  In each group of the two moments the probability is too low: the matched share is 1.2 to 4.3 times the probability.
+- The Brier skill of the probability is 0.21 at moment 0 and 0.2748 at moment 24. That of the level is 0.0281 and 0.0869.
+- Top tenth at moment 0: 114 of 172 events match. For the level: 31 of 172.
+- Thus the model puts the events in a better sequence than the level, at the first alert and one day later, in a year
+  that it did not see. Its number is not a correct probability. By the rule above, we give a rank and not a probability.
+- The values of 2025 are lower than those of 2024 and near those of 2023. 2025 is a small year: 327 events with a match.
+  We give no range for the values: a different year can give a different result.
+
 - Limits: the events are the events of the end of the year (section 11.14). The GOES detections of 2025 are from GOES-19,
   and those of 2023 and 2024 from GOES-16. The year 2025 can have holes in its GOES record that we did not find.
   2025 had few fires: 589 counted fires, and 4246 in 2024. Thus the test has fewer events with a match.

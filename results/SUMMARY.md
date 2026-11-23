@@ -69,7 +69,7 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
 ### 2023 confidence
 
-Configuration `a9daca3b3df1`, run on 2026-11-23.
+Configuration `004793e1aa29`, run on 2026-11-23.
 
 | moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched |
 |---|---|---|---|---|---|---|---|---|
@@ -80,24 +80,24 @@ Configuration `a9daca3b3df1`, run on 2026-11-23.
 
 ### 2023 confidence_calibration
 
-Configuration `a9daca3b3df1`, run on 2026-11-23.
+Configuration `004793e1aa29`, run on 2026-11-23.
 
-| moment_h | fifth | events | probability_mean | matched_share |
-|---|---|---|---|---|
-| 0 | 1 | 1178 | 0.0234 | 0.0357 |
-| 0 | 2 | 1178 | 0.0727 | 0.0823 |
-| 0 | 3 | 1178 | 0.1351 | 0.0883 |
-| 0 | 4 | 1178 | 0.2495 | 0.2572 |
-| 0 | 5 | 1178 | 0.5549 | 0.5722 |
-| 24 | 1 | 1178 | 0.0183 | 0.0289 |
-| 24 | 2 | 1178 | 0.0601 | 0.0577 |
-| 24 | 3 | 1178 | 0.1171 | 0.0891 |
-| 24 | 4 | 1178 | 0.237 | 0.2394 |
-| 24 | 5 | 1178 | 0.6032 | 0.6205 |
+| moment_h | fifth | events | probability_mean | matched_share | observed_to_predicted |
+|---|---|---|---|---|---|
+| 0 | 1 | 1178 | 0.0234 | 0.0357 | 1.5232 |
+| 0 | 2 | 1178 | 0.0727 | 0.0823 | 1.1328 |
+| 0 | 3 | 1178 | 0.1351 | 0.0883 | 0.6533 |
+| 0 | 4 | 1178 | 0.2495 | 0.2572 | 1.0308 |
+| 0 | 5 | 1178 | 0.5549 | 0.5722 | 1.0311 |
+| 24 | 1 | 1178 | 0.0183 | 0.0289 | 1.5747 |
+| 24 | 2 | 1178 | 0.0601 | 0.0577 | 0.9611 |
+| 24 | 3 | 1178 | 0.1171 | 0.0891 | 0.7609 |
+| 24 | 4 | 1178 | 0.237 | 0.2394 | 1.0102 |
+| 24 | 5 | 1178 | 0.6032 | 0.6205 | 1.0288 |
 
 ### 2023 confidence_weights
 
-Configuration `a9daca3b3df1`, run on 2026-11-23.
+Configuration `004793e1aa29`, run on 2026-11-23.
 
 | moment_h | input | weight |
 |---|---|---|
@@ -325,7 +325,7 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
 ### 2024 confidence
 
-Configuration `a9daca3b3df1`, run on 2026-11-23.
+Configuration `004793e1aa29`, run on 2026-11-23.
 
 | moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched |
 |---|---|---|---|---|---|---|---|---|
@@ -336,20 +336,20 @@ Configuration `a9daca3b3df1`, run on 2026-11-23.
 
 ### 2024 confidence_calibration
 
-Configuration `a9daca3b3df1`, run on 2026-11-23.
+Configuration `004793e1aa29`, run on 2026-11-23.
 
-| moment_h | fifth | events | probability_mean | matched_share |
-|---|---|---|---|---|
-| 0 | 1 | 1252 | 0.0148 | 0.0543 |
-| 0 | 2 | 1252 | 0.052 | 0.1789 |
-| 0 | 3 | 1252 | 0.1534 | 0.4305 |
-| 0 | 4 | 1252 | 0.3944 | 0.651 |
-| 0 | 5 | 1252 | 0.7466 | 0.881 |
-| 24 | 1 | 1252 | 0.0108 | 0.0487 |
-| 24 | 2 | 1252 | 0.0442 | 0.1486 |
-| 24 | 3 | 1252 | 0.1439 | 0.4313 |
-| 24 | 4 | 1252 | 0.3873 | 0.6749 |
-| 24 | 5 | 1252 | 0.7794 | 0.8922 |
+| moment_h | fifth | events | probability_mean | matched_share | observed_to_predicted |
+|---|---|---|---|---|---|
+| 0 | 1 | 1252 | 0.0148 | 0.0543 | 3.6693 |
+| 0 | 2 | 1252 | 0.052 | 0.1789 | 3.4409 |
+| 0 | 3 | 1252 | 0.1534 | 0.4305 | 2.8066 |
+| 0 | 4 | 1252 | 0.3944 | 0.651 | 1.6505 |
+| 0 | 5 | 1252 | 0.7466 | 0.881 | 1.18 |
+| 24 | 1 | 1252 | 0.0108 | 0.0487 | 4.516 |
+| 24 | 2 | 1252 | 0.0442 | 0.1486 | 3.3581 |
+| 24 | 3 | 1252 | 0.1439 | 0.4313 | 2.9965 |
+| 24 | 4 | 1252 | 0.3873 | 0.6749 | 1.7426 |
+| 24 | 5 | 1252 | 0.7794 | 0.8922 | 1.1448 |
 
 ### 2024 configurations
 
@@ -528,6 +528,36 @@ Configuration `7b93a5ff742a`, run on 2026-11-22.
 | counted fires with no detection | 1382 | 1382 | 1455.0 | 0.76 | 0.21 | 100 | 50 | 116 |
 | counted fires with a detection, not from GOES | 196 | 196 | 1440.0 | 0.76 | 0.21 | 10 | 8 | 28 |
 | counted fires with a GOES detection | 2668 | 2668 | 1440.0 | 0.74 | 0.23 | 120 | 61 | 1168 |
+
+## 2025 (test year of the later parts)
+
+### 2025 confidence
+
+Configuration `004793e1aa29`, run on 2026-11-23.
+
+| moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched |
+|---|---|---|---|---|---|---|---|---|
+| 0 | probability | 1726 | 327 | 0.8245 | 0.1216 | 0.21 | 172 | 114 |
+| 0 | level | 1726 | 327 | 0.6012 | 0.1495 | 0.0281 | 172 | 31 |
+| 24 | probability | 1726 | 327 | 0.8405 | 0.1116 | 0.2748 | 172 | 127 |
+| 24 | level | 1726 | 327 | 0.6814 | 0.1405 | 0.0869 | 172 | 37 |
+
+### 2025 confidence_calibration
+
+Configuration `004793e1aa29`, run on 2026-11-23.
+
+| moment_h | fifth | events | probability_mean | matched_share | observed_to_predicted |
+|---|---|---|---|---|---|
+| 0 | 1 | 346 | 0.0079 | 0.0145 | 1.8252 |
+| 0 | 2 | 345 | 0.0213 | 0.058 | 2.7196 |
+| 0 | 3 | 345 | 0.0437 | 0.1391 | 3.1847 |
+| 0 | 4 | 345 | 0.0966 | 0.2232 | 2.3106 |
+| 0 | 5 | 345 | 0.3995 | 0.513 | 1.2842 |
+| 24 | 1 | 346 | 0.0052 | 0.0087 | 1.66 |
+| 24 | 2 | 345 | 0.0162 | 0.0696 | 4.3031 |
+| 24 | 3 | 345 | 0.0354 | 0.1304 | 3.687 |
+| 24 | 4 | 345 | 0.087 | 0.1826 | 2.098 |
+| 24 | 5 | 345 | 0.4708 | 0.5565 | 1.182 |
 
 Limits of these results:
 

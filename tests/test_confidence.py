@@ -102,6 +102,8 @@ def test_tables_compare_the_probability_with_the_level():
     assert by_measure[("0", "probability")]["top_tenth"] == 0
     fifths = [row for row in tables["confidence_calibration"] if row["moment_h"] == "0"]
     assert [row["matched_share"] for row in fifths] == [0.0, 0.0, 1.0, 1.0, 1.0]
+    # The model gave 0.5 to the event of the third group, and that event matched: 1 / 0.5.
+    assert fifths[2]["observed_to_predicted"] == 2.0
     assert as_table(rows, ("x",))[0].shape == (5, 1)
     assert weight_table({"0": model, "24": model})[0] == {
         "moment_h": "0",
