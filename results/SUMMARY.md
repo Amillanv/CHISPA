@@ -150,23 +150,23 @@ Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 ### 2023 configurations
 
-Configuration `e03804b1c89a`, run on 2026-11-21.
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
-| configuration | detections | unmatched_detections | unmatched_share | fires | fires_found | fire_recall | area_recall | delay_fires | delay_observed_h_median | delay_observed_h_p90 | delay_available_h_median | delay_available_h_p90 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| source firms | 382550 | 51586 | 0.1348 | 969 | 743 | 0.7668 | 0.9889 | 117 | 0.0 | 0.51 | 0.0 | 1.73 |
-| source inpe | 331133 | 55723 | 0.1683 | 969 | 764 | 0.7884 | 0.9889 | 124 | 0.02 | 5.18 | 0.4 | 6.26 |
-| family abi | 375298 | 49258 | 0.1313 | 969 | 760 | 0.7843 | 0.9896 | 116 | 0.0 | 24.35 | 0.0 | 21.85 |
-| family avhrr | 13508 | 2432 | 0.18 | 969 | 329 | 0.3395 | 0.9012 | 23 | 48.53 | 215.23 | 51.03 | 217.73 |
-| family modis | 31246 | 3554 | 0.1137 | 969 | 567 | 0.5851 | 0.9753 | 70 | 8.7 | 98.53 | 10.43 | 101.03 |
-| family viirs | 293631 | 52065 | 0.1773 | 969 | 652 | 0.6729 | 0.9835 | 110 | 0.23 | 24.02 | 2.64 | 25.03 |
-| merged, level LOW or higher | 713683 | 107309 | 0.1504 | 969 | 786 | 0.8111 | 0.9908 | 130 | 0.0 | 0.0 | 0.0 | 0.0 |
-| merged, level MEDIUM or higher | 700649 | 98621 | 0.1408 | 969 | 768 | 0.7926 | 0.9893 | 120 | 0.17 | 23.32 | 0.17 | 21.98 |
-| merged, level HIGH | 657438 | 74103 | 0.1127 | 969 | 724 | 0.7472 | 0.9871 | 105 | 0.52 | 48.79 | 2.68 | 48.79 |
+| configuration | detections | unmatched_detections | unmatched_share | fires | fires_found | fire_recall | area_recall | delay_fires | delay_observed_h_median | delay_observed_h_p90 | delay_available_h_median | delay_available_h_p90 | first_day | last_day |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| source firms | 382550 | 51586 | 0.1348 | 969 | 743 | 0.7668 | 0.9889 | 117 | 0.0 | 0.51 | 0.0 | 1.73 | 2023-01-01 | 2023-12-31 |
+| source inpe | 331133 | 55723 | 0.1683 | 969 | 764 | 0.7884 | 0.9889 | 124 | 0.02 | 5.18 | 0.4 | 6.26 | 2023-01-01 | 2023-12-31 |
+| family abi | 375298 | 49258 | 0.1313 | 969 | 760 | 0.7843 | 0.9896 | 116 | 0.0 | 24.35 | 0.0 | 21.85 | 2023-01-01 | 2023-12-31 |
+| family avhrr | 13508 | 2432 | 0.18 | 969 | 329 | 0.3395 | 0.9012 | 23 | 48.53 | 215.23 | 51.03 | 217.73 | 2023-01-21 | 2023-12-30 |
+| family modis | 31246 | 3554 | 0.1137 | 969 | 567 | 0.5851 | 0.9753 | 70 | 8.7 | 98.53 | 10.43 | 101.03 | 2023-01-01 | 2023-12-31 |
+| family viirs | 293631 | 52065 | 0.1773 | 969 | 652 | 0.6729 | 0.9835 | 110 | 0.23 | 24.02 | 2.64 | 25.03 | 2023-01-01 | 2023-12-31 |
+| merged, level LOW or higher | 713683 | 107309 | 0.1504 | 969 | 786 | 0.8111 | 0.9908 | 130 | 0.0 | 0.0 | 0.0 | 0.0 | 2023-01-01 | 2023-12-31 |
+| merged, level MEDIUM or higher | 700649 | 98621 | 0.1408 | 969 | 768 | 0.7926 | 0.9893 | 120 | 0.17 | 23.32 | 0.17 | 21.98 | 2023-01-01 | 2023-12-31 |
+| merged, level HIGH | 657438 | 74103 | 0.1127 | 969 | 724 | 0.7472 | 0.9871 | 105 | 0.52 | 48.79 | 2.68 | 48.79 | 2023-01-01 | 2023-12-31 |
 
 ### 2023 events
 
-Configuration `e03804b1c89a`, run on 2026-11-21.
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 | final_level | events | events_matched | matched_share | events_on_counted_fires | events_on_one_fire | fires_per_event_max | purity |
 |---|---|---|---|---|---|---|---|
@@ -177,19 +177,19 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 
 ### 2023 fire_events
 
-Configuration `e03804b1c89a`, run on 2026-11-21.
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 | size_class_ha | fires | fires_with_burn_day | fires_isolated | fires_found | fires_in_one_event | events_per_fire_median | events_per_fire_max | completeness |
 |---|---|---|---|---|---|---|---|---|
-| 10 to 100 | 794 | 223 | 281 | 619 | 242 | 2.0 | 12 | 0.8837 |
-| 100 to 1000 | 122 | 106 | 29 | 114 | 28 | 2.0 | 13 | 0.9022 |
+| 10 to 100 | 794 | 223 | 106 | 619 | 242 | 2.0 | 12 | 0.8837 |
+| 100 to 1000 | 122 | 106 | 21 | 114 | 28 | 2.0 | 13 | 0.9022 |
 | 1000 to 10000 | 44 | 44 | 3 | 44 | 0 | 5.0 | 22 | 0.7883 |
 | 10000 to inf | 9 | 9 | 0 | 9 | 0 | 14.0 | 256 | 0.8786 |
-| all | 969 | 382 | 313 | 786 | 270 | 2.0 | 256 | 0.8641 |
+| all | 969 | 382 | 130 | 786 | 270 | 2.0 | 256 | 0.8641 |
 
 ### 2023 fire_sizes
 
-Configuration `e03804b1c89a`, run on 2026-11-21.
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 | configuration | size_class_ha | fires | fires_found | fire_recall |
 |---|---|---|---|---|
@@ -244,7 +244,7 @@ Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 ### 2023 merge_gain
 
-Configuration `e03804b1c89a`, run on 2026-11-21.
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 | sensor_family | size_class_ha | fires_found_merged | fires_found_family | fires_gained | gained_area_ha | delay_fires | fires_later | later_h_median | later_h_p90 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -382,24 +382,24 @@ Configuration `1c24a22bc94c`, run on 2026-11-23.
 
 ### 2024 configurations
 
-Configuration `e03804b1c89a`, run on 2026-11-21.
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
-| configuration | detections | unmatched_detections | unmatched_share | fires | fires_found | fire_recall | area_recall | delay_fires | delay_observed_h_median | delay_observed_h_p90 | delay_available_h_median | delay_available_h_p90 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| source firms | 769925 | 28975 | 0.0376 | 4246 | 2187 | 0.5151 | 0.96 | 124 | 0.0 | 19.95 | 0.0 | 21.18 |
-| source inpe | 602588 | 27127 | 0.045 | 4246 | 2431 | 0.5725 | 0.9682 | 141 | 0.0 | 1.92 | 0.0 | 4.08 |
-| source noaa | 101481 | 1360 | 0.0134 | 4246 | 778 | 0.1832 | 0.5126 | 36 | 0.0 | 86.33 | 0.0 | 83.83 |
-| family abi | 609914 | 19363 | 0.0317 | 4246 | 2668 | 0.6284 | 0.9736 | 140 | 0.0 | 40.9 | 0.0 | 38.4 |
-| family avhrr | 25753 | 1413 | 0.0549 | 4246 | 1034 | 0.2435 | 0.9061 | 35 | 8.62 | 118.65 | 9.65 | 121.15 |
-| family modis | 63544 | 2309 | 0.0363 | 4246 | 1443 | 0.3398 | 0.927 | 64 | 3.91 | 86.58 | 5.93 | 87.0 |
-| family viirs | 774783 | 34377 | 0.0444 | 4246 | 1564 | 0.3683 | 0.9407 | 101 | 0.0 | 19.45 | 0.92 | 21.95 |
-| merged, level LOW or higher | 1473994 | 57462 | 0.039 | 4246 | 2864 | 0.6745 | 0.9771 | 173 | 0.0 | 0.0 | 0.0 | 0.0 |
-| merged, level MEDIUM or higher | 1459439 | 52150 | 0.0357 | 4246 | 2654 | 0.6251 | 0.9724 | 137 | 0.17 | 23.26 | 0.17 | 23.4 |
-| merged, level HIGH | 1423724 | 42735 | 0.03 | 4246 | 2287 | 0.5386 | 0.9591 | 93 | 0.67 | 70.36 | 2.8 | 70.5 |
+| configuration | detections | unmatched_detections | unmatched_share | fires | fires_found | fire_recall | area_recall | delay_fires | delay_observed_h_median | delay_observed_h_p90 | delay_available_h_median | delay_available_h_p90 | first_day | last_day |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| source firms | 769925 | 28975 | 0.0376 | 4246 | 2187 | 0.5151 | 0.96 | 124 | 0.0 | 19.95 | 0.0 | 21.18 | 2024-01-01 | 2024-12-31 |
+| source inpe | 602588 | 27127 | 0.045 | 4246 | 2431 | 0.5725 | 0.9682 | 141 | 0.0 | 1.92 | 0.0 | 4.08 | 2023-12-31 | 2024-12-31 |
+| source noaa | 101481 | 1360 | 0.0134 | 4246 | 778 | 0.1832 | 0.5126 | 36 | 0.0 | 86.33 | 0.0 | 83.83 | 2024-09-29 | 2024-11-16 |
+| family abi | 609914 | 19363 | 0.0317 | 4246 | 2668 | 0.6284 | 0.9736 | 140 | 0.0 | 40.9 | 0.0 | 38.4 | 2023-12-31 | 2024-12-31 |
+| family avhrr | 25753 | 1413 | 0.0549 | 4246 | 1034 | 0.2435 | 0.9061 | 35 | 8.62 | 118.65 | 9.65 | 121.15 | 2024-01-01 | 2024-12-31 |
+| family modis | 63544 | 2309 | 0.0363 | 4246 | 1443 | 0.3398 | 0.927 | 64 | 3.91 | 86.58 | 5.93 | 87.0 | 2024-01-01 | 2024-12-31 |
+| family viirs | 774783 | 34377 | 0.0444 | 4246 | 1564 | 0.3683 | 0.9407 | 101 | 0.0 | 19.45 | 0.92 | 21.95 | 2024-01-01 | 2024-12-31 |
+| merged, level LOW or higher | 1473994 | 57462 | 0.039 | 4246 | 2864 | 0.6745 | 0.9771 | 173 | 0.0 | 0.0 | 0.0 | 0.0 | 2023-12-31 | 2024-12-31 |
+| merged, level MEDIUM or higher | 1459439 | 52150 | 0.0357 | 4246 | 2654 | 0.6251 | 0.9724 | 137 | 0.17 | 23.26 | 0.17 | 23.4 | 2024-01-01 | 2024-12-31 |
+| merged, level HIGH | 1423724 | 42735 | 0.03 | 4246 | 2287 | 0.5386 | 0.9591 | 93 | 0.67 | 70.36 | 2.8 | 70.5 | 2024-01-01 | 2024-12-31 |
 
 ### 2024 events
 
-Configuration `e03804b1c89a`, run on 2026-11-21.
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 | final_level | events | events_matched | matched_share | events_on_counted_fires | events_on_one_fire | fires_per_event_max | purity |
 |---|---|---|---|---|---|---|---|
@@ -410,19 +410,19 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 
 ### 2024 fire_events
 
-Configuration `e03804b1c89a`, run on 2026-11-21.
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 | size_class_ha | fires | fires_with_burn_day | fires_isolated | fires_found | fires_in_one_event | events_per_fire_median | events_per_fire_max | completeness |
 |---|---|---|---|---|---|---|---|---|
-| 10 to 100 | 3657 | 310 | 1446 | 2355 | 995 | 2.0 | 14 | 0.8265 |
-| 100 to 1000 | 462 | 188 | 102 | 383 | 104 | 3.0 | 68 | 0.7728 |
-| 1000 to 10000 | 102 | 86 | 7 | 101 | 5 | 5.0 | 30 | 0.7579 |
+| 10 to 100 | 3657 | 310 | 144 | 2355 | 995 | 2.0 | 14 | 0.8265 |
+| 100 to 1000 | 462 | 188 | 23 | 383 | 104 | 3.0 | 68 | 0.7728 |
+| 1000 to 10000 | 102 | 86 | 6 | 101 | 5 | 5.0 | 30 | 0.7579 |
 | 10000 to inf | 25 | 25 | 0 | 25 | 0 | 24.0 | 191 | 0.6868 |
-| all | 4246 | 609 | 1555 | 2864 | 1104 | 2.0 | 191 | 0.7229 |
+| all | 4246 | 609 | 173 | 2864 | 1104 | 2.0 | 191 | 0.7229 |
 
 ### 2024 fire_sizes
 
-Configuration `e03804b1c89a`, run on 2026-11-21.
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 | configuration | size_class_ha | fires | fires_found | fire_recall |
 |---|---|---|---|---|
@@ -481,26 +481,26 @@ Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 ### 2024 image_agreement
 
-Configuration `0ea7b8f424c7`, run on 2026-11-22.
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 | person | chips | rule_burned | rule_not_burned | rule_no_clear_view |
 |---|---|---|---|---|
-| burned | 0 | 0 | 0 | 0 |
-| not burned | 0 | 0 | 0 | 0 |
-| cannot tell | 0 | 0 | 0 | 0 |
+| burned | 30 | 23 | 6 | 1 |
+| not burned | 33 | 10 | 23 | 0 |
+| cannot tell | 6 | 5 | 1 | 0 |
 
 ### 2024 image_check
 
-Configuration `0ea7b8f424c7`, run on 2026-11-22.
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 | group | sample | burned | not_burned | cannot_tell | no_answer | burned_share |
 |---|---|---|---|---|---|---|
-| HIGH events, unmatched | 60 | 0 | 0 | 0 | 60 |  |
-| HIGH events, matched | 30 | 0 | 0 | 0 | 30 |  |
+| HIGH events, unmatched | 60 | 15 | 29 | 5 | 11 | 0.3409 |
+| HIGH events, matched | 30 | 15 | 4 | 1 | 10 | 0.7895 |
 
 ### 2024 merge_gain
 
-Configuration `e03804b1c89a`, run on 2026-11-21.
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 | sensor_family | size_class_ha | fires_found_merged | fires_found_family | fires_gained | gained_area_ha | delay_fires | fires_later | later_h_median | later_h_p90 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -607,6 +607,150 @@ Configuration `1c24a22bc94c`, run on 2026-11-23.
 | 24 | 4 | 346 | 0.0896 | 0.1821 | 2.033 |
 | 24 | 5 | 345 | 0.4865 | 0.571 | 1.1736 |
 
+### 2025 configurations
+
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
+
+| configuration | detections | unmatched_detections | unmatched_share | fires | fires_found | fire_recall | area_recall | delay_fires | delay_observed_h_median | delay_observed_h_p90 | delay_available_h_median | delay_available_h_p90 | first_day | last_day |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| source firms | 33885 | 7808 | 0.2304 | 589 | 302 | 0.5127 | 0.9058 | 97 | 0.0 | 0.33 | 0.0 | 0.91 | 2025-01-01 | 2025-12-31 |
+| source inpe | 27067 | 5936 | 0.2193 | 589 | 262 | 0.4448 | 0.8815 | 82 | 0.0 | 2.11 | 0.0 | 3.9 | 2025-01-01 | 2025-12-31 |
+| family abi | 23651 | 4049 | 0.1712 | 589 | 270 | 0.4584 | 0.8995 | 76 | 0.0 | 7.78 | 0.0 | 5.28 | 2025-01-01 | 2025-12-31 |
+| family avhrr | 250 | 130 | 0.52 | 589 | 20 | 0.034 | 0.2191 | 7 | 7.28 | 26.49 | 7.28 | 27.99 | 2025-01-01 | 2025-12-29 |
+| family modis | 2827 | 782 | 0.2766 | 589 | 148 | 0.2513 | 0.8362 | 32 | 2.62 | 36.49 | 5.12 | 36.74 | 2025-01-01 | 2025-12-31 |
+| family viirs | 34224 | 8783 | 0.2566 | 589 | 248 | 0.4211 | 0.8733 | 77 | 0.0 | 13.06 | 2.32 | 15.56 | 2025-01-01 | 2025-12-31 |
+| merged, level LOW or higher | 60952 | 13744 | 0.2255 | 589 | 306 | 0.5195 | 0.9067 | 98 | 0.0 | 0.0 | 0.0 | 0.0 | 2025-01-01 | 2025-12-31 |
+| merged, level MEDIUM or higher | 57384 | 11313 | 0.1971 | 589 | 278 | 0.472 | 0.8998 | 83 | 0.17 | 7.27 | 0.17 | 5.9 | 2025-01-01 | 2025-12-31 |
+| merged, level HIGH | 50937 | 8899 | 0.1747 | 589 | 230 | 0.3905 | 0.8733 | 61 | 1.18 | 8.28 | 2.92 | 10.78 | 2025-01-01 | 2025-12-31 |
+
+### 2025 events
+
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
+
+| final_level | events | events_matched | matched_share | events_on_counted_fires | events_on_one_fire | fires_per_event_max | purity |
+|---|---|---|---|---|---|---|---|
+| LOW | 959 | 252 | 0.2628 | 103 | 65 | 5 | 0.75 |
+| MEDIUM | 360 | 131 | 0.3639 | 63 | 37 | 6 | 0.6685 |
+| HIGH | 407 | 214 | 0.5258 | 161 | 74 | 22 | 0.787 |
+| all | 1726 | 597 | 0.3459 | 327 | 176 | 22 | 0.7856 |
+
+### 2025 fire_events
+
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
+
+| size_class_ha | fires | fires_with_burn_day | fires_isolated | fires_found | fires_in_one_event | events_per_fire_median | events_per_fire_max | completeness |
+|---|---|---|---|---|---|---|---|---|
+| 10 to 100 | 501 | 53 | 79 | 232 | 139 | 1.0 | 16 | 0.903 |
+| 100 to 1000 | 73 | 42 | 17 | 59 | 21 | 2.0 | 10 | 0.8973 |
+| 1000 to 10000 | 13 | 13 | 2 | 13 | 3 | 3.0 | 8 | 0.8868 |
+| 10000 to inf | 2 | 2 | 0 | 2 | 1 | 4.5 | 8 | 0.9956 |
+| all | 589 | 110 | 98 | 306 | 164 | 1.0 | 16 | 0.9264 |
+
+### 2025 fire_sizes
+
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
+
+| configuration | size_class_ha | fires | fires_found | fire_recall |
+|---|---|---|---|---|
+| source firms | 10 to 100 | 501 | 228 | 0.4551 |
+| source firms | 100 to 1000 | 73 | 59 | 0.8082 |
+| source firms | 1000 to 10000 | 13 | 13 | 1.0 |
+| source firms | 10000 to inf | 2 | 2 | 1.0 |
+| source inpe | 10 to 100 | 501 | 195 | 0.3892 |
+| source inpe | 100 to 1000 | 73 | 52 | 0.7123 |
+| source inpe | 1000 to 10000 | 13 | 13 | 1.0 |
+| source inpe | 10000 to inf | 2 | 2 | 1.0 |
+| family abi | 10 to 100 | 501 | 196 | 0.3912 |
+| family abi | 100 to 1000 | 73 | 59 | 0.8082 |
+| family abi | 1000 to 10000 | 13 | 13 | 1.0 |
+| family abi | 10000 to inf | 2 | 2 | 1.0 |
+| family avhrr | 10 to 100 | 501 | 11 | 0.022 |
+| family avhrr | 100 to 1000 | 73 | 7 | 0.0959 |
+| family avhrr | 1000 to 10000 | 13 | 1 | 0.0769 |
+| family avhrr | 10000 to inf | 2 | 1 | 0.5 |
+| family modis | 10 to 100 | 501 | 89 | 0.1776 |
+| family modis | 100 to 1000 | 73 | 44 | 0.6027 |
+| family modis | 1000 to 10000 | 13 | 13 | 1.0 |
+| family modis | 10000 to inf | 2 | 2 | 1.0 |
+| family viirs | 10 to 100 | 501 | 183 | 0.3653 |
+| family viirs | 100 to 1000 | 73 | 50 | 0.6849 |
+| family viirs | 1000 to 10000 | 13 | 13 | 1.0 |
+| family viirs | 10000 to inf | 2 | 2 | 1.0 |
+| merged, level LOW or higher | 10 to 100 | 501 | 232 | 0.4631 |
+| merged, level LOW or higher | 100 to 1000 | 73 | 59 | 0.8082 |
+| merged, level LOW or higher | 1000 to 10000 | 13 | 13 | 1.0 |
+| merged, level LOW or higher | 10000 to inf | 2 | 2 | 1.0 |
+| merged, level MEDIUM or higher | 10 to 100 | 501 | 205 | 0.4092 |
+| merged, level MEDIUM or higher | 100 to 1000 | 73 | 58 | 0.7945 |
+| merged, level MEDIUM or higher | 1000 to 10000 | 13 | 13 | 1.0 |
+| merged, level MEDIUM or higher | 10000 to inf | 2 | 2 | 1.0 |
+| merged, level HIGH | 10 to 100 | 501 | 164 | 0.3273 |
+| merged, level HIGH | 100 to 1000 | 73 | 51 | 0.6986 |
+| merged, level HIGH | 1000 to 10000 | 13 | 13 | 1.0 |
+| merged, level HIGH | 10000 to inf | 2 | 2 | 1.0 |
+
+### 2025 growth_steps
+
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
+
+| hours_between_passes | steps | advance_m_median | advance_m_p90 | floor_m | steps_with_new_pixels | new_pixel_share | speed_m_h_median | speed_m_h_p90 | steps_after_empty_pass |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 to 2 | 1242 | 295.99 | 780.91 | 850.0 | 144 | 0.1159 |  |  | 1 |
+| 2 to 6 | 0 |  |  | 850.0 | 0 |  |  |  | 0 |
+| 6 to 18 | 377 | 502.52 | 1812.74 | 850.0 | 118 | 0.313 | 124.08 | 316.08 | 161 |
+| 18 to 24.5 | 137 | 466.03 | 2271.48 | 850.0 | 46 | 0.3358 | 75.25 | 150.74 | 137 |
+| all | 1775 | 328.82 | 1213.84 | 850.0 | 320 | 0.1803 | 105.77 | 222.27 | 318 |
+
+### 2025 merge_gain
+
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
+
+| sensor_family | size_class_ha | fires_found_merged | fires_found_family | fires_gained | gained_area_ha | delay_fires | fires_later | later_h_median | later_h_p90 |
+|---|---|---|---|---|---|---|---|---|---|
+| abi | 10 to 100 | 232 | 196 | 36 | 788 | 57 | 9 | 7.3 | 99.48 |
+| abi | 100 to 1000 | 59 | 59 | 0 | 0 | 17 | 2 | 28.44 | 42.78 |
+| abi | 1000 to 10000 | 13 | 13 | 0 | 0 | 2 | 0 |  |  |
+| abi | 10000 to inf | 2 | 2 | 0 | 0 | 0 | 0 |  |  |
+| abi | all | 306 | 270 | 36 | 788 | 76 | 11 | 10.52 | 94.95 |
+| avhrr | 10 to 100 | 232 | 11 | 221 | 6633 | 4 | 3 | 8.33 | 12.87 |
+| avhrr | 100 to 1000 | 59 | 7 | 52 | 16487 | 3 | 3 | 6.35 | 40.44 |
+| avhrr | 1000 to 10000 | 13 | 1 | 12 | 37612 | 0 | 0 |  |  |
+| avhrr | 10000 to inf | 2 | 1 | 1 | 14711 | 0 | 0 |  |  |
+| avhrr | all | 306 | 20 | 286 | 75443 | 7 | 6 | 7.81 | 31.48 |
+| modis | 10 to 100 | 232 | 89 | 143 | 3775 | 17 | 16 | 4.47 | 22.08 |
+| modis | 100 to 1000 | 59 | 44 | 15 | 3960 | 13 | 11 | 9.63 | 73.0 |
+| modis | 1000 to 10000 | 13 | 13 | 0 | 0 | 2 | 2 | 13.5 | 22.11 |
+| modis | 10000 to inf | 2 | 2 | 0 | 0 | 0 | 0 |  |  |
+| modis | all | 306 | 148 | 158 | 7735 | 32 | 29 | 6.18 | 41.83 |
+| viirs | 10 to 100 | 232 | 183 | 49 | 1200 | 61 | 32 | 3.8 | 28.35 |
+| viirs | 100 to 1000 | 59 | 50 | 9 | 2464 | 14 | 14 | 4.63 | 47.83 |
+| viirs | 1000 to 10000 | 13 | 13 | 0 | 0 | 2 | 2 | 29.35 | 34.66 |
+| viirs | 10000 to inf | 2 | 2 | 0 | 0 | 0 | 0 |  |  |
+| viirs | all | 306 | 248 | 58 | 3664 | 77 | 48 | 3.88 | 40.57 |
+
+### 2025 severity
+
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
+
+| severity | alerts | alerts_matched | matched_share | area_ha_median | area_ha_p90 | detected_after | days_after_median | days_after_p90 |
+|---|---|---|---|---|---|---|---|---|
+| 0 to 25 | 1196 | 107 | 0.0895 | 37.8 | 722.14 | 7 | 1.04 | 2.59 |
+| 25 to 50 | 470 | 175 | 0.3723 | 110.61 | 3503.88 | 45 | 1.08 | 4.32 |
+| 50 to 75 | 57 | 45 | 0.7895 | 468.67 | 7072.94 | 26 | 1.22 | 3.44 |
+| 75 to 100 | 6 | 5 | 0.8333 | 3117.47 | 4660.71 | 4 | 2.5 | 6.03 |
+| all | 1729 | 332 | 0.192 | 140.41 | 3967.46 | 82 | 1.13 | 3.9 |
+
+### 2025 severity_rank
+
+Configuration `a84ef20c2e1b`, run on 2026-11-23.
+
+| measure | alerts | rank_correlation | alerts_matched | match_separation | rank_correlation_matched |
+|---|---|---|---|---|---|
+| severity | 1729 | 0.3751 | 332 | 0.7648 | 0.3143 |
+| detections | 1729 | 0.2679 | 332 | 0.6805 | 0.3174 |
+| max_frp_mw | 1722 | 0.391 | 332 | 0.774 | 0.4551 |
+| extent_km | 1729 | 0.3298 | 332 | 0.7217 | 0.3962 |
+
 ### 2025 visibility
 
 Configuration `1c24a22bc94c`, run on 2026-11-23.
@@ -649,4 +793,7 @@ Limits of these results:
 - A fire that burned for many days matches the detections of all those days.
 - GOES has no low-probability detections, and has holes in late September to November 2024.
 - The availability delay of each sensor family is an estimate in `config.py`.
-- A fire in January can have detections in December of the year before. We do not count those.
+- A fire in January can have detections in December of the year before. They cannot match it.
+- A detection of December that became available in January is in the tables of the new year
+  (`first_day`). The match uses the month and the day with no year: such a detection can match
+  a fire of December of the new year at the same place.
