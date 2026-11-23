@@ -157,3 +157,44 @@ def test_mask_file_with_no_time_of_the_first_view_gets_an_estimate(tmp_path, mon
     assert day["times"].tolist() == [first.isoformat(), second.isoformat()]
     assert day["seen"].tolist() == ["2026-11-23T03:10:00+00:00", "2026-11-23T03:22:00+00:00"]
     assert day["mask"].shape == (2, 1, 2)
+
+
+def test_status_counts_the_lag_from_the_newest_pass_with_no_failure(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.LIVE_START", datetime(2026, 11, 20, tzinfo=UTC))
+    monkeypatch.setattr("chispa.config.LIVE_POLL_LATE", timedelta(minutes=15))
+    folder = tmp_path / "live" / "polls"
+    folder.mkdir(parents=True)
+    header = "polled_at,source,item,result,new_rows\n"
+    good, failed = "2026-11-21T23:55:00+00:00", "2026-11-22T00:05:00+00:00"
+    (folder / "2026-11-21.csv").write_text(header + f"{good},firms,VIIRS_NOAA20_NRT,ok,5\n")
+    # Ten minutes later each source failed. That pass does not make the data newer.
+    (folder / "2026-11-22.csv").write_text(
+        header
+        + f"{failed},firms,VIIRS_NOAA20_NRT,failed: FIRMS request failed,0\n"
+        + f"{failed},goes,request,failed: ConnectionError,0\n"
+    )
+
+    def at(text):
+        return live.status(tmp_path, datetime.fromisoformat(text))
+
+    found = at("2026-11-22T00:10:00+00:00")
+    assert (found["archive"], found["newest_pass_at"], found["complete_pass_at"]) == (
+        False,
+        failed,
+        good,
+    )
+    assert found["late_at"] == "2026-11-22T00:10:00+00:00"  # 15 minutes after the good pass
+    assert found["sources"] == {
+        "firms": {"items": 1, "failed": 1, "new_rows": 0},
+        "goes": {"items": 1, "failed": 1, "new_rows": 0},
+    }
+    # A pass at the as-of time counts. In the live period with no pass, the values are None.
+    assert at(good)["complete_pass_at"] == good
+    empty = at("2026-11-21T00:00:00+00:00")
+    assert (empty["archive"], empty["newest_pass_at"], empty["complete_pass_at"]) == (
+        False,
+        None,
+        None,
+    )
+    # Before the live logs the store has archive data.
+    assert at("2026-11-19T00:00:00+00:00")["archive"] is True

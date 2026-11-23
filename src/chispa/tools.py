@@ -11,7 +11,7 @@ import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from chispa import config, record, region
+from chispa import config, live, record, region
 from chispa.store import to_text
 
 NEAR = """
@@ -93,6 +93,14 @@ def activity(hours: float, step_hours: float, as_of: datetime) -> dict:
             f"with 1 to {config.TOOL_MAX_STEPS} steps."
         )
     return region.steps(_open(), config.PANTANAL_BOX, as_of, hours, step_hours)
+
+
+def live_status(as_of: datetime) -> dict:
+    """Return how old the live data was at `as_of`: the newest pass of the poller, the newest pass
+    in which no source failed, and the time from which the data is late. `live.py` gives each value.
+    """
+    _check(0.0, 0.0, as_of)
+    return {"as_of": to_text(as_of)} | live.status(config.RAW_DIR, as_of)
 
 
 def evaluation_summary(year: int) -> dict:
