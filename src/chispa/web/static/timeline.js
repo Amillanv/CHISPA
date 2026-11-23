@@ -1,0 +1,83 @@
+/* The history of one event: the headline numbers and the timeline of its passes.
+   A row is one pass: when a satellite saw it, how long it took to reach CHISPA, and the alert it made.
+   Each value is a field of the event record. This file formats the values. It adds no fact. */
+import { esc, num, dur, hoursBetween, utc, day, zoned, offset, FAMILY } from "./format.js";
+
+const FOLDED = 10; // the newest passes that the folded timeline shows, with each pass that made an alert
+
+/* A time in UTC ("08-20 17:25") or in Pantanal time ("20 Aug 13:25"). */
+function when(text, zone) {
+  if (!zone) return `${day(text)} ${utc(text, false)}`;
+  const t = zoned(text, zone);
+  return `${t.date.split(" ").slice(1).join(" ")} ${t.time}`;
+}
+
+export function zoneName(r, zone) {
+  return zone ? `Pantanal, ${offset(r.first_observed_at, zone)}` : "UTC";
+}
+
+/* Age, last sighting and the delay of the first alert: the three numbers of triage time. */
+export function vitals(r, zone) {
+  const newest = r.newest_detections[0];
+  const first = r.passes.find((p) => p.alert);
+  const delay = first ? hoursBetween(first.observed_at, first.available_at) : null;
+  const kind = first ? `<span class="kind${first.estimated ? " est" : ""}">${first.estimated ? "estimated" : "measured"}</span>` : "";
+  const seen = newest ? `${FAMILY[newest.sensor_family]} ${esc(newest.platform)}, ` : "";
+  return `<div class="vitals">
+    <div><span class="label">Age, at least</span><span class="v">${dur(r.hours_from_first_detection)}</span>
+      <span class="c">first seen ${when(r.first_observed_at, zone)}</span></div>
+    <div><span class="label">Last seen</span><span class="v">${dur(r.newest_observation_age_h)} ago</span>
+      <span class="c">${seen}${when(r.last_observed_at, zone)}</span></div>
+    <div><span class="label">First alert</span><span class="v">${delay === null ? "–" : `+${dur(delay)}`}</span>
+      <span class="c">after its pass ${kind}</span></div>
+  </div>`;
+}
+
+export function timeline(r, zone, all, liveStart) {
+  const rows = r.passes;
+  const shown = new Set(all ? rows : rows.filter((p, n) => p.alert || n >= rows.length - FOLDED));
+  const parts = [];
+  let last = -1;
+  rows.forEach((p, n) => {
+    if (!shown.has(p)) return;
+    if (n - last > 1) parts.push(`<button type="button" class="more" data-passes>${n - last - 1} more passes</button>`);
+    parts.push(row(p, zone));
+    last = n;
+  });
+  const head = `<div class="pass head"><span>Observed</span><span>Sensor</span><span>To CHISPA</span><span>MW</span><span>Alert</span></div>`;
+  return `<div class="block"><div class="label"><span>Timeline</span><span>${rows.length} of ${num(r.pass_count)} passes · ${zoneName(r, zone)}</span></div>
+    <div class="passes">${head}${parts.join("")}</div>
+    ${absorbed(r, zone)}
+    ${days(r)}
+    <p class="note">The rows are in the sequence in which CHISPA had the passes. A pass is one GOES scan, or one pass of
+    another satellite. MW is its largest fire power. "To CHISPA" is the time from the observation
+    to the moment that CHISPA had the pass, and thus made its alert. From ${day(liveStart)} it is measured by the poller.
+    Before, it is an estimate. The time when a source published a pass is not in the record.</p></div>`;
+}
+
+function row(p, zone) {
+  const hours = hoursBetween(p.observed_at, p.available_at);
+  const width = Math.min(100, (Math.log1p(hours * 60) / Math.log1p(24 * 60)) * 100);
+  const title = `${p.detections} ${p.detections === 1 ? "detection" : "detections"}. Observed ${utc(p.observed_at)} UTC. `
+    + `CHISPA had it ${utc(p.available_at)} UTC${p.estimated ? ": an estimate" : ""}. The largest fire power: `
+    + `${p.max_frp_mw === null ? "not given" : `${num(p.max_frp_mw, 1)} MW`}.`;
+  return `<div class="pass${p.alert ? " raised" : ""}" title="${title}">
+    <span class="t">${when(p.observed_at, zone)}</span>
+    <span class="s"><i style="background:var(--${p.sensor_family})"></i>${esc(p.platform)}</span>
+    <span class="lag${p.estimated ? " est" : ""}"><span class="track"><b style="width:${width.toFixed(0)}%"></b></span><em>+${dur(hours)}</em></span>
+    <span class="n">${p.max_frp_mw === null ? "–" : num(p.max_frp_mw)}</span>
+    <span class="a">${p.alert ? `<span data-level="${p.alert}">${p.alert}</span>` : ""}</span></div>`;
+}
+
+function absorbed(r, zone) {
+  if (!r.absorbed.length) return "";
+  const items = r.absorbed.map((m) => `<li><span class="mono">${when(m.at, zone)}</span> alert ${m.alert_id} joined ${m.into_id}</li>`).join("");
+  return `<details class="absorbed"><summary>Absorbed ${num(r.absorbed.length)} ${r.absorbed.length === 1 ? "alert" : "alerts"}:
+    ${when(r.absorbed[0].at, zone)} to ${when(r.absorbed.at(-1).at, zone)}</summary><ul>${items}</ul></details>`;
+}
+
+function days(r) {
+  const list = r.timeline.slice(-30), most = Math.max(1, ...list.map((d) => d.detections));
+  const bars = list.map((d) => `<span style="height:${(8 + 92 * Math.log1p(d.detections) / Math.log1p(most)).toFixed(0)}%" title="${d.day}: ${num(d.detections)} detections, ${d.sensor_families.map((f) => FAMILY[f]).join(", ")}"></span>`).join("");
+  return `<div class="days">${bars}</div><div class="days-axis"><span>${day(list[0].day)}</span><span>detections of each day, UTC${r.timeline.length > 30 ? ", last 30" : ""}</span><span>${day(list.at(-1).day)}</span></div>`;
+}

@@ -98,10 +98,10 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 |---|---|---|
 | Ignition | `hours_from_first_detection`: the fire is this old or older | The start time, and its limits |
 | Observation | `first_observed_at`, `last_observed_at`, `max_frp_mw`, `detections`, `sensor_families`, `newest_detections`, `timeline`: the detections of each day, the land cover in `severity` | |
-| Publication | `newest_available_at`, `newest_observation_age_h` | |
+| Publication | `newest_available_at`, `newest_observation_age_h`, `passes`: when CHISPA had each pass | The time when a source published a pass |
 | Alert | `level`, `confidence`: the rank, its number of reference alerts and the inputs with the largest effect (section 11.15) | |
 | Growth | `growth`: the newest step. `growth_steps`: each step, the oldest first (section 11.13) | A burned area (section 11.12) |
-| Confirmation | `level_changes` | |
+| Confirmation | `level_changes`, the pass that made each change (`passes`), `absorbed` | |
 | End | `goes_view`: what GOES said for the place in its newest saved scan. `viirs_passes_after_last_detection` | A cause of the end |
 | Mapping | The track record of the level (`evaluation_summary`) | |
 
@@ -118,6 +118,11 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 - The land cover is the map of the year before the first detection of the event, not later than the last year of the map
   (`config.py`). If that file is absent, the record has no severity and no rank, and a note.
 - `level_changes` has the changes of the event itself. An alert that the event absorbed had its own levels before the merge.
+- `passes` has the newest passes and each pass that raised the level (`config.py`), in the sequence in which CHISPA had them.
+  `pass_count` is the number of all passes. A pass is the item of evidence of section 10.3. Its `available_at` is the first
+  time that CHISPA had it, thus the time of the alert that it made. `estimated` is true before the live logs
+  (`config.LIVE_START`): there that time is the observation time plus an estimate. The poller measures it after that day.
+- `absorbed` has each alert that merged into the event up to the as-of time, with the time of the merge.
 - `viirs_passes_after_last_detection` counts passes, not granules: the granules of one satellite that are not farther apart
   than the pass gap are one pass.
   The record uses the model of moment 0 in the first 24 hours of an event, and the model of moment 24 after that.
