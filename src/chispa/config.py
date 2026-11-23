@@ -200,6 +200,13 @@ GROWTH_SPEED_MIN_H = 6.0
 # The limits of the classes of the time between two passes, in hours.
 GROWTH_HOUR_CLASSES = (0.0, 2.0, 6.0, 18.0, 24.5)
 
+# --- Visibility ---
+
+# A fire has a low examined share if GOES examined its place in less than this share of its scans.
+VISIBILITY_FIRE_LOW = 0.5
+# A day is a day of cloud if GOES examined less than this share of the mask window.
+VISIBILITY_DAY_LOW = 0.25
+
 # --- Severity ---
 
 # The side of a cell of the layer grid, in scar pixels: approximately 300 m.

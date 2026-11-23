@@ -69,18 +69,18 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
 ### 2023 confidence
 
-Configuration `ff28cb069294`, run on 2026-11-23.
+Configuration `1c24a22bc94c`, run on 2026-11-23.
 
-| moment_h | measure | alerts | alerts_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched | top_tenth_fires |
-|---|---|---|---|---|---|---|---|---|---|
-| 0 | probability | 6873 | 1845 | 0.8234 | 0.1377 | 0.2989 | 687 | 559 | 426 |
-| 0 | level | 6873 | 1845 | 0.558 | 0.1942 | 0.0113 | 687 | 210 | 441 |
-| 24 | probability | 6037 | 1326 | 0.8567 | 0.1119 | 0.3471 | 603 | 483 | 606 |
-| 24 | level | 6037 | 1326 | 0.6649 | 0.1584 | 0.0756 | 603 | 234 | 316 |
+| moment_h | measure | alerts | alerts_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched | top_tenth_fires | top_tenth_own_fires |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | probability | 6873 | 1845 | 0.8234 | 0.1377 | 0.2989 | 687 | 559 | 426 | 192 |
+| 0 | level | 6873 | 1845 | 0.558 | 0.1942 | 0.0113 | 687 | 210 | 441 | 179 |
+| 24 | probability | 6037 | 1326 | 0.8567 | 0.1119 | 0.3471 | 603 | 483 | 606 | 405 |
+| 24 | level | 6037 | 1326 | 0.6649 | 0.1584 | 0.0756 | 603 | 234 | 316 | 264 |
 
 ### 2023 confidence_calibration
 
-Configuration `ff28cb069294`, run on 2026-11-23.
+Configuration `1c24a22bc94c`, run on 2026-11-23.
 
 | moment_h | fifth | alerts | probability_mean | matched_share | observed_to_predicted |
 |---|---|---|---|---|---|
@@ -97,7 +97,7 @@ Configuration `ff28cb069294`, run on 2026-11-23.
 
 ### 2023 confidence_weights
 
-Configuration `ff28cb069294`, run on 2026-11-23.
+Configuration `1c24a22bc94c`, run on 2026-11-23.
 
 | moment_h | input | weight |
 |---|---|---|
@@ -304,7 +304,7 @@ Configuration `ff28cb069294`, run on 2026-11-23.
 
 ### 2023 visibility
 
-Configuration `ff28cb069294`, run on 2026-11-23.
+Configuration `1c24a22bc94c`, run on 2026-11-23.
 
 | fires | count | with_scans | scans_median | examined_share_median | cloud_share_median | examined_under_half | never_examined | with_possible_fire |
 |---|---|---|---|---|---|---|---|---|
@@ -314,7 +314,7 @@ Configuration `ff28cb069294`, run on 2026-11-23.
 
 ### 2023 visibility_months
 
-Configuration `ff28cb069294`, run on 2026-11-23.
+Configuration `1c24a22bc94c`, run on 2026-11-23.
 
 | month | days | days_with_no_scan | scans | examined_share | cloud_share | days_examined_under_quarter |
 |---|---|---|---|---|---|---|
@@ -354,18 +354,18 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
 ### 2024 confidence
 
-Configuration `ff28cb069294`, run on 2026-11-23.
+Configuration `1c24a22bc94c`, run on 2026-11-23.
 
-| moment_h | measure | alerts | alerts_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched | top_tenth_fires |
-|---|---|---|---|---|---|---|---|---|---|
-| 0 | probability | 7085 | 3447 | 0.8658 | 0.1799 | 0.3951 | 708 | 667 | 1244 |
-| 0 | level | 7085 | 3447 | 0.5652 | 0.2929 | 0.0152 | 708 | 355 | 1217 |
-| 24 | probability | 6473 | 2945 | 0.8752 | 0.1813 | 0.4025 | 647 | 614 | 1634 |
-| 24 | level | 6473 | 2945 | 0.648 | 0.2766 | 0.0882 | 647 | 340 | 865 |
+| moment_h | measure | alerts | alerts_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched | top_tenth_fires | top_tenth_own_fires |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | probability | 7085 | 3447 | 0.8658 | 0.1799 | 0.3951 | 708 | 667 | 1244 | 437 |
+| 0 | level | 7085 | 3447 | 0.5652 | 0.2929 | 0.0152 | 708 | 355 | 1217 | 624 |
+| 24 | probability | 6473 | 2945 | 0.8752 | 0.1813 | 0.4025 | 647 | 614 | 1634 | 903 |
+| 24 | level | 6473 | 2945 | 0.648 | 0.2766 | 0.0882 | 647 | 340 | 865 | 517 |
 
 ### 2024 confidence_calibration
 
-Configuration `ff28cb069294`, run on 2026-11-23.
+Configuration `1c24a22bc94c`, run on 2026-11-23.
 
 | moment_h | fifth | alerts | probability_mean | matched_share | observed_to_predicted |
 |---|---|---|---|---|---|
@@ -550,7 +550,7 @@ Configuration `ff28cb069294`, run on 2026-11-23.
 
 ### 2024 visibility
 
-Configuration `ff28cb069294`, run on 2026-11-23.
+Configuration `1c24a22bc94c`, run on 2026-11-23.
 
 | fires | count | with_scans | scans_median | examined_share_median | cloud_share_median | examined_under_half | never_examined | with_possible_fire |
 |---|---|---|---|---|---|---|---|---|
@@ -560,7 +560,7 @@ Configuration `ff28cb069294`, run on 2026-11-23.
 
 ### 2024 visibility_months
 
-Configuration `ff28cb069294`, run on 2026-11-23.
+Configuration `1c24a22bc94c`, run on 2026-11-23.
 
 | month | days | days_with_no_scan | scans | examined_share | cloud_share | days_examined_under_quarter |
 |---|---|---|---|---|---|---|
@@ -581,18 +581,18 @@ Configuration `ff28cb069294`, run on 2026-11-23.
 
 ### 2025 confidence
 
-Configuration `ff28cb069294`, run on 2026-11-23.
+Configuration `1c24a22bc94c`, run on 2026-11-23.
 
-| moment_h | measure | alerts | alerts_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched | top_tenth_fires |
-|---|---|---|---|---|---|---|---|---|---|
-| 0 | probability | 1755 | 354 | 0.839 | 0.1216 | 0.2651 | 175 | 126 | 161 |
-| 0 | level | 1755 | 354 | 0.6075 | 0.1599 | 0.0338 | 175 | 35 | 52 |
-| 24 | probability | 1729 | 332 | 0.8415 | 0.1118 | 0.2827 | 172 | 128 | 186 |
-| 24 | level | 1729 | 332 | 0.686 | 0.1417 | 0.0911 | 172 | 37 | 67 |
+| moment_h | measure | alerts | alerts_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched | top_tenth_fires | top_tenth_own_fires |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | probability | 1755 | 354 | 0.839 | 0.1216 | 0.2651 | 175 | 126 | 161 | 125 |
+| 0 | level | 1755 | 354 | 0.6075 | 0.1599 | 0.0338 | 175 | 35 | 52 | 43 |
+| 24 | probability | 1729 | 332 | 0.8415 | 0.1118 | 0.2827 | 172 | 128 | 186 | 168 |
+| 24 | level | 1729 | 332 | 0.686 | 0.1417 | 0.0911 | 172 | 37 | 67 | 60 |
 
 ### 2025 confidence_calibration
 
-Configuration `ff28cb069294`, run on 2026-11-23.
+Configuration `1c24a22bc94c`, run on 2026-11-23.
 
 | moment_h | fifth | alerts | probability_mean | matched_share | observed_to_predicted |
 |---|---|---|---|---|---|
@@ -609,7 +609,7 @@ Configuration `ff28cb069294`, run on 2026-11-23.
 
 ### 2025 visibility
 
-Configuration `ff28cb069294`, run on 2026-11-23.
+Configuration `1c24a22bc94c`, run on 2026-11-23.
 
 | fires | count | with_scans | scans_median | examined_share_median | cloud_share_median | examined_under_half | never_examined | with_possible_fire |
 |---|---|---|---|---|---|---|---|---|
@@ -619,7 +619,7 @@ Configuration `ff28cb069294`, run on 2026-11-23.
 
 ### 2025 visibility_months
 
-Configuration `ff28cb069294`, run on 2026-11-23.
+Configuration `1c24a22bc94c`, run on 2026-11-23.
 
 | month | days | days_with_no_scan | scans | examined_share | cloud_share | days_examined_under_quarter |
 |---|---|---|---|---|---|---|

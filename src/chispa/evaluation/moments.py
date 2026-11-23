@@ -35,6 +35,8 @@ def at_moments(detections: Fields, merges: list, limits: dict[str, float]):
     alert as it was at the moment. An alert that is a part of an older event at the moment
     is not given.
     """
+    if len(detections["issued"]) == 0:
+        return
     order = np.argsort(detections["issued"], kind="stable")
     ids, starts = np.unique(detections["issued"][order], return_index=True)
     ends = [*starts[1:], len(order)]

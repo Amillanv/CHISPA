@@ -52,7 +52,8 @@ def test_table_gives_the_median_shares_of_each_part():
     assert (second["never_examined"], second["cloud_share_median"]) == (1, 1.0)
 
 
-def test_month_table_separates_a_hole_from_a_day_of_cloud(tmp_path):
+def test_month_table_separates_a_hole_from_a_day_of_cloud(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.VISIBILITY_DAY_LOW", 0.25)
     folder = tmp_path / "goes_mask" / "2024"
     folder.mkdir(parents=True)
     clear = np.full((2, 2, 2), 100, dtype=np.uint8)  # two scans, each pixel examined
@@ -64,12 +65,15 @@ def test_month_table_separates_a_hole_from_a_day_of_cloud(tmp_path):
     np.savez(
         folder / "2024-01-03.npz", times=np.array([]), mask=np.zeros((0, 2, 2), dtype=np.uint8)
     )
-    (row,) = visibility.month_table(2024, tmp_path)
-    assert (row["month"], row["days"], row["days_with_no_scan"], row["scans"]) == (
-        "2024-01",
-        3,
-        1,
-        4,
+    rows = visibility.month_table(2024, tmp_path)
+    january, february = rows[0], rows[1]
+    assert len(rows) == 12
+    # 31 days: 2 with scans, 1 file with no scan, 28 with no file.
+    assert (january["month"], january["days"], january["days_with_no_scan"]) == ("2024-01", 31, 29)
+    assert (january["scans"], january["examined_share"], january["cloud_share"]) == (4, 0.56, 0.44)
+    assert january["days_examined_under_quarter"] == 1
+    assert (february["days"], february["days_with_no_scan"], february["examined_share"]) == (
+        29,
+        29,
+        None,
     )
-    assert (row["examined_share"], row["cloud_share"]) == (0.56, 0.44)
-    assert row["days_examined_under_quarter"] == 1
