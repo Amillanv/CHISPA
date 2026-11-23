@@ -299,8 +299,9 @@ The delays, the unmatched shares, the size classes and the table `events` were n
 
 The result for 2025 (tables `configurations`, `merge_gain` and `events`, 2026-11-23). 2025 has 589 counted fires.
 
-- Hypothesis 1 is true. The merge found 306 of the 589 counted fires. The family abi, the best sensor family, found 270.
-  Each of the 36 fires that only the merge found is smaller than 100 hectares.
+- Hypothesis 1 is true. Its first part was not a new result: the table `visibility` gave it before the run (see above).
+  The merge found 306 of the 589 counted fires. The family abi, the best sensor family, found 270.
+  Its second part is new: each of the 36 fires that only the merge found is smaller than 100 hectares.
 - The source `firms` alone found 302 fires. It has three sensor families. Thus the merge of the sources added 4 fires
   to the best source. In 2023 it added 22 fires to the source `inpe`.
 - Hypothesis 2 is true. The family abi was later than the merge on 11 of the 76 isolated fires that it found.
@@ -310,9 +311,14 @@ The result for 2025 (tables `configurations`, `merge_gain` and `events`, 2026-11
   in 2025. Thus the levels have the same sequence in each year, and a level has no fixed matched share.
 - Hypothesis 4 is false, as in 2023 and in 2024. The unmatched share of the merged configuration is 0.2255:
   13 744 of 60 952 detections. That of the family abi is 0.1712. In 2024 the merged share was 0.039.
+- A correction after a review on 2026-11-23: hypothesis 4 is not a part of the first hypothesis of the project.
+  The project hypothesis is on alerts. The unmatched share counts detections, and an alert with many detections
+  counts many times. No table compares the alerts of the merge with the alerts of one source: a baseline row is not
+  a separate fusion run (section 13.4). Thus that part of the project hypothesis has no test.
 - The fire recall of the merge was 0.5195. It was 0.8111 in 2023 and 0.6745 in 2024.
   269 of the 283 fires with no detection are smaller than 100 hectares.
-- Limits: 2025 has few fires, and only 98 isolated fires give a delay. Its GOES detections are from GOES-19 from 7 April.
+- Limits: 2025 has few fires, and only 98 isolated fires give a delay. FIRMS gives GOES-16 to 7 April and GOES-19 from
+  6 April: the rows of those two days have the two satellites (`docs/sources.md` section 8.1).
   The year can have holes in its GOES record that we did not find.
 
 On the same day we made the tables of 2023 and 2024 again, with two corrections of the tables and no change of a threshold.
@@ -491,14 +497,15 @@ Limits:
 The result of the image check (tables `image_check` and `image_agreement` of 2024, 2026-11-23). The owner made the answers.
 
 - 69 of the 90 chips had the two pictures and got an answer. The other 21 chips had no pair of pictures.
-- Unmatched HIGH events: the person saw a burn at 15 of the 44 chips with the answer "burned" or "not burned".
-- Matched HIGH events: the person saw a burn at 15 of 19 such chips. A person does not see each mapped burn in one
-  pair of pictures. Thus 15 of 44 is a lower limit.
+- Unmatched HIGH events: the person said "burned" for 15 of the 44 chips with the answer "burned" or "not burned".
+  5 more chips got "cannot tell", and 11 had no pair of pictures.
+- Matched HIGH events: the person said "burned" for 15 of 19 such chips. Thus a person can miss a burn in one pair of pictures.
+- 15 of 44 is a count of answers. It is not a limit of the burned share: we do not know how frequently a person
+  says "burned" at a place with no fire. The sample has no chip of a no-fire box.
 - The person and the rule agree for 46 of the 62 chips with one of the two answers and a clear view for the rule.
   For the other 16, the rule said "burned" for 10 and the person for 6.
 - Thus the two checks agree on the direction: a part of the unmatched HIGH events has a burn. They do not agree on one number.
-- Limits: one person, one pair of pictures for each event, and a small sample. The sample has no chip of a no-fire box:
-  we do not know how frequently a person sees a burn at a place with no fire.
+- Limits: one person, one pair of pictures for each event, and a small sample.
 
 ### 11.11 Visibility of fires
 
@@ -714,8 +721,14 @@ Statements 2 and 3 were not hypotheses before 2025. They are about a match: a pr
 The result of the test (tables `severity` and `severity_rank` of 2025, 2026-11-23).
 2025 has 1729 alerts at the evaluation time, and 332 of them match a mapped fire.
 
-- Hypothesis 1 is true on 2025. The rank correlation with the outcome is 0.3751 for the severity and 0.2679 for the
-  number of detections. Thus the hypothesis is true on 2023 and on 2025, and false on 2024.
+- Hypothesis 1 is true on 2025 by its measure. The rank correlation with the outcome is 0.3751 for the severity and
+  0.2679 for the number of detections. Thus the hypothesis is true on 2023 and on 2025, and false on 2024.
+- That measure mixes two things. An alert with no match has an outcome of 0, thus a value that separates the alerts
+  with a match gets a high rank correlation. For the area alone, read the alerts with a match: there the severity
+  has 0.3143 and the number of detections 0.3174. Thus the gain of the severity on 2025 is a better separation of
+  the alerts with a match (0.7648 against 0.6805). It is not a better sequence of the burned areas.
+- Alerts that merged later into one event have one outcome. Thus the 332 alerts with a match are not 332
+  different outcomes. A comparison with one row for each event of the end of the year is not built.
 - One part alone was as good on 2025: the largest fire power has 0.391. On 2024 it had 0.1324.
   The best single measure changes with the year: the number of detections on 2024, and the fire power on 2025.
 - For the alerts with a match only, the rank correlations of 2025 are not near zero: 0.3143 for the severity,
@@ -725,8 +738,8 @@ The result of the test (tables `severity` and `severity_rank` of 2025, 2026-11-2
   from 50 to 75. From 75 it was 5 of 6.
 - Statement 3 is true. 30 of the 50 matched alerts with a severity of 50 or more had a detection after the
   evaluation time. Below 25 it was 7 of 107.
-- The match separation of 2025 is 0.7648 for the severity, 0.6805 for the number of detections and 0.774 for the fire power.
-  In 2024 the severity and the number of detections were equal in this measure.
+- In 2024 the match separation was 0.6678 for the severity and 0.6742 for the number of detections.
+  On 2025 the fire power alone had 0.774.
 - Thus the description of the first day is true in a year that did not give it. It is one test year, with 63 alerts of 50 or more.
 - The number is not better than its parts in each year. It must not be called a forecast of the burned area.
   The owner decides if it stays as a statement of priorities.
@@ -842,7 +855,7 @@ The result of the test (tables `confidence` and `confidence_calibration` of 2025
 - 2025 is a small year. We give no range for the values: a different year can give a different result.
 
 - Limits: the label of an alert is the match of the event that holds it at the end of the year. The GOES detections of 2025 are from GOES-16
-  to 7 April and from GOES-19 after that day. Those of 2023 and 2024 are from GOES-16. The year 2025 can have holes in its GOES record that we did not find.
+  to 7 April and from GOES-19 from 6 April (`docs/sources.md` section 8.1). Those of 2023 and 2024 are from GOES-16. The year 2025 can have holes in its GOES record that we did not find.
   2025 had few fires: 589 counted fires, and 4246 in 2024. Thus the test has fewer events with a match.
   The layers have the limits of section 11.14.
 

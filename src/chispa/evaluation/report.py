@@ -29,7 +29,10 @@ LIMITS = """Limits of these results:
 - A fire that burned for many days matches the detections of all those days.
 - GOES has no low-probability detections, and has holes in late September to November 2024.
 - The availability delay of each sensor family is an estimate in `config.py`.
-- A fire in January can have detections in December of the year before. We do not count those.
+- A fire in January can have detections in December of the year before. They cannot match it.
+- A detection of December that became available in January is in the tables of the new year
+  (`first_day`). The match uses the month and the day with no year: such a detection can match
+  a fire of December of the new year at the same place.
 """
 
 
