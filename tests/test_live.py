@@ -142,3 +142,18 @@ def test_only_a_log_that_gets_no_more_rows_is_complete(tmp_path, monkeypatch):
         path.write_text("observed_at\n")
     # At 19:30 on 21 November, the log of 19 November is 2 days old. The log of 20 November is not.
     assert [path.stem for path in live.complete_logs(tmp_path, NOW)] == ["2026-11-19"]
+
+
+def test_mask_file_with_no_time_of_the_first_view_gets_an_estimate(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.GOES_RAW_DELAY", timedelta(minutes=10))
+    folder = tmp_path / "2026"
+    folder.mkdir()
+    first = datetime(2026, 11, 23, 3, 0, tzinfo=UTC)
+    # A file that an earlier version of the poller made: it has no `seen`.
+    np.savez(folder / "2026-11-23.npz", times=np.array([first.isoformat()]), mask=MASK[None])
+    second = first + timedelta(minutes=10)
+    live._add_mask(folder, second, second + timedelta(minutes=12), MASK)
+    day = np.load(folder / "2026-11-23.npz")
+    assert day["times"].tolist() == [first.isoformat(), second.isoformat()]
+    assert day["seen"].tolist() == ["2026-11-23T03:10:00+00:00", "2026-11-23T03:22:00+00:00"]
+    assert day["mask"].shape == (2, 1, 2)
