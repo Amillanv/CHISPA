@@ -96,13 +96,11 @@ def activity(hours: float, step_hours: float, as_of: datetime) -> dict:
 
 
 def live_status(as_of: datetime) -> dict:
-    """Return the newest pass of the poller at or before `as_of`, and the result of each source.
-
-    The time from that pass to `as_of` says how old the live data is. With no pass at or before
-    `as_of`, the store has archive data only, with an estimate of when each detection was available.
+    """Return how old the live data was at `as_of`: the newest pass of the poller, the newest pass
+    in which no source failed, and the time from which the data is late. `live.py` gives each value.
     """
     _check(0.0, 0.0, as_of)
-    return {"as_of": to_text(as_of)} | live.last_pass(config.RAW_DIR, as_of)
+    return {"as_of": to_text(as_of)} | live.status(config.RAW_DIR, as_of)
 
 
 def evaluation_summary(year: int) -> dict:

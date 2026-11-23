@@ -94,7 +94,6 @@ def settings() -> dict:
         "since_hours": config.DASHBOARD_SINCE_HOURS,
         "windows": [{"hours": h, "step_hours": s} for h, s in config.DASHBOARD_WINDOWS],
         "refresh_s": config.DASHBOARD_REFRESH.total_seconds(),
-        "poll_late_s": config.DASHBOARD_POLL_LATE.total_seconds(),
         "time_zone": config.DASHBOARD_TIME_ZONE,
         "replays": [to_text(moment) for moment in config.DASHBOARD_REPLAYS],
         "levels": LEVELS,
