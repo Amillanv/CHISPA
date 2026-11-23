@@ -7,7 +7,7 @@ The logs are raw files: they only grow, and `build` can read them again.
 
 import csv
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -174,6 +174,55 @@ def complete_logs(raw_dir: Path, now: datetime) -> list[Path]:
     because a file in the bucket never changes."""
     last = (now - config.LIVE_COMPLETE_AFTER).date().isoformat()
     return sorted(path for path in (raw_dir / "live").rglob("*.csv") if path.stem <= last)
+
+
+def status(raw_dir: Path, as_of: datetime) -> dict:
+    """Return how old the live data was at the as-of time, from the poll log.
+
+    `archive` is True before the first day of the live logs: then the store has archive data.
+    `newest_pass_at` is the newest pass, with a result for each source. `complete_pass_at` is the
+    newest pass in which no source failed: the store has the data of each source to that pass.
+    A pass in which a source failed does not make the data newer. `late_at` is the time from which
+    the data is late. The answer gives no failure text: a text can hold a key or an address.
+    """
+    found = {"archive": as_of < config.LIVE_START, "newest_pass_at": None, "sources": None}
+    found |= {"complete_pass_at": None, "late_at": None}
+    for polled_at, rows in _passes(raw_dir, as_of):
+        if found["newest_pass_at"] is None:
+            found |= {"newest_pass_at": polled_at, "sources": _results(rows)}
+        if all(row["result"] == "ok" for row in rows):
+            late = datetime.fromisoformat(polled_at) + config.LIVE_POLL_LATE
+            return found | {"complete_pass_at": polled_at, "late_at": late.isoformat()}
+    return found
+
+
+def _passes(raw_dir: Path, as_of: datetime):
+    """Give (time, rows) for each pass at or before the as-of time, the newest first."""
+    day = as_of.astimezone(UTC).date().isoformat()
+    for path in sorted((raw_dir / "live" / "polls").glob("*.csv"), reverse=True):
+        if path.stem > day:
+            continue
+        passes: dict[str, list[dict]] = {}
+        for row in _read(path):
+            if datetime.fromisoformat(row["polled_at"]) <= as_of:
+                passes.setdefault(row["polled_at"], []).append(row)
+        yield from sorted(
+            passes.items(), key=lambda item: datetime.fromisoformat(item[0]), reverse=True
+        )
+
+
+def _results(rows: list[dict]) -> dict[str, dict]:
+    """Return, for each source of one pass, its items, its failed items and its new rows.
+
+    A source with no row read no new scan or file and recorded no failure in that pass.
+    """
+    sources: dict[str, dict] = {}
+    for row in rows:
+        found = sources.setdefault(row["source"], {"items": 0, "failed": 0, "new_rows": 0})
+        found["items"] += 1
+        found["failed"] += row["result"] != "ok"
+        found["new_rows"] += int(row["new_rows"])
+    return sources
 
 
 def _read(path: Path) -> list[dict]:

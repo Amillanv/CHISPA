@@ -77,6 +77,8 @@ def route(path: str, arguments: dict[str, str]) -> Answer:
     elif path == "/api/activity":
         hours, step = number(arguments, "hours"), number(arguments, "step_hours")
         answer = tools.activity(hours, step, as_of)
+    elif path == "/api/live":
+        answer = tools.live_status(as_of)
     elif path.startswith("/api/evaluation/"):
         answer = tools.evaluation_summary(_integer(path.removeprefix("/api/evaluation/")))
     else:
@@ -92,6 +94,7 @@ def settings() -> dict:
         "since_hours": config.DASHBOARD_SINCE_HOURS,
         "windows": [{"hours": h, "step_hours": s} for h, s in config.DASHBOARD_WINDOWS],
         "refresh_s": config.DASHBOARD_REFRESH.total_seconds(),
+        "time_zone": config.DASHBOARD_TIME_ZONE,
         "replays": [to_text(moment) for moment in config.DASHBOARD_REPLAYS],
         "levels": LEVELS,
         "evaluated_years": [config.DEVELOPMENT_YEAR, config.TEST_YEAR],

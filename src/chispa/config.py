@@ -316,6 +316,9 @@ LIVE_START = datetime(2026, 11, 20, tzinfo=UTC)
 # Thus a short stop of the poller loses no data. A scan or a file that is older is not read.
 LIVE_LOOKBACK = timedelta(hours=3)
 
+# The poller runs each 5 minutes. Late: this time with no pass in which all sources answered.
+LIVE_POLL_LATE = timedelta(minutes=15)
+
 # A live log of a day can get new rows for this long after the start of that day:
 # a FIRMS request for 2 days gives rows of the day before. Then the log is complete.
 LIVE_COMPLETE_AFTER = timedelta(days=2)
@@ -347,6 +350,10 @@ DASHBOARD_WINDOWS = ((72.0, 1.0), (168.0, 3.0), (720.0, 12.0))
 
 # In live mode the page gets the data again after this time.
 DASHBOARD_REFRESH = timedelta(minutes=5)
+
+# The local time of the Pantanal. Mato Grosso do Sul and Mato Grosso had the same time, UTC-4,
+# at each hour from 2020 to 2026 (`docs/sources.md` section 8.16).
+DASHBOARD_TIME_ZONE = "America/Campo_Grande"
 
 # Moments of recorded data that the page offers for a replay: days with many events.
 DASHBOARD_REPLAYS = (

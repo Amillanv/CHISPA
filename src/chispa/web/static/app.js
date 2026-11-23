@@ -5,12 +5,13 @@ import { MapView } from "./map.js";
 import { History } from "./history.js";
 import * as panels from "./panels.js";
 import { list, dossier } from "./events.js";
-import { esc, utc, dur, coord, num } from "./format.js";
+import { esc, dur, coord, num } from "./format.js";
+import { drawClock, tick } from "./clock.js";
 
 const $ = (id) => document.getElementById(id);
 const state = {
   settings: null, live: true, anchor: null, asOf: null, windowIndex: 1,
-  events: [], day: null, activity: null, past: null, years: {}, year: null,
+  events: [], day: null, activity: null, past: null, pass: undefined, years: {}, year: null, ladderZone: "utc",
   selectedId: null, record: null, recordError: null, open: null, view: "list",
   sort: "level", filter: new Set(["HIGH", "MEDIUM", "LOW"]),
 };
@@ -48,6 +49,7 @@ async function init() {
   loadYears();
   state.live ? goLive() : (loadWindow(), loadMoment());
   setInterval(() => { if (state.live) goLive(); }, state.settings.refresh_s * 1000);
+  setInterval(() => tick(state), 1000);
   new ResizeObserver(() => map.resize()).observe(document.body);
 }
 
@@ -101,10 +103,11 @@ async function loadWindow() {
 
 async function loadMoment() {
   const ticket = ++tickets.moment;
-  drawClock();
+  drawClock(state);
   writeUrl();
   try {
     const past = pastParams();
+    loadPass(ticket);
     const [alerts, day, steps] = await Promise.all([
       get("/api/alerts", { as_of: state.asOf }),
       get("/api/activity", { as_of: state.asOf, hours: 24, step_hours: 1 }),
@@ -122,6 +125,17 @@ async function loadMoment() {
   } catch (error) {
     $("right").innerHTML = `<div class="loading">${esc(error.message)}</div>`;
   }
+}
+
+/* The status of the poller, apart from the other answers: a problem with the poll log stops only the lag. */
+async function loadPass(ticket) {
+  state.pass = undefined;
+  tick(state);
+  let pass = null;
+  try { pass = await get("/api/live", { as_of: state.asOf }); } catch (error) { console.error(error); }
+  if (ticket !== tickets.moment) return;
+  state.pass = pass;
+  tick(state);
 }
 
 async function loadRecord(move) {
@@ -190,8 +204,12 @@ function drawRecordCard() {
 function drawRight() {
   if (state.view === "dossier") {
     dossier($("right"), {
-      record: state.record, error: state.recordError, trackRecord: state.years[state.settings.test_year], settings: state.settings, open: state.open,
-      on: { back, zoom: () => state.record && map.select(state.record, true), tile: (name) => { state.open = state.open === name ? null : name; drawRight(); } },
+      record: state.record, error: state.recordError, trackRecord: state.years[state.settings.test_year], settings: state.settings, open: state.open, zone: state.ladderZone,
+      on: {
+        back, zoom: () => state.record && map.select(state.record, true),
+        tile: (name) => { state.open = state.open === name ? null : name; drawRight(); },
+        zone: (zone) => { state.ladderZone = zone; drawRight(); },
+      },
     });
     return;
   }
@@ -207,17 +225,6 @@ function drawRight() {
 
 function drawHistory() {
   band.set({ activity: state.activity, past: state.past, asOf: state.asOf, windows: state.settings.windows, windowIndex: state.windowIndex, record: state.view === "dossier" ? state.record : null });
-}
-
-function drawClock() {
-  const mode = $("mode");
-  mode.className = `mode${state.live ? " live" : ""}`;
-  mode.innerHTML = `<span class="dot"></span>${state.live ? "Live" : "Replay"}`;
-  mode.title = state.live ? "The as-of time is now." : "Go back to live.";
-  $("asof").textContent = `${utc(state.asOf)} UTC`;
-  const select = $("replays");
-  const options = state.settings.replays.map((t) => `<option value="${t}"${!state.live && t === state.anchor ? " selected" : ""}>${utc(t)}</option>`).join("");
-  select.innerHTML = `<option value="">Replay a moment</option>${options}`;
 }
 
 function hoverFromMap(id, mouse) {
