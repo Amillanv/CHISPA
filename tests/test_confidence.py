@@ -3,7 +3,15 @@
 import numpy as np
 
 from chispa import confidence
-from chispa.evaluation.confidence import as_table, result_tables, separation, weight_table
+from chispa.evaluation.confidence import (
+    activity,
+    as_table,
+    level_rates,
+    near_count,
+    result_tables,
+    separation,
+    weight_table,
+)
 
 
 def found(**changes):
@@ -21,7 +29,13 @@ def found(**changes):
 
 
 def seen(**changes):
-    return {"families": {"viirs"}, "has_high": False, "day": 1, "local_hour": 12.0} | changes
+    return {
+        "families": {"viirs"},
+        "has_high": False,
+        "day": 1,
+        "local_hour": 12.0,
+        "near": 0,
+    } | changes
 
 
 def test_inputs_come_from_the_facts_and_from_what_the_detections_say():
@@ -35,8 +49,10 @@ def test_inputs_come_from_the_facts_and_from_what_the_detections_say():
 
 def test_inputs_for_a_night_detection_with_fire_power_and_an_advance():
     values = confidence.inputs(
-        found(max_frp_mw=9.0, advance_m=1500.0, cover=None), seen(local_hour=22.0, has_high=True)
+        found(max_frp_mw=9.0, advance_m=1500.0, cover=None),
+        seen(local_hour=22.0, has_high=True, near=9),
     )
+    assert round(values["near_log"], 4) == round(float(np.log(10)), 4)
     assert (values["night"], values["has_high"], values["no_power"]) == (1.0, 1.0, 0.0)
     assert (values["has_advance"], values["on_forest"]) == (1.0, 0.0)
     assert round(values["power_log"], 4) == round(float(np.log(10)), 4)
@@ -62,6 +78,7 @@ def test_separation_is_the_share_of_pairs_in_the_correct_sequence():
 
 def test_tables_compare_the_probability_with_the_level():
     model = {"inputs": ["x"], "mean": [0.0], "spread": [1.0], "start": 0.0, "weights": [2.0]}
+    model |= {"base_rate": 0.6, "level_rates": [0.75, 0.0, 0.6]}
     rows = [
         {"inputs": {"x": value}, "level": level, "matched": matched}
         for value, level, matched in (
@@ -77,6 +94,12 @@ def test_tables_compare_the_probability_with_the_level():
     assert by_measure[("0", "probability")]["match_separation"] == 1.0
     assert by_measure[("0", "level")]["match_separation"] == 0.25
     assert by_measure[("0", "level")]["events_matched"] == 3
+    # The level gives 0.75 to four events (3 match) and 0 to one event with no match.
+    assert by_measure[("0", "level")]["brier"] == round((3 * 0.25**2 + 0.75**2) / 5, 4)
+    assert (
+        by_measure[("0", "probability")]["brier_skill"] > by_measure[("0", "level")]["brier_skill"]
+    )
+    assert by_measure[("0", "probability")]["top_tenth"] == 0
     fifths = [row for row in tables["confidence_calibration"] if row["moment_h"] == "0"]
     assert [row["matched_share"] for row in fifths] == [0.0, 0.0, 1.0, 1.0, 1.0]
     assert as_table(rows, ("x",))[0].shape == (5, 1)
@@ -85,3 +108,28 @@ def test_tables_compare_the_probability_with_the_level():
         "input": "x",
         "weight": 2.0,
     }
+
+
+def test_activity_counts_only_the_days_before_and_the_cells_around(monkeypatch):
+    monkeypatch.setattr("chispa.config.PANTANAL_BOX", (0.0, 0.0, 1.0, 1.0))
+    monkeypatch.setattr("chispa.config.CONFIDENCE_NEAR_CELL_DEG", 0.1)
+    monkeypatch.setattr("chispa.config.CONFIDENCE_NEAR_DAYS", 2)
+    day = 86_400.0
+    detections = {
+        # Day 0: far in time. Day 1 and day 2: near. Day 3: the same day. Day 2: far in space.
+        "available": np.array([0.0, day, 2 * day, 3 * day, 2 * day]),
+        "lat": np.array([0.55, 0.55, 0.65, 0.55, 0.95]),
+        "lon": np.array([0.55, 0.55, 0.45, 0.55, 0.05]),
+    }
+    counts, place = activity(detections)
+    assert near_count(counts, place, 3 * day + 100, 0.55, 0.55) == 2
+    assert near_count(counts, place, 0.0, 0.55, 0.55) == 0
+
+
+def test_level_with_no_event_gets_the_share_of_all_events():
+    rows = [
+        {"level": 0, "matched": True},
+        {"level": 0, "matched": False},
+        {"level": 2, "matched": True},
+    ]
+    assert level_rates(rows, 0.4) == [0.5, 0.4, 1.0]

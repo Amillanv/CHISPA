@@ -37,8 +37,14 @@ Checked 2026-11-23 with live requests, for the 2025 data:
 - In `GOES_NRT`, the `satellite` field changed in 2025. On 2025-03-15 it had `G16`. On 2025-04-10, 2025-08-15 and 2025-12-15 it had `G19`.
   The rows of `G19` have the mask class in the `confidence` field, as the rows of `G16`. We use `G19` with the platform name `GOES19`.
 - The same days also had `G19FRP`, `Met10` and a new value `Met12`. We do not use them, as before.
-- Not checked: holes in the `G19` record of 2025. A hole in 2024 was seven weeks long. April 2025, the month of the change,
-  has GOES detections on 14 days. Each other month has them on 26 days or more.
+- April 2025 has GOES detections on 14 days. Each other month has them on 26 days or more. Checked 2026-11-23:
+  - FIRMS gives `G16` to 2025-04-07 and `G19` from 2025-04-06. The two are in the rows of 6 and 7 April.
+  - FIRMS has no `G19` row in the Pantanal box on 13 to 18 April and on 22 to 30 April.
+  - The NOAA bucket `noaa-goes19` has all 144 files for 11, 16, 23 and 27 April. The bucket `noaa-goes16` has none for those days.
+  - In 12 scans of each of those days, the window of the box had 3, 0, 1 and 0 fire pixels. The sensor examined
+    84, 51, 24 and 17 percent of the window: the days with no row had much cloud.
+  - Thus we found no hole in April 2025: the raw files exist, and they have almost no fire pixels. We read one scan of each two hours, not all.
+- Not checked: holes in the `G19` record of the other months of 2025. A hole in 2024 was seven weeks long.
 - The 2025 store has 200 140 detections, 17 146 fires and 589 counted fires: a year with few fires.
 - The burn scar asset has the band `burned_monthly_2025`. The burn day product has one image for each month of 2025.
 

@@ -55,7 +55,7 @@ The first alert of an event is LOW, and it is the quickest alert that we can mak
 HIGH needs a second sensor family. On 93 isolated fires of 2024, it came a median of 2.8 hours later.
 The hypothesis: data that exists at the first detection can say which first alerts will match a mapped fire, better than the level.
 A small model gives that probability at the first alert and 24 hours later (`chispa confidence`, method 11.15). Its weights come from 2023.
-On 2024, the year that we use to tune it, its match separation at the first alert was 0.8131, and that of the level was 0.5625 (6260 events).
+On 2024, the year that we use to tune it, 575 of the 626 events with the largest probability at the first alert matched a mapped fire. For the level it was 291 of 626. The match separation was 0.8579 against 0.5625 (6260 events).
 This is not the test. The 2025 data is in the store, and the test on 2025 is not run.
 
 ## Status
