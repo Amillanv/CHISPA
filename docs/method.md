@@ -115,14 +115,21 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 - Add a field only with its measure: how do we know that the field is correct, and on which data?
 - A fire has no "type" in the record. No source gives a label for a controlled burn. The land cover is in the facts.
 - The confidence rank is the share of the alerts of the development year with a smaller value. It is not a probability.
+- The land cover is the map of the year before the first detection of the event, not later than the last year of the map
+  (`config.py`). If that file is absent, the record has no severity and no rank, and a note.
+- `level_changes` has the changes of the event itself. An alert that the event absorbed had its own levels before the merge.
+- `viirs_passes_after_last_detection` counts passes, not granules: the granules of one satellite that are not farther apart
+  than the pass gap are one pass.
   The record uses the model of moment 0 in the first 24 hours of an event, and the model of moment 24 after that.
   We examined the model only at those two moments. At a different time, the rank is the best value that we have, not a checked value.
 - `goes_view` reads the saved masks: one scan of each hour for the years that `chispa fetch goes_mask` got,
-  and each scan that the live poller read. It gives the group of the pixel of the event centre in the newest scan:
+  and each scan that the live poller read. It uses only a scan that we had at the as-of time: a live mask has the time
+  when the poller got it, and a recorded mask counts from the delay of a raw file after its scan start (`config.py`). It gives the group of the pixel of the event centre in the newest scan:
   `no_fire` says that GOES examined the pixel and found no fire, and `cloud` says that it could not examine it (section 7.2).
   It is one pixel at one time. It does not say that a fire is out.
-- The level and the confidence rank say if an event is a real fire. `goes_view`, `growth` and the passes after the
-  last detection say what the sensors see now. Do not use one for the other.
+- The level and the confidence rank put the events in a sequence by their evidence for a match with a mapped fire.
+  They do not decide that a fire is real: a burn can be absent from the map. `goes_view`, `growth` and the passes after
+  the last detection say what the sensors see now. Do not use one for the other.
 
 ### 7.4 Rules for a new part
 
@@ -169,6 +176,7 @@ Each source module returns records with these fields and no others.
 A satellite observation is not available at the moment of the observation.
 For a recorded detection it is an estimate: `observed_at` plus a fixed delay from `config.py`. Say so in the results.
 For a live detection it is a measurement: the time of the pass of the poller that first saw it.
+The live logs start on the day in `config.py`. The detections of 2026 before that day come from the archive, with the estimate.
 
 ### 9.3 Missing values
 
@@ -516,7 +524,9 @@ The result (table `growth_steps`, 2026-11-22): the hypothesis is false in 2023 a
   The 90th percentile was 335 m and 354 m. The two years agree.
 - A speed for a step with less than 2 hours has no meaning: the error of the positions, divided by a short time, gives a high value.
   Thus a step has a speed only with 6 hours or more from the pass before.
-- More than half of the steps with 6 to 18 hours came after an empty pass: a satellite passed and gave no detection of the event.
+- Some steps came after an empty pass: a satellite passed and gave no detection of the event. In the steps with
+  6 to 18 hours that is 610 of 1769 in 2023 and 1309 of 4546 in 2024. A granule that is nearer than the pass gap to one of
+  the two passes of a step is a part of that pass, and it is not an empty pass.
 
 What a step can say: "new pixels past the floor, this far, in this direction", or "no measured advance".
 The first is true for less than half of the steps. "No measured advance" does not say that the fire did not move.

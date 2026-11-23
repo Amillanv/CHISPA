@@ -236,7 +236,7 @@ def confidence_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, l
     The development year makes the model and saves it. Each other year reads that model.
     """
     detections, pairs, fires, _ = prepare(year, store_path, raw_dir)
-    layers = severity.load_layers(raw_dir, year - 1)
+    layers = severity.load_layers(raw_dir, severity.cover_year(year))
     merges = load_merges(sqlite3.connect(store_path), year)
     links = (event_fires(detections, pairs, fires), detection_fires(detections, pairs, fires))
     rows = moment_rows(detections, merges, links, layers)
@@ -247,10 +247,10 @@ def confidence_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, l
             names = names_of(moment)
             models[moment] = confidence.fit(*as_table(rows[moment], names), names)
             models[moment]["level_rates"] = level_rates(rows[moment], models[moment]["base_rate"])
-            # The values of the alerts of this year, as 101 percentiles. A value of a new alert
-            # gets its rank from them.
+            # The values of the alerts of this year, in sequence. A value of a new alert gets
+            # its rank from them: the share of these values that are smaller.
             values = confidence.probability(models[moment], as_table(rows[moment], names)[0])
-            models[moment]["reference"] = np.percentile(values, range(101)).tolist()
+            models[moment]["reference"] = np.sort(values).round(6).tolist()
         confidence.save(models, path)
     models = confidence.load(path)
     tables = result_tables(rows, models)

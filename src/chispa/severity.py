@@ -54,6 +54,11 @@ def load_layers(raw_dir: Path, cover_year: int) -> Layers:
     return Layers(grid, cover, people_near, distance_km, nearest, names)
 
 
+def cover_year(event_year: int) -> int:
+    """Return the land cover year for an event: the year before it, if the map has that year."""
+    return min(event_year - 1, config.LANDCOVER_LAST_YEAR)
+
+
 def cover_groups(classes: np.ndarray) -> np.ndarray:
     """Return the group name of each land cover class in an array."""
     names = np.full(256, "other", dtype="U9")

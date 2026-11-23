@@ -207,7 +207,15 @@ VISIBILITY_FIRE_LOW = 0.5
 # A day is a day of cloud if GOES examined less than this share of the mask window.
 VISIBILITY_DAY_LOW = 0.25
 
+# A raw GOES file is in the NOAA bucket this long after the start of its scan (`docs/sources.md`
+# section 8.10). We did not have a recorded mask before that time.
+GOES_RAW_DELAY = timedelta(minutes=10)
+
 # --- Severity ---
+
+# The last year of the land cover map. An event uses the map of the year before it,
+# not later than this year.
+LANDCOVER_LAST_YEAR = 2024
 
 # The side of a cell of the layer grid, in scar pixels: approximately 300 m.
 LAYER_CELLS = 10
