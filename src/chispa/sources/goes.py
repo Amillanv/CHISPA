@@ -63,16 +63,17 @@ def mask_groups(mask: np.ndarray) -> np.ndarray:
     return names[mask]
 
 
-def download_masks(year: int, raw_dir: Path) -> list[Path]:
+def download_masks(year: int, raw_dir: Path, last: date) -> list[Path]:
     """Save the mask of the Pantanal box for one scan of each hour, as one file for each day.
 
     A file holds the scan times and one mask for each time. `grid.npz` holds the position of
-    each pixel. The grid of one satellite does not change.
+    each pixel. The grid of one satellite does not change. `last` is the last day to save:
+    a day in progress is not complete, and a raw file does not change.
     """
     folder = raw_dir / "goes_mask" / str(year)
     folder.mkdir(parents=True, exist_ok=True)
     paths, day = [], date(year, 1, 1)
-    while day.year == year:
+    while day <= min(last, date(year, 12, 31)):
         path = folder / f"{day}.npz"
         if not path.exists():
             hourly = {start.hour: (key, start) for key, start in reversed(_list_scans(day))}
