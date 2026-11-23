@@ -34,7 +34,10 @@ def load_layers(raw_dir: Path, cover_year: int) -> Layers:
     grid = layer_grid()
     side = config.SEVERITY_PEOPLE_CELLS
     people = settlements.read(raw_dir).astype(float)
-    people_near = ndimage.uniform_filter(people, size=side, mode="constant") * side**2
+    # The filter gives a very small negative number where there are no people.
+    people_near = np.clip(
+        ndimage.uniform_filter(people, size=side, mode="constant") * side**2, 0, None
+    )
     cell_km = (
         grid.pixel_deg * 110.574,
         grid.pixel_deg * 111.32 * np.cos(np.deg2rad(grid.lats().mean())),
@@ -49,6 +52,11 @@ def load_layers(raw_dir: Path, cover_year: int) -> Layers:
         nearest[kind] = ids[rows, cols]
     cover = landcover.read_year(cover_year, raw_dir)
     return Layers(grid, cover, people_near, distance_km, nearest, names)
+
+
+def cover_year(event_year: int) -> int:
+    """Return the land cover year for an event: the year before it, if the map has that year."""
+    return min(event_year - 1, config.LANDCOVER_LAST_YEAR)
 
 
 def cover_groups(classes: np.ndarray) -> np.ndarray:

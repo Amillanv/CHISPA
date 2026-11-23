@@ -10,6 +10,7 @@ import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import numpy as np
 import requests
 
 from chispa import config
@@ -98,7 +99,11 @@ def _poll_goes(live: Path, now: datetime) -> list[dict]:
     results = []
     try:
         new_scans = [scan for scan in goes.list_live(now) if scan[1].isoformat() not in done]
-        for observed_at, published_at, pixels, mask_counts in goes.read_live(new_scans):
+        if new_scans and not (live / "goes_mask" / "grid.npz").exists():
+            lat, lon = goes.mask_grid(new_scans[0])
+            (live / "goes_mask").mkdir(parents=True, exist_ok=True)
+            np.savez_compressed(live / "goes_mask" / "grid.npz", lat=lat, lon=lon)
+        for observed_at, published_at, pixels, mask_counts, mask in goes.read_live(new_scans):
             rows = [
                 dict(zip(goes.COLUMNS, [observed_at.isoformat(), *pixel], strict=True))
                 | _times(now, published_at)
@@ -110,6 +115,7 @@ def _poll_goes(live: Path, now: datetime) -> list[dict]:
                 {"observed_at": observed_at.isoformat()} | mask_counts | _times(now, published_at)
             )
             _append(live / "goes_mask" / f"{observed_at.date()}.csv", [seen])
+            _add_mask(live / "goes_mask" / str(observed_at.year), observed_at, now, mask)
             results.append(_result(now, "goes", observed_at.isoformat(), "ok", len(rows)))
     except requests.RequestException as error:
         results.append(_result(now, "goes", "request", f"failed: {type(error).__name__}", 0))
@@ -131,6 +137,29 @@ def _poll_inpe(live: Path, now: datetime) -> list[dict]:
     except requests.RequestException as error:
         results.append(_result(now, "inpe", "request", f"failed: {type(error).__name__}", 0))
     return results
+
+
+def _add_mask(folder: Path, observed_at: datetime, seen_at: datetime, mask: np.ndarray) -> None:
+    """Add the mask of one scan to the mask file of its day, with the time when we first had it.
+
+    The file has the form of the recorded masks. Thus the event record reads the two in one way:
+    for a place, it can say if GOES examined it, or if cloud hid it.
+    """
+    path = folder / f"{observed_at.date()}.npz"
+    times, seen = np.array([], dtype="U25"), np.array([], dtype="U25")
+    masks = np.empty((0, *mask.shape), dtype=np.uint8)
+    if path.exists():
+        day = np.load(path)
+        times, seen, masks = day["times"], day["seen"], day["mask"]
+    folder.mkdir(parents=True, exist_ok=True)
+    part = path.with_suffix(".part.npz")  # A pass that stops in the middle does not break the file.
+    np.savez_compressed(
+        part,
+        times=np.append(times, observed_at.isoformat()),
+        seen=np.append(seen, seen_at.isoformat(timespec="seconds")),
+        mask=np.concatenate([masks, mask[None]]),
+    )
+    part.replace(path)
 
 
 def complete_logs(raw_dir: Path, now: datetime) -> list[Path]:

@@ -21,7 +21,6 @@ FROM detections d JOIN memberships m ON m.detection_id = d.id
 WHERE d.sensor_family = ? AND m.event_id >= ? AND m.event_id < ?
 ORDER BY m.event_id
 """
-SAME_PASS_S = 600  # A granule this near to a pass with detections is a part of that pass.
 
 
 def load_events(store: sqlite3.Connection, year: int, raw_dir: Path) -> dict[int, tuple]:
@@ -47,8 +46,10 @@ def has_empty_pass(step: dict, lat: float, lon: float, granules: list, starts: n
     """Return True if a VIIRS satellite passed over the position between the two passes of a step,
     with no detection of the event."""
     before = step["at"] - step["hours"] * 3600
-    first = np.searchsorted(starts, before + SAME_PASS_S)
-    last = np.searchsorted(starts, step["at"] - SAME_PASS_S)
+    # A granule that is nearer than the pass gap to one of the two passes is a part of that pass.
+    gap_s = config.PASS_GAP.total_seconds()
+    first = np.searchsorted(starts, before + gap_s)
+    last = np.searchsorted(starts, step["at"] - gap_s)
     return any(passes.covers(granules[number][2], lat, lon) for number in range(first, last))
 
 

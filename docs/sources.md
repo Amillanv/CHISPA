@@ -48,6 +48,17 @@ Checked 2026-11-23 with live requests, for the 2025 data:
 - The 2025 store has 200 140 detections, 17 146 fires and 589 counted fires: a year with few fires.
 - The burn scar asset has the band `burned_monthly_2025`. The burn day product has one image for each month of 2025.
 
+Checked 2026-11-23 with live requests, for the data of 2026 before the live logs:
+
+- The archive products (`_SP`) have data to 2026-08-31. FIRMS gives the last day of each product at `/api/data_availability/csv/{key}/ALL`.
+- The live products `VIIRS_SNPP_NRT`, `VIIRS_NOAA20_NRT` and `MODIS_NRT` have data from 2026-09-01. `VIIRS_NOAA21_NRT` has data from 2024-01-17.
+- A request for an archive product after its last day gives no row and no error. Thus `fetch firms` asks FIRMS for the last day,
+  and it gets the live product of the same satellite for the later days.
+- A request on 2026-10-10 for 2 days gave no row for each of the four live products. Not checked: if this is a hole or two days with no fire.
+- The rows of a live product from the archive have no time of the first view. Their `available_at` is an estimate, as for 2023 to 2025.
+- INPE has the monthly files of 2026 to November. The file of a month in progress changes each day: we get the months to October.
+  INPE also has a file for each day (`focos/csv/diario/`). We do not read it. Thus 1 to 19 November 2026 has no INPE detection.
+
 ### 8.2 GOES fire product
 
 Checked 2026-11-19 with live requests and one raw file.

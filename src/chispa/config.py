@@ -207,7 +207,15 @@ VISIBILITY_FIRE_LOW = 0.5
 # A day is a day of cloud if GOES examined less than this share of the mask window.
 VISIBILITY_DAY_LOW = 0.25
 
+# A raw GOES file is in the NOAA bucket this long after the start of its scan (`docs/sources.md`
+# section 8.10). We did not have a recorded mask before that time.
+GOES_RAW_DELAY = timedelta(minutes=10)
+
 # --- Severity ---
+
+# The last year of the land cover map. An event uses the map of the year before it,
+# not later than this year.
+LANDCOVER_LAST_YEAR = 2024
 
 # The side of a cell of the layer grid, in scar pixels: approximately 300 m.
 LAYER_CELLS = 10
@@ -299,6 +307,10 @@ FIRMS_PAUSE_S = 1.0
 SCAR_TILE_PX = 2048
 
 # --- Live operation ---
+
+# The first day of the live logs. A fetch of the archive files stops on the day before it:
+# from this day, the detections come from the poller, with the time when we first saw them.
+LIVE_START = datetime(2026, 11, 20, tzinfo=UTC)
 
 # One pass of the poller reads the GOES scans and the INPE files of this many hours before it.
 # Thus a short stop of the poller loses no data. A scan or a file that is older is not read.

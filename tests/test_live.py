@@ -4,6 +4,8 @@ import csv
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import numpy as np
+
 from chispa import live
 from chispa.sources import goes
 
@@ -29,6 +31,9 @@ def read(path):
         return list(csv.DictReader(file))
 
 
+MASK = np.array([[100, 200]], dtype=np.uint8)  # one pixel examined, one pixel with cloud
+
+
 def replace_sources(monkeypatch, firms_rows, scans):
     """One FIRMS product that gives `firms_rows`, and GOES scans with one fire pixel each."""
     monkeypatch.setattr("chispa.sources.firms.LIVE_PRODUCTS", {"VIIRS_NOAA21_NRT": "viirs"})
@@ -37,11 +42,13 @@ def replace_sources(monkeypatch, firms_rows, scans):
     monkeypatch.setattr(
         "chispa.sources.goes.read_live",
         lambda new: [
-            (start, published, [[-17.5, -57.5, 10, 20.7]], {"no_fire": 90, "cloud": 10})
+            (start, published, [[-17.5, -57.5, 10, 20.7]], {"no_fire": 90, "cloud": 10}, MASK)
             for _, start, published in new
         ],
     )
     monkeypatch.setattr("chispa.sources.inpe.list_live", lambda now: [])
+    grid = (np.array([[-17.5, -17.5]]), np.array([[-57.5, -57.4]]))
+    monkeypatch.setattr("chispa.sources.goes.mask_grid", lambda scan: grid)
 
 
 def test_listing_gives_the_scan_time_and_the_publication_time():
@@ -75,6 +82,10 @@ def test_goes_scan_is_read_one_time(tmp_path, monkeypatch):
     seen = read(tmp_path / "live" / "goes_mask" / "2026-11-21.csv")
     assert [(row["no_fire"], row["cloud"]) for row in seen] == [("90", "10")] * len(seen)
     assert len(seen) == len({row["observed_at"] for row in log})
+    # The mask of each scan is in the file of its day, in the form of the recorded masks.
+    day = np.load(tmp_path / "live" / "goes_mask" / "2026" / "2026-11-21.npz")
+    assert (len(day["times"]), day["mask"].shape) == (len(seen), (len(seen), 1, 2))
+    assert (tmp_path / "live" / "goes_mask" / "grid.npz").exists()
     assert [result for result in again if result["source"] == "goes"] == []
     assert len(log) == 1
     assert (log[0]["observed_at"], log[0]["published_at"]) == (
