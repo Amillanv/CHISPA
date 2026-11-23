@@ -11,7 +11,7 @@ import { drawClock, tick } from "./clock.js";
 const $ = (id) => document.getElementById(id);
 const state = {
   settings: null, live: true, anchor: null, asOf: null, windowIndex: 1,
-  events: [], day: null, activity: null, past: null, pass: undefined, years: {}, year: null, ladderZone: "utc",
+  events: [], day: null, activity: null, past: null, pass: undefined, years: {}, year: null, ladderZone: "local", allPasses: false,
   selectedId: null, record: null, recordError: null, open: null, view: "list",
   sort: "level", filter: new Set(["HIGH", "MEDIUM", "LOW"]),
 };
@@ -173,6 +173,7 @@ function select(id, move) {
   state.view = "dossier";
   state.record = null;
   state.open = null;
+  state.allPasses = false;
   const row = state.events.find((e) => e.event_id === id);
   if (row) map.select(row, move);
   drawRight();
@@ -204,11 +205,13 @@ function drawRecordCard() {
 function drawRight() {
   if (state.view === "dossier") {
     dossier($("right"), {
-      record: state.record, error: state.recordError, trackRecord: state.years[state.settings.test_year], settings: state.settings, open: state.open, zone: state.ladderZone,
+      record: state.record, error: state.recordError, trackRecord: state.years[state.settings.test_year], settings: state.settings, open: state.open,
+      zone: state.ladderZone, all: state.allPasses,
       on: {
         back, zoom: () => state.record && map.select(state.record, true),
         tile: (name) => { state.open = state.open === name ? null : name; drawRight(); },
         zone: (zone) => { state.ladderZone = zone; drawRight(); },
+        passes: () => { state.allPasses = true; drawRight(); },
       },
     });
     return;
@@ -242,24 +245,7 @@ function hoverFromMap(id, mouse) {
 }
 
 function openLimits() {
-  const summary = state.years[state.year];
-  // A bullet of SUMMARY.md can go on in indented lines. Join them to their bullet.
-  const bullets = [];
-  for (const line of (summary?.limits ?? "").split("\n")) {
-    if (line.startsWith("- ")) bullets.push(line.slice(2));
-    else if (/^\s+\S/.test(line) && bullets.length) bullets[bullets.length - 1] += ` ${line.trim()}`;
-  }
-  const lines = bullets.map((b) => `<li>${esc(b)}</li>`).join("");
-  $("limits-body").innerHTML = `
-    <h3>This page</h3><ul>
-      <li>The sources are satellites only. No camera detection and no report from a person.</li>
-      <li>The base image is a mosaic from MapTiler. It is not an image of the as-of time.</li>
-      <li>An event is a group of detections. One event is not always one fire: large fires can join into one event.</li>
-      <li>The confidence rank is a rank, not a probability. The severity is a heuristic of priorities, not a forecast.</li>
-      <li>Measured growth gives past steps between VIIRS passes. It is not a forecast. The speed has no reference.</li>
-      <li>No detection is not "no fire". A sensor does not see through thick cloud.</li>
-    </ul>
-    <h3>The results, ${esc(summary?.year ?? "")}</h3><ul>${lines}</ul>`;
+  panels.limits($("limits-body"), state.years[state.year], state.settings.live_start);
   $("limits").showModal();
 }
 
