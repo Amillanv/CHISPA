@@ -100,7 +100,7 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 | Observation | `first_observed_at`, `last_observed_at`, `max_frp_mw`, `detections`, `sensor_families`, `newest_detections`, `timeline`: the detections of each day, the land cover in `severity` | |
 | Publication | `newest_available_at`, `newest_observation_age_h` | |
 | Alert | `level`, `confidence`: the rank and the inputs with the largest effect (section 11.15) | |
-| Growth | `growth`: the newest step (section 11.13) | A burned area (section 11.12) |
+| Growth | `growth`: the newest step. `growth_steps`: each step, the oldest first (section 11.13) | A burned area (section 11.12) |
 | Confirmation | `level_changes` | |
 | End | `goes_view`: what GOES said for the place in its newest saved scan. `viirs_passes_after_last_detection` | A cause of the end |
 | Mapping | The track record of the level (`evaluation_summary`) | |
@@ -733,7 +733,9 @@ The result of the test (tables `confidence` and `confidence_calibration` of 2025
 
 ### 12.1 Tools
 
-Three tools exist: `alerts_near`, `event_record` and `evaluation_summary`. The maximum is six.
+Four tools exist: `alerts_near`, `event_record`, `activity` and `evaluation_summary`. The maximum is six.
+`activity` gives, for each time step of a window, the events with a new detection by level and the detections
+of each sensor family. Its events are the events of the as-of time, the same events that `alerts_near` gives.
 Read these rules before you write or change a tool. A test does a check of the rules that a program can examine.
 
 1. A tool is one function in `tools.py` with typed arguments, a typed return value and a docstring.
@@ -781,6 +783,18 @@ The agent must:
 - Each gold question can list text that the answer must not contain.
 - Grade with code first. Use a model as a judge only where code cannot grade, and report the two scores separately.
 - Include questions where the correct answer is "I do not know" or a refusal.
+
+### 12.6 Dashboard
+
+`chispa serve` starts the dashboard. `web/server.py` calls the tools, and the page shows their answers.
+
+1. The page formats values. It calculates no new fact and has no threshold. Each value has its unit and its time.
+2. The page has one as-of time. Live: the time of the request, again each few minutes. Replay: a recorded moment.
+   The history band can show the steps after the as-of time of a replay. It makes them dark.
+3. The base image is a mosaic. It is not an image of the as-of time. A burn scar in it can be of a different year.
+4. The growth matrix shows the steps of the record on a log scale, with the floor as a ring. A ray is a past step, not a forecast.
+5. The level, the rank and the severity stay separate. The rank and the level say "no check" for an event out of the biome.
+6. The text uses the terms of the glossary: "event", "unmatched", "no detection" and not "no fire".
 
 ## 13. Assumptions and decisions
 
