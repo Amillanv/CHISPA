@@ -102,7 +102,7 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 | Alert | `level`, `confidence`: the rank, its number of reference alerts and the inputs with the largest effect (section 11.15) | |
 | Growth | `growth`: the newest step. `growth_steps`: each step, the oldest first (section 11.13) | A burned area (section 11.12) |
 | Confirmation | `level_changes`, the pass that made each change (`passes`), `absorbed` | |
-| End | `goes_view`: what GOES said for the place in its newest saved scan. `viirs_passes_after_last_detection` | A cause of the end |
+| End | `goes_view`: what GOES said for the place in its newest saved scan and in each scan after the newest detection, with the last clear look. `viirs_passes_after_last_detection` | A cause of the end. A statement that a fire is out |
 | Mapping | The track record of the level (`evaluation_summary`) | |
 
 `severity` has the number, the points of each part and the facts (section 11.14).
@@ -120,8 +120,11 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 - `level_changes` has the changes of the event itself. An alert that the event absorbed had its own levels before the merge.
 - `passes` has the newest passes and each pass that raised the level (`config.py`), in the sequence in which CHISPA had them.
   `pass_count` is the number of all passes. A pass is the item of evidence of section 10.3. Its `available_at` is the first
-  time that CHISPA had it, thus the time of the alert that it made. `estimated` is true before the live logs
+  time that CHISPA had it, thus the time of the alert that it made. `alerts` has each level that the pass raised, in sequence:
+  one pass can raise LOW and then MEDIUM. `estimated` is true before the live logs
   (`config.LIVE_START`): there that time is the observation time plus an estimate. The poller measures it after that day.
+  `poller_stop_h` is the time with no complete pass of the poller before CHISPA had the pass, if it is more than
+  `config.LIVE_POLL_LATE`. Then the measured time includes that stop, and the source was faster. Else it is None.
 - `absorbed` has each alert that merged into the event up to the as-of time, with the time of the merge.
 - `viirs_passes_after_last_detection` counts passes, not granules: the granules of one satellite that are not farther apart
   than the pass gap are one pass.
@@ -131,7 +134,11 @@ The event is the event as it was at that time (`issued.py`), not the event of th
   and each scan that the live poller read. It uses only a scan that we had at the as-of time: a live mask has the time
   when the poller got it, and a recorded mask counts from the delay of a raw file after its scan start (`config.py`). It gives the group of the pixel of the event centre in the newest scan:
   `no_fire` says that GOES examined the pixel and found no fire, and `cloud` says that it could not examine it (section 7.2).
-  It is one pixel at one time. It does not say that a fire is out.
+  `no_background` says that GOES could not decide: it had no clear pixels near the pixel to compare with.
+  `after_last_detection` counts the saved scans after the newest detection in each group. `newest_no_fire_at` is the newest
+  of them with `no_fire`: the last clear look. The recorded masks have one scan of each hour, the live masks each scan.
+  It is one pixel. It does not say that a fire is out: GOES can miss a small fire. Event 20260008568 had `no_fire`
+  at 2026-11-22 21:00 UTC, and TERRA found it at 2026-11-23 00:20 UTC.
 - The level and the confidence rank put the events in a sequence by their evidence for a match with a mapped fire.
   They do not decide that a fire is real: a burn can be absent from the map. `goes_view`, `growth` and the passes after
   the last detection say what the sensors see now. Do not use one for the other.
@@ -811,6 +818,8 @@ The agent must:
    the data is late; the page compares it with its clock. Before the live logs: "archive". In the live period with
    no such pass: "no pass". The lag is not the delay of a source (`PLAN.md`, live operation).
 8. Pantanal time is the time of the zone in `config.py`, with its offset on the page. Data, tools and results stay in UTC.
+9. A time to CHISPA that includes a stop of the poller (`poller_stop_h`) has a mark. The last clear look is the newest GOES
+   scan after the last detection with "examined, no fire". The page does not say that a fire is out.
 
 ## 13. Assumptions and decisions
 
