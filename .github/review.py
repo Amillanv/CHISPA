@@ -18,6 +18,16 @@ def plain(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def plain_quote(text: str) -> str:
+    """Return a quote in the form of a known line.
+
+    A model frequently copies the "+" at the start of a diff line, and it changes straight
+    quote marks to curved quote marks. The two changes do not make a quote wrong.
+    """
+    marks = str.maketrans({"\u201c": '"', "\u201d": '"', "\u2018": "'", "\u2019": "'"})
+    return plain(re.sub(r"^\s*\+", "", text.translate(marks)))
+
+
 def known_lines(context: str) -> list[str]:
     """Return each line that a quote can come from.
 
@@ -40,9 +50,12 @@ def keep(findings: list[dict], context: str) -> tuple[list[dict], int]:
     lines = known_lines(context)
     kept = []
     for finding in findings:
-        quote = plain(str(finding.get("quote", "")))
+        quote = plain_quote(str(finding.get("quote", "")))
         if len(quote) >= MIN_QUOTE and any(quote in line for line in lines):
             kept.append(finding)
+        else:
+            # The log of the workflow shows what was deleted. The comment does not.
+            print(f"deleted: {finding.get('file', '')}: {quote[:200]}", file=sys.stderr)
     return kept, len(findings) - len(kept)
 
 
@@ -60,7 +73,7 @@ def render(answer: dict, context: str) -> str:
         for finding in of_check:
             lines += [
                 f"- **{finding.get('level', 'LOW')}** `{finding.get('file', '')}`",
-                f"  > {plain(str(finding['quote']))}",
+                f"  > {plain_quote(str(finding['quote']))}",
                 f"  {finding.get('problem', '')} **Action:** {finding.get('action', '')}",
             ]
     for title, key in (

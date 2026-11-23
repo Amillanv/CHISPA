@@ -56,8 +56,11 @@ def near_count(counts: np.ndarray, place: tuple, time_s: float, lat: float, lon:
     return int(before.sum())
 
 
-def moment_rows(detections: Fields, matched: set[int], layers: severity.Layers) -> dict[str, list]:
-    """Return, for each moment, one row for each event: its inputs, its level and its label."""
+def moment_rows(detections: Fields, fires_of: dict, layers: severity.Layers) -> dict[str, list]:
+    """Return, for each moment, one row for each event: its inputs, its level and its label.
+
+    `fires_of` gives the counted fires that each event matches. An event with a fire has a match.
+    """
     order = np.argsort(detections["event"], kind="stable")
     starts = np.nonzero(np.concatenate([[True], np.diff(detections["event"][order]) != 0]))[0]
     limits = {"0": config.PASS_GAP.total_seconds(), "24": config.SEVERITY_EVAL_HOURS * 3600}
@@ -73,7 +76,8 @@ def moment_rows(detections: Fields, matched: set[int], layers: severity.Layers) 
             position = (detections["lat"][first], detections["lon"][first])
             near = near_count(counts, place, available.min(), *position)
             row = _event_row(detections, chosen, layers, near)
-            row["matched"] = event in matched
+            row["fires"] = fires_of.get(event, frozenset())
+            row["matched"] = bool(row["fires"])
             rows[moment].append(row)
     return rows
 
@@ -114,6 +118,11 @@ def separation(values: np.ndarray, matched: np.ndarray) -> float | None:
     return share(higher, is_match.sum() * (~is_match).sum())
 
 
+def top_tenth(values: np.ndarray) -> np.ndarray:
+    """Return the positions of the tenth of the events with the largest values."""
+    return np.argsort(-values, kind="stable")[: int(len(values) * TOP_SHARE)]
+
+
 def scores(name: str, values: np.ndarray, chance: np.ndarray, matched: np.ndarray, base: float):
     """Return the row of one measure. `chance` is its probability for each event.
 
@@ -121,7 +130,7 @@ def scores(name: str, values: np.ndarray, chance: np.ndarray, matched: np.ndarra
     The Brier skill compares it with one constant probability, the matched share of the
     development year: more than 0 is better than that constant.
     """
-    top = np.argsort(-values, kind="stable")[: int(len(values) * TOP_SHARE)]
+    top = top_tenth(values)
     brier = float(((chance - matched) ** 2).mean())
     constant = float(((base - matched) ** 2).mean())
     return {
@@ -155,6 +164,11 @@ def result_tables(rows: dict[str, list], models: dict[str, dict]) -> dict[str, l
             ("level", level, level_chance),
         ):
             row = scores(name, values.astype(float), given, matched, model["base_rate"])
+            # Many events can match one large fire. Thus we also count the different fires.
+            fires = [
+                rows[moment][position]["fires"] for position in top_tenth(values.astype(float))
+            ]
+            row["top_tenth_fires"] = len(frozenset().union(*fires))
             compare.append({"moment_h": moment, **row})
         for number, part in enumerate(np.array_split(np.argsort(chance, kind="stable"), FIFTHS), 1):
             calibration.append(
@@ -190,10 +204,14 @@ def weight_table(models: dict[str, dict]) -> list[dict]:
     return table
 
 
-def matched_events(detections: Fields, pairs: Pairs, fires: Fields) -> set[int]:
-    """Return each event with a detection that matches a counted fire."""
+def event_fires(detections: Fields, pairs: Pairs, fires: Fields) -> dict[int, frozenset]:
+    """Return the counted fires that each event matches."""
     counted = fires["counted"][pairs[1]]
-    return set(np.unique(detections["event"][pairs[0][counted]]).tolist())
+    links = np.unique(np.stack([detections["event"][pairs[0][counted]], pairs[1][counted]]), axis=1)
+    found: dict[int, set] = {}
+    for event, fire in zip(*links.tolist(), strict=True):
+        found.setdefault(event, set()).add(fire)
+    return {event: frozenset(numbers) for event, numbers in found.items()}
 
 
 def confidence_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, list[dict]]:
@@ -203,7 +221,7 @@ def confidence_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, l
     """
     detections, pairs, fires, _ = prepare(year, store_path, raw_dir)
     layers = severity.load_layers(raw_dir, year - 1)
-    rows = moment_rows(detections, matched_events(detections, pairs, fires), layers)
+    rows = moment_rows(detections, event_fires(detections, pairs, fires), layers)
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
     if year == config.DEVELOPMENT_YEAR:
         models = {}
