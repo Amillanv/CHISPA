@@ -43,6 +43,29 @@ export function dur(hours) {
   return days < 10 && rest ? `${days}${NBSP}d ${rest}${NBSP}h` : `${Math.round(hours / 24)}${NBSP}d`;
 }
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/* A time in a time zone, as parts: { date: "Tue 10 Sep", time: "14:00" }. The browser has the rules of the zone. */
+export function zoned(time, zone, seconds = false) {
+  const options = { timeZone: zone, weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" };
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", options).formatToParts(new Date(time)).map((x) => [x.type, x.value]));
+  return { date: `${p.weekday} ${p.day} ${MONTHS[p.month - 1]}`, time: `${p.hour}:${p.minute}${seconds ? `:${p.second}` : ""}` };
+}
+
+/* The offset of a time zone at a time: "UTC−4". */
+export function offset(time, zone) {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: zone, timeZoneName: "shortOffset" }).formatToParts(new Date(time));
+  const name = parts.find((x) => x.type === "timeZoneName")?.value ?? "";
+  return name.replace("GMT", "UTC").replace("-", "−");
+}
+
+/* Seconds as a counter: 221 -> "00:03:41". Days go first: "2 d 04:00:09". */
+export function counter(seconds) {
+  const s = Math.max(0, Math.floor(seconds)), days = Math.floor(s / 86_400);
+  const hms = [Math.floor((s % 86_400) / 3600), Math.floor((s % 3600) / 60), s % 60].map((v) => String(v).padStart(2, "0")).join(":");
+  return days ? `${days}${NBSP}d ${hms}` : hms;
+}
+
 export function hoursBetween(a, b) {
   return (new Date(b) - new Date(a)) / 3_600_000;
 }

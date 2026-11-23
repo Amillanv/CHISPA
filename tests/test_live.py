@@ -157,3 +157,31 @@ def test_mask_file_with_no_time_of_the_first_view_gets_an_estimate(tmp_path, mon
     assert day["times"].tolist() == [first.isoformat(), second.isoformat()]
     assert day["seen"].tolist() == ["2026-11-23T03:10:00+00:00", "2026-11-23T03:22:00+00:00"]
     assert day["mask"].shape == (2, 1, 2)
+
+
+def test_last_pass_is_the_newest_pass_at_or_before_the_as_of_time(tmp_path):
+    folder = tmp_path / "live" / "polls"
+    folder.mkdir(parents=True)
+    header = "polled_at,source,item,result,new_rows\n"
+    late = "2026-11-21T23:55:00+00:00"
+    (folder / "2026-11-21.csv").write_text(
+        header
+        + f"{late},firms,VIIRS_NOAA20_NRT,ok,5\n"
+        + f"{late},goes,request,failed: ConnectionError,0\n"
+    )
+    early = "2026-11-22T00:05:00+00:00"
+    (folder / "2026-11-22.csv").write_text(header + f"{early},inpe,focos.csv,ok,2\n")
+
+    def at(text):
+        return live.last_pass(tmp_path, datetime.fromisoformat(text))
+
+    # Five minutes after midnight there was no pass yet on the new day: the pass before counts.
+    found = at("2026-11-22T00:00:00+00:00")
+    assert found["last_pass_at"] == late
+    assert found["sources"] == {
+        "firms": {"items": 1, "failed": 0, "new_rows": 5},
+        "goes": {"items": 1, "failed": 1, "new_rows": 0},
+    }
+    # A pass at the as-of time counts. Before the first pass there is no live data.
+    assert at(early)["sources"] == {"inpe": {"items": 1, "failed": 0, "new_rows": 2}}
+    assert at("2026-11-21T00:00:00+00:00") == {"last_pass_at": None, "sources": None}

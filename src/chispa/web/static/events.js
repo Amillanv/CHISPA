@@ -1,7 +1,7 @@
 /* The right column: the list of events at the as-of time, and the record of one event.
    The record follows the questions of triage: where and how sure, is it moving, how did it get here,
    what do the sensors see now, what is near it. Each value is a field of the tool answer. */
-import { esc, num, pct, utc, day, dur, hoursBetween, coord, km, compass, FAMILY, FAMILY_ORDER, INPUT, PART, GOES_GROUP } from "./format.js";
+import { esc, num, pct, utc, day, dur, hoursBetween, coord, km, compass, zoned, offset, FAMILY, FAMILY_ORDER, INPUT, PART, GOES_GROUP } from "./format.js";
 import { matrix } from "./matrix.js";
 
 const RANK = { HIGH: 2, MEDIUM: 1, LOW: 0 };
@@ -62,7 +62,7 @@ function daysSpark(timeline) {
   return `<svg width="56" height="20" viewBox="0 0 56 20" aria-label="Detections of each day">${bars}</svg>`;
 }
 
-export function dossier(root, { record, error, trackRecord, settings, open, on }) {
+export function dossier(root, { record, error, trackRecord, settings, open, zone, on }) {
   if (error) { root.innerHTML = `${top(null, on)}<div class="loading">${esc(error)}</div>`; wireTop(root, on); return; }
   if (!record) { root.innerHTML = `${top(null, on)}<div class="loading">Reading the event record.</div>`; wireTop(root, on); return; }
   const r = record;
@@ -72,17 +72,19 @@ export function dossier(root, { record, error, trackRecord, settings, open, on }
         <span class="dz-level"><i></i>${r.level}</span>
         <div class="dz-where">${coord(r.lat, r.lon)}</div>
         <div class="dz-brief">${brief(r)}</div>
+        ${localTimes(r, settings.time_zone)}
         ${r.notes.map((n) => `<div class="flag">${esc(n)}</div>`).join("")}
       </div>
       ${triage(r, trackRecord, settings, open)}
       ${growth(r, settings)}
-      ${history(r)}
+      ${history(r, zone === "local" ? settings.time_zone : null)}
       ${sensorsNow(r)}
       ${place(r)}
       ${detections(r)}
     </div>`;
   wireTop(root, on);
   root.querySelectorAll("[data-tile]").forEach((b) => b.addEventListener("click", () => on.tile(b.dataset.tile)));
+  root.querySelectorAll("[data-zone]").forEach((b) => b.addEventListener("click", () => on.zone(b.dataset.zone)));
 }
 
 function top(r, on) {
@@ -179,20 +181,31 @@ function growth(r, settings) {
     that the fire did not move. A ray is a past step, not a forecast. The speed has no reference.</p></div>`;
 }
 
-function history(r) {
+/* The first and the newest detection in Pantanal time: when in the local day the event started and was last seen. */
+function localTimes(r, zone) {
+  const first = zoned(r.first_observed_at, zone), last = zoned(r.last_observed_at, zone);
+  return `<dl class="dz-local"><dt class="label">Pantanal time, ${offset(r.first_observed_at, zone)}</dt>
+    <dd><span class="muted">First</span> ${first.date} ${first.time}</dd><dd><span class="muted">Newest</span> ${last.date} ${last.time}</dd></dl>`;
+}
+
+/* `zone` is null for UTC, or the time zone of the Pantanal. */
+function history(r, zone) {
   const rows = [{ label: "First", at: r.first_observed_at, colour: "var(--fg-1)", text: "observed" }];
   for (const c of r.level_changes) rows.push({ label: c.level, at: c.at, level: c.level, text: "alert" });
   rows.push({ label: "Newest", at: r.last_observed_at, colour: "var(--fg-1)", text: "observed" });
   rows.sort((a, b) => new Date(a.at) - new Date(b.at));
   const ladder = rows.map((x, n) => {
     const gap = n ? `+${dur(hoursBetween(rows[n - 1].at, x.at))}` : "";
+    const when = zone ? Object.values(zoned(x.at, zone)).join(" ") : short(x.at);
     return `<div class="step"${x.level ? ` data-level="${x.level}"` : ""}><i${x.colour ? ` style="background:${x.colour}"` : ""}></i>
-      <span class="lv"${x.colour ? ` style="color:var(--fg-2)"` : ""}>${x.label}</span><span class="t">${short(x.at)} <span class="muted">${x.text}</span></span><span class="gap">${gap}</span></div>`;
+      <span class="lv"${x.colour ? ` style="color:var(--fg-2)"` : ""}>${x.label}</span><span class="t">${when} <span class="muted">${x.text}</span></span><span class="gap">${gap}</span></div>`;
   }).join("");
   const days = r.timeline.slice(-30), most = Math.max(1, ...days.map((d) => d.detections));
   const bars = days.map((d) => `<span style="height:${(8 + 92 * Math.log1p(d.detections) / Math.log1p(most)).toFixed(0)}%" title="${d.day}: ${num(d.detections)} detections, ${d.sensor_families.map((f) => FAMILY[f]).join(", ")}"></span>`).join("");
-  return `<div class="block"><div class="label"><span>Alert history</span><span>UTC · alerts at publication</span></div>
+  const zones = [["utc", "UTC"], ["local", "Pantanal"]].map(([key, name]) => `<button type="button" data-zone="${key}" aria-pressed="${(zone ? "local" : "utc") === key}">${name}</button>`).join("");
+  return `<div class="block"><div class="label"><span>Alert history</span><div class="seg">${zones}</div></div>
     <div class="ladder">${ladder}</div>
+    <p class="note">An alert has the time of its publication. A detection has the time of its observation.</p>
     <div class="days">${bars}</div><div class="days-axis"><span>${day(days[0].day)}</span><span>detections of each day${r.timeline.length > 30 ? ", last 30" : ""}</span><span>${day(days.at(-1).day)}</span></div></div>`;
 }
 

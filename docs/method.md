@@ -733,9 +733,11 @@ The result of the test (tables `confidence` and `confidence_calibration` of 2025
 
 ### 12.1 Tools
 
-Four tools exist: `alerts_near`, `event_record`, `activity` and `evaluation_summary`. The maximum is six.
+Five tools exist: `alerts_near`, `event_record`, `activity`, `live_status` and `evaluation_summary`. The maximum is six.
 `activity` gives, for each time step of a window, the events with a new detection by level and the detections
 of each sensor family. Its events are the events of the as-of time, the same events that `alerts_near` gives.
+`live_status` gives the newest pass of the poller at or before the as-of time, from the poll log, with the items
+that each source answered and its new rows. It gives no failure text: a text can hold a key or an address.
 Read these rules before you write or change a tool. A test does a check of the rules that a program can examine.
 
 1. A tool is one function in `tools.py` with typed arguments, a typed return value and a docstring.
@@ -798,6 +800,10 @@ The agent must:
    The matched share of a level is for the level at the end of the year. The rank gives its number of reference alerts
    and the hours of its model after the first detection.
 6. The text uses the terms of the glossary: "event", "unmatched", "no detection" and not "no fire".
+7. The lag is the time from the newest pass of the poller to the as-of time. Live: to the clock of the computer, each
+   second. It is "late" after the time in `config.py` or when a source failed in that pass. Before the live logs: "archive".
+   The lag says how old the store is. It is not the delay of a source (section 13 and `PLAN.md`, live operation).
+8. Pantanal time is the time of the zone in `config.py`, with its offset on the page. Data, tools and results stay in UTC.
 
 ## 13. Assumptions and decisions
 
