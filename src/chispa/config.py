@@ -200,6 +200,13 @@ GROWTH_SPEED_MIN_H = 6.0
 # The limits of the classes of the time between two passes, in hours.
 GROWTH_HOUR_CLASSES = (0.0, 2.0, 6.0, 18.0, 24.5)
 
+# --- Visibility ---
+
+# A fire has a low examined share if GOES examined its place in less than this share of its scans.
+VISIBILITY_FIRE_LOW = 0.5
+# A day is a day of cloud if GOES examined less than this share of the mask window.
+VISIBILITY_DAY_LOW = 0.25
+
 # --- Severity ---
 
 # The side of a cell of the layer grid, in scar pixels: approximately 300 m.
@@ -242,10 +249,10 @@ SEVERITY_NEAR_KM = 5.0
 # A value gets one third of its points for each step that it reaches.
 # Fire power in megawatts, extent in kilometres and advance in metres: set them on the development
 # year, as the 50th, 75th and 90th percentile of the events with a value (table `severity_inputs`).
-# Set on 2023 on 2026-11-22.
-SEVERITY_POWER_STEPS_MW: tuple | None = (54.0, 82.7, 107.9)
-SEVERITY_EXTENT_STEPS_KM: tuple | None = (2.2, 4.42, 8.82)
-SEVERITY_ADVANCE_STEPS_M: tuple | None = (1289.59, 1978.79, 2921.57)
+# Set on 2023 on 2026-11-23, with the alerts as they were at the evaluation time.
+SEVERITY_POWER_STEPS_MW: tuple | None = (54.81, 83.57, 108.7)
+SEVERITY_EXTENT_STEPS_KM: tuple | None = (2.2, 4.42, 8.61)
+SEVERITY_ADVANCE_STEPS_M: tuple | None = (1263.59, 1852.71, 2745.11)
 # The number of people in the square around a detection. A choice of the owner.
 SEVERITY_PEOPLE_STEPS = (10.0, 100.0, 1000.0)
 # The side of that square in layer cells: approximately 10 km.

@@ -37,22 +37,27 @@ class _State:
     max_frp_mw: float | None = None
 
 
-def fuse(
-    detections: Iterable[tuple[int, Detection]], first_id: int
-) -> tuple[list[Event], list[Alert], list[tuple[int, int, str]]]:
-    """Replay detections and return the events, the alert changes and the memberships.
+def fuse(detections: Iterable[tuple[int, Detection]], first_id: int) -> tuple[list, ...]:
+    """Replay detections and return the events, the alert changes, the memberships and the merges.
 
-    A membership is (detection id, event id, level of the event after this detection).
+    A membership is (detection id, event id, level of the event after this detection, issued id).
+    The event id is the event at the end of the replay. The issued id is the event that the
+    detection joined at its time: the alert as a brigade got it. A merge is (time, the event
+    that stops, the event that continues). With the issued ids and the merges up to a time,
+    we get the events as they were at that time.
     The detections must be in `available_at` sequence.
     """
     cells: dict[tuple[int, int], list] = {}  # cell -> [event number, last observation time]
     parent: list[int] = []  # When two events merge, the newer points to the older.
     states: dict[int, _State] = {}
-    changes, members = [], []
+    changes, members, merges = [], [], []
     for detection_id, detection in detections:
         observed = detection.observed_at.timestamp()
         covered = _cells(detection)
-        root, before = _join(covered, observed, cells, parent, states)
+        root, before, absorbed = _join(covered, observed, cells, parent, states)
+        merges += [
+            (detection.available_at, first_id + other, first_id + root) for other in absorbed
+        ]
         state = states[root]
         _add(state, detection, observed)
         for cell in covered:
@@ -67,7 +72,8 @@ def fuse(
         Alert(first_id + number, at, level, fam, passes)
         for number, at, level, fam, passes in _rises(changes, final)
     ]
-    return events, alerts, [(d, first_id + final[n], level) for d, n, level in members]
+    memberships = [(d, first_id + final[n], level, first_id + n) for d, n, level in members]
+    return events, alerts, memberships, merges
 
 
 def _rises(changes: list[tuple], final: list[int]) -> list[tuple]:
@@ -102,8 +108,9 @@ def _cells(detection: Detection) -> list[tuple[int, int]]:
     return [(row, col) for row in rows for col in cols]
 
 
-def _join(covered, observed, cells, parent, states) -> tuple[int, str | None]:
-    """Find the event for a detection. Return its number and its level before the detection.
+def _join(covered, observed, cells, parent, states) -> tuple[int, str | None, list[int]]:
+    """Find the event for a detection. Return its number, its level before the detection,
+    and the events that it absorbed.
 
     No near event: start a new event. Two or more near events: merge them into the oldest.
     """
@@ -115,13 +122,13 @@ def _join(covered, observed, cells, parent, states) -> tuple[int, str | None]:
     if not roots:
         parent.append(len(parent))
         states[len(parent) - 1] = _State()
-        return len(parent) - 1, None
+        return len(parent) - 1, None, []
     oldest, *others = sorted(roots)
     before = _level(states[oldest])
     for other in others:
         parent[other] = oldest
         _absorb(states[oldest], states.pop(other))
-    return oldest, before
+    return oldest, before, others
 
 
 def _find(parent: list[int], number: int) -> int:

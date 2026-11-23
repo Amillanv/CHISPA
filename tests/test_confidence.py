@@ -6,6 +6,7 @@ from chispa import confidence
 from chispa.evaluation.confidence import (
     activity,
     as_table,
+    detection_fires,
     event_fires,
     level_rates,
     near_count,
@@ -81,7 +82,13 @@ def test_tables_compare_the_probability_with_the_level():
     model = {"inputs": ["x"], "mean": [0.0], "spread": [1.0], "start": 0.0, "weights": [2.0]}
     model |= {"base_rate": 0.6, "level_rates": [0.75, 0.0, 0.6]}
     rows = [
-        {"inputs": {"x": value}, "level": level, "matched": matched, "fires": frozenset()}
+        {
+            "inputs": {"x": value},
+            "level": level,
+            "matched": matched,
+            "fires": frozenset(),
+            "own_fires": frozenset(),
+        }
         for value, level, matched in (
             (-2, 0, False),
             (-1, 1, False),
@@ -94,7 +101,7 @@ def test_tables_compare_the_probability_with_the_level():
     by_measure = {(row["moment_h"], row["measure"]): row for row in tables["confidence"]}
     assert by_measure[("0", "probability")]["match_separation"] == 1.0
     assert by_measure[("0", "level")]["match_separation"] == 0.25
-    assert by_measure[("0", "level")]["events_matched"] == 3
+    assert by_measure[("0", "level")]["alerts_matched"] == 3
     # The level gives 0.75 to four events (3 match) and 0 to one event with no match.
     assert by_measure[("0", "level")]["brier"] == round((3 * 0.25**2 + 0.75**2) / 5, 4)
     assert (
@@ -156,9 +163,19 @@ def test_top_tenth_counts_the_different_fires():
             "level": 0,
             "matched": n >= 18,
             "fires": frozenset({7} if n >= 18 else ()),
+            "own_fires": frozenset({7} if n == 19 else ()),
         }
         for n in range(20)
     ]
     tables = result_tables({"0": rows, "24": rows}, {"0": model, "24": model})
     first = tables["confidence"][0]
     assert (first["top_tenth"], first["top_tenth_matched"], first["top_tenth_fires"]) == (2, 2, 1)
+    assert first["top_tenth_own_fires"] == 1
+
+
+def test_each_detection_gets_its_counted_fires():
+    detections = {"event": np.array([1, 1, 2])}
+    pairs = (np.array([2, 0, 0, 1]), np.array([6, 5, 6, 9]))  # Detection 0: fires 5 and 6.
+    fires = {"counted": np.array([False] * 5 + [True, True, False, False, False])}
+    first, fire = detection_fires(detections, pairs, fires)
+    assert [fire[first[d] : first[d + 1]].tolist() for d in range(3)] == [[5, 6], [], [6]]

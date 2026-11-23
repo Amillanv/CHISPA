@@ -191,10 +191,14 @@ def run_fuse(year: int) -> None:
     start, end = datetime(year, 1, 1, tzinfo=UTC), datetime(year + 1, 1, 1, tzinfo=UTC)
     # An event id is the year, then a number. Thus the ids of two years do not collide.
     first_id = year * 10_000_000
-    events, alerts, memberships = fuse(read_detections(store, start, end), first_id)
-    replace_fusion(store, (first_id, first_id + 10_000_000), events, alerts, memberships)
+    fusion = fuse(read_detections(store, start, end), first_id)
+    replace_fusion(store, (first_id, first_id + 10_000_000), fusion)
+    events, _, memberships, merges = fusion
     levels = {level: sum(event.level == level for event in events) for level in LEVELS}
-    print(f"{year}: {len(memberships)} detections, {len(events)} events, {levels}.")
+    issued = len(events) + len(merges)
+    print(
+        f"{year}: {len(memberships)} detections, {issued} alerts, {len(events)} events, {levels}."
+    )
 
 
 def run_evaluate(year: int) -> None:
