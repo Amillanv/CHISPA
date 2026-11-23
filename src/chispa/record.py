@@ -223,9 +223,11 @@ def event_record(store: sqlite3.Connection, event_id: int, as_of: datetime, raw_
     steps = growth_steps(found)
     record |= {"growth": steps[-1] if steps else None, "growth_steps": steps, "notes": []}
     shown, count = history.passes(found, root)
-    record |= {"passes": shown, "pass_count": count, "absorbed": history.absorbed(replay, root)}
+    record |= {"passes": history.with_stops(shown, raw_dir), "pass_count": count}
+    record["absorbed"] = history.absorbed(replay, root)
     record["newest_detections"] = newest_detections(found)
-    record["goes_view"] = view.goes_view(record["lat"], record["lon"], as_of, raw_dir)
+    last_seen = datetime.fromtimestamp(int(found["observed"].max()), UTC)
+    record["goes_view"] = view.goes_view(record["lat"], record["lon"], last_seen, as_of, raw_dir)
     record["viirs_passes_after_last_detection"] = view.passes_after(found, as_of, raw_dir)
     record |= {"severity": None, "confidence": None}
     return _with_layers(store, record, found, as_of, raw_dir)

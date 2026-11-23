@@ -294,6 +294,9 @@ GOES mask:
 - Each raw GOES fire file has the variable `Mask`: one class for each pixel. The file gives the name of each of its 45 classes (`flag_meanings`).
 - `sources/goes.py` puts the classes in groups: fire (10, 11, 30, 31), possible fire (12 to 15, 32 to 35), no fire (100), cloud (200 to 245),
   no background (170), water (150 to 153), blocked (40, 50, 60) and not processed (all others).
+- Checked 2026-11-23 in the GOES-19 file of the scan 2026-11-22 14:00 UTC (`flag_meanings`): 30 is `temporally_filtered_good_fire_pixel`,
+  33 is `temporally_filtered_high_probability_fire_pixel`, 100 is `processed_no_fire_pixel`, 170 is `no_background_value_could_be_computed`,
+  200 is `cloud_pixel_detected_by_11.19um_threshold_test` and 60 is `SZA_or_glint_angle_block_out_zone`.
 - The Pantanal box is 356 rows by 285 columns of the GOES-16 grid.
 - In the scan of 2024-08-15 15:00 UTC, 100 741 of the 101 460 pixels of this window had the class "no fire". 162 had a fire class, and 557 were water.
 - `chispa fetch goes_mask` reads one scan of each hour and keeps only the mask of the window. One day of January 2024 is approximately 0.2 MB, and takes approximately 25 seconds.

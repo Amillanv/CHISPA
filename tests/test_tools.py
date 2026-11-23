@@ -87,25 +87,41 @@ def test_event_record_says_what_it_cannot_give(store):
 def test_event_record_reads_a_live_mask_only_after_the_poller_got_it(store, tmp_path):
     folder = tmp_path / "live" / "goes_mask"
     (folder / str(T0.year)).mkdir(parents=True)
-    # Two pixels: the event is at the first. Scan of 5 hours: no fire. Scan of 6 hours: cloud.
+    # Two pixels: the event is at the first. The newest detection is the GOES scan of 5 hours.
+    # Scans at the event: 5 hours no fire, 6 hours cloud, 7 hours no fire.
     np.savez(folder / "grid.npz", lat=np.array([[-17.5, -17.5]]), lon=np.array([[-57.5, -50.0]]))
-    scans = [T0 + timedelta(hours=5), T0 + timedelta(hours=6)]
+    scans = [T0 + timedelta(hours=5), T0 + timedelta(hours=6), T0 + timedelta(hours=7)]
     times = np.array([scan.isoformat() for scan in scans])
     seen = np.array([(scan + timedelta(minutes=12)).isoformat() for scan in scans])
-    mask = np.array([[[100, 100]], [[200, 100]]], dtype=np.uint8)
+    mask = np.array([[[100, 100]], [[200, 100]], [[100, 200]]], dtype=np.uint8)
     np.savez(folder / str(T0.year) / f"{T0.date()}.npz", times=times, seen=seen, mask=mask)
 
     def view_at(**after):
         return tools.event_record(100, as_of=T0 + timedelta(**after))["goes_view"]
 
     # At 6 hours and 5 minutes the poller did not have the scan of 6 hours.
-    assert view_at(hours=6, minutes=5)["group"] == "no_fire"
+    # The scan of 5 hours is the newest detection itself: it is not after it.
+    early = view_at(hours=6, minutes=5)
+    assert (early["group"], early["after_last_detection"], early["newest_no_fire_at"]) == (
+        "no_fire",
+        {},
+        None,
+    )
     assert view_at(hours=6, minutes=12) == {
         "scan_at": "2024-08-15T11:00:00+00:00",
         "group": "cloud",
+        "scans_after_last_detection": 1,
+        "after_last_detection": {"cloud": 1},
+        "newest_no_fire_at": None,
     }
+    # The scan of 7 hours examined the place and found no fire: the last clear look.
+    late = view_at(hours=7, minutes=12)
+    assert late["after_last_detection"] == {"cloud": 1, "no_fire": 1}
+    assert late["newest_no_fire_at"] == "2024-08-15T12:00:00+00:00"
     # The day after, with no scan of that day, the record gives the last scan of the day before.
-    assert view_at(days=1, hours=1)["group"] == "cloud"
+    assert view_at(days=1, hours=1)["group"] == "no_fire"
+    # Two days after, the newest saved scan is older than the day before: it is not a view of now.
+    assert view_at(days=2, hours=1) is None
 
 
 def test_level_changes_are_the_history_of_the_event_itself(tmp_path, monkeypatch):

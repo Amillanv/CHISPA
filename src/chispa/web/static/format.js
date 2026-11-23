@@ -103,8 +103,14 @@ export const INPUT = {
 /* The parts of the severity (`severity.py`), in words. */
 export const PART = { power: "Fire power", extent: "Extent", advance: "Advance", cover: "Land cover", people: "People", land: "Protected land" };
 
-/* The GOES mask groups (`docs/method.md` 7.2), as what GOES said for the pixel. */
+/* The GOES mask groups (`docs/method.md` 7.2), as what GOES said for the pixel, and what that means. */
 export const GOES_GROUP = {
-  fire: "fire", possible_fire: "possible fire", no_fire: "examined, no fire", cloud: "cloud: not examined",
-  no_background: "not examined", water: "water: not examined", blocked: "blocked: not examined", not_processed: "not processed",
+  fire: "fire", possible_fire: "possible fire", no_fire: "examined, no fire", cloud: "cloud",
+  no_background: "could not decide", water: "water", blocked: "blocked", not_processed: "not processed",
+};
+export const GOES_NOTE = {
+  fire: "GOES found fire", possible_fire: "GOES found a possible fire", no_fire: "GOES examined the pixel and found no fire",
+  cloud: "GOES did not examine the pixel", no_background: "GOES could not compute a background value for the pixel",
+  water: "GOES does not examine water", blocked: "view angle or sun glint: GOES did not examine the pixel",
+  not_processed: "GOES did not process the pixel",
 };
