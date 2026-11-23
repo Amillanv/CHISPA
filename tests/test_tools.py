@@ -69,6 +69,10 @@ def test_event_record_has_the_state_and_the_level_changes_to_the_as_of_time(stor
     )
     assert [found["platform"] for found in late["newest_detections"]] == ["GOES16", "SNPP"]
     assert (late["lat"], late["lon"]) == (-17.5, -57.5)
+    # The first detection was at T0. At 6 hours the fire is 6 hours old or older.
+    assert (early["hours_from_first_detection"], late["hours_from_first_detection"]) == (4.0, 6.0)
+    day = {"day": "2024-08-15", "detections": 2, "sensor_families": ["abi", "viirs"]}
+    assert late["timeline"] == [day]
 
 
 def test_event_record_says_what_it_cannot_give(store):

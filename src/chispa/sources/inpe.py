@@ -46,12 +46,18 @@ SATELLITES = {
 
 
 def download_year(year: int, raw_dir: Path) -> list[Path]:
-    """Save the twelve monthly files of one year and return the paths."""
+    """Save the monthly files of one year and return the paths.
+
+    A past year has twelve files. The year of the live logs has the months before the month of
+    the first live log: the file of a month in progress changes each day.
+    """
     listing = requests.get(FOLDER, timeout=60)
     listing.raise_for_status()
     names = sorted(set(re.findall(rf"focos_mensal_br_{year}\d\d\.(?:csv|zip)", listing.text)))
-    if len(names) != 12:
-        raise RuntimeError(f"INPE lists {len(names)} monthly files for {year}, not 12.")
+    months = config.LIVE_START.month - 1 if year == config.LIVE_START.year else 12
+    names = names[:months]
+    if len(names) != months:
+        raise RuntimeError(f"INPE lists {len(names)} monthly files for {year}, not {months}.")
     return [_download(name, raw_dir) for name in names]
 
 

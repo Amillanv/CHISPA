@@ -76,6 +76,10 @@ def state(found: dict, event_id: int, as_of: datetime) -> dict:
         "detections": len(found["lat"]),
         "sensor_families": sorted(set(found["family"].tolist())),
         "first_observed_at": _text(found["observed"].min()),
+        # The fire is this old or older: no source says when it started.
+        "hours_from_first_detection": round(
+            (as_of.timestamp() - float(found["observed"].min())) / 3600, 2
+        ),
         "last_observed_at": to_text(last),
         "newest_available_at": _text(found["available"].max()),
         "newest_observation_age_h": round((as_of - last).total_seconds() / 3600, 2),
@@ -84,7 +88,21 @@ def state(found: dict, event_id: int, as_of: datetime) -> dict:
         else float(np.nanmax(found["frp_mw"])),
         "lat": round(float(found["lat"].mean()), 5),
         "lon": round(float(found["lon"].mean()), 5),
+        "timeline": timeline(found),
     }
+
+
+def timeline(found: dict) -> list[dict]:
+    """Return the detections of an event for each day (UTC), with the sensor families of the day."""
+    days = (found["observed"] // 86_400).astype(int)
+    return [
+        {
+            "day": _text(day * 86_400)[:10],
+            "detections": int((days == day).sum()),
+            "sensor_families": sorted(set(found["family"][days == day].tolist())),
+        }
+        for day in np.unique(days).tolist()
+    ]
 
 
 def newest_detections(found: dict) -> list[dict]:

@@ -96,8 +96,8 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 
 | Stage | Field of the record | Not in the record |
 |---|---|---|
-| Ignition | | The limits of the start time |
-| Observation | `first_observed_at`, `last_observed_at`, `max_frp_mw`, `detections`, `sensor_families`, `newest_detections`, the land cover in `severity` | |
+| Ignition | `hours_from_first_detection`: the fire is this old or older | The start time, and its limits |
+| Observation | `first_observed_at`, `last_observed_at`, `max_frp_mw`, `detections`, `sensor_families`, `newest_detections`, `timeline`: the detections of each day, the land cover in `severity` | |
 | Publication | `newest_available_at`, `newest_observation_age_h` | |
 | Alert | `level`, `confidence`: the rank and the inputs with the largest effect (section 11.15) | |
 | Growth | `growth`: the newest step (section 11.13) | A burned area (section 11.12) |
@@ -108,6 +108,10 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 `severity` has the number, the points of each part and the facts (section 11.14).
 
 - A field with no value is `None`. Do not fill it with an estimate. `notes` says why a part is absent.
+- `hours_from_first_detection` is a minimum of the age of a fire. The fire started before its first detection,
+  and we do not know how long before. For a small fire under cloud, that time can be days.
+- An event out of the Pantanal biome of Brazil is in the answers of the tools, with a note: the confidence rank,
+  the land cover and the track record of the level have no check for that place.
 - Add a field only with its measure: how do we know that the field is correct, and on which data?
 - A fire has no "type" in the record. No source gives a label for a controlled burn. The land cover is in the facts.
 - The confidence rank is the share of the alerts of the development year with a smaller value. It is not a probability.

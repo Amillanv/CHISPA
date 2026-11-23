@@ -300,6 +300,10 @@ SCAR_TILE_PX = 2048
 
 # --- Live operation ---
 
+# The first day of the live logs. A fetch of the archive files stops on the day before it:
+# from this day, the detections come from the poller, with the time when we first saw them.
+LIVE_START = datetime(2026, 11, 20, tzinfo=UTC)
+
 # One pass of the poller reads the GOES scans and the INPE files of this many hours before it.
 # Thus a short stop of the poller loses no data. A scan or a file that is older is not read.
 LIVE_LOOKBACK = timedelta(hours=3)

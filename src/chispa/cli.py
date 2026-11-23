@@ -5,7 +5,7 @@ One command for each step lets a reader make each result again.
 
 import argparse
 import os
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from dotenv import load_dotenv
 
@@ -157,7 +157,8 @@ def run_fetch(source: str, year: int | None, push: bool) -> None:
     elif source == "passes":
         files = passes.download_year(year, config.RAW_DIR)
     elif source == "goes_mask":
-        files = goes.download_masks(year, config.RAW_DIR)
+        yesterday = datetime.now(UTC).date() - timedelta(days=1)
+        files = goes.download_masks(year, config.RAW_DIR, yesterday)
     elif source == "scars":
         project = read_setting("EE_PROJECT")
         files = scars.download_year(year, project, config.RAW_DIR, pantanal_grid())
