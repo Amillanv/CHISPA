@@ -205,6 +205,8 @@ def test_bad_argument_is_rejected(store):
         tools.event_record(100, as_of=T0.replace(tzinfo=None))
     with pytest.raises(ValueError):
         tools.activity(7.0, 3.0, as_of=T0)  # not a multiple of the step
+    with pytest.raises(ValueError):
+        tools.activity(0.004, 0.0004, as_of=T0)  # steps of 1.44 seconds
 
 
 def test_evaluation_summary_reads_the_result_tables(tmp_path, monkeypatch):

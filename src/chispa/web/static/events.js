@@ -23,7 +23,7 @@ export function list(root, { events, sort, filter, selectedId, asOf, sinceHours,
       <div class="lede">With a new detection in the ${sinceHours} h to ${utc(asOf)} UTC</div>
       <div class="filters">${chips}</div>
     </div>
-    <div class="rows">${rows || `<div class="empty-state">No event has a new detection in this window. No detection is not "no fire".</div>`}</div>`;
+    <div class="rows">${rows || empty(events.length)}</div>`;
   root.querySelectorAll("[data-sort]").forEach((b) => b.addEventListener("click", () => on.sort(b.dataset.sort)));
   root.querySelectorAll("[data-filter]").forEach((b) => b.addEventListener("click", () => on.filter(b.dataset.filter)));
   root.querySelectorAll(".row").forEach((r) => {
@@ -33,6 +33,11 @@ export function list(root, { events, sort, filter, selectedId, asOf, sinceHours,
     r.addEventListener("mouseleave", () => on.hover(null));
   });
   root.querySelector(".row.selected")?.scrollIntoView({ block: "nearest" });
+}
+
+function empty(total) {
+  if (total) return `<div class="empty-state">The filters hide all ${num(total)} events. Select a level to show them.</div>`;
+  return `<div class="empty-state">No event has a new detection in this window. No detection is not "no fire".</div>`;
 }
 
 function row(e, selected) {
@@ -101,11 +106,10 @@ function triage(r, trackRecord, settings, open) {
   const out = r.notes.some((n) => n.includes("not in the Pantanal biome"));
   const share = trackRecord?.events.find((x) => x.final_level === r.level);
   const levelNote = out ? "No check of the level for this place." : share
-    ? `${pct(Number(share.matched_share))} of ${num(Number(share.events))} ${r.level} events matched a mapped fire in ${trackRecord.year}.` : "";
+    ? `${pct(Number(share.matched_share))} of the ${num(Number(share.events))} events with final level ${r.level} in ${trackRecord.year} matched a mapped fire.` : "";
   const c = r.confidence, s = r.severity;
-  const moment = c?.model_moment_h === "0" ? "first alert" : "24 h";
   const rankNote = !c ? "No rank. The record says why." : out ? "No check for this place."
-    : `Above ${pct(c.rank)} of the ${settings.confidence_year} alerts. Model at ${moment}.`;
+    : `Above ${pct(c.rank)} of ${num(c.reference_alerts)} alerts of ${settings.confidence_year}, at ${dur(settings.confidence_moments_h[c.model_moment_h])}.`;
   const sevNote = s ? "A heuristic. Not a forecast." : "No severity. The record says why.";
   const tiles = `<div class="triage">
     <button class="tile" type="button" data-tile="level" aria-expanded="${open === "level"}" data-level="${r.level}">
@@ -124,7 +128,8 @@ function explain(open, r, settings) {
   if (open === "level") {
     return `<div class="explain"><div class="label">How the level rises</div><div class="note" style="color:var(--fg-2)">
       LOW: one pass with low or nominal source confidence. MEDIUM: a high source confidence, or two passes of one sensor family.
-      HIGH: passes from two or more sensor families. The level counts evidence. It does not give the size of a fire.</div></div>`;
+      HIGH: passes from two or more sensor families. The level counts evidence. It does not give the size of a fire.
+      The share in the tile is for the level at the end of the year. An event that is LOW now can rise later.</div></div>`;
   }
   if (open === "rank" && r.confidence) {
     const most = Math.max(...r.confidence.largest_effects.map((e) => Math.abs(e.effect)), 1);
@@ -133,9 +138,10 @@ function explain(open, r, settings) {
       return `<div class="effect"><span>${INPUT[e.input] ?? esc(e.input)}</span><span class="axis"><i class="${e.effect >= 0 ? "up" : "down"}" style="width:${width}%"></i></span>
         <span class="n">${e.effect >= 0 ? "+" : "−"}${Math.abs(e.effect).toFixed(2)}</span></div>`;
     }).join("");
+    const [early, late] = ["0", "24"].map((m) => dur(settings.confidence_moments_h[m]));
     return `<div class="explain"><div class="label" style="margin-bottom:10px">Inputs with the largest effect</div><div class="effects">${rows}</div>
       <p class="note">A rank, not a probability. It puts alerts in a sequence by their chance to match a mapped fire.
-      It was checked at the first alert and at 24 h only.</p></div>`;
+      The model was checked only ${early} and ${late} after the first detection of an alert.</p></div>`;
   }
   if (open === "severity" && r.severity) {
     const rows = Object.entries(r.severity.points).map(([name, points]) => {
@@ -169,7 +175,8 @@ function growth(r, settings) {
   return `<div class="block"><div class="label"><span>Measured growth</span><span>${moved.length} of ${steps.length} steps past ${num(floor)} m</span></div>
     <div class="growth">${matrix(steps, floor)}<div class="read">${read}</div></div>
     <p class="note">Steps between VIIRS passes, north up, log scale. The dashed ring is the floor of ${num(floor)} m:
-    a nearer pixel is position error. A ray is a past step, not a forecast. The speed has no reference.</p></div>`;
+    a movement less than the floor cannot be told apart from the error of the positions. "No measured advance" does not say
+    that the fire did not move. A ray is a past step, not a forecast. The speed has no reference.</p></div>`;
 }
 
 function history(r) {

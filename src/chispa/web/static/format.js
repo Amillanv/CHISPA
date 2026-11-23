@@ -3,6 +3,8 @@
 
 const NNBSP = " "; // A narrow space between groups of three digits: 194 932.
 
+const NBSP = " "; // A number and its unit stay on one line.
+
 export function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 }
@@ -34,11 +36,11 @@ export function day(text) {
 /* Hours as a short duration: 0.25 -> "15 min", 5.5 -> "5.5 h", 50 -> "2 d 2 h", 721 -> "30 d". */
 export function dur(hours) {
   if (hours === null || hours === undefined) return "–";
-  if (hours < 1) return `${Math.round(hours * 60)} min`;
-  if (hours < 10) return `${hours.toFixed(1).replace(/\.0$/, "")} h`;
-  if (hours < 48) return `${Math.round(hours)} h`;
+  if (hours < 1) return `${Math.round(hours * 60)}${NBSP}min`;
+  if (hours < 10) return `${hours.toFixed(1).replace(/\.0$/, "")}${NBSP}h`;
+  if (hours < 48) return `${Math.round(hours)}${NBSP}h`;
   const days = Math.floor(hours / 24), rest = Math.round(hours - days * 24);
-  return days < 10 && rest ? `${days} d ${rest} h` : `${Math.round(hours / 24)} d`;
+  return days < 10 && rest ? `${days}${NBSP}d ${rest}${NBSP}h` : `${Math.round(hours / 24)}${NBSP}d`;
 }
 
 export function hoursBetween(a, b) {
@@ -52,7 +54,7 @@ export function coord(lat, lon, digits = 3) {
 
 export function km(metres) {
   if (metres === null || metres === undefined) return "–";
-  return metres < 1000 ? `${Math.round(metres)} m` : `${(metres / 1000).toFixed(1)} km`;
+  return metres < 1000 ? `${Math.round(metres)}${NBSP}m` : `${(metres / 1000).toFixed(1)}${NBSP}km`;
 }
 
 const POINTS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];

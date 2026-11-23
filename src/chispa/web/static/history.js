@@ -19,7 +19,8 @@ export class History {
     this.plot.addEventListener("keydown", (e) => this.key(e));
   }
 
-  /* state: { activity, asOf, windows, windowIndex, record } */
+  /* state: { activity, past, asOf, windows, windowIndex, record }. `activity` ends at the end of the window.
+     `past` ends at the as-of time, with the events of the as-of time. The steps to the as-of time come from `past`. */
   set(state) {
     this.state = state;
     this.header();
@@ -37,10 +38,11 @@ export class History {
 
   draw() {
     if (!this.state?.activity) { this.plot.innerHTML = ""; return; }
-    const { activity, asOf, record } = this.state;
+    const { activity, past, asOf, record } = this.state;
     const W = this.plot.clientWidth, H = this.plot.clientHeight;
     if (W < 50 || H < 50) return;
-    const steps = activity.steps;
+    const aligned = past && past.steps[0]?.start === activity.steps[0].start;
+    const steps = activity.steps.map((s, n) => (aligned && n < past.steps.length ? past.steps[n] : s));
     const start = new Date(steps[0].start).getTime(), end = new Date(steps.at(-1).end).getTime();
     const x = (t) => G + ((new Date(t).getTime() - start) / (end - start)) * (W - G - RIGHT);
     const families = FAMILY_ORDER.filter((f) => steps.some((s) => s.detections[f]));
@@ -97,8 +99,9 @@ export class History {
     const parts = [`<text class="lane-name" x="4" y="${top + 12}" style="fill:#4f9dff">EVENT</text>`];
     parts.push(`<rect x="${G}" y="${top}" width="${x(end) - G}" height="${EVENT_LANE}" fill="rgba(8,124,255,0.05)"/>`);
     for (const d of record.timeline) {
-      const from = Math.max(new Date(`${d.day}T00:00:00Z`).getTime(), start), to = Math.min(from + 86_400_000, end);
-      if (to <= start || from >= end) continue;
+      const midnight = new Date(`${d.day}T00:00:00Z`).getTime();
+      const from = Math.max(midnight, start), to = Math.min(midnight + 86_400_000, end);
+      if (to <= from) continue;
       const h = 3 + (EVENT_LANE - 4) * (Math.log1p(d.detections) / Math.log1p(most));
       parts.push(`<rect x="${x(from)}" y="${top + EVENT_LANE - h}" width="${Math.max(1, x(to) - x(from) - 1)}" height="${h}" fill="#087cff" fill-opacity="0.35"/>`);
     }
@@ -136,7 +139,8 @@ export class History {
         const fams = FAMILY_ORDER.filter((f) => s.detections[f]).map((f) => `${FAMILY[f]} ${num(s.detections[f])}`).join(" · ") || "no detection";
         tip.innerHTML = `<div class="mono">${utc(s.start)} – ${utc(s.end, false)}</div>
           <div>${LEVELS.map(([n]) => `<span data-level="${n}"><span class="swatch"></span>${n} <b>${s.events[n]}</b></span>`).join("&nbsp;&nbsp;")}</div>
-          <div class="muted">${esc(fams)}</div><div class="muted">Click: as-of time ${utc(s.end, false)}</div>`;
+          <div class="muted">${esc(fams)}</div>${new Date(s.end) > new Date(this.state.asOf) ? `<div class="muted">After the as-of time: events of the end of the window.</div>` : ""}
+          <div class="muted">Click: as-of time ${utc(s.end, false)}</div>`;
         tip.hidden = false;
       });
       hit.addEventListener("mousemove", (e) => { tip.style.left = `${Math.min(e.clientX + 14, innerWidth - 270)}px`; tip.style.top = `${e.clientY - 90}px`; });

@@ -10,7 +10,7 @@ import { esc, utc, dur, coord, num } from "./format.js";
 const $ = (id) => document.getElementById(id);
 const state = {
   settings: null, live: true, anchor: null, asOf: null, windowIndex: 1,
-  events: [], day: null, activity: null, years: {}, year: null,
+  events: [], day: null, activity: null, past: null, years: {}, year: null,
   selectedId: null, record: null, recordError: null, open: null, view: "list",
   sort: "level", filter: new Set(["HIGH", "MEDIUM", "LOW"]),
 };
@@ -42,7 +42,7 @@ async function init() {
   state.year = state.settings.test_year;
   readUrl();
   map = new MapView($("map"), state.settings, { select: (id) => select(id, true), hover: hoverFromMap });
-  band = new History($("history"), { asOf: moveAsOf, window: (n) => { state.windowIndex = n; loadWindow(); } });
+  band = new History($("history"), { asOf: moveAsOf, window: changeWindow });
   if (!state.settings.map_key) $("readout").textContent = "No map key. Write MAPTILER_KEY in the file .env.";
   wireBar();
   loadYears();
@@ -68,8 +68,26 @@ function replay(iso) {
 function moveAsOf(iso) {
   state.live = false;
   state.asOf = iso;
+  state.past = null;
   loadMoment();
   drawHistory();
+}
+
+/* A new window ends at the as-of time. Thus its steps stay on the step ends of the as-of time. */
+function changeWindow(n) {
+  state.windowIndex = n;
+  state.anchor = state.asOf;
+  state.past = null;
+  loadWindow();
+  writeUrl();
+}
+
+/* The steps from the start of the window to the as-of time, with the events of the as-of time.
+   None when the as-of time is the end of the window: then the window answer is already that. */
+function pastParams() {
+  const w = state.settings.windows[state.windowIndex];
+  const hours = w.hours - (new Date(state.anchor) - new Date(state.asOf)) / 3_600_000;
+  return hours > 0 && hours < w.hours ? { as_of: state.asOf, hours, step_hours: w.step_hours } : null;
 }
 
 async function loadWindow() {
@@ -86,13 +104,17 @@ async function loadMoment() {
   drawClock();
   writeUrl();
   try {
-    const [alerts, day] = await Promise.all([
+    const past = pastParams();
+    const [alerts, day, steps] = await Promise.all([
       get("/api/alerts", { as_of: state.asOf }),
       get("/api/activity", { as_of: state.asOf, hours: 24, step_hours: 1 }),
+      past ? get("/api/activity", past) : null,
     ]);
     if (ticket !== tickets.moment) return;
     state.events = alerts.events;
     state.day = day;
+    state.past = steps;
+    drawHistory();
     map.setEvents(state.events);
     drawLeft();
     drawRight();
@@ -184,7 +206,7 @@ function drawRight() {
 }
 
 function drawHistory() {
-  band.set({ activity: state.activity, asOf: state.asOf, windows: state.settings.windows, windowIndex: state.windowIndex, record: state.view === "dossier" ? state.record : null });
+  band.set({ activity: state.activity, past: state.past, asOf: state.asOf, windows: state.settings.windows, windowIndex: state.windowIndex, record: state.view === "dossier" ? state.record : null });
 }
 
 function drawClock() {
@@ -213,7 +235,7 @@ function hoverFromMap(id, mouse) {
 }
 
 function openLimits() {
-  const summary = state.years[state.settings.test_year];
+  const summary = state.years[state.year];
   // A bullet of SUMMARY.md can go on in indented lines. Join them to their bullet.
   const bullets = [];
   for (const line of (summary?.limits ?? "").split("\n")) {
