@@ -50,6 +50,8 @@ def test_event_and_activity_routes_call_their_tools(address):
     assert (status, record["level"], record["growth_steps"]) == (200, "HIGH", [])
     status, found = get(f"{address}/api/activity?as_of={as_of}&hours=6&step_hours=3")
     assert (status, len(found["steps"])) == (200, 2)
+    status, found = get(f"{address}/api/live?as_of={as_of}")
+    assert (status, found["last_pass_at"]) == (200, None)  # The test folder has no poll log.
 
 
 def test_bad_argument_gives_400_with_the_reason(address):

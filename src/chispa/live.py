@@ -7,7 +7,7 @@ The logs are raw files: they only grow, and `build` can read them again.
 
 import csv
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -174,6 +174,31 @@ def complete_logs(raw_dir: Path, now: datetime) -> list[Path]:
     because a file in the bucket never changes."""
     last = (now - config.LIVE_COMPLETE_AFTER).date().isoformat()
     return sorted(path for path in (raw_dir / "live").rglob("*.csv") if path.stem <= last)
+
+
+def last_pass(raw_dir: Path, as_of: datetime) -> dict:
+    """Return the time of the newest pass at or before the as-of time, and a result for each source.
+
+    A pass is the rows of the poll log with one time. A source result has the items that the pass
+    read, the items that failed and the new rows. The answer gives no failure text: a text can hold
+    a key or an address. With no pass at or before that time, the two values are None.
+    """
+    day = as_of.astimezone(UTC).date().isoformat()
+    for path in sorted((raw_dir / "live" / "polls").glob("*.csv"), reverse=True):
+        if path.stem > day:
+            continue
+        rows = [r for r in _read(path) if datetime.fromisoformat(r["polled_at"]) <= as_of]
+        if not rows:
+            continue
+        newest = max(rows, key=lambda r: datetime.fromisoformat(r["polled_at"]))["polled_at"]
+        sources: dict[str, dict] = {}
+        for row in (r for r in rows if r["polled_at"] == newest):
+            found = sources.setdefault(row["source"], {"items": 0, "failed": 0, "new_rows": 0})
+            found["items"] += 1
+            found["failed"] += row["result"] != "ok"
+            found["new_rows"] += int(row["new_rows"])
+        return {"last_pass_at": newest, "sources": sources}
+    return {"last_pass_at": None, "sources": None}
 
 
 def _read(path: Path) -> list[dict]:

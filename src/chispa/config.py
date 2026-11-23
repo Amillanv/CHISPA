@@ -348,6 +348,13 @@ DASHBOARD_WINDOWS = ((72.0, 1.0), (168.0, 3.0), (720.0, 12.0))
 # In live mode the page gets the data again after this time.
 DASHBOARD_REFRESH = timedelta(minutes=5)
 
+# The poller runs each 5 minutes. With no pass for this long, the lag counter says "late".
+DASHBOARD_POLL_LATE = timedelta(minutes=15)
+
+# The local time of the Pantanal. Mato Grosso do Sul and Mato Grosso have the same time: UTC-4
+# with no summer time from 2020 to 2026 (`docs/sources.md` section 8.16).
+DASHBOARD_TIME_ZONE = "America/Campo_Grande"
+
 # Moments of recorded data that the page offers for a replay: days with many events.
 DASHBOARD_REPLAYS = (
     datetime(2024, 9, 10, 18, 0, tzinfo=UTC),

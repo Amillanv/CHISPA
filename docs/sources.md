@@ -375,3 +375,13 @@ Checked 2026-11-23 (UTC) with requests from this computer and the key of the own
 - The dashboard shows the town names of the `place` layer: OpenStreetMap data. Not checked against a second source.
 - UNVERIFIED: the dates of the satellite mosaic for the Pantanal. Thus the page says that the image is not of the as-of time.
 - UNVERIFIED: the terms of the free plan for a public page. The page shows the attribution of each tile set.
+
+### 8.16 Time zone of the Pantanal
+
+Checked 2026-11-23 with the IANA time zone database (Python `zoneinfo`, the copy of this computer).
+The dashboard shows Pantanal time. No result uses it.
+
+- The biome is in Mato Grosso do Sul (`America/Campo_Grande`) and Mato Grosso (`America/Cuiaba`).
+- Each of the two zones was UTC-4 on each day that we examined from 2020 to 2026: the 15th of five months of each year.
+  In 2018 and 2019 each had UTC-3 in summer.
+- The page uses the copy of the database in the browser. A very old browser can have different rules. Not checked.
