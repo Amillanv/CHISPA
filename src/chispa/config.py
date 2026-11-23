@@ -327,3 +327,30 @@ TOOL_MAX_RADIUS_KM = 500.0
 
 # The largest number of detections that a tool returns for one event.
 TOOL_MAX_DETECTIONS = 200
+
+# The largest number of steps that the activity tool returns: 7 days in steps of 10 minutes.
+TOOL_MAX_STEPS = 1008
+
+# --- Dashboard ---
+
+# The page asks for the events in a circle around this centre. The radius reaches each corner
+# of the Pantanal box, and it is the largest radius that a tool accepts.
+DASHBOARD_CENTRE = (-19.0, -57.0)
+DASHBOARD_RADIUS_KM = 500.0
+
+# An event is on the page if one of its detections became available in these hours
+# before the as-of time.
+DASHBOARD_SINCE_HOURS = 24.0
+
+# The windows of the history band, as (hours, step hours). The page opens with the second.
+DASHBOARD_WINDOWS = ((72.0, 1.0), (168.0, 3.0), (720.0, 12.0))
+
+# In live mode the page gets the data again after this time.
+DASHBOARD_REFRESH = timedelta(minutes=5)
+
+# Moments of recorded data that the page offers for a replay: days with many events.
+DASHBOARD_REPLAYS = (
+    datetime(2024, 9, 10, 18, 0, tzinfo=UTC),
+    datetime(2024, 8, 22, 0, 0, tzinfo=UTC),
+    datetime(2023, 11, 15, 18, 0, tzinfo=UTC),
+)

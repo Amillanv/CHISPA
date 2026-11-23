@@ -28,11 +28,11 @@ from chispa.sources import (
     settlements,
 )
 from chispa.store import open_store, read_detections, replace_fusion
+from chispa.web import server
 
 YEAR_SOURCES = ("firms", "goes", "goes_mask", "inpe", "passes", "scars", "burnday", "landcover")
 FIXED_SOURCES = ("border", "protected", "settlements")
 NOT_BUILT = {
-    "serve": "Start the dashboard.",
     "mcp": "Start the MCP server.",
     "grade": "Run the gold questions and grade the answers.",
 }
@@ -71,6 +71,8 @@ def main(arguments: list[str] | None = None) -> None:
         check.add_argument("--test-run", action="store_true", help="Permit the test year.")
     poll = commands.add_parser("poll", help="Do one pass of the live poller.")
     poll.add_argument("--push", action="store_true", help="Also copy complete logs to the bucket.")
+    dashboard = commands.add_parser("serve", help="Start the dashboard on this computer.")
+    dashboard.add_argument("--port", type=int, default=8000)
     for name, text in NOT_BUILT.items():
         commands.add_parser(name, help=f"{text} Not built.")
     chosen = parser.parse_args(arguments)
@@ -94,6 +96,8 @@ def main(arguments: list[str] | None = None) -> None:
         checks.run_images(chosen.year, lambda: read_setting("EE_PROJECT"))
     elif chosen.command == "poll":
         run_poll(chosen.push)
+    elif chosen.command == "serve":
+        server.serve(chosen.port)
     else:
         parser.exit(1, f"The command '{chosen.command}' is not built.\n")
 

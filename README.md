@@ -54,13 +54,14 @@ All the work follows eight stages. Each stage gives one part of the alert, and e
 
 - `chispa build` gets the raw files from a public bucket and makes a SQLite store. The bucket has the raw files of 2023 and 2024: 4.1 million detections and their mapped fires. The files of 2025 and 2026 are not in the bucket: `chispa fetch` gets them. `chispa fuse` groups the detections of one year into events with a confidence level. `chispa evaluate` compares them with the mapped fires.
 - `chispa poll` does one pass of the live poller: it records each new detection with the time of the pass, then updates the store and the events. It needs a FIRMS key.
-- `tools.py` answers three questions for a given time: the alerts near a position, the record of one event, and the measured quality of the alerts. The event record has the level, the rank of the confidence, the severity with its facts, the newest growth step and what GOES examined, for the event as it was at that time.
+- `tools.py` answers four questions for a given time: the alerts near a position, the record of one event, the activity of each step of a window, and the measured quality of the alerts. The event record has the level, the rank of the confidence, the severity with its facts, each growth step and what GOES examined, for the event as it was at that time.
+- `chispa serve` starts the dashboard on this computer: the events on a map at an as-of time, live or as a replay, the record of one event, and the track record of the levels. It only calls the tools. The map needs a MapTiler key in `.env` (`MAPTILER_KEY`).
 - `chispa burn` asks Sentinel-2 if the ground at each unmatched HIGH event burned. `chispa images` lets a person check a sample. The check by a person is not complete.
 - `chispa visibility` says how frequently GOES examined the place of each mapped fire. `chispa growth` gives the advance, the direction and the speed of each event between two VIIRS passes.
 - `severity.py` gives an event one number from 0 to 100, with its facts: fire power, extent, advance, land cover, people and protected land. The number is a heuristic: it shows priorities, and it is not a forecast of the burned area. `chispa severity` makes the tables that examine it. The event record gives the number of one event.
 - [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
 - `confidence.py` gives an event a value for a match with a mapped fire, near the first alert and 24 hours later. `chispa confidence` makes the tables that examine it. The event record gives the value as a rank.
-- Not built: the parts that the stage table marks, the live delay report, the MCP server, the agent and the dashboard.
+- Not built: the parts that the stage table marks, the live delay report, the MCP server and the agent.
 
 ## Limits you must know
 
@@ -182,7 +183,7 @@ venv/bin/chispa fetch settlements
 
 ## Later work
 
-- A dashboard, an MCP server and a small agent. The agent will not say that a burn is safe.
+- An MCP server and a small agent. The agent will not say that a burn is safe.
 - Delivery of alerts by SMS, radio or an offline app. Camera detections and community reports. A growth forecast, only after a test against measured growth. Other regions.
 
 ## Language and licence

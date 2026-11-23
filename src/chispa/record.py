@@ -1,7 +1,7 @@
 """The event record: all that CHISPA can say about one event at one time.
 
 An alert, a tool and the dashboard read this one record. It has the state of the event,
-the rank of its confidence, its severity, its newest growth step and what GOES examined.
+the rank of its confidence, its severity, its growth steps and what GOES examined.
 Each part uses only data that was available at the as-of time, and the event is the event
 as it was at that time (`issued.py`). A part that we cannot give is None, with a note.
 """
@@ -128,25 +128,29 @@ def _text(seconds: float) -> str:
     return to_text(datetime.fromtimestamp(int(seconds), UTC))
 
 
-def newest_step(found: dict) -> dict | None:
-    """Return the newest growth step of an event, or None if it has less than two VIIRS passes."""
+def growth_steps(found: dict) -> list[dict]:
+    """Return each growth step of an event, the oldest first. Less than two VIIRS passes: none.
+
+    A step with no new pixel has no advance: "no measured advance" is not an advance of zero.
+    """
     viirs = found["family"] == growth.SENSOR_FAMILY
     if viirs.sum() < 2:
-        return None
+        return []
     observed = found["observed"][viirs].astype(float)
     numbers = growth.passes(found["platform"][viirs], observed)
-    steps = growth.steps(found["lat"][viirs], found["lon"][viirs], numbers, observed)
-    if not steps:
-        return None
-    step = steps[-1]
-    return {
-        "at": _text(step["at"]),
-        "hours_from_the_pass_before": round(step["hours"], 2),
-        "new_pixels": step["new_pixels"],
-        "advance_m": round(step["advance_m"]) if step["new_pixels"] else None,
-        "direction_deg": None if step["direction_deg"] is None else round(step["direction_deg"]),
-        "speed_m_h": None if step["speed_m_h"] is None else round(step["speed_m_h"]),
-    }
+    return [
+        {
+            "at": _text(step["at"]),
+            "hours_from_the_pass_before": round(step["hours"], 2),
+            "new_pixels": step["new_pixels"],
+            "advance_m": round(step["advance_m"]) if step["new_pixels"] else None,
+            "direction_deg": None
+            if step["direction_deg"] is None
+            else round(step["direction_deg"]),
+            "speed_m_h": None if step["speed_m_h"] is None else round(step["speed_m_h"]),
+        }
+        for step in growth.steps(found["lat"][viirs], found["lon"][viirs], numbers, observed)
+    ]
 
 
 def near_before(store: sqlite3.Connection, found: dict, event_id: int, in_biome: np.ndarray) -> int:
@@ -218,8 +222,9 @@ def event_record(store: sqlite3.Connection, event_id: int, as_of: datetime, raw_
     root = replay.root(event_id)
     found = read(store, replay.ids(event_id), as_of)
     record = state(found, root, as_of)
-    step = newest_step(found)
-    record |= {"growth": step, "newest_detections": newest_detections(found), "notes": []}
+    steps = growth_steps(found)
+    record |= {"growth": steps[-1] if steps else None, "growth_steps": steps, "notes": []}
+    record["newest_detections"] = newest_detections(found)
     record["goes_view"] = view.goes_view(record["lat"], record["lon"], as_of, raw_dir)
     record["viirs_passes_after_last_detection"] = view.passes_after(found, as_of, raw_dir)
     record |= {"severity": None, "confidence": None}
@@ -229,7 +234,7 @@ def event_record(store: sqlite3.Connection, event_id: int, as_of: datetime, raw_
     except RuntimeError as error:
         record["notes"].append(f"No severity and no confidence rank: {error}")
         return record
-    advance_m = step["advance_m"] if step else None
+    advance_m = steps[-1]["advance_m"] if steps else None
     facts = severity.facts(found["lat"], found["lon"], found["frp_mw"], advance_m, layers)
     value, parts = severity.score(facts)
     record["severity"] = {

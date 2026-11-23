@@ -11,7 +11,7 @@ import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from chispa import config, record
+from chispa import config, record, region
 from chispa.store import to_text
 
 NEAR = """
@@ -69,10 +69,27 @@ def event_record(event_id: int, as_of: datetime) -> dict:
     """Return all that CHISPA can say about one event at the time `as_of`.
 
     The answer has the state of the event, the rank of its confidence, its severity with its
-    facts, its newest growth step and what GOES examined. `record.py` gives each part.
+    facts, its growth steps and what GOES examined. `record.py` gives each part.
     """
     _check(0.0, 0.0, as_of)
     return record.event_record(_open(), event_id, as_of, config.RAW_DIR)
+
+
+def activity(hours: float, step_hours: float, as_of: datetime) -> dict:
+    """Return the events and the detections in the Pantanal box for each step of a window.
+
+    The window is the `hours` before `as_of`, in steps of `step_hours`, the oldest step first.
+    An event counts in a step if a detection of it became available in that step, with the
+    level after its newest detection of the step. The events are the events at `as_of`.
+    `newest_observed_at` has the newest observation of each sensor family in the window.
+    """
+    _check(0.0, 0.0, as_of)
+    count = hours / step_hours if step_hours > 0 else 0.0
+    if hours <= 0 or count != round(count) or not 1 <= count <= config.TOOL_MAX_STEPS:
+        raise ValueError(
+            f"hours must be a multiple of step_hours, with 1 to {config.TOOL_MAX_STEPS} steps."
+        )
+    return region.steps(_open(), config.PANTANAL_BOX, as_of, hours, step_hours)
 
 
 def evaluation_summary(year: int) -> dict:
