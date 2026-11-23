@@ -365,3 +365,13 @@ People, Global Human Settlement Layer (GHSL):
 - A sum of the cells on our grid gave 6 499 476: wrong. Use the mean of the cells, then the area of our cell.
 
 `UNVERIFIED`: the terms of the three layers. Do a check before we publish a copy of a layer.
+
+### 8.15 MapTiler base map
+
+Checked 2026-11-23 (UTC) with requests from this computer and the key of the owner. The dashboard reads the base map. No result uses it.
+
+- The tile sets `satellite-v2`, `terrain-rgb-v2` and `v3`, and the style `outdoor`, answered with status 200.
+- `satellite-v2` gives JPEG tiles for zoom 0 to 22. `v3` has the vector layers `water`, `waterway`, `transportation` and `place`, and others.
+- The dashboard shows the town names of the `place` layer: OpenStreetMap data. Not checked against a second source.
+- UNVERIFIED: the dates of the satellite mosaic for the Pantanal. Thus the page says that the image is not of the as-of time.
+- UNVERIFIED: the terms of the free plan for a public page. The page shows the attribution of each tile set.

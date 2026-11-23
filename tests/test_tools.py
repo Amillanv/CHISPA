@@ -80,7 +80,7 @@ def test_event_record_says_what_it_cannot_give(store):
     found = tools.event_record(100, as_of=T0 + timedelta(hours=6))
     assert (found["severity"], found["confidence"], found["goes_view"]) == (None, None, None)
     assert found["viirs_passes_after_last_detection"] is None
-    assert found["growth"] is None  # one VIIRS pass only
+    assert (found["growth"], found["growth_steps"]) == (None, [])  # one VIIRS pass only
     assert "chispa fetch" in found["notes"][0]
 
 
@@ -157,6 +157,12 @@ def test_two_alerts_are_two_events_before_their_merge_and_one_after(tmp_path, mo
     # The newer alert is a part of the older event after the merge.
     assert tools.event_record(101, as_of=after)["event_id"] == 100
     assert tools.event_record(101, as_of=before)["detections"] == 1
+    # The activity counts the events of the as-of time: two alerts before the merge, one after.
+    # After the merge the event has passes of two VIIRS satellites, thus it is MEDIUM.
+    early_step = tools.activity(3.0, 3.0, as_of=before)["steps"][0]["events"]
+    late_step = tools.activity(3.0, 3.0, as_of=after)["steps"][0]["events"]
+    assert early_step == {"LOW": 2, "MEDIUM": 0, "HIGH": 0}
+    assert late_step == {"LOW": 0, "MEDIUM": 1, "HIGH": 0}
 
 
 def test_each_tool_follows_the_rules_for_a_tool():
@@ -177,6 +183,19 @@ def test_each_tool_follows_the_rules_for_a_tool():
         assert "as_of" in signature.parameters or function.__name__ == "evaluation_summary"
 
 
+def test_activity_counts_each_event_in_the_step_of_its_detection(store):
+    # Steps of 3 hours to 6 hours. VIIRS and FAR became available at 3 hours: the end of step 1.
+    # GOES became available at 5 hours 30 minutes, in step 2, and made the event HIGH.
+    found = tools.activity(6.0, 3.0, as_of=T0 + timedelta(hours=6))
+    first, second = found["steps"]
+    assert (first["start"], first["end"]) == (T0.isoformat(), (T0 + timedelta(hours=3)).isoformat())
+    assert first["events"] == {"LOW": 2, "MEDIUM": 0, "HIGH": 0}
+    assert second["events"] == {"LOW": 0, "MEDIUM": 0, "HIGH": 1}
+    assert (first["detections"], second["detections"]) == ({"viirs": 2}, {"abi": 1})
+    newest = (T0.isoformat(), (T0 + timedelta(hours=5)).isoformat())
+    assert (found["newest_observed_at"]["viirs"], found["newest_observed_at"]["abi"]) == newest
+
+
 def test_bad_argument_is_rejected(store):
     with pytest.raises(ValueError):
         tools.alerts_near(-95.0, -57.5, 10.0, 6.0, as_of=T0)
@@ -184,6 +203,10 @@ def test_bad_argument_is_rejected(store):
         tools.alerts_near(-17.5, -57.5, 0.0, 6.0, as_of=T0)
     with pytest.raises(ValueError):
         tools.event_record(100, as_of=T0.replace(tzinfo=None))
+    with pytest.raises(ValueError):
+        tools.activity(7.0, 3.0, as_of=T0)  # not a multiple of the step
+    with pytest.raises(ValueError):
+        tools.activity(0.004, 0.0004, as_of=T0)  # steps of 1.44 seconds
 
 
 def test_evaluation_summary_reads_the_result_tables(tmp_path, monkeypatch):

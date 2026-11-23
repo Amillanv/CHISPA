@@ -29,6 +29,10 @@ chispa = "chispa.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+# The page of the dashboard is in the package, thus a normal install has it too.
+[tool.setuptools.package-data]
+chispa = ["web/static/*"]
+
 [tool.ruff]
 line-length = 100
 src = ["src", "tests"]

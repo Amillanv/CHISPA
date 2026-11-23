@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>CHISPA · Pantanal</title>
+<link rel="icon" href="/static/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="/static/chispa.css">
+</head>
+<body>
+<div id="map" class="map" aria-label="Map of the Pantanal with the events"></div>
+<div class="progress" id="progress" hidden></div>
+
+<div class="app">
+  <header class="bar">
+    <div class="brand">
+      <img src="/static/mark.svg" alt="" width="22" height="22">
+      <span class="wordmark">CHISPA</span>
+      <span class="region">Pantanal <span class="dim">·</span> Brazil</span>
+    </div>
+    <div class="clock" id="clock">
+      <button class="mode" id="mode" type="button"></button>
+      <div class="asof">
+        <span class="label">As-of time</span>
+        <span class="mono" id="asof">–</span>
+      </div>
+      <select class="replays" id="replays" aria-label="Replay a recorded moment"></select>
+    </div>
+    <div class="status">
+      <span class="tag">Satellites only</span>
+      <button class="ghost" id="limits-open" type="button">Limits</button>
+      <button class="ghost drawer-toggle" id="drawer-toggle" type="button">Overview</button>
+    </div>
+  </header>
+
+  <aside class="left" id="left" aria-label="Overview">
+    <section class="card" id="situation"></section>
+    <section class="card" id="sensors"></section>
+    <section class="card" id="record"></section>
+  </aside>
+
+  <section class="right panel" id="right" aria-label="Events"></section>
+
+  <section class="history panel" id="history" aria-label="History"></section>
+
+  <div class="map-ui">
+    <div class="readout mono" id="readout"></div>
+    <div class="controls" id="controls">
+      <div class="segmented" id="base">
+        <button type="button" data-base="imagery" aria-pressed="true">Imagery</button>
+        <button type="button" data-base="relief" aria-pressed="false">Relief</button>
+      </div>
+      <button type="button" class="square" id="pitch" title="Relief in 3D at a selected event" aria-pressed="true">3D</button>
+      <button type="button" class="square" id="fit" title="Show all of the Pantanal">⌖</button>
+      <button type="button" class="square" id="zoom-in" title="Zoom in">+</button>
+      <button type="button" class="square" id="zoom-out" title="Zoom out">−</button>
+    </div>
+  </div>
+</div>
+
+<dialog class="limits" id="limits">
+  <header><span class="label">Limits</span><button class="ghost" id="limits-close" type="button">Close</button></header>
+  <div id="limits-body"></div>
+</dialog>
+
+<div class="tip" id="tip" hidden></div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>
