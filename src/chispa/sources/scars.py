@@ -6,7 +6,6 @@ The map is a grid: each pixel holds 0, or the month (1 to 12) of the burn.
 then `fires.py` groups the scars into fires.
 """
 
-import io
 import re
 from pathlib import Path
 
@@ -15,19 +14,20 @@ import numpy as np
 from scipy import ndimage
 
 from chispa import config
+from chispa.earthengine import read_window
 from chispa.grid import Grid
 
 TILE_NAME = re.compile(r"r(\d+)_c(\d+)\.npz")
 
 
 def check_access(project: str) -> list[str]:
-    """Return the band names for the development year and the test year.
+    """Return the band names for each year that the store holds.
 
     Earth Engine uses the Google login on this computer. README.md gives the setup.
     """
     ee.Initialize(project=project)
     available = ee.Image(config.SCAR_ASSET).bandNames().getInfo()
-    wanted = [f"burned_monthly_{year}" for year in (config.DEVELOPMENT_YEAR, config.TEST_YEAR)]
+    wanted = [f"burned_monthly_{year}" for year in config.YEAR_ROLES]
     absent = [name for name in wanted if name not in available]
     if absent:
         raise RuntimeError(f"The MapBiomas asset has no band {absent}.")
@@ -50,25 +50,8 @@ def download_year(year: int, project: str, raw_dir: Path, grid: Grid) -> list[Pa
 
 
 def _get_tile(image: ee.Image, grid: Grid, row: int, col: int) -> np.ndarray:
-    height = min(config.SCAR_TILE_PX, grid.height - row)
-    width = min(config.SCAR_TILE_PX, grid.width - col)
-    request = {
-        "expression": image,
-        "fileFormat": "NPY",
-        "grid": {
-            "dimensions": {"width": width, "height": height},
-            "affineTransform": {
-                "scaleX": grid.pixel_deg,
-                "shearX": 0,
-                "translateX": grid.west + col * grid.pixel_deg,
-                "shearY": 0,
-                "scaleY": -grid.pixel_deg,
-                "translateY": grid.north - row * grid.pixel_deg,
-            },
-            "crsCode": "EPSG:4326",
-        },
-    }
-    tile = np.load(io.BytesIO(ee.data.computePixels(request)))
+    size = (min(config.SCAR_TILE_PX, grid.width - col), min(config.SCAR_TILE_PX, grid.height - row))
+    tile = read_window(image, grid, (row, col), size)
     return tile[tile.dtype.names[0]].astype(np.uint8)
 
 

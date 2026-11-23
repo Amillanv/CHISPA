@@ -67,6 +67,87 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 |---|---|---|---|---|---|---|---|
 | 99 | 91 | 0.9192 | 99 | 21 | 0.2121 | 0.8125 | 0.8626 |
 
+### 2023 confidence
+
+Configuration `004793e1aa29`, run on 2026-11-23.
+
+| moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched | top_tenth_fires |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | probability | 5890 | 1220 | 0.8233 | 0.119 | 0.2754 | 589 | 432 | 411 |
+| 0 | level | 5890 | 1220 | 0.5688 | 0.162 | 0.0134 | 589 | 154 | 202 |
+| 24 | probability | 5890 | 1220 | 0.8538 | 0.1095 | 0.3335 | 589 | 457 | 584 |
+| 24 | level | 5890 | 1220 | 0.6532 | 0.1535 | 0.0655 | 589 | 218 | 323 |
+
+### 2023 confidence_calibration
+
+Configuration `004793e1aa29`, run on 2026-11-23.
+
+| moment_h | fifth | events | probability_mean | matched_share | observed_to_predicted |
+|---|---|---|---|---|---|
+| 0 | 1 | 1178 | 0.0234 | 0.0357 | 1.5232 |
+| 0 | 2 | 1178 | 0.0727 | 0.0823 | 1.1328 |
+| 0 | 3 | 1178 | 0.1351 | 0.0883 | 0.6533 |
+| 0 | 4 | 1178 | 0.2495 | 0.2572 | 1.0308 |
+| 0 | 5 | 1178 | 0.5549 | 0.5722 | 1.0311 |
+| 24 | 1 | 1178 | 0.0183 | 0.0289 | 1.5747 |
+| 24 | 2 | 1178 | 0.0601 | 0.0577 | 0.9611 |
+| 24 | 3 | 1178 | 0.1171 | 0.0891 | 0.7609 |
+| 24 | 4 | 1178 | 0.237 | 0.2394 | 1.0102 |
+| 24 | 5 | 1178 | 0.6032 | 0.6205 | 1.0288 |
+
+### 2023 confidence_weights
+
+Configuration `004793e1aa29`, run on 2026-11-23.
+
+| moment_h | input | weight |
+|---|---|---|
+| 0 | power_log | 0.8993 |
+| 0 | near_log | 0.7447 |
+| 0 | season_sin | -0.5061 |
+| 0 | indigenous_km_log | -0.4127 |
+| 0 | protected_km_log | -0.3462 |
+| 0 | season_cos | -0.3432 |
+| 0 | detections_log | 0.2544 |
+| 0 | has_abi | -0.2371 |
+| 0 | people_log | -0.2354 |
+| 0 | has_viirs | 0.2333 |
+| 0 | on_pasture | -0.2144 |
+| 0 | night | 0.2072 |
+| 0 | on_farming | -0.1441 |
+| 0 | on_grassland | -0.1141 |
+| 0 | on_savanna | -0.1007 |
+| 0 | on_wetland | 0.0917 |
+| 0 | families | -0.0437 |
+| 0 | has_high | -0.0213 |
+| 0 | on_forest | -0.0157 |
+| 0 | has_modis | -0.0047 |
+| 0 | has_avhrr | 0.0041 |
+| 0 | no_power | 0.0041 |
+| 24 | power_log | 0.8912 |
+| 24 | near_log | 0.7151 |
+| 24 | season_sin | -0.5562 |
+| 24 | protected_km_log | -0.3875 |
+| 24 | indigenous_km_log | -0.3816 |
+| 24 | has_viirs | 0.3296 |
+| 24 | detections_log | 0.32 |
+| 24 | has_abi | -0.2519 |
+| 24 | on_pasture | -0.2498 |
+| 24 | people_log | -0.2146 |
+| 24 | season_cos | -0.2056 |
+| 24 | on_savanna | -0.1853 |
+| 24 | on_grassland | -0.1609 |
+| 24 | on_farming | -0.1381 |
+| 24 | no_power | 0.1189 |
+| 24 | has_avhrr | -0.0934 |
+| 24 | on_wetland | 0.0848 |
+| 24 | extent_km_log | 0.0571 |
+| 24 | families | 0.0513 |
+| 24 | has_advance | 0.0456 |
+| 24 | on_forest | -0.0386 |
+| 24 | night | 0.036 |
+| 24 | has_modis | -0.0076 |
+| 24 | has_high | 0.005 |
+
 ### 2023 configurations
 
 Configuration `e03804b1c89a`, run on 2026-11-21.
@@ -190,19 +271,19 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 
 ### 2023 severity
 
-Configuration `add29633057e`, run on 2026-11-22.
+Configuration `bdf0e945b73a`, run on 2026-11-23.
 
 | severity | events | events_matched | matched_share | area_ha_median | area_ha_p90 | detected_after | days_after_median | days_after_p90 |
 |---|---|---|---|---|---|---|---|---|
-| 0 to 25 | 3006 | 363 | 0.1208 | 244.56 | 209570.0 | 38 | 1.14 | 3.91 |
-| 25 to 50 | 2552 | 649 | 0.2543 | 1705.99 | 209570.0 | 214 | 1.11 | 7.05 |
+| 0 to 25 | 3002 | 362 | 0.1206 | 244.56 | 209570.0 | 38 | 1.14 | 3.91 |
+| 25 to 50 | 2556 | 650 | 0.2543 | 1692.54 | 209570.0 | 214 | 1.11 | 7.05 |
 | 50 to 75 | 321 | 198 | 0.6168 | 1911.96 | 209570.0 | 109 | 1.16 | 8.09 |
 | 75 to 100 | 11 | 10 | 0.9091 | 7399.58 | 209583.54 | 8 | 2.19 | 4.23 |
 | all | 5890 | 1220 | 0.2071 | 1134.19 | 209570.0 | 369 | 1.15 | 7.18 |
 
 ### 2023 severity_inputs
 
-Configuration `add29633057e`, run on 2026-11-22.
+Configuration `bdf0e945b73a`, run on 2026-11-23.
 
 | input | events | events_with_a_value | p50 | p75 | p90 |
 |---|---|---|---|---|---|
@@ -212,16 +293,16 @@ Configuration `add29633057e`, run on 2026-11-22.
 
 ### 2023 severity_rank
 
-Configuration `add29633057e`, run on 2026-11-22.
+Configuration `bdf0e945b73a`, run on 2026-11-23.
 
 | measure | events | rank_correlation | events_matched | match_separation | rank_correlation_matched |
 |---|---|---|---|---|---|
-| severity | 5890 | 0.275 | 1220 | 0.692 | 0.1136 |
+| severity | 5890 | 0.2749 | 1220 | 0.692 | 0.1136 |
 | detections | 5890 | 0.2547 | 1220 | 0.688 | -0.167 |
-| max_frp_mw | 5890 | 0.2348 | 1220 | 0.6641 | 0.0972 |
+| max_frp_mw | 5845 | 0.2351 | 1215 | 0.664 | 0.0992 |
 | extent_km | 5890 | 0.2345 | 1220 | 0.6659 | -0.0137 |
 
-## 2024 (test year)
+## 2024 (test year of the merge)
 
 ### 2024 burn_check
 
@@ -241,6 +322,34 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 | reference_fires | called_burned | recall | reference_boxes_no_fire | boxes_called_burned | false_share | precision | f1 |
 |---|---|---|---|---|---|---|---|
 | 97 | 82 | 0.8454 | 98 | 22 | 0.2245 | 0.7885 | 0.8159 |
+
+### 2024 confidence
+
+Configuration `004793e1aa29`, run on 2026-11-23.
+
+| moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched | top_tenth_fires |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | probability | 6260 | 2749 | 0.8579 | 0.1893 | 0.3693 | 626 | 575 | 1011 |
+| 0 | level | 6260 | 2749 | 0.5625 | 0.2967 | 0.0114 | 626 | 291 | 860 |
+| 24 | probability | 6260 | 2749 | 0.8712 | 0.1835 | 0.3886 | 626 | 592 | 1618 |
+| 24 | level | 6260 | 2749 | 0.6333 | 0.2783 | 0.0728 | 626 | 320 | 797 |
+
+### 2024 confidence_calibration
+
+Configuration `004793e1aa29`, run on 2026-11-23.
+
+| moment_h | fifth | events | probability_mean | matched_share | observed_to_predicted |
+|---|---|---|---|---|---|
+| 0 | 1 | 1252 | 0.0148 | 0.0543 | 3.6693 |
+| 0 | 2 | 1252 | 0.052 | 0.1789 | 3.4409 |
+| 0 | 3 | 1252 | 0.1534 | 0.4305 | 2.8066 |
+| 0 | 4 | 1252 | 0.3944 | 0.651 | 1.6505 |
+| 0 | 5 | 1252 | 0.7466 | 0.881 | 1.18 |
+| 24 | 1 | 1252 | 0.0108 | 0.0487 | 4.516 |
+| 24 | 2 | 1252 | 0.0442 | 0.1486 | 3.3581 |
+| 24 | 3 | 1252 | 0.1439 | 0.4313 | 2.9965 |
+| 24 | 4 | 1252 | 0.3873 | 0.6749 | 1.7426 |
+| 24 | 5 | 1252 | 0.7794 | 0.8922 | 1.1448 |
 
 ### 2024 configurations
 
@@ -389,25 +498,25 @@ Configuration `e03804b1c89a`, run on 2026-11-21.
 
 ### 2024 severity
 
-Configuration `add29633057e`, run on 2026-11-22.
+Configuration `bdf0e945b73a`, run on 2026-11-23.
 
 | severity | events | events_matched | matched_share | area_ha_median | area_ha_p90 | detected_after | days_after_median | days_after_p90 |
 |---|---|---|---|---|---|---|---|---|
-| 0 to 25 | 3288 | 1080 | 0.3285 | 1964.54 | 181441.58 | 95 | 1.38 | 6.13 |
-| 25 to 50 | 2599 | 1345 | 0.5175 | 3054.29 | 181747.89 | 378 | 1.87 | 6.77 |
+| 0 to 25 | 3285 | 1078 | 0.3282 | 1964.54 | 181458.91 | 95 | 1.38 | 6.13 |
+| 25 to 50 | 2602 | 1347 | 0.5177 | 3051.13 | 181725.94 | 378 | 1.87 | 6.77 |
 | 50 to 75 | 357 | 309 | 0.8655 | 3493.81 | 181219.45 | 211 | 2.2 | 8.36 |
 | 75 to 100 | 16 | 15 | 0.9375 | 11356.93 | 206694.97 | 13 | 6.23 | 21.4 |
 | all | 6260 | 2749 | 0.4391 | 2544.71 | 181489.92 | 697 | 1.93 | 7.52 |
 
 ### 2024 severity_rank
 
-Configuration `add29633057e`, run on 2026-11-22.
+Configuration `bdf0e945b73a`, run on 2026-11-23.
 
 | measure | events | rank_correlation | events_matched | match_separation | rank_correlation_matched |
 |---|---|---|---|---|---|
-| severity | 6260 | 0.2684 | 2749 | 0.6613 | 0.0248 |
+| severity | 6260 | 0.2685 | 2749 | 0.6615 | 0.0236 |
 | detections | 6260 | 0.2857 | 2749 | 0.6612 | 0.0898 |
-| max_frp_mw | 6260 | 0.1304 | 2749 | 0.5954 | -0.1072 |
+| max_frp_mw | 6098 | 0.1186 | 2713 | 0.5883 | -0.1041 |
 | extent_km | 6260 | 0.2195 | 2749 | 0.6272 | 0.0273 |
 
 ### 2024 visibility
@@ -419,6 +528,36 @@ Configuration `7b93a5ff742a`, run on 2026-11-22.
 | counted fires with no detection | 1382 | 1382 | 1455.0 | 0.76 | 0.21 | 100 | 50 | 116 |
 | counted fires with a detection, not from GOES | 196 | 196 | 1440.0 | 0.76 | 0.21 | 10 | 8 | 28 |
 | counted fires with a GOES detection | 2668 | 2668 | 1440.0 | 0.74 | 0.23 | 120 | 61 | 1168 |
+
+## 2025 (test year of the later parts)
+
+### 2025 confidence
+
+Configuration `004793e1aa29`, run on 2026-11-23.
+
+| moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched | top_tenth_fires |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | probability | 1726 | 327 | 0.8245 | 0.1216 | 0.21 | 172 | 114 | 145 |
+| 0 | level | 1726 | 327 | 0.6012 | 0.1495 | 0.0281 | 172 | 31 | 47 |
+| 24 | probability | 1726 | 327 | 0.8405 | 0.1116 | 0.2748 | 172 | 127 | 187 |
+| 24 | level | 1726 | 327 | 0.6814 | 0.1405 | 0.0869 | 172 | 37 | 67 |
+
+### 2025 confidence_calibration
+
+Configuration `004793e1aa29`, run on 2026-11-23.
+
+| moment_h | fifth | events | probability_mean | matched_share | observed_to_predicted |
+|---|---|---|---|---|---|
+| 0 | 1 | 346 | 0.0079 | 0.0145 | 1.8252 |
+| 0 | 2 | 345 | 0.0213 | 0.058 | 2.7196 |
+| 0 | 3 | 345 | 0.0437 | 0.1391 | 3.1847 |
+| 0 | 4 | 345 | 0.0966 | 0.2232 | 2.3106 |
+| 0 | 5 | 345 | 0.3995 | 0.513 | 1.2842 |
+| 24 | 1 | 346 | 0.0052 | 0.0087 | 1.66 |
+| 24 | 2 | 345 | 0.0162 | 0.0696 | 4.3031 |
+| 24 | 3 | 345 | 0.0354 | 0.1304 | 3.687 |
+| 24 | 4 | 345 | 0.087 | 0.1826 | 2.098 |
+| 24 | 5 | 345 | 0.4708 | 0.5565 | 1.182 |
 
 Limits of these results:
 
