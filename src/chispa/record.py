@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
-from chispa import confidence, config, growth, severity, view
+from chispa import confidence, config, growth, history, severity, view
 from chispa.fusion import LEVELS
 from chispa.grid import layer_grid
 from chispa.issued import Replay
@@ -62,10 +62,7 @@ def read(store: sqlite3.Connection, ids: list[int], as_of: datetime) -> dict:
 
 def state(found: dict, event_id: int, as_of: datetime) -> dict:
     """Return the state of an event from its detections: the level, the times and the place."""
-    # Only the detections that joined this event give its level changes. An alert that it absorbed
-    # had its own levels before the merge: they are not the history of this event.
-    own = np.nonzero(found["issued"] == event_id)[0]
-    rises = own[np.nonzero(np.diff(np.maximum.accumulate(found["level"][own]), prepend=-1) > 0)[0]]
+    rises = history.rises(found, event_id)
     last = datetime.fromtimestamp(int(found["observed"].max()), UTC)
     return {
         "event_id": event_id,
@@ -225,17 +222,27 @@ def event_record(store: sqlite3.Connection, event_id: int, as_of: datetime, raw_
     record = state(found, root, as_of)
     steps = growth_steps(found)
     record |= {"growth": steps[-1] if steps else None, "growth_steps": steps, "notes": []}
+    shown, count = history.passes(found, root)
+    record |= {"passes": shown, "pass_count": count, "absorbed": history.absorbed(replay, root)}
     record["newest_detections"] = newest_detections(found)
     record["goes_view"] = view.goes_view(record["lat"], record["lon"], as_of, raw_dir)
     record["viirs_passes_after_last_detection"] = view.passes_after(found, as_of, raw_dir)
     record |= {"severity": None, "confidence": None}
+    return _with_layers(store, record, found, as_of, raw_dir)
+
+
+def _with_layers(
+    store: sqlite3.Connection, record: dict, found: dict, as_of: datetime, raw_dir: Path
+) -> dict:
+    """Add the severity and the rank of the confidence, which need the layers of the place."""
+    root = record["event_id"]
     first_year = datetime.fromtimestamp(int(found["observed"].min()), UTC).year
     try:
         layers = severity.load_layers(raw_dir, severity.cover_year(first_year))
     except RuntimeError as error:
         record["notes"].append(f"No severity and no confidence rank: {error}")
         return record
-    advance_m = steps[-1]["advance_m"] if steps else None
+    advance_m = record["growth"]["advance_m"] if record["growth"] else None
     facts = severity.facts(found["lat"], found["lon"], found["frp_mw"], advance_m, layers)
     value, parts = severity.score(facts)
     record["severity"] = {

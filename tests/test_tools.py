@@ -156,6 +156,9 @@ def test_two_alerts_are_two_events_before_their_merge_and_one_after(tmp_path, mo
     assert [(event["event_id"], event["detections"]) for event in late] == [(100, 3)]
     # The newer alert is a part of the older event after the merge.
     assert tools.event_record(101, as_of=after)["event_id"] == 100
+    merged = {"at": bridge.available_at.isoformat(), "alert_id": 101, "into_id": 100}
+    assert tools.event_record(101, as_of=after)["absorbed"] == [merged]
+    assert tools.event_record(100, as_of=before)["absorbed"] == []
     assert tools.event_record(101, as_of=before)["detections"] == 1
     # The activity counts the events of the as-of time: two alerts before the merge, one after.
     # After the merge the event has passes of two VIIRS satellites, thus it is MEDIUM.

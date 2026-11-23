@@ -88,3 +88,24 @@ function wire(root, onYear, onLimits) {
   root.querySelectorAll("[data-year]").forEach((b) => b.addEventListener("click", () => onYear(Number(b.dataset.year))));
   root.querySelector("[data-limits]")?.addEventListener("click", (e) => { e.preventDefault(); onLimits(); });
 }
+
+/* The limits of the page, and the limits of the results of one year from SUMMARY.md. */
+export function limits(root, summary, liveStart) {
+  // A bullet of SUMMARY.md can go on in indented lines. Join them to their bullet.
+  const bullets = [];
+  for (const line of (summary?.limits ?? "").split("\n")) {
+    if (line.startsWith("- ")) bullets.push(line.slice(2));
+    else if (/^\s+\S/.test(line) && bullets.length) bullets[bullets.length - 1] += ` ${line.trim()}`;
+  }
+  root.innerHTML = `
+    <h3>This page</h3><ul>
+      <li>The sources are satellites only. No camera detection and no report from a person.</li>
+      <li>The base image is a mosaic from MapTiler. It is not an image of the as-of time.</li>
+      <li>An event is a group of detections. One event is not always one fire: large fires can join into one event.</li>
+      <li>The confidence rank is a rank, not a probability. The severity is a heuristic of priorities, not a forecast.</li>
+      <li>Measured growth gives past steps between VIIRS passes. It is not a forecast. The speed has no reference.</li>
+      <li>Before ${liveStart.slice(0, 10)} the time when CHISPA had a detection is an estimate. After it, the poller measures it.</li>
+      <li>No detection is not "no fire". A sensor does not see through thick cloud.</li>
+    </ul>
+    <h3>The results, ${esc(summary?.year ?? "")}</h3><ul>${bullets.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>`;
+}

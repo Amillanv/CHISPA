@@ -331,6 +331,9 @@ TOOL_MAX_RADIUS_KM = 500.0
 # The largest number of detections that a tool returns for one event.
 TOOL_MAX_DETECTIONS = 200
 
+# The newest passes that the event record shows. Each pass that made the level go up is also shown.
+TOOL_MAX_PASSES = 60
+
 # The largest number of steps that the activity tool returns: 7 days in steps of 10 minutes.
 TOOL_MAX_STEPS = 1008
 
