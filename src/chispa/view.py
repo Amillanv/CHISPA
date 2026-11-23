@@ -6,7 +6,8 @@ thing: what the sensors saw at that place after the last detection. "Examined, n
 Each answer uses only what we had at the as-of time.
 """
 
-from datetime import datetime, timedelta
+from collections import Counter
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -16,33 +17,58 @@ from chispa.sources import goes, passes
 from chispa.store import to_text
 
 
-def goes_view(lat: float, lon: float, as_of: datetime, raw_dir: Path) -> dict | None:
-    """Return what GOES said for the place in the newest scan that we had at the as-of time.
+def goes_view(
+    lat: float, lon: float, last_seen: datetime, as_of: datetime, raw_dir: Path
+) -> dict | None:
+    """Return what GOES said for the place: in its newest scan, and in each scan after `last_seen`.
+
+    `last_seen` is the newest observation of the event. `after_last_detection` counts the scans
+    after it in each mask group. `newest_no_fire_at` is the newest of those scans in which GOES
+    examined the place and found no fire: the last clear look. None: no such scan.
+    The answer is None if no saved scan that we had at the as-of time is near that time.
+    """
+    first = min(last_seen.date(), as_of.date() - timedelta(days=1))
+    seen = _place_scans(lat, lon, first, as_of, raw_dir)
+    if not seen:
+        return None
+    after = {scan: group for scan, group in seen.items() if scan > last_seen}
+    clear = [scan for scan, group in after.items() if group == "no_fire"]
+    return {
+        "scan_at": to_text(max(seen)),
+        "group": seen[max(seen)],
+        "after_last_detection": dict(Counter(after.values())),
+        "newest_no_fire_at": to_text(max(clear)) if clear else None,
+    }
+
+
+def _place_scans(lat: float, lon: float, first: date, as_of: datetime, raw_dir: Path) -> dict:
+    """Return the mask group of the place in each saved scan from `first` that we had at as-of.
 
     The recorded masks have one scan of each hour: we had one after the delay of a raw file.
     The live masks have each scan of the poller, with the time when the poller got it.
-    The answer is None if the day of the as-of time and the day before have no such scan.
     """
-    best = None
+    seen: dict[datetime, str] = {}
     for folder in (raw_dir / "goes_mask", raw_dir / "live" / "goes_mask"):
-        for day in (as_of.date() - timedelta(days=1), as_of.date()):
+        cell = None
+        for number in range((as_of.date() - first).days + 1):
+            day = first + timedelta(days=number)
             path = folder / str(day.year) / f"{day}.npz"
             if not path.exists():
                 continue
             saved = np.load(path)
-            scans = [datetime.fromisoformat(str(time)) for time in saved["times"]]
+            if cell is None:
+                place = np.load(folder / "grid.npz")
+                nearest = ((place["lat"] - lat) ** 2 + (place["lon"] - lon) ** 2).argmin()
+                cell = np.unravel_index(nearest, place["lat"].shape)
+            scans = [datetime.fromisoformat(str(time)).astimezone(UTC) for time in saved["times"]]
             had = [scan + config.GOES_RAW_DELAY for scan in scans]
             if "seen" in saved:
                 had = [datetime.fromisoformat(str(time)) for time in saved["seen"]]
-            for number, scan in enumerate(scans):
-                if had[number] <= as_of and (best is None or scan > best[0]):
-                    best = (scan, folder, saved["mask"][number])
-    if best is None:
-        return None
-    place = np.load(best[1] / "grid.npz")
-    nearest = ((place["lat"] - lat) ** 2 + (place["lon"] - lon) ** 2).argmin()
-    row, col = np.unravel_index(nearest, place["lat"].shape)
-    return {"scan_at": to_text(best[0]), "group": str(goes.mask_groups(best[2][row, col]))}
+            groups = goes.mask_groups(saved["mask"][:, cell[0], cell[1]])
+            for scan, when, group in zip(scans, had, groups, strict=True):
+                if when <= as_of:
+                    seen.setdefault(scan, str(group))
+    return seen
 
 
 def passes_after(found: dict, as_of: datetime, raw_dir: Path) -> int | None:

@@ -7,10 +7,11 @@ pass gap. Before the live logs, the time when a detection became available is an
 """
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 import numpy as np
 
-from chispa import config
+from chispa import config, live
 from chispa.fusion import LEVELS
 from chispa.issued import Replay
 from chispa.store import to_text
@@ -54,12 +55,16 @@ def passes(found: dict, event_id: int) -> tuple[list[dict], int]:
     The passes to show are the newest passes (`config.py` gives how many) and each pass that
     made the level go up. They are in the sequence in which they became available: the sequence
     in which the fusion had them, and thus the sequence of the alerts.
+    `alerts` has each level that the pass raised, in sequence. It is empty if the pass raised none.
     `estimated` is True for a pass before the live logs: then the time when it became available
     is the observation time plus an estimate (`config.AVAILABLE_DELAY`).
     """
     numbers = pass_numbers(found)
     count = int(numbers.max()) + 1
-    raised = {int(numbers[i]): LEVELS[int(found["level"][i])] for i in rises(found, event_id)}
+    # One pass can raise the level two times: LOW at its first detection, MEDIUM at a later one.
+    raised: dict[int, list[str]] = {}
+    for i in rises(found, event_id):
+        raised.setdefault(int(numbers[i]), []).append(LEVELS[int(found["level"][i])])
     shown = sorted(set(range(max(0, count - config.TOOL_MAX_PASSES), count)) | set(raised))
     live_s = config.LIVE_START.timestamp()
     rows = []
@@ -76,10 +81,24 @@ def passes(found: dict, event_id: int) -> tuple[list[dict], int]:
                 "platform": str(found["platform"][members[0]]),
                 "detections": len(members),
                 "max_frp_mw": None if np.isnan(power).all() else float(np.nanmax(power)),
-                "alert": raised.get(number),
+                "alerts": raised.get(number, []),
             }
         )
     return sorted(rows, key=lambda row: (row["available_at"], row["observed_at"])), count
+
+
+def with_stops(rows: list[dict], raw_dir: Path) -> list[dict]:
+    """Add to each pass the stop of the poller before CHISPA had it (`live.stop_before`).
+
+    A pass with an estimated time gets None: the poller did not measure it.
+    """
+    stops: dict[str, float | None] = {}
+    for row in rows:
+        at = row["available_at"]
+        if not row["estimated"] and at not in stops:
+            stops[at] = live.stop_before(raw_dir, datetime.fromisoformat(at))
+        row["poller_stop_h"] = None if row["estimated"] else stops[at]
+    return rows
 
 
 def absorbed(replay: Replay, event_id: int) -> list[dict]:

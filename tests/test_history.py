@@ -36,13 +36,13 @@ def test_passes_follow_the_fusion_and_say_which_pass_raised_the_level(monkeypatc
     monkeypatch.setattr("chispa.config.LIVE_START", datetime.fromtimestamp(2400, UTC))
     rows, count = history.passes(found(), 100)
     assert count == 5
-    summary = [(r["platform"], r["detections"], r["max_frp_mw"], r["alert"]) for r in rows]
+    summary = [(r["platform"], r["detections"], r["max_frp_mw"], r["alerts"]) for r in rows]
     assert summary == [
-        ("GOES16", 2, 40.0, "LOW"),
-        ("GOES16", 1, None, "MEDIUM"),
-        ("GOES16", 1, 10.0, None),
-        ("SNPP", 2, 5.0, "HIGH"),
-        ("NOAA20", 1, 2.0, None),
+        ("GOES16", 2, 40.0, ["LOW"]),
+        ("GOES16", 1, None, ["MEDIUM"]),
+        ("GOES16", 1, 10.0, []),
+        ("SNPP", 2, 5.0, ["HIGH"]),
+        ("NOAA20", 1, 2.0, []),
     ]
     # A pass has its first observation and the first time that CHISPA had it.
     assert (rows[0]["observed_at"], rows[0]["available_at"]) == (at(300), at(2100))
@@ -55,5 +55,25 @@ def test_record_shows_the_newest_passes_and_each_pass_that_raised_the_level(monk
     rows, count = history.passes(found(), 100)
     # The newest pass is NOAA20. The GOES scan of 1200 raised nothing: it is not shown.
     assert count == 5
-    assert [r["alert"] for r in rows] == ["LOW", "MEDIUM", "HIGH", None]
+    assert [r["alerts"] for r in rows] == [["LOW"], ["MEDIUM"], ["HIGH"], []]
     assert rows[-1]["platform"] == "NOAA20"
+
+
+def test_one_pass_can_raise_the_level_two_times():
+    # TERRA, one pass of two detections: the first has a nominal confidence (LOW),
+    # the second a high confidence (MEDIUM). NOAA20 then adds a second sensor family (HIGH).
+    passes = {
+        "family": np.array(["modis", "modis", "viirs"]),
+        "platform": np.array(["TERRA", "TERRA", "NOAA20"]),
+        "observed": np.array([0.0, 0.0, 3600.0]),
+        "available": np.array([7200.0, 7200.0, 7200.0]),
+        "frp_mw": np.array([80.0, 20.0, 30.0]),
+        "level": np.array([0, 1, 2]),
+        "issued": np.array([100] * 3),
+    }
+    rows, count = history.passes(passes, 100)
+    assert count == 2
+    assert [(r["platform"], r["alerts"]) for r in rows] == [
+        ("TERRA", ["LOW", "MEDIUM"]),
+        ("NOAA20", ["HIGH"]),
+    ]

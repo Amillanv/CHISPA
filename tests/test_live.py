@@ -198,3 +198,30 @@ def test_status_counts_the_lag_from_the_newest_pass_with_no_failure(tmp_path, mo
     )
     # Before the live logs the store has archive data.
     assert at("2026-11-19T00:00:00+00:00")["archive"] is True
+
+
+def test_stop_before_gives_the_hours_with_no_complete_pass(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.LIVE_START", datetime(2026, 11, 21, 18, tzinfo=UTC))
+    monkeypatch.setattr("chispa.config.LIVE_POLL_LATE", timedelta(minutes=15))
+    folder = tmp_path / "live" / "polls"
+    folder.mkdir(parents=True)
+    header = "polled_at,source,item,result,new_rows\n"
+    first, second = "2026-11-21T20:00:00+00:00", "2026-11-21T20:05:00+00:00"
+    failed, back = "2026-11-21T20:10:00+00:00", "2026-11-23T00:05:00+00:00"
+    (folder / "2026-11-21.csv").write_text(
+        header
+        + f"{first},firms,MODIS_NRT,ok,0\n"
+        + f"{second},firms,MODIS_NRT,ok,0\n"
+        + f"{failed},firms,MODIS_NRT,failed: FIRMS request failed,0\n"
+    )
+    (folder / "2026-11-23.csv").write_text(header + f"{back},firms,MODIS_NRT,ok,12\n")
+
+    def stop(text):
+        return live.stop_before(tmp_path, datetime.fromisoformat(text))
+
+    # Five minutes after a complete pass: no stop.
+    assert stop(second) is None
+    # A failed pass does not count. The complete pass before is 28 hours earlier.
+    assert stop(back) == 28.0
+    # Before the first pass, the stop counts from the first day of the live logs: 2 hours.
+    assert stop(first) == 2.0

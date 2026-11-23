@@ -196,6 +196,20 @@ def status(raw_dir: Path, as_of: datetime) -> dict:
     return found
 
 
+def stop_before(raw_dir: Path, at: datetime) -> float | None:
+    """Return the hours with no complete pass before the pass at `at`, if that time is late.
+
+    Then the time from an observation to `at` includes a stop of the poller: the source was faster.
+    Before the first complete pass, the stop counts from the first day of the live logs.
+    None: the complete pass before was not late (`config.LIVE_POLL_LATE`).
+    """
+    before = status(raw_dir, at - timedelta(seconds=1))["complete_pass_at"]
+    start = datetime.fromisoformat(before) if before else config.LIVE_START
+    return (
+        round((at - start) / timedelta(hours=1), 2) if at - start > config.LIVE_POLL_LATE else None
+    )
+
+
 def _passes(raw_dir: Path, as_of: datetime):
     """Give (time, rows) for each pass at or before the as-of time, the newest first."""
     day = as_of.astimezone(UTC).date().isoformat()
