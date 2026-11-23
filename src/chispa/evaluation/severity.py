@@ -5,6 +5,7 @@ does an event with a high severity, some hours after its first detection, end wi
 burned ground than an event with a low severity?
 """
 
+import sqlite3
 from pathlib import Path
 
 import numpy as np
@@ -12,6 +13,7 @@ from scipy import stats
 
 from chispa import config, growth, severity
 from chispa.evaluation.match import Fields, Pairs
+from chispa.evaluation.moments import at_moments, load_merges
 from chispa.evaluation.report import percentile, share
 from chispa.evaluation.run import prepare
 
@@ -39,25 +41,30 @@ def newest_advance(detections: Fields, chosen: np.ndarray) -> float | None:
     return steps[-1]["advance_m"] if steps and steps[-1]["new_pixels"] else None
 
 
-def event_rows(detections: Fields, areas: dict[int, float], layers: severity.Layers) -> list[dict]:
-    """Return the facts, the severity and the outcome of each event, at the evaluation time."""
-    order = np.argsort(detections["event"], kind="stable")
-    starts = np.nonzero(np.concatenate([[True], np.diff(detections["event"][order]) != 0]))[0]
+def alert_rows(
+    detections: Fields, merges: list, areas: dict, layers: severity.Layers
+) -> list[dict]:
+    """Return the facts, the severity and the outcome of each alert, at the evaluation time.
+
+    An alert is the event as it was at that time (`moments.py`). Its outcome is the outcome of
+    the event that holds it at the end of the year. `days_after` is the time from the
+    evaluation time to the last detection of that event.
+    """
     limit_s = config.SEVERITY_EVAL_HOURS * 3600
+    last_s: dict[int, float] = {}
+    pairs = zip(detections["event"].tolist(), detections["observed"].tolist(), strict=True)
+    for event, observed in pairs:
+        last_s[event] = max(observed, last_s.get(event, observed))
     rows = []
-    for start, end in zip(starts, [*starts[1:], len(order)], strict=True):
-        members = order[start:end]
-        available = detections["available"][members]
-        chosen = members[available <= available.min() + limit_s]
+    for _, _, own, chosen in at_moments(detections, merges, {"24": limit_s}):
         lat, lon = detections["lat"][chosen], detections["lon"][chosen]
         advance_m = newest_advance(detections, chosen)
         found = severity.facts(lat, lon, detections["frp_mw"][chosen], advance_m, layers)
-        event = int(detections["event"][members[0]])
+        event = int(detections["event"][own[0]])
         found["severity"] = severity.score(found)[0]
         found["area_ha"] = areas.get(event, 0.0)
-        # The time from the evaluation time to the last detection of the event, in days.
-        last_s = detections["observed"][members].max()
-        found["days_after"] = float(last_s - available.min() - limit_s) / 86_400
+        start_s = float(detections["available"][own].min())
+        found["days_after"] = (last_s[event] - start_s - limit_s) / 86_400
         rows.append(found)
     return rows
 
@@ -75,8 +82,8 @@ def inputs_table(rows: list[dict]) -> list[dict]:
         table.append(
             {
                 "input": label,
-                "events": len(rows),
-                "events_with_a_value": len(values),
+                "alerts": len(rows),
+                "alerts_with_a_value": len(values),
                 "p50": percentile(values, 50),
                 "p75": percentile(values, 75),
                 "p90": percentile(values, 90),
@@ -105,8 +112,8 @@ def score_table(rows: list[dict]) -> list[dict]:
         table.append(
             {
                 "severity": label,
-                "events": int(part.sum()),
-                "events_matched": int(matched.sum()),
+                "alerts": int(part.sum()),
+                "alerts_matched": int(matched.sum()),
                 "matched_share": share(matched.sum(), part.sum()),
                 "area_ha_median": percentile(areas[matched], 50),
                 "area_ha_p90": percentile(areas[matched], 90),
@@ -137,9 +144,9 @@ def rank_table(rows: list[dict]) -> list[dict]:
         table.append(
             {
                 "measure": name,
-                "events": len(known),
+                "alerts": len(known),
                 "rank_correlation": round(float(stats.spearmanr(values, areas).statistic), 4),
-                "events_matched": int(matched.sum()),
+                "alerts_matched": int(matched.sum()),
                 "match_separation": share(higher, matched.sum() * (~matched).sum()),
                 "rank_correlation_matched": round(float(among_matched), 4),
             }
@@ -152,7 +159,8 @@ def severity_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, lis
     detections, pairs, fires, _ = prepare(year, store_path, raw_dir)
     # The newest land cover that exists at the time of an alert is the map of the year before.
     layers = severity.load_layers(raw_dir, year - 1)
-    rows = event_rows(detections, outcomes(detections, pairs, fires), layers)
+    merges = load_merges(sqlite3.connect(store_path), year)
+    rows = alert_rows(detections, merges, outcomes(detections, pairs, fires), layers)
     if year == config.DEVELOPMENT_YEAR and config.SEVERITY_POWER_STEPS_MW is None:
         return {"severity_inputs": inputs_table(rows)}
     tables = {"severity": score_table(rows), "severity_rank": rank_table(rows)}

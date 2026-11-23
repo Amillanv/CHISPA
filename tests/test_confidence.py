@@ -94,7 +94,7 @@ def test_tables_compare_the_probability_with_the_level():
     by_measure = {(row["moment_h"], row["measure"]): row for row in tables["confidence"]}
     assert by_measure[("0", "probability")]["match_separation"] == 1.0
     assert by_measure[("0", "level")]["match_separation"] == 0.25
-    assert by_measure[("0", "level")]["events_matched"] == 3
+    assert by_measure[("0", "level")]["alerts_matched"] == 3
     # The level gives 0.75 to four events (3 match) and 0 to one event with no match.
     assert by_measure[("0", "level")]["brier"] == round((3 * 0.25**2 + 0.75**2) / 5, 4)
     assert (

@@ -50,3 +50,26 @@ def test_table_gives_the_median_shares_of_each_part():
     assert (first["examined_under_half"], first["never_examined"]) == (1, 0)
     assert first["with_possible_fire"] == 1
     assert (second["never_examined"], second["cloud_share_median"]) == (1, 1.0)
+
+
+def test_month_table_separates_a_hole_from_a_day_of_cloud(tmp_path):
+    folder = tmp_path / "goes_mask" / "2024"
+    folder.mkdir(parents=True)
+    clear = np.full((2, 2, 2), 100, dtype=np.uint8)  # two scans, each pixel examined
+    cloud = np.full((2, 2, 2), 200, dtype=np.uint8)
+    cloud[0, 0, 0] = 100  # one of the eight values is examined
+    times = np.array(["2024-01-01T00:00:00+00:00", "2024-01-01T01:00:00+00:00"])
+    np.savez(folder / "2024-01-01.npz", times=times, mask=clear)
+    np.savez(folder / "2024-01-02.npz", times=times, mask=cloud)
+    np.savez(
+        folder / "2024-01-03.npz", times=np.array([]), mask=np.zeros((0, 2, 2), dtype=np.uint8)
+    )
+    (row,) = visibility.month_table(2024, tmp_path)
+    assert (row["month"], row["days"], row["days_with_no_scan"], row["scans"]) == (
+        "2024-01",
+        3,
+        1,
+        4,
+    )
+    assert (row["examined_share"], row["cloud_share"]) == (0.56, 0.44)
+    assert row["days_examined_under_quarter"] == 1

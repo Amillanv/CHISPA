@@ -103,6 +103,36 @@ def table(counts: Fields, parts: dict[str, np.ndarray]) -> list[dict]:
     return rows
 
 
+def month_table(year: int, raw_dir: Path) -> list[dict]:
+    """Return, for each month, how much of the mask window GOES examined.
+
+    A day with no scan is a hole in the record. A day with a small examined share is a day
+    of cloud. Thus the table separates "no data" from "the sensor could not see".
+    """
+    days: dict[str, list] = {}
+    for path in sorted((raw_dir / "goes_mask" / str(year)).glob("????-??-??.npz")):
+        day = np.load(path)
+        groups = goes.mask_groups(day["mask"]) if len(day["times"]) else np.empty((0, 1, 1), "U13")
+        examined = float(np.isin(groups, EXAMINED).mean()) if groups.size else None
+        cloud = float((groups == "cloud").mean()) if groups.size else None
+        days.setdefault(path.stem[:7], []).append((len(day["times"]), examined, cloud))
+    rows = []
+    for month, values in days.items():
+        with_scans = [(examined, cloud) for scans, examined, cloud in values if scans]
+        rows.append(
+            {
+                "month": month,
+                "days": len(values),
+                "days_with_no_scan": len(values) - len(with_scans),
+                "scans": sum(scans for scans, _, _ in values),
+                "examined_share": percentile(np.array([e for e, _ in with_scans]), 50),
+                "cloud_share": percentile(np.array([c for _, c in with_scans]), 50),
+                "days_examined_under_quarter": sum(e < 0.25 for e, _ in with_scans),
+            }
+        )
+    return rows
+
+
 def visibility(year: int, store_path: Path, raw_dir: Path) -> list[dict]:
     """Return the visibility table of the counted fires of one fused year."""
     detections, pairs, fires, _ = prepare(year, store_path, raw_dir)

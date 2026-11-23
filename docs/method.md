@@ -207,7 +207,10 @@ The command `chispa fuse --year` writes three tables.
 - `events`: one row for each event at the end of the year: times, number of detections, mean position, bounding box, largest FRP, level, sensor families and number of passes.
 - `alerts`: one row for each time that the level of an event goes up, with the time when the change became available.
   A merged event keeps only the first row of each level from the events that it absorbed.
-- `memberships`: one row for each detection: its event, and the level of the event immediately after that detection.
+- `memberships`: one row for each detection: its event, the level of the event immediately after that detection,
+  and the issued id: the event that the detection joined at its time.
+- `merges`: one row for each merge of two events: the time, the event that stops and the event that continues.
+  With the issued ids and the merges up to a time, `issued.py` gives the events as they were at that time.
 
 The `memberships` table lets the evaluation ask: "When did an alert of a given level first have a detection at this place?"
 
@@ -329,7 +332,7 @@ The tables are:
 - `events`: for each final level, the share of events that match a fire, how many counted fires one event holds, and the purity.
 - `merge_gain`: for each sensor family and fire size class, the fires that only the merge finds, and the isolated fires that the family finds later than the merge.
 - `burn_check`, `burn_rule`, `image_check` and `image_agreement`: the burn check of HIGH events and its check by a person (section 11.10).
-- `visibility`: how frequently GOES examined the place of a fire (section 11.11).
+- `visibility` and `visibility_months`: how frequently GOES examined the place of a fire, and the box in each month (section 11.11).
 - `growth_steps`: the advance and the speed of the steps of the events, by the time between passes (section 11.13).
 - `severity_inputs`, `severity` and `severity_rank`: the severity of the events against the mapped area (section 11.14).
 - `confidence` and `confidence_weights`: the probability of a match at two moments, against the level (section 11.15).
@@ -429,6 +432,19 @@ The result for 2024 (table `visibility`, 2026-11-22): the hypothesis is false.
 - 116 of the 1382 fires with no detection had a scan with a possible-fire class, which FIRMS does not give.
 - The largest limit: most of these fires have only a month. Their scans are from two months, and the fire burned in a part
   of that time. A fire that burned on one day with cloud can have a high examined share.
+
+The same table for 2023 and 2025 (2026-11-23) agrees. The median examined share of the fires with no detection
+is 0.67 for 183 fires in 2023 and 0.76 for 283 fires in 2025.
+
+The table `visibility_months` gives, for each month, how much of the mask window GOES examined:
+the number of days with no scan, the median examined share and the median cloud share of the days,
+and the number of days with an examined share below one quarter.
+A day with no scan is a hole in the record. A day with a small examined share is a day of cloud.
+
+- 2023, 2024 and 2025 have no day with no scan in the hourly masks. They have 8741, 8739 and 8717 scans.
+- The examined share follows the season: in 2024 it is 0.91 to 0.96 from May to September, and 0.42 to 0.72 in the other months.
+- April 2025 has an examined share of 0.63, and 4 days below one quarter. FIRMS had GOES rows on only 14 days of that month.
+  Thus that month is a month of cloud and few fires, not a hole (section 8.1).
 
 ### 11.12 Why growth has no area
 
@@ -534,29 +550,33 @@ If this is false, the number adds nothing to a count, and the facts stay with no
 - Limits: the outcome is an area, not damage. The people and the land get points, but no reference says that they matter.
   An event that merges with a second event later has the outcome of the two. The land cover is a year old.
   The population is an estimate for 2020 on a grid of 100 m.
-- The check uses the events as they are at the end of the year. Two events that were separate at the evaluation time and
-  merged later are one event in the check. A brigade did not have that grouping at that time. A correct check needs
-  a replay that stops at the evaluation time: not built.
+- The outcome of an alert is the outcome of the event that holds it at the end of the year. If the alert merged
+  into a large fire later, it has the area of that fire.
 - The list of protected land is the list of today (section 8.14). An area that got its status after an event still
   gives points to that event. A new download can give a different list.
 
-The result (tables `severity` and `severity_rank`, 2026-11-22): the hypothesis is true on 2023 and false on 2024.
+The unit of the check is an alert as it was at the evaluation time (`evaluation/moments.py`), not an event of the end
+of the year. Two alerts that merged later are two rows. An alert that was a part of an older event at that time gives no row.
+The first runs used the events of the end of the year. A review found that error. The steps in `config.py` and each
+number below come from the corrected unit, on 2026-11-23.
 
-- Rank correlation with the outcome, for all events: the severity 0.2749 and the number of detections 0.2547 in 2023 (5890 events).
-  In 2024 the severity 0.2685 and the number of detections 0.2857 (6260 events). The two are almost equal, and the sequence changes.
+The result (tables `severity` and `severity_rank`): the hypothesis is true on 2023 and false on 2024.
+
+- Rank correlation with the outcome, for all alerts: the severity 0.2894 and the number of detections 0.2738 in 2023 (6037 alerts).
+  In 2024 the severity 0.2838 and the number of detections 0.3155 (6473 alerts). The sequence changes between the years.
 - Thus the severity does not say more about the final burned area than a count of detections.
-- For the events with a match only, each rank correlation is near zero. Many small events match one very large fire,
-  thus the outcome of an event says little about that event. Thus the rank correlation for all events shows mostly
-  one thing: an event with many detections matches a fire more frequently. It does not show a ranking of the burned area.
-- The severity does separate the events that match a mapped fire. In 2024 the matched share was 1078 of 3285 events with a
-  severity below 25, 1347 of 2602 from 25 to 50, 309 of 357 from 50 to 75, and 15 of 16 from 75.
-  This was not the hypothesis. It is a property of a confidence, not of a severity (PLAN.md, C4).
-- The number of detections separates these events as well as the severity: the match separation in the table
-  `severity_rank` is 0.6615 for the severity and 0.6612 for the number of detections in 2024, and 0.692 and 0.688 in 2023.
-- The time after the evaluation time. Of the 324 matched events with a severity of 50 or more in 2024, 224 had a detection
-  after the evaluation time: 211 of 309 from 50 to 75, for a median of 2.2 more days, and 13 of 15 from 75, for a median of 6.23.
-  Below 25, 95 of 1078 matched events had one. In 2023: 117 of 208 from 50, and 38 of 362 below 25.
-  Thus more of the events with a high value at 24 hours have a later detection, and fewer of the events with a low value.
+- For the alerts with a match only, each rank correlation is near zero. Many small alerts match one very large fire,
+  thus the outcome of an alert says little about that alert. Thus the rank correlation for all alerts shows mostly
+  one thing: an alert with many detections matches a fire more frequently. It does not show a ranking of the burned area.
+- The severity does separate the alerts that match a mapped fire. In 2024 the matched share was 1131 of 3358 alerts with a
+  severity below 25, 1457 of 2711 from 25 to 50, 342 of 388 from 50 to 75, and 15 of 16 from 75.
+  This was not the hypothesis. It is a property of a confidence, not of a severity (section 11.15).
+- The number of detections separates these alerts as well as the severity: the match separation in the table
+  `severity_rank` is 0.6678 for the severity and 0.6742 for the number of detections in 2024, and 0.6973 and 0.6965 in 2023.
+- The time after the evaluation time. Of the 357 matched alerts with a severity of 50 or more in 2024, 253 had a detection
+  after the evaluation time: 240 of 342 from 50 to 75, for a median of 2.96 more days, and 13 of 15 from 75, for a median of 5.93.
+  Below 25, 141 of 1131 matched alerts had one. In 2023: 130 of 220 from 50, and 59 of 389 below 25.
+  Thus more of the alerts with a high value at 24 hours have a later detection, and fewer of the alerts with a low value.
   A later detection does not say that the same fire burns, and it gives no time for a brigade to act.
   No later detection does not say that a fire is out: the sensors do not see each fire.
   This is a description of two years, found after the first run. It is not a tested forecast.
@@ -616,50 +636,56 @@ The measures in the table `confidence`, for the probability and for the level:
   `top_tenth_fires` is the number of different counted fires that those events match. Many events can match one
   large fire, thus a count of events alone can look better than it is.
 
-What 2023 and 2024 show (2026-11-23). This is tuning, not the test. The weights are from 2023:
+The unit is an alert as it was at the moment (`evaluation/moments.py`). The numbers below are for that unit.
 
-- The first model had no input for the fire activity near an event. On 2024 its match separation was 0.8131 at moment 0.
-- We examined the inputs on 2024, outside the repository. No group of inputs alone gave more than 0.74. Each group that we
-  removed decreased the separation by 0.04 or less. The activity of all the region did not help.
+What 2023 and 2024 show. This is tuning, not the test. The weights are from 2023:
+
+- The first model had no input for the fire activity near an event. We examined the inputs on 2024, outside the repository.
+  No group of inputs alone gave a match separation of more than 0.74. Each group that we removed decreased it by 0.04 or less.
+  The activity of all the region did not help.
 - We made one change: the input "activity near the event". Fires come in groups in space and time, and the input
   uses only the days before the first alert. We made no other change, and the penalty stays at its first value.
-- With this input, on 2024: the match separation is 0.8579 at moment 0 and 0.8712 at moment 24. That of the level is 0.5625 and 0.6333.
-  The Brier skill is 0.3693 and 0.3886. That of the level is 0.0114 and 0.0728 (6260 events, 2749 with a match).
-- Top tenth at moment 0: 575 of 626 events match. For the level: 291 of 626.
-- The probability is too low on 2024: in the middle fifth of the events the mean probability was 0.1534, and the matched
-  share was 0.4305. The matched share of all events was 0.207 in 2023 and 0.439 in 2024. The model has the rate of 2023.
-  No data at the time of an alert gives the rate of its year: the map comes the next year. Thus we expect hypothesis 3 to be false.
+- On 2024: the match separation is 0.8658 at moment 0 and 0.8752 at moment 24. That of the level is 0.5652 and 0.648.
+  The Brier skill is 0.3951 and 0.4025. That of the level is 0.0152 and 0.0882 (7085 alerts at moment 0, 3447 with a match).
+- Top tenth at moment 0: 667 of 708 alerts match. For the level: 355 of 708.
+- At moment 24, 1326 of 6037 alerts matched in 2023, and 2945 of 6473 in 2024. The model has the rate of 2023.
+  No data at the time of an alert gives the rate of its year: the map comes the next year. Thus we expected hypothesis 3 to be false.
 - The largest weights at moment 0: the fire power and the activity near the event (more is a match), the season,
   and the distance to indigenous land and to protected land (near is a match).
-- The model is frozen at this state.
 
 A caution for the input "activity near the event": an event near a large fire can match that fire, because the match
 rule has a reach in space and in time. Then the input and the label agree for a reason that is not the event.
 
-The table `confidence_calibration`: we put the events in sequence by their probability and make five equal groups.
+The table `confidence_calibration`: we put the alerts in sequence by their probability and make five equal groups.
 `probability_mean` is what the model said for a group. `matched_share` is what came. `observed_to_predicted` is the
 second divided by the first: 1 is a correct probability, and more than 1 says that the probability is too low.
 
-The result of the test (tables `confidence` and `confidence_calibration` of 2025). The owner ran it one time on 2026-11-23,
-with the frozen model. A second run on the same day added the column `observed_to_predicted`. It changed no other number.
-2025 has 1726 events in the biome, and 327 of them match a mapped fire.
+The history of the test on 2025, all on 2026-11-23. No run changed an input, the penalty or a hypothesis:
 
-- Hypothesis 1 is true. At moment 0 the match separation of the probability is 0.8245. That of the level is 0.6012.
-- Hypothesis 2 is true. At moment 24 it is 0.8405 for the probability and 0.6814 for the level.
-- Hypothesis 3 is false at moment 0 and true at moment 24. At moment 0 the fourth group had a mean probability of 0.0966
-  and a matched share of 0.2232, and the fifth group 0.3995 and 0.513. At moment 24 each group is in 0.1.
-  In each group of the two moments the probability is too low: the matched share is 1.2 to 4.3 times the probability.
-- The Brier skill of the probability is 0.21 at moment 0 and 0.2748 at moment 24. That of the level is 0.0281 and 0.0869.
-- Top tenth at moment 0: 114 of 172 events match. For the level: 31 of 172.
-  Those events match 145 different counted fires. For the level: 47. Thus the model does not only put many alerts
-  of one large fire at the top. A review of the pull request asked for this number. A third run on 2025 added it,
-  and changed no other number.
-- Thus the model puts the events in a better sequence than the level, at the first alert and one day later, in a year
-  that it did not see. Its number is not a correct probability. By the rule above, we give a rank and not a probability.
-- The values of 2025 are lower than those of 2024 and near those of 2023. 2025 is a small year: 327 events with a match.
-  We give no range for the values: a different year can give a different result.
+1. The owner ran the test one time with the frozen model. Its unit was the event of the end of the year.
+   Hypotheses 1 and 2 were true. Hypothesis 3 was false at moment 0.
+2. Two more runs added a column each: `observed_to_predicted` and `top_tenth_fires`. They changed no other number.
+3. A review said that the unit was wrong: a brigade gets alerts as they are at that time. We corrected the unit in the code.
+   A check outside the repository used the frozen model of run 1 on the alerts as they were issued:
+   the match separation at moment 0 was 0.8401 for the probability and 0.6273 for the level.
+4. With the corrected unit, the weights came from 2023 again, and 2025 ran again. The tables have this last run.
 
-- Limits: the events are the events of the end of the year (section 11.14). The GOES detections of 2025 are from GOES-19,
+The result of the test (tables `confidence` and `confidence_calibration` of 2025), with the corrected unit.
+2025 has 1755 alerts at moment 0, and 354 of them match a mapped fire. At moment 24 it has 1729 and 332.
+
+- Hypothesis 1 is true. At moment 0 the match separation of the probability is 0.839. That of the level is 0.6075.
+- Hypothesis 2 is true. At moment 24 it is 0.8415 for the probability and 0.686 for the level.
+- Hypothesis 3 is false at moment 0: the fourth group had a mean probability of 0.118 and a matched share of 0.2393.
+  At moment 24 each group is in 0.1. But in 9 of the 10 groups the probability is too low: at moment 24 the matched share
+  is 1.2 to 4.6 times the probability. The limit of 0.1 was too wide for small probabilities. Thus we give a rank at the two moments.
+- The Brier skill of the probability is 0.2651 at moment 0 and 0.2827 at moment 24. That of the level is 0.0338 and 0.0911.
+- Top tenth at moment 0: 126 of 175 alerts match, and they match 161 different counted fires. For the level: 35 of 175, and 52 fires.
+  Thus the model does not only put many alerts of one large fire at the top.
+- Thus the model puts the alerts in a better sequence than the level, at the first alert and one day later, in a year
+  that it did not see. Its number is not a correct probability.
+- 2025 is a small year. We give no range for the values: a different year can give a different result.
+
+- Limits: the label of an alert is the match of the event that holds it at the end of the year. The GOES detections of 2025 are from GOES-19,
   and those of 2023 and 2024 from GOES-16. The year 2025 can have holes in its GOES record that we did not find.
   2025 had few fires: 589 counted fires, and 4246 in 2024. Thus the test has fewer events with a match.
   The layers have the limits of section 11.14.

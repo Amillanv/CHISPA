@@ -6,6 +6,7 @@ The question: does the probability separate the events that match a mapped fire
 better than the level that the fusion gave at the same moment?
 """
 
+import sqlite3
 from pathlib import Path
 
 import numpy as np
@@ -13,6 +14,7 @@ from scipy import stats
 
 from chispa import confidence, config, severity
 from chispa.evaluation.match import Fields, Pairs
+from chispa.evaluation.moments import at_moments, load_merges
 from chispa.evaluation.report import share
 from chispa.evaluation.run import prepare
 from chispa.evaluation.severity import newest_advance
@@ -56,33 +58,28 @@ def near_count(counts: np.ndarray, place: tuple, time_s: float, lat: float, lon:
     return int(before.sum())
 
 
-def moment_rows(detections: Fields, fires_of: dict, layers: severity.Layers) -> dict[str, list]:
-    """Return, for each moment, one row for each event: its inputs, its level and its label.
+def moment_rows(detections: Fields, merges: list, fires_of: dict, layers: severity.Layers):
+    """Return, for each moment, one row for each alert: its inputs, its level and its label.
 
-    `fires_of` gives the counted fires that each event matches. An event with a fire has a match.
+    An alert is the event as it was at the moment (`moments.py`). `fires_of` gives the counted
+    fires that each event of the end of the year matches. An alert has a match if the event
+    that holds it at the end of the year has one.
     """
-    order = np.argsort(detections["event"], kind="stable")
-    starts = np.nonzero(np.concatenate([[True], np.diff(detections["event"][order]) != 0]))[0]
     limits = {"0": config.PASS_GAP.total_seconds(), "24": config.SEVERITY_EVAL_HOURS * 3600}
     counts, place = activity(detections)
     rows = {moment: [] for moment in MOMENTS}
-    for start, end in zip(starts, [*starts[1:], len(order)], strict=True):
-        members = order[start:end]
-        available = detections["available"][members]
-        event = int(detections["event"][members[0]])
-        for moment, limit_s in limits.items():
-            chosen = members[available <= available.min() + limit_s]
-            first = members[available.argmin()]
-            position = (detections["lat"][first], detections["lon"][first])
-            near = near_count(counts, place, available.min(), *position)
-            row = _event_row(detections, chosen, layers, near)
-            row["fires"] = fires_of.get(event, frozenset())
-            row["matched"] = bool(row["fires"])
-            rows[moment].append(row)
+    for moment, _, own, chosen in at_moments(detections, merges, limits):
+        first = own[detections["available"][own].argmin()]
+        position = (detections["lat"][first], detections["lon"][first])
+        near = near_count(counts, place, detections["available"][first], *position)
+        row = _alert_row(detections, chosen, layers, near)
+        row["fires"] = fires_of.get(int(detections["event"][first]), frozenset())
+        row["matched"] = bool(row["fires"])
+        rows[moment].append(row)
     return rows
 
 
-def _event_row(detections: Fields, chosen: np.ndarray, layers: severity.Layers, near: int) -> dict:
+def _alert_row(detections: Fields, chosen: np.ndarray, layers: severity.Layers, near: int) -> dict:
     lat, lon = detections["lat"][chosen], detections["lon"][chosen]
     advance_m = newest_advance(detections, chosen)
     found = severity.facts(lat, lon, detections["frp_mw"][chosen], advance_m, layers)
@@ -135,8 +132,8 @@ def scores(name: str, values: np.ndarray, chance: np.ndarray, matched: np.ndarra
     constant = float(((base - matched) ** 2).mean())
     return {
         "measure": name,
-        "events": len(matched),
-        "events_matched": int(matched.sum()),
+        "alerts": len(matched),
+        "alerts_matched": int(matched.sum()),
         "match_separation": separation(values, matched),
         "brier": round(brier, 4),
         "brier_skill": round(1 - brier / constant, 4),
@@ -175,7 +172,7 @@ def result_tables(rows: dict[str, list], models: dict[str, dict]) -> dict[str, l
                 {
                     "moment_h": moment,
                     "fifth": number,
-                    "events": len(part),
+                    "alerts": len(part),
                     "probability_mean": round(float(chance[part].mean()), 4),
                     "matched_share": share(matched[part].sum(), len(part)),
                     # 1 is a correct probability. More than 1: the probability is too low.
@@ -221,7 +218,8 @@ def confidence_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, l
     """
     detections, pairs, fires, _ = prepare(year, store_path, raw_dir)
     layers = severity.load_layers(raw_dir, year - 1)
-    rows = moment_rows(detections, event_fires(detections, pairs, fires), layers)
+    merges = load_merges(sqlite3.connect(store_path), year)
+    rows = moment_rows(detections, merges, event_fires(detections, pairs, fires), layers)
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
     if year == config.DEVELOPMENT_YEAR:
         models = {}
