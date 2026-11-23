@@ -18,6 +18,9 @@ from chispa.build import read_live
 from chispa.sources import firms, goes, inpe
 from chispa.store import add_detections
 
+# The source of a detection, as the poll log names it. The GOES rows of the poller come from NOAA.
+POLL_SOURCE = {"firms": "firms", "inpe": "inpe", "noaa": "goes"}
+
 # The fields that identify one FIRMS row. A row that we saw before is not a new detection.
 FIRMS_KEY = ("satellite", "acq_date", "acq_time", "latitude", "longitude")
 
@@ -196,18 +199,17 @@ def status(raw_dir: Path, as_of: datetime) -> dict:
     return found
 
 
-def stop_before(raw_dir: Path, at: datetime) -> float | None:
-    """Return the hours with no complete pass before the pass at `at`, if that time is late.
+def answered_before(raw_dir: Path, at: datetime, source: str) -> datetime:
+    """Return the time of the newest poll before `at` that read a source with no failure.
 
-    Then the time from an observation to `at` includes a stop of the poller: the source was faster.
-    Before the first complete pass, the stop counts from the first day of the live logs.
-    None: the complete pass before was not late (`config.LIVE_POLL_LATE`).
+    `source` is the source of a detection. A poll with no row for the source read nothing new
+    and had no failure (`_results`). Before the first such poll: the first day of the live logs.
     """
-    before = status(raw_dir, at - timedelta(seconds=1))["complete_pass_at"]
-    start = datetime.fromisoformat(before) if before else config.LIVE_START
-    return (
-        round((at - start) / timedelta(hours=1), 2) if at - start > config.LIVE_POLL_LATE else None
-    )
+    name = POLL_SOURCE[source]
+    for polled_at, rows in _passes(raw_dir, at - timedelta(seconds=1)):
+        if not any(row["source"] == name and row["result"] != "ok" for row in rows):
+            return datetime.fromisoformat(polled_at)
+    return config.LIVE_START
 
 
 def _passes(raw_dir: Path, as_of: datetime):

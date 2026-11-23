@@ -20,7 +20,7 @@ export function zoneName(r, zone) {
 export function vitals(r, zone) {
   const newest = r.newest_detections[0];
   const first = r.passes.find((p) => p.alerts.length);
-  const delay = first ? hoursBetween(first.observed_at, first.available_at) : null;
+  const delay = first ? hoursBetween(first.observed_at, first.alerts[0].at) : null;
   const seen = newest ? `${FAMILY[newest.sensor_family]} ${esc(newest.platform)}, ` : "";
   return `<div class="vitals">
     <div><span class="label">Age, at least</span><span class="v">${dur(r.hours_from_first_detection)}</span>
@@ -33,22 +33,25 @@ export function vitals(r, zone) {
   </div>`;
 }
 
-/* Measured or estimated. A measured time can include a stop of the poller: then the source was faster. */
+/* Measured or estimated. A measured time can include a stop of the poller: up to that time is our delay, not the delay of the source. */
 function kind(p) {
   if (p.estimated) return `<span class="kind est">estimated</span>`;
-  if (p.poller_stop_h) return `<span class="kind stop">includes a ${dur(p.poller_stop_h)} stop of the poller</span>`;
+  if (p.poller_stop_h) return `<span class="kind stop">up to ${dur(p.poller_stop_h)} is a stop of the poller</span>`;
   return `<span class="kind">measured</span>`;
 }
 
 /* The newest GOES scan after the last detection that examined the place and found no fire (`goes_view`). */
 function clearLook(r, zone) {
   const g = r.goes_view;
-  const total = g ? Object.values(g.after_last_detection).reduce((sum, n) => sum + n, 0) : 0;
+  const total = g?.scans_after_last_detection ?? 0;
   const clear = g?.after_last_detection.no_fire ?? 0;
   let value = "–", note = "no saved GOES scan for this time";
   if (g && g.newest_no_fire_at) {
     value = `${dur(hoursBetween(g.newest_no_fire_at, r.as_of))} ago`;
     note = `GOES: examined, no fire, ${when(g.newest_no_fire_at, zone)}. ${num(clear)} of ${num(total)} scans since last seen`;
+  } else if (g && !total) {
+    value = "not yet";
+    note = "no GOES scan after the last detection yet";
   } else if (g) {
     value = "none";
     note = `none of ${num(total)} GOES ${total === 1 ? "scan" : "scans"} since last seen said "examined, no fire"`;
@@ -76,18 +79,19 @@ export function timeline(r, zone, all, liveStart) {
     <p class="note">The rows are in the sequence in which CHISPA had the passes. A pass is one GOES scan, or one pass of
     another satellite. MW is its largest fire power. "To CHISPA" is the time from the observation
     to the moment that CHISPA had the pass, and thus made its alert. From ${day(liveStart)} it is measured by the poller.
-    Before, it is an estimate. A time in yellow includes a stop of the poller: the source was faster.
+    Before, it is an estimate. A time in yellow includes a stop of the poller: up to the time of the stop is our delay.
     The time when a source published a pass is not in the record.</p></div>`;
 }
 
 function row(p, zone) {
   const hours = hoursBetween(p.observed_at, p.available_at);
   const width = Math.min(100, (Math.log1p(hours * 60) / Math.log1p(24 * 60)) * 100);
-  const stop = p.poller_stop_h ? ` The poller had no complete pass for ${dur(p.poller_stop_h)} before: this time includes that stop.` : "";
+  const stop = p.poller_stop_h ? ` For ${dur(p.poller_stop_h)} of this time the poller did not read the source. The source can have published at any time in that stop.` : "";
+  const alerts = p.alerts.length ? ` Alerts: ${p.alerts.map((a) => `${a.level} at ${utc(a.at)} UTC`).join(", ")}.` : "";
   const title = `${p.detections} ${p.detections === 1 ? "detection" : "detections"}. Observed ${utc(p.observed_at)} UTC. `
-    + `CHISPA had it ${utc(p.available_at)} UTC${p.estimated ? ": an estimate" : ""}.${stop} The largest fire power: `
+    + `CHISPA had it ${utc(p.available_at)} UTC${p.estimated ? ": an estimate" : ""}.${stop}${alerts} The largest fire power: `
     + `${p.max_frp_mw === null ? "not given" : `${num(p.max_frp_mw, 1)} MW`}.`;
-  const levels = p.alerts.map((l) => `<span data-level="${l}">${l}</span>`).join(`<i>→</i>`);
+  const levels = p.alerts.map((a) => `<span data-level="${a.level}">${a.level}</span>`).join(`<i>→</i>`);
   return `<div class="pass${p.alerts.length ? " raised" : ""}" title="${title}">
     <span class="t">${when(p.observed_at, zone)}</span>
     <span class="s"><i style="background:var(--${p.sensor_family})"></i>${esc(p.platform)}</span>
