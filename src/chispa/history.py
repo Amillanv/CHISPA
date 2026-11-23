@@ -6,7 +6,7 @@ fusion (`docs/method.md` 10.3): one scan of GOES, or the detections of one other
 pass gap. Before the live logs, the time when a detection became available is an estimate.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -55,16 +55,19 @@ def passes(found: dict, event_id: int) -> tuple[list[dict], int]:
     The passes to show are the newest passes (`config.py` gives how many) and each pass that
     made the level go up. They are in the sequence in which they became available: the sequence
     in which the fusion had them, and thus the sequence of the alerts.
-    `alerts` has each level that the pass raised, in sequence. It is empty if the pass raised none.
+    `alerts` has each level that the pass raised, with the time when CHISPA had the detection
+    that raised it. The rows of one pass can come in two polls: FIRMS first, INPE later.
+    `source` is the source of the first detection of the pass that CHISPA had.
     `estimated` is True for a pass before the live logs: then the time when it became available
     is the observation time plus an estimate (`config.AVAILABLE_DELAY`).
     """
     numbers = pass_numbers(found)
     count = int(numbers.max()) + 1
     # One pass can raise the level two times: LOW at its first detection, MEDIUM at a later one.
-    raised: dict[int, list[str]] = {}
+    raised: dict[int, list[dict]] = {}
     for i in rises(found, event_id):
-        raised.setdefault(int(numbers[i]), []).append(LEVELS[int(found["level"][i])])
+        level = {"level": LEVELS[int(found["level"][i])], "at": _text(found["available"][i])}
+        raised.setdefault(int(numbers[i]), []).append(level)
     shown = sorted(set(range(max(0, count - config.TOOL_MAX_PASSES), count)) | set(raised))
     live_s = config.LIVE_START.timestamp()
     rows = []
@@ -79,6 +82,7 @@ def passes(found: dict, event_id: int) -> tuple[list[dict], int]:
                 "estimated": observed < live_s,
                 "sensor_family": str(found["family"][members[0]]),
                 "platform": str(found["platform"][members[0]]),
+                "source": str(found["source"][members[0]]),
                 "detections": len(members),
                 "max_frp_mw": None if np.isnan(power).all() else float(np.nanmax(power)),
                 "alerts": raised.get(number, []),
@@ -88,16 +92,25 @@ def passes(found: dict, event_id: int) -> tuple[list[dict], int]:
 
 
 def with_stops(rows: list[dict], raw_dir: Path) -> list[dict]:
-    """Add to each pass the stop of the poller before CHISPA had it (`live.stop_before`).
+    """Add to each pass the hours of its time to CHISPA in which the poller did not read its source.
 
-    A pass with an estimated time gets None: the poller did not measure it.
+    That time starts at the observation, or at the newest poll before that read the source with
+    no failure (`live.answered_before`), and stops when CHISPA had the pass. It is the most that the
+    poller added to the delay: the poll log does not say when the source published the pass.
+    None: that time is not more than `config.LIVE_POLL_LATE`, or the pass has an estimated time.
     """
-    stops: dict[str, float | None] = {}
+    answered: dict[tuple[str, str], datetime] = {}
     for row in rows:
-        at = row["available_at"]
-        if not row["estimated"] and at not in stops:
-            stops[at] = live.stop_before(raw_dir, datetime.fromisoformat(at))
-        row["poller_stop_h"] = None if row["estimated"] else stops[at]
+        row["poller_stop_h"] = None
+        if row["estimated"]:
+            continue
+        key = (row["available_at"], row["source"])
+        at = datetime.fromisoformat(key[0])
+        if key not in answered:
+            answered[key] = live.answered_before(raw_dir, at, key[1])
+        stop = at - max(answered[key], datetime.fromisoformat(row["observed_at"]))
+        if stop > config.LIVE_POLL_LATE:
+            row["poller_stop_h"] = round(stop / timedelta(hours=1), 2)
     return rows
 
 

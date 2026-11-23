@@ -22,20 +22,24 @@ def goes_view(
 ) -> dict | None:
     """Return what GOES said for the place: in its newest scan, and in each scan after `last_seen`.
 
-    `last_seen` is the newest observation of the event. `after_last_detection` counts the scans
-    after it in each mask group. `newest_no_fire_at` is the newest of those scans in which GOES
-    examined the place and found no fire: the last clear look. None: no such scan.
-    The answer is None if no saved scan that we had at the as-of time is near that time.
+    `last_seen` is the newest observation of the event. `scans_after_last_detection` is the number
+    of saved scans after it, and `after_last_detection` counts them in each mask group.
+    `newest_no_fire_at` is the newest of those scans in which GOES examined the place and found
+    no fire: the last clear look. None: no such scan.
+    The newest scan is from the day of the as-of time or the day before. If these days have no saved
+    scan that we had at the as-of time, the answer is None: an older scan is not a view of now.
     """
-    first = min(last_seen.date(), as_of.date() - timedelta(days=1))
-    seen = _place_scans(lat, lon, first, as_of, raw_dir)
-    if not seen:
+    recent = as_of.date() - timedelta(days=1)
+    seen = _place_scans(lat, lon, min(last_seen.date(), recent), as_of, raw_dir)
+    newest = max((scan for scan in seen if scan.date() >= recent), default=None)
+    if newest is None:
         return None
     after = {scan: group for scan, group in seen.items() if scan > last_seen}
     clear = [scan for scan, group in after.items() if group == "no_fire"]
     return {
-        "scan_at": to_text(max(seen)),
-        "group": seen[max(seen)],
+        "scan_at": to_text(newest),
+        "group": seen[newest],
+        "scans_after_last_detection": len(after),
         "after_last_detection": dict(Counter(after.values())),
         "newest_no_fire_at": to_text(max(clear)) if clear else None,
     }

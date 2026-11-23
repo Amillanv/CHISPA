@@ -110,7 +110,7 @@ export const GOES_GROUP = {
 };
 export const GOES_NOTE = {
   fire: "GOES found fire", possible_fire: "GOES found a possible fire", no_fire: "GOES examined the pixel and found no fire",
-  cloud: "GOES did not examine the pixel", no_background: "no clear pixels near it to compare with",
+  cloud: "GOES did not examine the pixel", no_background: "GOES could not compute a background value for the pixel",
   water: "GOES does not examine water", blocked: "view angle or sun glint: GOES did not examine the pixel",
   not_processed: "GOES did not process the pixel",
 };

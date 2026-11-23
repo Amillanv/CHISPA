@@ -206,8 +206,8 @@ function sensorsNow(r) {
 /* What GOES said in each saved scan after the newest detection: "11 scans after the newest detection: 11 could not decide." */
 function goesAfter(g) {
   const counts = Object.entries(g.after_last_detection).sort((a, b) => b[1] - a[1]);
-  const total = counts.reduce((sum, [, n]) => sum + n, 0);
-  if (!total) return `<small>No saved scan after the newest detection.</small>`;
+  const total = g.scans_after_last_detection;
+  if (!total) return `<small>No saved scan after the newest detection yet.</small>`;
   const parts = counts.map(([group, n]) => `${num(n)} ${GOES_GROUP[group] ?? esc(group)}`).join(" · ");
   return `<small>${num(total)} saved ${total === 1 ? "scan" : "scans"} after the newest detection: ${parts}.</small>`;
 }

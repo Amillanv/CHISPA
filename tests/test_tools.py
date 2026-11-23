@@ -110,6 +110,7 @@ def test_event_record_reads_a_live_mask_only_after_the_poller_got_it(store, tmp_
     assert view_at(hours=6, minutes=12) == {
         "scan_at": "2024-08-15T11:00:00+00:00",
         "group": "cloud",
+        "scans_after_last_detection": 1,
         "after_last_detection": {"cloud": 1},
         "newest_no_fire_at": None,
     }
@@ -119,6 +120,8 @@ def test_event_record_reads_a_live_mask_only_after_the_poller_got_it(store, tmp_
     assert late["newest_no_fire_at"] == "2024-08-15T12:00:00+00:00"
     # The day after, with no scan of that day, the record gives the last scan of the day before.
     assert view_at(days=1, hours=1)["group"] == "no_fire"
+    # Two days after, the newest saved scan is older than the day before: it is not a view of now.
+    assert view_at(days=2, hours=1) is None
 
 
 def test_level_changes_are_the_history_of_the_event_itself(tmp_path, monkeypatch):
