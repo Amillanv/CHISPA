@@ -31,6 +31,15 @@ Checked 2026-11-19 with live requests.
 - An empty result is a file with only the header line. A bad key gives HTTP 400.
 - Each satellite passes approximately two times each day. Thus the gap between observations is hours.
 
+Checked 2026-11-23 with live requests, for the 2025 data:
+
+- The archive products `VIIRS_SNPP_SP`, `VIIRS_NOAA20_SP`, `VIIRS_NOAA21_SP` and `MODIS_SP` have data to 2026-08-31.
+- In `GOES_NRT`, the `satellite` field changed in 2025. On 2025-03-15 it had `G16`. On 2025-04-10, 2025-08-15 and 2025-12-15 it had `G19`.
+  The rows of `G19` have the mask class in the `confidence` field, as the rows of `G16`. We use `G19` with the platform name `GOES19`.
+- The same days also had `G19FRP`, `Met10` and a new value `Met12`. We do not use them, as before.
+- Not checked: holes in the `G19` record of 2025. A hole in 2024 was seven weeks long.
+- The burn scar asset has the band `burned_monthly_2025`. The burn day product has one image for each month of 2025.
+
 ### 8.2 GOES fire product
 
 Checked 2026-11-19 with live requests and one raw file.

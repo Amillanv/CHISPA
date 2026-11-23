@@ -59,16 +59,12 @@ jobs:
             printf '\n[The diff was cut at %s characters.]\n' "$MAX_DIFF" >> diff.txt
           fi
 
-          # The prompt and the program come from the base branch. Thus a pull request cannot
-          # change its own review. Only if the base branch does not have the two files,
-          # they come from the pull request.
-          if git cat-file -e "origin/$BASE_REF:.github/review.py" 2>/dev/null \
-             && git cat-file -e "origin/$BASE_REF:.github/review-prompt.txt" 2>/dev/null; then
-            git show "origin/$BASE_REF:.github/review-prompt.txt" > prompt.txt
-            git show "origin/$BASE_REF:.github/review.py" > review.py
-          else
-            cp .github/review-prompt.txt prompt.txt
-            cp .github/review.py review.py
+          # The prompt and the program come only from the base branch. Thus a pull request
+          # cannot change its own review. If the base branch does not have them, there is no review.
+          if ! git show "origin/$BASE_REF:.github/review-prompt.txt" > prompt.txt 2>/dev/null \
+             || ! git show "origin/$BASE_REF:.github/review.py" > review.py 2>/dev/null; then
+            echo "The base branch has no review files. No review."
+            exit 0
           fi
 
           # Each document is one part of the message, between marks.

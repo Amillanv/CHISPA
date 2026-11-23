@@ -12,9 +12,18 @@ from pathlib import Path
 # We use it to request data. The biome border, not this box, selects data for results.
 PANTANAL_BOX = (-59.5, -22.5, -54.5, -15.5)
 
-# We set thresholds on the development year and report results on the test year.
+# We set thresholds on the development year. The test year scored the merge one time.
+# Each later part uses those two years to set its rules, and the year below as its test year.
 DEVELOPMENT_YEAR = 2023
 TEST_YEAR = 2024
+PART_TEST_YEAR = 2025
+
+# The years that have mapped fires in the store, with the role of each in the results.
+YEAR_ROLES = {
+    DEVELOPMENT_YEAR: "development year",
+    TEST_YEAR: "test year of the merge",
+    PART_TEST_YEAR: "test year of the later parts",
+}
 
 # --- FIRMS ---
 

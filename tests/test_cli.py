@@ -17,3 +17,11 @@ def test_command_that_is_not_built_fails(capsys):
         main(["serve"])
     assert stop.value.code == 1
     assert "not built" in capsys.readouterr().err
+
+
+def test_result_command_for_a_test_year_needs_a_clear_decision(capsys):
+    for command in ("evaluate", "severity"):
+        with pytest.raises(SystemExit) as stop:
+            main([command, "--year", "2025"])
+        assert "test year of the later parts" in str(stop.value)
+        assert "--test-run" in str(stop.value)

@@ -233,7 +233,8 @@ This lets the same text go through SMS and voice radio.
 The test period of the merge hypothesis was 2024. We ran it on 2026-11-21, thus 2024 is not new data now.
 The table `merge_gain` came after that first run. It changed no threshold and no number of the other tables.
 Each later part uses 2024 only to tune, and 2025 as its test period (section 7.4).
-The 2025 data is not in the store.
+Each command that makes a result stops for 2024 and for 2025, unless it has the flag `--test-run`.
+Do not use the flag for 2025 before the rules of a part are frozen. The store can hold the 2025 data before that time.
 
 ### 11.3 Fires
 

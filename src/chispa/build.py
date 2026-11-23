@@ -28,7 +28,7 @@ def build_store(raw_dir: Path, store_path: Path) -> dict[str, list[int]]:
         total[0] += 1
         total[1] += add_detections(store, detections)
         total[2] += rejected
-    for year in (config.DEVELOPMENT_YEAR, config.TEST_YEAR):
+    for year in config.YEAR_ROLES:
         scar_count, fire_count = build_fires(year, raw_dir, store_path.parent, store)
         totals[f"scars {year}"] = [1, scar_count, 0]
         totals[f"fires {year}"] = [1, fire_count, 0]
