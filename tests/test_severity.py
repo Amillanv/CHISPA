@@ -123,14 +123,14 @@ def test_tables_of_the_severity(monkeypatch):
     monkeypatch.setattr("chispa.config.SEVERITY_SCORE_CLASSES", (0.0, 50.0, 100.1))
     rows = [event(10.0, 0.0, 3), event(20.0, 40.0, 1), event(60.0, 100.0, 2), event(90.0, 900.0, 4)]
     low, high, everything = score_table(rows)
-    assert (low["events"], low["events_matched"], low["matched_share"], low["area_ha_median"]) == (
+    assert (low["alerts"], low["alerts_matched"], low["matched_share"], low["area_ha_median"]) == (
         2,
         1,
         0.5,
         40.0,
     )
-    assert (high["events"], high["events_matched"], high["area_ha_median"]) == (2, 2, 500.0)
-    assert everything["events"] == 4
+    assert (high["alerts"], high["alerts_matched"], high["area_ha_median"]) == (2, 2, 500.0)
+    assert everything["alerts"] == 4
     # The two matched events of the high class have detections 1 day and 4 days after.
     assert (high["detected_after"], high["days_after_median"], low["detected_after"]) == (2, 2.5, 0)
     by_name = {row["measure"]: row for row in rank_table(rows)}
@@ -140,7 +140,7 @@ def test_tables_of_the_severity(monkeypatch):
     assert by_name["severity"]["match_separation"] == 1.0
     assert by_name["detections"]["match_separation"] == 0.3333
     # Two events have no fire power. The row of the fire power has only the two other events.
-    assert (by_name["max_frp_mw"]["events"], by_name["detections"]["events"]) == (2, 4)
+    assert (by_name["max_frp_mw"]["alerts"], by_name["detections"]["alerts"]) == (2, 4)
     power, extent, advance = inputs_table(rows)
-    assert (power["events"], power["events_with_a_value"], power["p50"]) == (4, 2, 150.0)
-    assert (advance["events_with_a_value"], advance["p50"]) == (0, None)
+    assert (power["alerts"], power["alerts_with_a_value"], power["p50"]) == (4, 2, 150.0)
+    assert (advance["alerts_with_a_value"], advance["p50"]) == (0, None)

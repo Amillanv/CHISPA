@@ -13,7 +13,7 @@ from chispa.evaluation.confidence import confidence_tables
 from chispa.evaluation.growth import step_rows
 from chispa.evaluation.report import write_summary, write_tables
 from chispa.evaluation.severity import severity_tables
-from chispa.evaluation.visibility import visibility
+from chispa.evaluation.visibility import month_table, visibility
 from chispa.sources import scars
 
 
@@ -31,7 +31,10 @@ def run_table(name: str, year: int) -> None:
     elif name == "growth":
         tables = {"growth_steps": step_rows(*arguments)}
     else:
-        tables = {"visibility": visibility(*arguments)}
+        tables = {
+            "visibility": visibility(*arguments),
+            "visibility_months": month_table(year, config.RAW_DIR),
+        }
     write_tables(tables, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
     print(f"{year}: see results/SUMMARY.md, tables {', '.join(tables)}.")

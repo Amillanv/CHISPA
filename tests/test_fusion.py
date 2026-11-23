@@ -38,61 +38,64 @@ def run(*detections):
 
 
 def test_near_detections_are_one_event():
-    events, _, members = run(VIIRS, replace(VIIRS, lat=VIIRS.lat + 0.5 * KM))
+    events, _, members, _ = run(VIIRS, replace(VIIRS, lat=VIIRS.lat + 0.5 * KM))
     assert len(events) == 1
     assert events[0].detections == 2
-    assert {event_id for _, event_id, _ in members} == {100}
+    assert {event_id for _, event_id, _, _ in members} == {100}
 
 
 def test_far_detections_are_two_events():
-    events, _, _ = run(VIIRS, replace(VIIRS, lat=VIIRS.lat + 10 * KM))
+    events, _, _, _ = run(VIIRS, replace(VIIRS, lat=VIIRS.lat + 10 * KM))
     assert [event.id for event in events] == [100, 101]
 
 
 def test_same_place_after_the_time_window_is_a_new_event():
-    events, _, _ = run(VIIRS, later(VIIRS, hours=25))
+    events, _, _, _ = run(VIIRS, later(VIIRS, hours=25))
     assert len(events) == 2
 
 
 def test_detection_between_two_events_merges_them_into_the_older():
     north = replace(VIIRS, lat=VIIRS.lat + 2.4 * KM, platform="NOAA20")
     bridge = later(replace(VIIRS, lat=VIIRS.lat + 1.2 * KM), hours=1)
-    events, alerts, members = run(VIIRS, north, bridge)
+    events, alerts, members, merges = run(VIIRS, north, bridge)
     assert [(event.id, event.detections) for event in events] == [(100, 3)]
-    assert {event_id for _, event_id, _ in members} == {100}
+    assert {event_id for _, event_id, _, _ in members} == {100}
     assert {alert.event_id for alert in alerts} == {100}
+    # The alerts as a brigade got them: two alerts, then the bridge merged the newer into the older.
+    assert [issued for _, _, _, issued in members] == [100, 101, 100]
+    assert merges == [(bridge.available_at, 101, 100)]
     # Each of the two first events was LOW. The merged event has LOW one time, then MEDIUM.
     assert [alert.level for alert in alerts] == ["LOW", "MEDIUM"]
 
 
 def test_one_nominal_detection_is_low():
-    events, alerts, _ = run(VIIRS)
+    events, alerts, _, _ = run(VIIRS)
     assert events[0].level == "LOW"
     assert [(alert.level, alert.at) for alert in alerts] == [("LOW", VIIRS.available_at)]
 
 
 def test_same_pass_from_two_sources_is_one_item_of_evidence():
     inpe = later(replace(VIIRS, source="inpe"), minutes=1)
-    events, _, _ = run(VIIRS, inpe)
+    events, _, _, _ = run(VIIRS, inpe)
     assert (events[0].level, events[0].passes) == ("LOW", 1)
 
 
 def test_second_pass_of_the_same_family_is_medium():
-    events, alerts, _ = run(VIIRS, later(VIIRS, minutes=100))
+    events, alerts, _, _ = run(VIIRS, later(VIIRS, minutes=100))
     assert (events[0].level, events[0].passes) == ("MEDIUM", 2)
     assert [alert.level for alert in alerts] == ["LOW", "MEDIUM"]
 
 
 def test_high_source_confidence_is_medium():
-    events, _, _ = run(replace(VIIRS, source_confidence="high"))
+    events, _, _, _ = run(replace(VIIRS, source_confidence="high"))
     assert events[0].level == "MEDIUM"
 
 
 def test_two_sensor_families_are_high():
     goes = replace(VIIRS, sensor_family="abi", platform="GOES16", footprint_m=1250.0)
-    events, alerts, members = run(VIIRS, later(goes, minutes=30))
+    events, alerts, members, _ = run(VIIRS, later(goes, minutes=30))
     assert (events[0].level, events[0].families) == ("HIGH", "abi+viirs")
-    assert [level for _, _, level in members] == ["LOW", "HIGH"]
+    assert [level for _, _, level, _ in members] == ["LOW", "HIGH"]
     assert alerts[-1].at == goes.available_at + timedelta(minutes=30)
 
 

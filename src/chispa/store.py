@@ -9,7 +9,7 @@ from dataclasses import astuple, fields
 from datetime import UTC, datetime
 from pathlib import Path
 
-from chispa.models import Alert, Detection, Event, Fire
+from chispa.models import Detection, Fire
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS detections (
@@ -64,9 +64,16 @@ CREATE INDEX IF NOT EXISTS alerts_event ON alerts (event_id);
 CREATE TABLE IF NOT EXISTS memberships (
     detection_id INTEGER PRIMARY KEY,
     event_id INTEGER NOT NULL,
-    level TEXT NOT NULL
+    level TEXT NOT NULL,
+    issued_id INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS memberships_event ON memberships (event_id);
+CREATE INDEX IF NOT EXISTS memberships_issued ON memberships (issued_id);
+CREATE TABLE IF NOT EXISTS merges (
+    at TEXT NOT NULL,
+    absorbed_id INTEGER NOT NULL,
+    into_id INTEGER NOT NULL
+);
 """
 
 COLUMNS = ", ".join(field.name for field in fields(Detection))
@@ -116,20 +123,28 @@ def read_detections(connection: sqlite3.Connection, start: datetime, end: dateti
 
 
 def replace_fusion(
-    connection: sqlite3.Connection,
-    id_range: tuple[int, int],
-    events: list[Event],
-    alerts: list[Alert],
-    memberships: list[tuple[int, int, str]],
+    connection: sqlite3.Connection, id_range: tuple[int, int], fusion: tuple
 ) -> None:
-    """Delete the fusion results with an event id in the range, then save the new results."""
-    for table, column in (("events", "id"), ("alerts", "event_id"), ("memberships", "event_id")):
+    """Delete the fusion results with an event id in the range, then save the new results.
+
+    `fusion` is what `fuse` returns: the events, the alert changes, the memberships and the merges.
+    """
+    events, alerts, memberships, merges = fusion
+    tables = (
+        ("events", "id"),
+        ("alerts", "event_id"),
+        ("memberships", "event_id"),
+        ("merges", "into_id"),
+    )
+    for table, column in tables:
         connection.execute(f"DELETE FROM {table} WHERE {column} >= ? AND {column} < ?", id_range)
     rows = [_times_to_text(astuple(event), (1, 2, 3)) for event in events]
     connection.executemany(f"INSERT INTO events VALUES ({', '.join('?' * 15)})", rows)
     rows = [_times_to_text(astuple(alert), (1,)) for alert in alerts]
     connection.executemany("INSERT INTO alerts VALUES (?, ?, ?, ?, ?)", rows)
-    connection.executemany("INSERT INTO memberships VALUES (?, ?, ?)", memberships)
+    connection.executemany("INSERT INTO memberships VALUES (?, ?, ?, ?)", memberships)
+    rows = [_times_to_text(merge, (0,)) for merge in merges]
+    connection.executemany("INSERT INTO merges VALUES (?, ?, ?)", rows)
     connection.commit()
 
 
