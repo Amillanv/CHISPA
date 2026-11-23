@@ -582,6 +582,7 @@ The inputs. Each exists at its moment:
   and if a source gave a high confidence.
 - From the time: the month, and day or night at the place.
 - From the layers of section 11.14: the land cover group, the distance to protected land and to indigenous land, and the people.
+- From the days before: the number of detections near the first detection (`config.py` gives the days and the cells).
 - Only at moment 24: the extent, and the advance of the newest step.
 
 The model is a logistic regression: a sum of the inputs with one weight for each, then a probability.
@@ -604,15 +605,34 @@ The hypotheses, written before the first run on 2025:
 
 If hypothesis 1 or 2 is false, the level rule stays at that moment. If hypothesis 3 is false, we give a rank and not a probability.
 
-What 2023 and 2024 show (tables `confidence` and `confidence_calibration`, 2026-11-23). This is tuning, not the test:
+The measures in the table `confidence`, for the probability and for the level:
 
-- On 2024, with the weights of 2023, the match separation of the probability was 0.8131 at moment 0 and 0.8309 at moment 24.
-  That of the level was 0.5625 and 0.6333 (6260 events, 2749 with a match).
-- On 2024 the probability was too low: in the middle fifth of the events the mean probability was 0.1579,
-  and the matched share was 0.4888. 2024 had more than two times the matched share of 2023. Thus we expect hypothesis 3 to be false.
-- The largest weights at moment 0 are the fire power (more is a match), the season, and the distance to indigenous land
-  and to protected land (near is a match). Pasture, farming and many people go with no match.
-- We made no change after this look: all inputs, and the first penalty. The model is frozen at this state.
+- Match separation: the probability that an event with a match has a larger value than an event with no match.
+- Brier value: the mean square of the probability minus the label. 0 is the best. The probability of a level
+  is the matched share of that level in the development year.
+- Brier skill: 1 minus the Brier value divided by the Brier value of one constant, the matched share of the development year.
+  More than 0 is better than that constant.
+- Top tenth: of the tenth of the events with the largest values, how many match. A brigade goes to these first.
+
+What 2023 and 2024 show (2026-11-23). This is tuning, not the test. The weights are from 2023:
+
+- The first model had no input for the fire activity near an event. On 2024 its match separation was 0.8131 at moment 0.
+- We examined the inputs on 2024, outside the repository. No group of inputs alone gave more than 0.74. Each group that we
+  removed decreased the separation by 0.04 or less. The activity of all the region did not help.
+- We made one change: the input "activity near the event". Fires come in groups in space and time, and the input
+  uses only the days before the first alert. We made no other change, and the penalty stays at its first value.
+- With this input, on 2024: the match separation is 0.8579 at moment 0 and 0.8712 at moment 24. That of the level is 0.5625 and 0.6333.
+  The Brier skill is 0.3693 and 0.3886. That of the level is 0.0114 and 0.0728 (6260 events, 2749 with a match).
+- Top tenth at moment 0: 575 of 626 events match. For the level: 291 of 626.
+- The probability is too low on 2024: in the middle fifth of the events the mean probability was 0.1534, and the matched
+  share was 0.4305. The matched share of all events was 0.207 in 2023 and 0.439 in 2024. The model has the rate of 2023.
+  No data at the time of an alert gives the rate of its year: the map comes the next year. Thus we expect hypothesis 3 to be false.
+- The largest weights at moment 0: the fire power and the activity near the event (more is a match), the season,
+  and the distance to indigenous land and to protected land (near is a match).
+- The model is frozen at this state.
+
+A caution for the input "activity near the event": an event near a large fire can match that fire, because the match
+rule has a reach in space and in time. Then the input and the label agree for a reason that is not the event.
 
 - Limits: the events are the events of the end of the year (section 11.14). The GOES detections of 2025 are from GOES-19,
   and those of 2023 and 2024 from GOES-16. The year 2025 can have holes in its GOES record that we did not find.

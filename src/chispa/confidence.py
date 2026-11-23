@@ -30,6 +30,7 @@ INPUTS = (
     "people_log",
     "protected_km_log",
     "indigenous_km_log",
+    "near_log",
 )
 LATER_INPUTS = ("extent_km_log", "has_advance")  # Only at the second moment.
 
@@ -38,8 +39,9 @@ def inputs(found: dict, seen: dict) -> dict[str, float]:
     """Return the inputs of the model for one event at one moment.
 
     `found` has the facts of `severity.facts`. `seen` has what the detections say:
-    the set of sensor families, if a source gave a high confidence, the day of the year
-    and the hour at the place of the first detection.
+    the set of sensor families, if a source gave a high confidence, the day of the year,
+    the hour at the place of the first detection, and the number of detections near that
+    place in the days before.
     """
     angle = 2 * np.pi * seen["day"] / 365.25
     power = found["max_frp_mw"]
@@ -55,6 +57,7 @@ def inputs(found: dict, seen: dict) -> dict[str, float]:
         "people_log": np.log1p(found["people_near"]),
         "protected_km_log": np.log1p(found["protected_km"]),
         "indigenous_km_log": np.log1p(found["indigenous_km"]),
+        "near_log": np.log1p(seen["near"]),
         "extent_km_log": np.log1p(found["extent_km"]),
         "has_advance": float(found["advance_m"] is not None),
     }
@@ -67,7 +70,8 @@ def fit(table: np.ndarray, matched: np.ndarray, names: tuple[str, ...]) -> dict:
     """Return a model from one row of inputs for each event and the label of each event.
 
     Each input gets the mean 0 and the spread 1 first. Thus the weights are comparable.
-    The penalty in `config.py` keeps the weights small.
+    The penalty in `config.py` keeps the weights small. `base_rate` is the matched share
+    of these events: the probability that a person can give with no model.
     """
     mean, spread = table.mean(axis=0), table.std(axis=0)
     spread[spread == 0] = 1.0
@@ -89,6 +93,7 @@ def fit(table: np.ndarray, matched: np.ndarray, names: tuple[str, ...]) -> dict:
         "mean": mean.tolist(),
         "spread": spread.tolist(),
         "start": float(best.x[0]),
+        "base_rate": float(matched.mean()),
         "weights": best.x[1:].tolist(),
     }
 

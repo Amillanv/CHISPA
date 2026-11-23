@@ -258,6 +258,12 @@ SEVERITY_SCORE_CLASSES = (0.0, 25.0, 50.0, 75.0, 100.1)
 # Set it on the test year of the merge, which is the tuning year of this part.
 CONFIDENCE_PENALTY = 0.001
 
+# The fire activity near an event: the detections of this many days before the day of its first
+# alert, in the cell of the first detection and in the 8 cells around it. The side of a cell
+# is in degrees (approximately 11 km).
+CONFIDENCE_NEAR_DAYS = 7
+CONFIDENCE_NEAR_CELL_DEG = 0.1
+
 # === The values above this line can change a result. The configuration hash covers them. ===
 # The values below this line change no number in a result table.
 

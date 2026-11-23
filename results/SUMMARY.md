@@ -69,82 +69,84 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
 ### 2023 confidence
 
-Configuration `bdf0e945b73a`, run on 2026-11-23.
+Configuration `a9daca3b3df1`, run on 2026-11-23.
 
-| moment_h | measure | events | events_matched | match_separation |
-|---|---|---|---|---|
-| 0 | probability | 5890 | 1220 | 0.7901 |
-| 0 | level | 5890 | 1220 | 0.5688 |
-| 24 | probability | 5890 | 1220 | 0.8307 |
-| 24 | level | 5890 | 1220 | 0.6532 |
+| moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched |
+|---|---|---|---|---|---|---|---|---|
+| 0 | probability | 5890 | 1220 | 0.8233 | 0.119 | 0.2754 | 589 | 432 |
+| 0 | level | 5890 | 1220 | 0.5688 | 0.162 | 0.0134 | 589 | 154 |
+| 24 | probability | 5890 | 1220 | 0.8538 | 0.1095 | 0.3335 | 589 | 457 |
+| 24 | level | 5890 | 1220 | 0.6532 | 0.1535 | 0.0655 | 589 | 218 |
 
 ### 2023 confidence_calibration
 
-Configuration `bdf0e945b73a`, run on 2026-11-23.
+Configuration `a9daca3b3df1`, run on 2026-11-23.
 
 | moment_h | fifth | events | probability_mean | matched_share |
 |---|---|---|---|---|
-| 0 | 1 | 1178 | 0.0358 | 0.0374 |
-| 0 | 2 | 1178 | 0.0943 | 0.0798 |
-| 0 | 3 | 1178 | 0.1573 | 0.1384 |
-| 0 | 4 | 1178 | 0.2506 | 0.2818 |
-| 0 | 5 | 1178 | 0.4977 | 0.4983 |
-| 24 | 1 | 1178 | 0.0279 | 0.0306 |
-| 24 | 2 | 1178 | 0.0773 | 0.056 |
-| 24 | 3 | 1178 | 0.1337 | 0.1248 |
-| 24 | 4 | 1178 | 0.2357 | 0.2521 |
-| 24 | 5 | 1178 | 0.561 | 0.5722 |
+| 0 | 1 | 1178 | 0.0234 | 0.0357 |
+| 0 | 2 | 1178 | 0.0727 | 0.0823 |
+| 0 | 3 | 1178 | 0.1351 | 0.0883 |
+| 0 | 4 | 1178 | 0.2495 | 0.2572 |
+| 0 | 5 | 1178 | 0.5549 | 0.5722 |
+| 24 | 1 | 1178 | 0.0183 | 0.0289 |
+| 24 | 2 | 1178 | 0.0601 | 0.0577 |
+| 24 | 3 | 1178 | 0.1171 | 0.0891 |
+| 24 | 4 | 1178 | 0.237 | 0.2394 |
+| 24 | 5 | 1178 | 0.6032 | 0.6205 |
 
 ### 2023 confidence_weights
 
-Configuration `bdf0e945b73a`, run on 2026-11-23.
+Configuration `a9daca3b3df1`, run on 2026-11-23.
 
 | moment_h | input | weight |
 |---|---|---|
-| 0 | power_log | 0.9387 |
-| 0 | season_sin | -0.5424 |
-| 0 | indigenous_km_log | -0.4873 |
-| 0 | protected_km_log | -0.3967 |
-| 0 | has_abi | -0.3044 |
-| 0 | has_viirs | 0.3001 |
-| 0 | on_pasture | -0.2888 |
-| 0 | people_log | -0.2591 |
-| 0 | detections_log | 0.2523 |
-| 0 | night | 0.1863 |
-| 0 | on_farming | -0.1822 |
-| 0 | on_grassland | -0.1175 |
-| 0 | on_wetland | 0.0888 |
-| 0 | on_savanna | -0.0761 |
-| 0 | season_cos | -0.0731 |
-| 0 | has_avhrr | 0.0401 |
-| 0 | no_power | 0.0401 |
-| 0 | has_high | -0.0362 |
-| 0 | families | -0.0238 |
-| 0 | has_modis | -0.0071 |
-| 0 | on_forest | -0.0026 |
-| 24 | power_log | 0.8911 |
-| 24 | season_sin | -0.5909 |
-| 24 | indigenous_km_log | -0.4372 |
-| 24 | protected_km_log | -0.4364 |
-| 24 | has_viirs | 0.4163 |
-| 24 | on_pasture | -0.3059 |
-| 24 | has_abi | -0.3005 |
-| 24 | detections_log | 0.2904 |
-| 24 | people_log | -0.2536 |
-| 24 | on_farming | -0.1708 |
-| 24 | no_power | 0.1692 |
-| 24 | on_savanna | -0.1397 |
-| 24 | on_grassland | -0.1385 |
-| 24 | on_wetland | 0.095 |
-| 24 | has_avhrr | -0.0845 |
-| 24 | families | 0.0821 |
-| 24 | extent_km_log | 0.0787 |
-| 24 | has_advance | 0.0574 |
-| 24 | season_cos | 0.0561 |
-| 24 | has_modis | -0.0192 |
-| 24 | night | 0.0135 |
-| 24 | on_forest | -0.0129 |
-| 24 | has_high | -0.0038 |
+| 0 | power_log | 0.8993 |
+| 0 | near_log | 0.7447 |
+| 0 | season_sin | -0.5061 |
+| 0 | indigenous_km_log | -0.4127 |
+| 0 | protected_km_log | -0.3462 |
+| 0 | season_cos | -0.3432 |
+| 0 | detections_log | 0.2544 |
+| 0 | has_abi | -0.2371 |
+| 0 | people_log | -0.2354 |
+| 0 | has_viirs | 0.2333 |
+| 0 | on_pasture | -0.2144 |
+| 0 | night | 0.2072 |
+| 0 | on_farming | -0.1441 |
+| 0 | on_grassland | -0.1141 |
+| 0 | on_savanna | -0.1007 |
+| 0 | on_wetland | 0.0917 |
+| 0 | families | -0.0437 |
+| 0 | has_high | -0.0213 |
+| 0 | on_forest | -0.0157 |
+| 0 | has_modis | -0.0047 |
+| 0 | has_avhrr | 0.0041 |
+| 0 | no_power | 0.0041 |
+| 24 | power_log | 0.8912 |
+| 24 | near_log | 0.7151 |
+| 24 | season_sin | -0.5562 |
+| 24 | protected_km_log | -0.3875 |
+| 24 | indigenous_km_log | -0.3816 |
+| 24 | has_viirs | 0.3296 |
+| 24 | detections_log | 0.32 |
+| 24 | has_abi | -0.2519 |
+| 24 | on_pasture | -0.2498 |
+| 24 | people_log | -0.2146 |
+| 24 | season_cos | -0.2056 |
+| 24 | on_savanna | -0.1853 |
+| 24 | on_grassland | -0.1609 |
+| 24 | on_farming | -0.1381 |
+| 24 | no_power | 0.1189 |
+| 24 | has_avhrr | -0.0934 |
+| 24 | on_wetland | 0.0848 |
+| 24 | extent_km_log | 0.0571 |
+| 24 | families | 0.0513 |
+| 24 | has_advance | 0.0456 |
+| 24 | on_forest | -0.0386 |
+| 24 | night | 0.036 |
+| 24 | has_modis | -0.0076 |
+| 24 | has_high | 0.005 |
 
 ### 2023 configurations
 
@@ -323,31 +325,31 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 
 ### 2024 confidence
 
-Configuration `bdf0e945b73a`, run on 2026-11-23.
+Configuration `a9daca3b3df1`, run on 2026-11-23.
 
-| moment_h | measure | events | events_matched | match_separation |
-|---|---|---|---|---|
-| 0 | probability | 6260 | 2749 | 0.8131 |
-| 0 | level | 6260 | 2749 | 0.5625 |
-| 24 | probability | 6260 | 2749 | 0.8309 |
-| 24 | level | 6260 | 2749 | 0.6333 |
+| moment_h | measure | events | events_matched | match_separation | brier | brier_skill | top_tenth | top_tenth_matched |
+|---|---|---|---|---|---|---|---|---|
+| 0 | probability | 6260 | 2749 | 0.8579 | 0.1893 | 0.3693 | 626 | 575 |
+| 0 | level | 6260 | 2749 | 0.5625 | 0.2967 | 0.0114 | 626 | 291 |
+| 24 | probability | 6260 | 2749 | 0.8712 | 0.1835 | 0.3886 | 626 | 592 |
+| 24 | level | 6260 | 2749 | 0.6333 | 0.2783 | 0.0728 | 626 | 320 |
 
 ### 2024 confidence_calibration
 
-Configuration `bdf0e945b73a`, run on 2026-11-23.
+Configuration `a9daca3b3df1`, run on 2026-11-23.
 
 | moment_h | fifth | events | probability_mean | matched_share |
 |---|---|---|---|---|
-| 0 | 1 | 1252 | 0.0233 | 0.0703 |
-| 0 | 2 | 1252 | 0.0708 | 0.2109 |
-| 0 | 3 | 1252 | 0.1579 | 0.4888 |
-| 0 | 4 | 1252 | 0.312 | 0.6438 |
-| 0 | 5 | 1252 | 0.5861 | 0.7819 |
-| 24 | 1 | 1252 | 0.017 | 0.0655 |
-| 24 | 2 | 1252 | 0.0576 | 0.2133 |
-| 24 | 3 | 1252 | 0.1395 | 0.4401 |
-| 24 | 4 | 1252 | 0.3139 | 0.6581 |
-| 24 | 5 | 1252 | 0.6639 | 0.8187 |
+| 0 | 1 | 1252 | 0.0148 | 0.0543 |
+| 0 | 2 | 1252 | 0.052 | 0.1789 |
+| 0 | 3 | 1252 | 0.1534 | 0.4305 |
+| 0 | 4 | 1252 | 0.3944 | 0.651 |
+| 0 | 5 | 1252 | 0.7466 | 0.881 |
+| 24 | 1 | 1252 | 0.0108 | 0.0487 |
+| 24 | 2 | 1252 | 0.0442 | 0.1486 |
+| 24 | 3 | 1252 | 0.1439 | 0.4313 |
+| 24 | 4 | 1252 | 0.3873 | 0.6749 |
+| 24 | 5 | 1252 | 0.7794 | 0.8922 |
 
 ### 2024 configurations
 

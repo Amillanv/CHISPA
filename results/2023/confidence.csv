@@ -1,5 +1,5 @@
-moment_h,measure,events,events_matched,match_separation,config,run_date
-0,probability,5890,1220,0.7901,bdf0e945b73a,2026-11-23
-0,level,5890,1220,0.5688,bdf0e945b73a,2026-11-23
-24,probability,5890,1220,0.8307,bdf0e945b73a,2026-11-23
-24,level,5890,1220,0.6532,bdf0e945b73a,2026-11-23
+moment_h,measure,events,events_matched,match_separation,brier,brier_skill,top_tenth,top_tenth_matched,config,run_date
+0,probability,5890,1220,0.8233,0.119,0.2754,589,432,a9daca3b3df1,2026-11-23
+0,level,5890,1220,0.5688,0.162,0.0134,589,154,a9daca3b3df1,2026-11-23
+24,probability,5890,1220,0.8538,0.1095,0.3335,589,457,a9daca3b3df1,2026-11-23
+24,level,5890,1220,0.6532,0.1535,0.0655,589,218,a9daca3b3df1,2026-11-23

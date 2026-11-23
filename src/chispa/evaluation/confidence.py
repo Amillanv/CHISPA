@@ -20,6 +20,40 @@ from chispa.fusion import LEVELS
 
 MOMENTS = ("0", "24")
 FIFTHS = 5
+TOP_SHARE = 0.1  # The part of the events with the largest values that a brigade can go to first.
+DAY_S = 86_400
+
+
+def activity(detections: Fields) -> tuple[np.ndarray, tuple]:
+    """Return the number of detections in each day and each cell, and how to find a cell.
+
+    The count is by the day when a detection became available. Thus the count of the days
+    before a day uses only data that existed on that day.
+    """
+    west, south, east, north = config.PANTANAL_BOX
+    side = config.CONFIDENCE_NEAR_CELL_DEG
+    days = (detections["available"] // DAY_S).astype(int)
+    rows = ((detections["lat"] - south) / side).astype(int) + 1  # One free cell at each edge.
+    cols = ((detections["lon"] - west) / side).astype(int) + 1
+    shape = (
+        days.max() - days.min() + 1,
+        int((north - south) / side) + 3,
+        int((east - west) / side) + 3,
+    )
+    counts = np.zeros(shape, dtype=np.int32)
+    np.add.at(counts, (days - days.min(), rows, cols), 1)
+    return counts, (int(days.min()), south, west, side)
+
+
+def near_count(counts: np.ndarray, place: tuple, time_s: float, lat: float, lon: float) -> int:
+    """Return the detections of the days before a time, in the cell of a position and around it."""
+    first_day, south, west, side = place
+    day = int(time_s // DAY_S) - first_day
+    row, col = int((lat - south) / side) + 1, int((lon - west) / side) + 1
+    before = counts[
+        max(day - config.CONFIDENCE_NEAR_DAYS, 0) : day, row - 1 : row + 2, col - 1 : col + 2
+    ]
+    return int(before.sum())
 
 
 def moment_rows(detections: Fields, matched: set[int], layers: severity.Layers) -> dict[str, list]:
@@ -27,6 +61,7 @@ def moment_rows(detections: Fields, matched: set[int], layers: severity.Layers) 
     order = np.argsort(detections["event"], kind="stable")
     starts = np.nonzero(np.concatenate([[True], np.diff(detections["event"][order]) != 0]))[0]
     limits = {"0": config.PASS_GAP.total_seconds(), "24": config.SEVERITY_EVAL_HOURS * 3600}
+    counts, place = activity(detections)
     rows = {moment: [] for moment in MOMENTS}
     for start, end in zip(starts, [*starts[1:], len(order)], strict=True):
         members = order[start:end]
@@ -34,13 +69,16 @@ def moment_rows(detections: Fields, matched: set[int], layers: severity.Layers) 
         event = int(detections["event"][members[0]])
         for moment, limit_s in limits.items():
             chosen = members[available <= available.min() + limit_s]
-            row = _event_row(detections, chosen, layers)
+            first = members[available.argmin()]
+            position = (detections["lat"][first], detections["lon"][first])
+            near = near_count(counts, place, available.min(), *position)
+            row = _event_row(detections, chosen, layers, near)
             row["matched"] = event in matched
             rows[moment].append(row)
     return rows
 
 
-def _event_row(detections: Fields, chosen: np.ndarray, layers: severity.Layers) -> dict:
+def _event_row(detections: Fields, chosen: np.ndarray, layers: severity.Layers, near: int) -> dict:
     lat, lon = detections["lat"][chosen], detections["lon"][chosen]
     advance_m = newest_advance(detections, chosen)
     found = severity.facts(lat, lon, detections["frp_mw"][chosen], advance_m, layers)
@@ -50,6 +88,7 @@ def _event_row(detections: Fields, chosen: np.ndarray, layers: severity.Layers) 
         "has_high": bool(detections["high"][chosen].any()),
         "day": int(detections["day"][first]),
         "local_hour": (detections["observed"][first] / 3600 + detections["lon"][first] / 15) % 24,
+        "near": near,
     }
     newest = chosen[detections["available"][chosen] == detections["available"][chosen].max()]
     level = max(LEVELS.index(name) for name in detections["level"][newest])
@@ -75,23 +114,46 @@ def separation(values: np.ndarray, matched: np.ndarray) -> float | None:
     return share(higher, is_match.sum() * (~is_match).sum())
 
 
+def scores(name: str, values: np.ndarray, chance: np.ndarray, matched: np.ndarray, base: float):
+    """Return the row of one measure. `chance` is its probability for each event.
+
+    The Brier value is the mean square of the probability minus the label: 0 is the best.
+    The Brier skill compares it with one constant probability, the matched share of the
+    development year: more than 0 is better than that constant.
+    """
+    top = np.argsort(-values, kind="stable")[: int(len(values) * TOP_SHARE)]
+    brier = float(((chance - matched) ** 2).mean())
+    constant = float(((base - matched) ** 2).mean())
+    return {
+        "measure": name,
+        "events": len(matched),
+        "events_matched": int(matched.sum()),
+        "match_separation": separation(values, matched),
+        "brier": round(brier, 4),
+        "brier_skill": round(1 - brier / constant, 4),
+        "top_tenth": len(top),
+        "top_tenth_matched": int(matched[top].sum()),
+    }
+
+
 def result_tables(rows: dict[str, list], models: dict[str, dict]) -> dict[str, list[dict]]:
-    """Return the table of the separation and the table of the calibration."""
+    """Return the table of the comparison with the level, and the table of the calibration.
+
+    The probability of a level is the matched share of that level in the development year.
+    """
     compare, calibration = [], []
     for moment in MOMENTS:
-        table, matched = as_table(rows[moment], tuple(models[moment]["inputs"]))
-        chance = confidence.probability(models[moment], table)
-        level = np.array([row["level"] for row in rows[moment]], dtype=float)
-        for name, values in (("probability", chance), ("level", level)):
-            compare.append(
-                {
-                    "moment_h": moment,
-                    "measure": name,
-                    "events": len(matched),
-                    "events_matched": int(matched.sum()),
-                    "match_separation": separation(values, matched),
-                }
-            )
+        model = models[moment]
+        table, matched = as_table(rows[moment], tuple(model["inputs"]))
+        chance = confidence.probability(model, table)
+        level = np.array([row["level"] for row in rows[moment]])
+        level_chance = np.array(model["level_rates"])[level]
+        for name, values, given in (
+            ("probability", chance, chance),
+            ("level", level, level_chance),
+        ):
+            row = scores(name, values.astype(float), given, matched, model["base_rate"])
+            compare.append({"moment_h": moment, **row})
         for number, part in enumerate(np.array_split(np.argsort(chance, kind="stable"), FIFTHS), 1):
             calibration.append(
                 {
@@ -103,6 +165,15 @@ def result_tables(rows: dict[str, list], models: dict[str, dict]) -> dict[str, l
                 }
             )
     return {"confidence": compare, "confidence_calibration": calibration}
+
+
+def level_rates(rows: list[dict], base: float) -> list[float]:
+    """Return the matched share of each level. A level with no event gets the share of all."""
+    rates = []
+    for level in range(len(LEVELS)):
+        labels = [row["matched"] for row in rows if row["level"] == level]
+        rates.append(float(np.mean(labels)) if labels else base)
+    return rates
 
 
 def weight_table(models: dict[str, dict]) -> list[dict]:
@@ -135,6 +206,7 @@ def confidence_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, l
         for moment in MOMENTS:
             names = names_of(moment)
             models[moment] = confidence.fit(*as_table(rows[moment], names), names)
+            models[moment]["level_rates"] = level_rates(rows[moment], models[moment]["base_rate"])
         confidence.save(models, path)
     models = confidence.load(path)
     tables = result_tables(rows, models)
