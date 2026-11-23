@@ -1,0 +1,6 @@
+hours_between_passes,steps,advance_m_median,advance_m_p90,floor_m,steps_with_new_pixels,new_pixel_share,speed_m_h_median,speed_m_h_p90,steps_after_empty_pass,config,run_date
+0 to 2,1242,295.99,780.91,850.0,144,0.1159,,,1,a84ef20c2e1b,2026-11-23
+2 to 6,0,,,850.0,0,,,,0,a84ef20c2e1b,2026-11-23
+6 to 18,377,502.52,1812.74,850.0,118,0.313,124.08,316.08,161,a84ef20c2e1b,2026-11-23
+18 to 24.5,137,466.03,2271.48,850.0,46,0.3358,75.25,150.74,137,a84ef20c2e1b,2026-11-23
+all,1775,328.82,1213.84,850.0,320,0.1803,105.77,222.27,318,a84ef20c2e1b,2026-11-23
