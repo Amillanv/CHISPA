@@ -49,7 +49,7 @@ MASK_GROUPS = {
     "possible_fire": (12, 13, 14, 15, 32, 33, 34, 35),  # FIRMS does not give these classes.
     "no_fire": (100,),  # The sensor examined the pixel and found no fire.
     "cloud": (200, 201, 205, 210, 215, 220, 225, 230, 240, 245),
-    "no_background": (170,),  # No clear pixels near it to compare with.
+    "no_background": (170,),  # No background value could be computed for the pixel.
     "water": (150, 151, 152, 153),
     "blocked": (40, 50, 60),  # Off the Earth, a view angle too large, or sun glint.
 }

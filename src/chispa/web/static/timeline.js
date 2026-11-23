@@ -16,26 +16,53 @@ export function zoneName(r, zone) {
   return zone ? `Pantanal, ${offset(r.first_observed_at, zone)}` : "UTC";
 }
 
-/* Age, last sighting and the delay of the first alert: the three numbers of triage time. */
+/* The four numbers of triage time: age, the delay of the first alert, the last detection and the last clear look. */
 export function vitals(r, zone) {
   const newest = r.newest_detections[0];
-  const first = r.passes.find((p) => p.alert);
-  const delay = first ? hoursBetween(first.observed_at, first.available_at) : null;
-  const kind = first ? `<span class="kind${first.estimated ? " est" : ""}">${first.estimated ? "estimated" : "measured"}</span>` : "";
+  const first = r.passes.find((p) => p.alerts.length);
+  const delay = first ? hoursBetween(first.observed_at, first.alerts[0].at) : null;
   const seen = newest ? `${FAMILY[newest.sensor_family]} ${esc(newest.platform)}, ` : "";
   return `<div class="vitals">
     <div><span class="label">Age, at least</span><span class="v">${dur(r.hours_from_first_detection)}</span>
       <span class="c">first seen ${when(r.first_observed_at, zone)}</span></div>
+    <div><span class="label">First alert</span><span class="v${first?.poller_stop_h ? " stop" : ""}">${delay === null ? "–" : `+${dur(delay)}`}</span>
+      <span class="c">after its pass ${first ? kind(first) : ""}</span></div>
     <div><span class="label">Last seen</span><span class="v">${dur(r.newest_observation_age_h)} ago</span>
       <span class="c">${seen}${when(r.last_observed_at, zone)}</span></div>
-    <div><span class="label">First alert</span><span class="v">${delay === null ? "–" : `+${dur(delay)}`}</span>
-      <span class="c">after its pass ${kind}</span></div>
+    ${clearLook(r, zone)}
   </div>`;
+}
+
+/* Measured or estimated. A measured time can include a stop of the poller: up to that time is our delay, not the delay of the source. */
+function kind(p) {
+  if (p.estimated) return `<span class="kind est">estimated</span>`;
+  if (p.poller_stop_h) return `<span class="kind stop">up to ${dur(p.poller_stop_h)} is a stop of the poller</span>`;
+  return `<span class="kind">measured</span>`;
+}
+
+/* The newest GOES scan after the last detection that examined the place and found no fire (`goes_view`). */
+function clearLook(r, zone) {
+  const g = r.goes_view;
+  const total = g?.scans_after_last_detection ?? 0;
+  const clear = g?.after_last_detection.no_fire ?? 0;
+  let value = "–", note = "no saved GOES scan for this time";
+  if (g && g.newest_no_fire_at) {
+    value = `${dur(hoursBetween(g.newest_no_fire_at, r.as_of))} ago`;
+    note = `GOES: examined, no fire, ${when(g.newest_no_fire_at, zone)}. ${num(clear)} of ${num(total)} scans since last seen`;
+  } else if (g && !total) {
+    value = "not yet";
+    note = "no GOES scan after the last detection yet";
+  } else if (g) {
+    value = "none";
+    note = `none of ${num(total)} GOES ${total === 1 ? "scan" : "scans"} since last seen said "examined, no fire"`;
+  }
+  return `<div title="The newest GOES scan after the last detection in which GOES examined the place and found no fire. It does not say that the fire is out: GOES can miss a small fire.">
+    <span class="label">Last clear look</span><span class="v">${value}</span><span class="c">${note}</span></div>`;
 }
 
 export function timeline(r, zone, all, liveStart) {
   const rows = r.passes;
-  const shown = new Set(all ? rows : rows.filter((p, n) => p.alert || n >= rows.length - FOLDED));
+  const shown = new Set(all ? rows : rows.filter((p, n) => p.alerts.length || n >= rows.length - FOLDED));
   const parts = [];
   let last = -1;
   rows.forEach((p, n) => {
@@ -52,21 +79,25 @@ export function timeline(r, zone, all, liveStart) {
     <p class="note">The rows are in the sequence in which CHISPA had the passes. A pass is one GOES scan, or one pass of
     another satellite. MW is its largest fire power. "To CHISPA" is the time from the observation
     to the moment that CHISPA had the pass, and thus made its alert. From ${day(liveStart)} it is measured by the poller.
-    Before, it is an estimate. The time when a source published a pass is not in the record.</p></div>`;
+    Before, it is an estimate. A time in yellow includes a stop of the poller: up to the time of the stop is our delay.
+    The time when a source published a pass is not in the record.</p></div>`;
 }
 
 function row(p, zone) {
   const hours = hoursBetween(p.observed_at, p.available_at);
   const width = Math.min(100, (Math.log1p(hours * 60) / Math.log1p(24 * 60)) * 100);
+  const stop = p.poller_stop_h ? ` For ${dur(p.poller_stop_h)} of this time the poller did not read the source. The source can have published at any time in that stop.` : "";
+  const alerts = p.alerts.length ? ` Alerts: ${p.alerts.map((a) => `${a.level} at ${utc(a.at)} UTC`).join(", ")}.` : "";
   const title = `${p.detections} ${p.detections === 1 ? "detection" : "detections"}. Observed ${utc(p.observed_at)} UTC. `
-    + `CHISPA had it ${utc(p.available_at)} UTC${p.estimated ? ": an estimate" : ""}. The largest fire power: `
+    + `CHISPA had it ${utc(p.available_at)} UTC${p.estimated ? ": an estimate" : ""}.${stop}${alerts} The largest fire power: `
     + `${p.max_frp_mw === null ? "not given" : `${num(p.max_frp_mw, 1)} MW`}.`;
-  return `<div class="pass${p.alert ? " raised" : ""}" title="${title}">
+  const levels = p.alerts.map((a) => `<span data-level="${a.level}">${a.level}</span>`).join(`<i>→</i>`);
+  return `<div class="pass${p.alerts.length ? " raised" : ""}" title="${title}">
     <span class="t">${when(p.observed_at, zone)}</span>
     <span class="s"><i style="background:var(--${p.sensor_family})"></i>${esc(p.platform)}</span>
-    <span class="lag${p.estimated ? " est" : ""}"><span class="track"><b style="width:${width.toFixed(0)}%"></b></span><em>+${dur(hours)}</em></span>
+    <span class="lag${p.estimated ? " est" : ""}${p.poller_stop_h ? " stop" : ""}"><span class="track"><b style="width:${width.toFixed(0)}%"></b></span><em>+${dur(hours)}</em></span>
     <span class="n">${p.max_frp_mw === null ? "–" : num(p.max_frp_mw)}</span>
-    <span class="a">${p.alert ? `<span data-level="${p.alert}">${p.alert}</span>` : ""}</span></div>`;
+    <span class="a">${levels}</span></div>`;
 }
 
 function absorbed(r, zone) {
