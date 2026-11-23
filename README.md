@@ -1,4 +1,4 @@
-# CHISPA
+![CHISPA Banner](src/chispa/web/static/chispa.png)
 
 CHISPA merges fire detections from different sources into one alert for each fire.
 It measures how good those alerts are, and it publishes the result: good or bad.
