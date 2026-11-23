@@ -52,9 +52,10 @@ These rules have priority over all other rules.
 
 ## Scope
 
-- Now: recorded satellite detections, fusion, evaluation, live operation, and the parts of the stages: visibility,
-  the content of the alert, measured growth and the confidence of the first alert.
-- Parked: the tools, the MCP server, the agent, the gold questions and the dashboard. Do not change them without the owner.
+- Now: recorded satellite detections, fusion, evaluation, live operation, the tools, and the parts of the stages:
+  visibility, the content of the alert, measured growth and the confidence of the first alert.
+- Parked: the MCP server, the agent, the gold questions and the dashboard. Do not change them without the owner.
+- Before you write or change a tool, read `docs/method.md` section 12.1. A new tool needs the agreement of the owner.
 - Later: delivery by SMS or radio, cameras, community reports, other regions, and a growth forecast.
   A growth forecast needs a published test against measured growth.
 - Never: a permission to burn, a replacement for official alert systems.

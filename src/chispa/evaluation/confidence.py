@@ -247,6 +247,10 @@ def confidence_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, l
             names = names_of(moment)
             models[moment] = confidence.fit(*as_table(rows[moment], names), names)
             models[moment]["level_rates"] = level_rates(rows[moment], models[moment]["base_rate"])
+            # The values of the alerts of this year, as 101 percentiles. A value of a new alert
+            # gets its rank from them.
+            values = confidence.probability(models[moment], as_table(rows[moment], names)[0])
+            models[moment]["reference"] = np.percentile(values, range(101)).tolist()
         confidence.save(models, path)
     models = confidence.load(path)
     tables = result_tables(rows, models)
