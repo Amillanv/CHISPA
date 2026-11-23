@@ -9,25 +9,26 @@ Each part of an alert must say how we know it.
 A brigade gets fire data from many places. Polar-orbit satellites see small fires, but only a few times each day.
 Geostationary satellites look every 10 minutes, but with large pixels. The same fire can show as many records, and some records are not fires.
 
-CHISPA gives one alert for each fire. The alert says how much to trust it, with a measured track record.
+The goal is one alert for each fire. Today CHISPA gives one alert for each event: a group of detections that it assigns to one fire. One event is not always one fire, and finding 3 has the numbers. The alert says how much to trust it, with a measured track record.
 It says what the fire does, what it can reach, and what the satellites could not see.
 We do not tell a brigade a thing that we did not measure.
 
 ## What we found
 
-Each finding has a hypothesis that we wrote before the run, and a command that makes it again.
+Each finding has a command that makes it again. Findings 1 to 6, 8 and 9 have a hypothesis that we wrote before the run. Finding 7 came after its run.
 A negative result is here in the same way as a positive result.
-The numbers are for 2024, the test year, with satellite sources only, in the Brazilian part of the Pantanal.
-The rules come from 2023. Each link goes to the table in [results/SUMMARY.md](results/SUMMARY.md). [docs/method.md](docs/method.md) has each method, in the section that the finding names.
+The numbers are for 2024, with satellite sources only, in the Brazilian part of the Pantanal. The rules come from 2023.
+2024 was the test year of the merge (findings 1 to 3). The later parts used 2024 to examine their rules. Their test year is 2025: only finding 9 has that test. Each link goes to the table in [results/SUMMARY.md](results/SUMMARY.md). [docs/method.md](docs/method.md) has each method, in the section that the finding names.
 
 1. **The merge finds more fires, by a small amount.** It found 2864 of 4246 mapped fires. GOES, the best single sensor family, found 2668. Almost all of the gain is fires smaller than 100 hectares. ([configurations](results/SUMMARY.md#2024-configurations), method 11.4)
 2. **The merge is not earlier for the typical fire.** It is earlier where GOES was late: on 30 of 140 isolated fires, a polar-orbit satellite was first. A simple comparison showed GOES hours before VIIRS. That lead came from the large GOES pixel, which reaches the fires adjacent to its fire. ([merge_gain](results/SUMMARY.md#2024-merge_gain), method 11.6)
-3. **The confidence level has a measured meaning.** 1273 of 1582 HIGH events matched a mapped fire, and 1511 of 2914 LOW events. ([events](results/SUMMARY.md#2024-events), method 10.3)
+3. **The confidence level has a measured meaning.** 1273 of 1582 HIGH events matched a mapped fire, and 1511 of 2914 LOW events. An event is not always one fire: 1104 of the 2864 fires that we found are in one event only. ([events](results/SUMMARY.md#2024-events), method 10.3)
 4. **An alert with no mapped fire is not always a false alarm.** Sentinel-2 showed a burn at 94 of 209 HIGH events with no mapped fire, at 82 of 97 with a mapped fire, and at 22 of 98 boxes with no fire. The rule of this check is weak: read the three numbers together. ([burn_check](results/SUMMARY.md#2024-burn_check), method 11.10)
-5. **Cloud is not the main cause of a fire with no detection.** GOES examined the place of a typical such fire in 76 percent of the hourly scans of its months (1382 fires). Most of these fires were too small or too short for the sensor. ([visibility](results/SUMMARY.md#2024-visibility), method 11.11)
+5. **We found no sign that cloud is the main cause of a fire with no detection.** GOES examined the place of a typical such fire in 76 percent of the hourly scans of its months (1382 fires). The table uses the months of a fire, not its hours: a short fire under cloud stays possible. ([visibility](results/SUMMARY.md#2024-visibility), method 11.11)
 6. **We can measure where a fire goes, not how much it burned.** A VIIRS pixel is as large as a small fire, thus we give no burned area. In 1736 of 4546 steps of 6 to 18 hours, new pixels were farther than the error of the positions. ([growth_steps](results/SUMMARY.md#2024-growth_steps), method 11.12 and 11.13)
-7. **The first day separates the events.** 24 hours after its first detection, 324 of 373 events with a severity of 50 or more matched a mapped fire, and 224 of those had a later detection. Below 25, 1080 of 3288 matched, and 95 of those had one. The number of detections alone separates the events as well. ([severity](results/SUMMARY.md#2024-severity), method 11.14)
-8. **A severity number shows priorities. It is not a forecast.** Its rank correlation with the final burned area was 0.2684. For the number of detections alone it was 0.2857. ([severity_rank](results/SUMMARY.md#2024-severity_rank), method 11.14)
+7. **The first day separates the events (found after the run, not a tested forecast).** 24 hours after its first detection, 324 of 373 events with a severity of 50 or more matched a mapped fire, and 224 of those had a later detection. Below 25, 1078 of 3285 matched, and 95 of those had one. The number of detections alone separates the events as well. ([severity](results/SUMMARY.md#2024-severity), method 11.14)
+8. **A severity number shows priorities. It is not a forecast.** Its rank correlation with the final burned area was 0.2685. For the number of detections alone it was 0.2857. ([severity_rank](results/SUMMARY.md#2024-severity_rank), method 11.14)
+9. **A small model puts the first alerts in a better sequence than the level.** This is the result of a test on 2025, a year that the model did not see. At the first alert, 114 of the 172 events with the largest values matched a mapped fire, and they matched 145 different fires. For the level it was 31 of 172, and 47 fires. The match separation was 0.8245 against 0.6012 (1726 events, 327 with a match). The value is not a correct probability: it is too low in each fifth of the events. Thus we give a rank. ([confidence](results/SUMMARY.md#2025-confidence), [calibration](results/SUMMARY.md#2025-confidence_calibration), method 11.15)
 
 ## The stages of a fire
 
@@ -49,13 +50,6 @@ All the work follows eight stages. Each stage gives one part of the alert, and e
 - We cannot make stages 1 to 3 quicker. We read each source by its quickest route, at intervals of 5 minutes.
 - Our work is stage 4 and the stages after it: what the alert says, and how we know it.
 
-## The next hypothesis: the first alert
-
-The first alert of an event is LOW, and it is the quickest alert that we can make.
-HIGH needs a second sensor family. On 93 isolated fires of 2024, it came a median of 2.8 hours later.
-The hypothesis: data that exists at the first detection can say which first alerts will match a mapped fire.
-It is not measured. We will learn on 2023, tune on 2024 and do the test one time on 2025.
-
 ## Status
 
 - `chispa build` gets the raw files from a public bucket and makes a SQLite store: 4.1 million detections and the mapped fires of 2023 and 2024. `chispa fuse` groups the detections of one year into events with a confidence level. `chispa evaluate` compares them with the mapped fires.
@@ -63,8 +57,9 @@ It is not measured. We will learn on 2023, tune on 2024 and do the test one time
 - `tools.py` answers three questions for a given time: the alerts near a position, the detail of one event, and the measured quality of the alerts.
 - `chispa burn` asks Sentinel-2 if the ground at each unmatched HIGH event burned. `chispa images` lets a person check a sample. The check by a person is not complete.
 - `chispa visibility` says how frequently GOES examined the place of each mapped fire. `chispa growth` gives the advance, the direction and the speed of each event between two VIIRS passes.
-- `chispa severity` gives each event one number from 0 to 100, with its facts: fire power, extent, advance, land cover, people and protected land. The number is a heuristic: it shows priorities, and it is not a forecast of the burned area.
+- `severity.py` gives an event one number from 0 to 100, with its facts: fire power, extent, advance, land cover, people and protected land. The number is a heuristic: it shows priorities, and it is not a forecast of the burned area. `chispa severity` makes the tables that examine it. No command shows the number of one event yet.
 - [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
+- `confidence.py` gives an event a value for a match with a mapped fire, at the first alert and 24 hours later. `chispa confidence` makes the tables that examine it. The value is not in an alert yet.
 - Not built: the parts that the stage table marks, the live delay report, the MCP server, the agent and the dashboard.
 
 ## Limits you must know

@@ -139,6 +139,8 @@ def test_tables_of_the_severity(monkeypatch):
     # One event has no match, with the lowest severity: each matched event has a larger value.
     assert by_name["severity"]["match_separation"] == 1.0
     assert by_name["detections"]["match_separation"] == 0.3333
+    # Two events have no fire power. The row of the fire power has only the two other events.
+    assert (by_name["max_frp_mw"]["events"], by_name["detections"]["events"]) == (2, 4)
     power, extent, advance = inputs_table(rows)
     assert (power["events"], power["events_with_a_value"], power["p50"]) == (4, 2, 150.0)
     assert (advance["events_with_a_value"], advance["p50"]) == (0, None)

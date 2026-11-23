@@ -121,27 +121,27 @@ def score_table(rows: list[dict]) -> list[dict]:
 def rank_table(rows: list[dict]) -> list[dict]:
     """Return how well the severity and each simple measure agree with the outcome.
 
+    A measure uses only the events where it has a value: `events` is their number.
     `match_separation` is the probability that an event with a match has a larger value than
     an event with no match. 0.5 is no separation.
     """
-    areas = np.array([row["area_ha"] for row in rows])
-    matched = areas > 0
     table = []
     for name in BASELINES:
-        values = np.array([row[name] or 0.0 for row in rows], dtype=float)
+        known = [row for row in rows if row[name] is not None]
+        values = np.array([row[name] for row in known], dtype=float)
+        areas = np.array([row["area_ha"] for row in known])
+        matched = areas > 0
         ranks = stats.rankdata(values)
-        pairs = matched.sum() * (~matched).sum()
         higher = ranks[matched].sum() - matched.sum() * (matched.sum() + 1) / 2
+        among_matched = stats.spearmanr(values[matched], areas[matched]).statistic
         table.append(
             {
                 "measure": name,
-                "events": len(rows),
+                "events": len(known),
                 "rank_correlation": round(float(stats.spearmanr(values, areas).statistic), 4),
                 "events_matched": int(matched.sum()),
-                "match_separation": share(higher, pairs),
-                "rank_correlation_matched": round(
-                    float(stats.spearmanr(values[matched], areas[matched]).statistic), 4
-                ),
+                "match_separation": share(higher, matched.sum() * (~matched).sum()),
+                "rank_correlation_matched": round(float(among_matched), 4),
             }
         )
     return table

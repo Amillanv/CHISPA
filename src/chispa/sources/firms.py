@@ -34,7 +34,8 @@ LIVE_DAYS = 2
 # The maximum number of days that the API gives in one request.
 MAX_DAYS = {"viirs": 5, "modis": 5, "abi": 2}
 # The `satellite` field -> our platform name. We ignore rows with other values:
-# `G16FRP` has no documentation that we know, and `Met10` sees the Pantanal at a bad angle.
+# `G16FRP` and `G19FRP` have no documentation that we know. `Met10` and `Met12` see the Pantanal
+# at a bad angle. FIRMS gives `G19` in place of `G16` from April 2025.
 PLATFORMS = {
     "N": "SNPP",
     "N20": "NOAA20",
@@ -42,6 +43,7 @@ PLATFORMS = {
     "Terra": "TERRA",
     "Aqua": "AQUA",
     "G16": "GOES16",
+    "G19": "GOES19",
 }
 VIIRS_CONFIDENCE = {"l": "low", "n": "nominal", "h": "high"}
 

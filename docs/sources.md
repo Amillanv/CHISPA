@@ -31,6 +31,23 @@ Checked 2026-11-19 with live requests.
 - An empty result is a file with only the header line. A bad key gives HTTP 400.
 - Each satellite passes approximately two times each day. Thus the gap between observations is hours.
 
+Checked 2026-11-23 with live requests, for the 2025 data:
+
+- The archive products `VIIRS_SNPP_SP`, `VIIRS_NOAA20_SP`, `VIIRS_NOAA21_SP` and `MODIS_SP` have data to 2026-08-31.
+- In `GOES_NRT`, the `satellite` field changed in 2025. On 2025-03-15 it had `G16`. On 2025-04-10, 2025-08-15 and 2025-12-15 it had `G19`.
+  The rows of `G19` have the mask class in the `confidence` field, as the rows of `G16`. We use `G19` with the platform name `GOES19`.
+- The same days also had `G19FRP`, `Met10` and a new value `Met12`. We do not use them, as before.
+- April 2025 has GOES detections on 14 days. Each other month has them on 26 days or more. Checked 2026-11-23:
+  - FIRMS gives `G16` to 2025-04-07 and `G19` from 2025-04-06. The two are in the rows of 6 and 7 April.
+  - FIRMS has no `G19` row in the Pantanal box on 13 to 18 April and on 22 to 30 April.
+  - The NOAA bucket `noaa-goes19` has all 144 files for 11, 16, 23 and 27 April. The bucket `noaa-goes16` has none for those days.
+  - In 12 scans of each of those days, the window of the box had 3, 0, 1 and 0 fire pixels. The sensor examined
+    84, 51, 24 and 17 percent of the window: the days with no row had much cloud.
+  - Thus we found no hole in April 2025: the raw files exist, and they have almost no fire pixels. We read one scan of each two hours, not all.
+- Not checked: holes in the `G19` record of the other months of 2025. A hole in 2024 was seven weeks long.
+- The 2025 store has 200 140 detections, 17 146 fires and 589 counted fires: a year with few fires.
+- The burn scar asset has the band `burned_monthly_2025`. The burn day product has one image for each month of 2025.
+
 ### 8.2 GOES fire product
 
 Checked 2026-11-19 with live requests and one raw file.
@@ -332,7 +349,8 @@ People, Global Human Settlement Layer (GHSL):
 
 - Asset: `JRC/GHSL/P2023A/GHS_POP/2020`: the number of people in each cell of 100 m, in an equal-area projection.
   The asset also has 2025 and 2030: those years are a projection, and we do not use them.
-- The Pantanal box has 3 492 696 people in this layer.
+- A cell with no data has the value -200. We use 0 for it. Found 2026-11-23: the mean of cells with -200 gave cells with less than zero people.
+- The Pantanal box has 3 507 496 people in this layer, with 0 for the cells with no data. Our grid has 3 473 304.
 - A sum of the cells on our grid gave 6 499 476: wrong. Use the mean of the cells, then the area of our cell.
 
 `UNVERIFIED`: the terms of the three layers. Do a check before we publish a copy of a layer.

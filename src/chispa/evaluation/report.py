@@ -71,7 +71,7 @@ def write_summary(results_dir: Path) -> None:
     """Make `SUMMARY.md` again from all the CSV files in the results folder."""
     lines = ["# Results", "", "Code makes this file. Do not edit it by hand.", ""]
     for folder in sorted(path for path in results_dir.iterdir() if path.is_dir()):
-        role = "test year" if folder.name == str(config.TEST_YEAR) else "development year"
+        role = config.YEAR_ROLES[int(folder.name)]
         lines += [f"## {folder.name} ({role})", ""]
         for path in sorted(folder.glob("*.csv")):
             with path.open(newline="") as file:

@@ -12,9 +12,18 @@ from pathlib import Path
 # We use it to request data. The biome border, not this box, selects data for results.
 PANTANAL_BOX = (-59.5, -22.5, -54.5, -15.5)
 
-# We set thresholds on the development year and report results on the test year.
+# We set thresholds on the development year. The test year scored the merge one time.
+# Each later part uses those two years to set its rules, and the year below as its test year.
 DEVELOPMENT_YEAR = 2023
 TEST_YEAR = 2024
+PART_TEST_YEAR = 2025
+
+# The years that have mapped fires in the store, with the role of each in the results.
+YEAR_ROLES = {
+    DEVELOPMENT_YEAR: "development year",
+    TEST_YEAR: "test year of the merge",
+    PART_TEST_YEAR: "test year of the later parts",
+}
 
 # --- FIRMS ---
 
@@ -45,6 +54,10 @@ GOES_CONFIDENCE = {10: "nominal", 11: "nominal", 30: "nominal", 31: "nominal"}
 # The start is the first absent scan. The end is the first scan that FIRMS has again.
 GOES_GAP_START = datetime(2024, 9, 28, 15, 0, tzinfo=UTC)
 GOES_GAP_END = datetime(2024, 11, 16, 23, 50, tzinfo=UTC)
+
+# GOES-19 replaced GOES-16 as the east satellite. The bucket of GOES-16 has no files after
+# 2025-04-07. From this day we read the raw files of GOES-19. The two have the same pixel grid.
+GOES19_START = datetime(2025, 4, 7, tzinfo=UTC)
 
 # --- INPE ---
 
@@ -242,6 +255,18 @@ SEVERITY_PEOPLE_CELLS = 33
 # after the first detection of an event.
 SEVERITY_EVAL_HOURS = 24.0
 SEVERITY_SCORE_CLASSES = (0.0, 25.0, 50.0, 75.0, 100.1)
+
+# --- Confidence ---
+
+# The penalty on the weights of the confidence model. A larger value gives smaller weights.
+# Set it on the test year of the merge, which is the tuning year of this part.
+CONFIDENCE_PENALTY = 0.001
+
+# The fire activity near an event: the detections of this many days before the day of its first
+# alert, in the cell of the first detection and in the 8 cells around it. The side of a cell
+# is in degrees (approximately 11 km).
+CONFIDENCE_NEAR_DAYS = 7
+CONFIDENCE_NEAR_CELL_DEG = 0.1
 
 # === The values above this line can change a result. The configuration hash covers them. ===
 # The values below this line change no number in a result table.

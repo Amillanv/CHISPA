@@ -19,20 +19,26 @@ def read_grid(image: ee.Image, grid: Grid) -> np.ndarray:
     """Return the first band of an image as an array on the grid. Row 0 is the north edge."""
     tiles = []
     for row in range(0, grid.height, TILE_PX):
-        strip = [_read_tile(image, grid, row, col) for col in range(0, grid.width, TILE_PX)]
+        strip = []
+        for col in range(0, grid.width, TILE_PX):
+            size = (min(TILE_PX, grid.width - col), min(TILE_PX, grid.height - row))
+            tile = read_window(image, grid, (row, col), size)
+            strip.append(tile[tile.dtype.names[0]])
         tiles.append(np.concatenate(strip, axis=1))
     return np.concatenate(tiles, axis=0)
 
 
-def _read_tile(image: ee.Image, grid: Grid, row: int, col: int) -> np.ndarray:
+def read_window(image: ee.Image, grid: Grid, start: tuple[int, int], size: tuple[int, int]):
+    """Return a part of the grid in one request, as an array with one field for each band.
+
+    `start` is the row and the column of the north-west pixel. `size` is the width and the height.
+    """
+    row, col = start
     request = {
         "expression": image,
         "fileFormat": "NPY",
         "grid": {
-            "dimensions": {
-                "width": min(TILE_PX, grid.width - col),
-                "height": min(TILE_PX, grid.height - row),
-            },
+            "dimensions": {"width": size[0], "height": size[1]},
             "affineTransform": {
                 "scaleX": grid.pixel_deg,
                 "shearX": 0,
@@ -44,5 +50,4 @@ def _read_tile(image: ee.Image, grid: Grid, row: int, col: int) -> np.ndarray:
             "crsCode": "EPSG:4326",
         },
     }
-    tile = np.load(io.BytesIO(ee.data.computePixels(request)))
-    return tile[tile.dtype.names[0]]
+    return np.load(io.BytesIO(ee.data.computePixels(request)))

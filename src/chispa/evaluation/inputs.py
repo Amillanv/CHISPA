@@ -16,12 +16,24 @@ SELECT d.source, d.sensor_family, m.level, d.platform, m.event_id,
        CAST(strftime('%s', d.observed_at) AS INTEGER),
        CAST(strftime('%s', d.available_at) AS INTEGER),
        CAST(substr(d.observed_at, 6, 2) AS INTEGER),
-       CAST(strftime('%j', d.observed_at) AS INTEGER), d.lat, d.lon, d.footprint_m, d.frp_mw
+       CAST(strftime('%j', d.observed_at) AS INTEGER), d.lat, d.lon, d.footprint_m, d.frp_mw,
+       d.source_confidence = 'high'
 FROM detections d JOIN memberships m ON m.detection_id = d.id
 WHERE m.event_id >= ? AND m.event_id < ?
 """
 TEXT = ("source", "family", "level", "platform")
-NUMBERS = ("event", "observed", "available", "month", "day", "lat", "lon", "footprint_m", "frp_mw")
+NUMBERS = (
+    "event",
+    "observed",
+    "available",
+    "month",
+    "day",
+    "lat",
+    "lon",
+    "footprint_m",
+    "frp_mw",
+    "high",
+)
 
 
 def load_detections(store: sqlite3.Connection, year: int) -> Fields:

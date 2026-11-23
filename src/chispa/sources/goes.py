@@ -30,8 +30,8 @@ BUCKET = "https://noaa-goes16.s3.amazonaws.com"
 SCAN_START = re.compile(r"<Key>(ABI-L2-FDCF/[^<]*_s(\d{4})(\d{3})(\d{2})(\d{2})[^<]*\.nc)</Key>")
 COLUMNS = ["observed_at", "lat", "lon", "mask", "frp_mw"]
 
-# The part of the GOES-16 grid that holds the Pantanal box: rows, then columns.
-# `find_window` gave it for a file of 2024-08-15. The grid of one satellite does not change.
+# The part of the grid that holds the Pantanal box: rows, then columns. `find_window` gave it
+# for a GOES-16 file of 2024-08-15 and for a GOES-19 file of 2025-08-15: the two are the same.
 MASK_WINDOW = (slice(3542, 3898), slice(3481, 3766))
 
 # GOES-19 replaced GOES-16 in 2025. Its bucket gives the time when each file arrived.
@@ -79,7 +79,8 @@ def download_masks(year: int, raw_dir: Path) -> list[Path]:
             scans = [hourly[hour] for hour in sorted(hourly)]  # The first scan of each hour.
             # The file reader is not safe in threads. Only the downloads run in threads.
             with ThreadPoolExecutor(max_workers=24) as pool:
-                contents = pool.map(lambda scan: _get(f"{BUCKET}/{scan[0]}").content, scans)
+                urls = [f"{_bucket(day)}/{key}" for key, _ in scans]
+                contents = pool.map(lambda url: _get(url).content, urls)
                 masks = [_read_mask(content, folder.parent) for content in contents]
             times = np.array([start.isoformat() for _, start in scans])
             np.savez_compressed(path, times=times, mask=np.array(masks, dtype=np.uint8))
@@ -115,7 +116,7 @@ def _download_day(day: date, raw_dir: Path) -> Path:
     scans = [scan for scan in _list_scans(day) if _in_gap(scan[1])]
     rows, window = [], None
     with ThreadPoolExecutor(max_workers=8) as pool:
-        contents = pool.map(lambda scan: _get(f"{BUCKET}/{scan[0]}").content, scans)
+        contents = pool.map(lambda scan: _get(f"{_bucket(day)}/{scan[0]}").content, scans)
         for (_, observed_at), content in zip(scans, contents, strict=True):
             with netCDF4.Dataset("scan.nc", memory=content) as dataset:
                 window = window or find_window(dataset)
@@ -132,10 +133,15 @@ def _in_gap(observed_at: datetime) -> bool:
     return config.GOES_GAP_START <= observed_at < config.GOES_GAP_END
 
 
+def _bucket(day: date) -> str:
+    """Return the bucket of the east satellite of one day."""
+    return LIVE_BUCKET if day >= config.GOES19_START.date() else BUCKET
+
+
 def _list_scans(day: date) -> list[tuple[str, datetime]]:
     """Return (file key, scan start time) for each file of one day, in time sequence."""
     prefix = f"ABI-L2-FDCF/{day.year}/{day.timetuple().tm_yday:03d}/"
-    listing = _get(f"{BUCKET}/?list-type=2&prefix={prefix}").text
+    listing = _get(f"{_bucket(day)}/?list-type=2&prefix={prefix}").text
     scans = {}
     # Some scans have two files. The keys sort by creation time, thus the newest file wins.
     for key, year, day_of_year, hour, minute in sorted(SCAN_START.findall(listing)):
