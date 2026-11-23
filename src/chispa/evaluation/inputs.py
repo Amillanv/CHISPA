@@ -17,7 +17,7 @@ SELECT d.source, d.sensor_family, m.level, d.platform, m.event_id,
        CAST(strftime('%s', d.available_at) AS INTEGER),
        CAST(substr(d.observed_at, 6, 2) AS INTEGER),
        CAST(strftime('%j', d.observed_at) AS INTEGER), d.lat, d.lon, d.footprint_m, d.frp_mw,
-       d.source_confidence = 'high'
+       d.source_confidence = 'high', m.issued_id
 FROM detections d JOIN memberships m ON m.detection_id = d.id
 WHERE m.event_id >= ? AND m.event_id < ?
 """
@@ -33,6 +33,7 @@ NUMBERS = (
     "footprint_m",
     "frp_mw",
     "high",
+    "issued",
 )
 
 

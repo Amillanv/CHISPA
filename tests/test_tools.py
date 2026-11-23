@@ -26,7 +26,7 @@ def store(tmp_path, monkeypatch):
     connection = open_store(path)
     add_detections(connection, [VIIRS, SECOND, FAR])
     found = read_detections(connection, T0, T0 + timedelta(days=1))
-    replace_fusion(connection, (100, 200), *fuse(found, first_id=100))
+    replace_fusion(connection, (100, 200), fuse(found, first_id=100))
     return connection
 
 
