@@ -140,6 +140,8 @@ def result_tables(rows: dict[str, list], models: dict[str, dict]) -> dict[str, l
     """Return the table of the comparison with the level, and the table of the calibration.
 
     The probability of a level is the matched share of that level in the development year.
+    The calibration puts the events in sequence by their probability and makes equal groups.
+    For each group: the mean probability that the model gave, and the matched share that came.
     """
     compare, calibration = [], []
     for moment in MOMENTS:
@@ -162,6 +164,8 @@ def result_tables(rows: dict[str, list], models: dict[str, dict]) -> dict[str, l
                     "events": len(part),
                     "probability_mean": round(float(chance[part].mean()), 4),
                     "matched_share": share(matched[part].sum(), len(part)),
+                    # 1 is a correct probability. More than 1: the probability is too low.
+                    "observed_to_predicted": share(matched[part].sum(), chance[part].sum()),
                 }
             )
     return {"confidence": compare, "confidence_calibration": calibration}

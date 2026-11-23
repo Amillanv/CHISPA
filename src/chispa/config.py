@@ -55,6 +55,10 @@ GOES_CONFIDENCE = {10: "nominal", 11: "nominal", 30: "nominal", 31: "nominal"}
 GOES_GAP_START = datetime(2024, 9, 28, 15, 0, tzinfo=UTC)
 GOES_GAP_END = datetime(2024, 11, 16, 23, 50, tzinfo=UTC)
 
+# GOES-19 replaced GOES-16 as the east satellite. The bucket of GOES-16 has no files after
+# 2025-04-07. From this day we read the raw files of GOES-19. The two have the same pixel grid.
+GOES19_START = datetime(2025, 4, 7, tzinfo=UTC)
+
 # --- INPE ---
 
 # INPE gives no pixel size. These radii in metres are estimates: the pixel size below

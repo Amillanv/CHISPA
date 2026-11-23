@@ -1,0 +1,5 @@
+moment_h,measure,events,events_matched,match_separation,brier,brier_skill,top_tenth,top_tenth_matched,config,run_date
+0,probability,1726,327,0.8245,0.1216,0.21,172,114,004793e1aa29,2026-11-23
+0,level,1726,327,0.6012,0.1495,0.0281,172,31,004793e1aa29,2026-11-23
+24,probability,1726,327,0.8405,0.1116,0.2748,172,127,004793e1aa29,2026-11-23
+24,level,1726,327,0.6814,0.1405,0.0869,172,37,004793e1aa29,2026-11-23
