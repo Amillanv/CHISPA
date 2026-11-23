@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from chispa import growth
+from chispa import growth, record
 from chispa.evaluation.growth import step_table
 
 M = 1 / 110_574  # one metre north, in degrees, at the equator
@@ -71,3 +71,23 @@ def test_step_table_gives_the_speed_of_the_steps_with_a_new_pixel(monkeypatch):
     assert (long["steps"], long["advance_m_median"], long["new_pixel_share"]) == (2, 1300.0, 1.0)
     assert (long["speed_m_h_median"], long["steps_after_empty_pass"]) == (125.0, 1)
     assert everything["steps"] == 3
+
+
+def test_record_gives_each_step_the_oldest_first(monkeypatch):
+    monkeypatch.setattr("chispa.config.GROWTH_FLOOR_M", 850.0)
+    monkeypatch.setattr("chispa.config.GROWTH_ADVANCE_PERCENT", 90)
+    # Pass 0: one pixel. Pass 1, 12 hours later: pixels 600 m and 1200 m north. The second is new.
+    # Pass 2, 50 minutes later from a second satellite: a pixel on the newest pixel. Not new.
+    found = {
+        "family": np.array(["viirs", "viirs", "viirs", "viirs", "abi"]),
+        "platform": np.array(["SNPP", "SNPP", "SNPP", "NOAA20", "GOES16"]),
+        "observed": np.array([0.0, 43200.0, 43200.0, 46200.0, 46200.0]),
+        "lat": np.array([0.0, 600 * M, 1200 * M, 1200 * M, 5000 * M]),
+        "lon": np.zeros(5),
+    }
+    first, second = record.growth_steps(found)
+    # The advance is the 90th percentile of 600 m and 1200 m: 1140 m, in 12 hours.
+    assert (first["new_pixels"], first["advance_m"], first["direction_deg"]) == (1, 1140, 0)
+    assert (first["hours_from_the_pass_before"], first["speed_m_h"]) == (12.0, 95)
+    assert (second["new_pixels"], second["advance_m"], second["speed_m_h"]) == (0, None, None)
+    assert second["hours_from_the_pass_before"] == 0.83
