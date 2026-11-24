@@ -35,7 +35,11 @@ async function get(path, params = {}) {
 function now() {
   const d = new Date();
   d.setUTCSeconds(0, 0);
-  return d.toISOString().replace(".000Z", "Z");
+  return iso(d.getTime());
+}
+
+function iso(ms) {
+  return new Date(ms).toISOString().replace(".000Z", "Z");
 }
 
 async function init() {
@@ -43,12 +47,12 @@ async function init() {
   state.year = state.settings.test_year;
   readUrl();
   map = new MapView($("map"), state.settings, { select: (id) => select(id, true), hover: hoverFromMap });
-  band = new History($("history"), { asOf: moveAsOf, window: changeWindow });
+  band = new History($("history"), { asOf: moveAsOf, window: changeWindow, pan: panWindow });
   if (!state.settings.map_key) $("readout").textContent = "No map key. Write MAPTILER_KEY in the file .env.";
   wireBar();
   loadYears();
   state.live ? goLive() : (loadWindow(), loadMoment());
-  setInterval(() => { if (state.live) goLive(); }, state.settings.refresh_s * 1000);
+  setInterval(() => { if (state.live) refreshLive(); }, state.settings.refresh_s * 1000);
   setInterval(() => tick(state), 1000);
   new ResizeObserver(() => map.resize()).observe(document.body);
 }
@@ -65,6 +69,37 @@ function replay(iso) {
   state.anchor = state.asOf = iso;
   loadWindow();
   loadMoment();
+}
+
+/* Each few minutes, live: the as-of time is the time now. A window that a swipe moved keeps its distance to it. */
+function refreshLive() {
+  const back = new Date(state.asOf) - new Date(state.anchor);
+  state.asOf = now();
+  state.anchor = iso(new Date(state.asOf).getTime() - back);
+  loadWindow();
+  loadMoment();
+}
+
+/* A swipe on the band moves the window by whole steps. The as-of time stays. */
+function panWindow(steps) {
+  const w = state.settings.windows[state.windowIndex];
+  state.anchor = iso(new Date(state.anchor).getTime() + steps * w.step_hours * 3_600_000);
+  drawHistory();
+  loadWindow();
+  writeUrl();
+}
+
+/* How many steps the window can move. Forward: live to the as-of time, in a replay to the time now.
+   Back: the steps from the start of the window to the as-of time must fit in one answer of the tool. */
+function panLimits() {
+  const w = state.settings.windows[state.windowIndex], stepMs = w.step_hours * 3_600_000;
+  const end = new Date(state.anchor).getTime(), asOf = new Date(state.asOf).getTime();
+  const latest = state.live ? asOf : Date.now();
+  const gap = Math.max(0, Math.round((asOf - end) / stepMs));
+  return {
+    forward: Math.max(0, Math.floor((latest - end) / stepMs)),
+    back: Math.max(0, state.settings.max_steps - Math.round(w.hours / w.step_hours) - gap),
+  };
 }
 
 function moveAsOf(iso) {
@@ -85,19 +120,26 @@ function changeWindow(n) {
 }
 
 /* The steps from the start of the window to the as-of time, with the events of the as-of time.
-   None when the as-of time is the end of the window: then the window answer is already that. */
+   After a swipe the as-of time can be after the end of the window: then this answer is longer than the window,
+   and the band shows its first steps. None when the as-of time is the end of the window (the window answer
+   is already that) or before its start (no step is before the as-of time). */
 function pastParams() {
   const w = state.settings.windows[state.windowIndex];
   const hours = w.hours - (new Date(state.anchor) - new Date(state.asOf)) / 3_600_000;
-  return hours > 0 && hours < w.hours ? { as_of: state.asOf, hours, step_hours: w.step_hours } : null;
+  return hours > 0 && Math.abs(hours - w.hours) > 1e-6 ? { as_of: state.asOf, hours, step_hours: w.step_hours } : null;
 }
 
+/* The window and its steps to the as-of time, together: the band draws the two answers of one position. */
 async function loadWindow() {
   const ticket = ++tickets.window;
   const w = state.settings.windows[state.windowIndex];
+  const past = pastParams();
   try {
-    const activity = await get("/api/activity", { as_of: state.anchor, hours: w.hours, step_hours: w.step_hours });
-    if (ticket === tickets.window) { state.activity = activity; drawHistory(); }
+    const [activity, steps] = await Promise.all([
+      get("/api/activity", { as_of: state.anchor, hours: w.hours, step_hours: w.step_hours }),
+      past ? get("/api/activity", past) : null,
+    ]);
+    if (ticket === tickets.window) { state.activity = activity; state.past = steps; drawHistory(); }
   } catch (error) { console.error(error); }
 }
 
@@ -227,7 +269,10 @@ function drawRight() {
 }
 
 function drawHistory() {
-  band.set({ activity: state.activity, past: state.past, asOf: state.asOf, windows: state.settings.windows, windowIndex: state.windowIndex, record: state.view === "dossier" ? state.record : null });
+  band.set({
+    activity: state.activity, past: state.past, asOf: state.asOf, end: state.anchor, limits: panLimits(),
+    windows: state.settings.windows, windowIndex: state.windowIndex, record: state.view === "dossier" ? state.record : null,
+  });
 }
 
 function hoverFromMap(id, mouse) {
@@ -270,6 +315,7 @@ function readUrl() {
   const params = new URLSearchParams(location.search);
   const asOf = params.get("as_of");
   if (asOf) { state.live = false; state.anchor = state.asOf = asOf; }
+  if (asOf && params.get("end")) state.anchor = params.get("end");
   const event = Number(params.get("event"));
   if (event) { state.selectedId = event; state.view = "dossier"; fly = true; }
   const windowIndex = Number(params.get("window"));
@@ -279,6 +325,7 @@ function readUrl() {
 function writeUrl() {
   const params = new URLSearchParams();
   if (!state.live) params.set("as_of", state.asOf);
+  if (!state.live && state.anchor !== state.asOf) params.set("end", state.anchor);
   if (state.selectedId) params.set("event", state.selectedId);
   if (state.windowIndex !== 1) params.set("window", state.windowIndex);
   window.history.replaceState(null, "", params.size ? `?${params}` : location.pathname);

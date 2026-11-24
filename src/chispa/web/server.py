@@ -93,6 +93,7 @@ def settings() -> dict:
         "box": config.PANTANAL_BOX,
         "since_hours": config.DASHBOARD_SINCE_HOURS,
         "windows": [{"hours": h, "step_hours": s} for h, s in config.DASHBOARD_WINDOWS],
+        "max_steps": config.TOOL_MAX_STEPS,
         "refresh_s": config.DASHBOARD_REFRESH.total_seconds(),
         "time_zone": config.DASHBOARD_TIME_ZONE,
         "live_start": to_text(config.LIVE_START),
