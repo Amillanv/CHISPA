@@ -8,7 +8,7 @@ which has the commands that get data, make the store and make the events.
 from collections.abc import Callable
 
 from chispa import config
-from chispa.evaluation import burn, images
+from chispa.evaluation import burn, candidates, images
 from chispa.evaluation.confidence import confidence_tables
 from chispa.evaluation.growth import step_rows
 from chispa.evaluation.report import write_summary, write_tables
@@ -67,26 +67,74 @@ def run_burn(year: int, project: Callable[[], str]) -> None:
     print(f"{year}: {len(targets)} boxes measured. See results/SUMMARY.md, table burn_check.")
 
 
-def run_images(year: int, project: Callable[[], str]) -> None:
+def run_candidates(year: int, project: Callable[[], str]) -> None:
+    """Measure each candidate for the burned ground on the boxes of the burn check."""
+    targets_path = config.RESULTS_DIR / str(year) / "burn_check" / "targets.csv"
+    if not targets_path.exists():
+        raise SystemExit(f"Run `chispa burn --year {year}` first.")
+    development = year == config.DEVELOPMENT_YEAR
+    if not development and config.BURN_CANDIDATES is None:
+        raise SystemExit(f"Set BURN_CANDIDATES on {config.DEVELOPMENT_YEAR} first.")
+    look = config.RESULTS_DIR / str(year) / "image_check_2"
+    has_look = (look / "sample.csv").exists()
+    if year == config.PART_TEST_YEAR and not has_look:
+        raise SystemExit(f"Run `chispa images --year {year} --test-run --look 2` first.")
+    # A person must not see an answer of a candidate before the answers of the person are complete.
+    if has_look and any(row[2] not in images.ANSWERS for row in images.read_answers(look)):
+        raise SystemExit(f"{look / 'answers.csv'} has a chip with no answer. Complete it first.")
+    scars.check_access(project())
+    targets = burn.read(targets_path)
+    path = config.RESULTS_DIR / str(year) / "burn_candidates" / "measures.csv"
+    candidates.measure(targets, path)
+    tables = {"burn_candidates": candidates.table(targets, burn.read(path), development)}
+    if has_look and config.BURN_CANDIDATES is not None:
+        answers, apart = images.read_answers(look), images.later_only(look)
+        tables["burn_candidates_person"] = candidates.person_table(answers, burn.read(path), apart)
+    write_tables(tables, year, config.RESULTS_DIR)
+    write_summary(config.RESULTS_DIR)
+    print(f"{year}: {len(targets)} boxes measured. See results/SUMMARY.md, table burn_candidates.")
+
+
+def run_images(year: int, project: Callable[[], str], look: int) -> None:
     """Make the pictures of the image check, then count the answers of the person.
 
     The first run makes the sample from the targets of the burn check. A later run keeps it.
+    The second look has the events of the first look again and boxes with no fire.
+    A look with no answer makes no table: a table of empty answers is not a result.
     """
     burn_folder = config.RESULTS_DIR / str(year) / "burn_check"
-    folder = config.RESULTS_DIR / str(year) / "image_check"
+    first_folder = config.RESULTS_DIR / str(year) / "image_check"
+    mark = "" if look == 1 else f"_{look}"
+    folder, pictures = (
+        first_folder.with_name(f"image_check{mark}"),
+        config.IMAGE_DIR / f"{year}{mark}",
+    )
     if not (burn_folder / "measures.csv").exists():
         raise SystemExit(f"Run `chispa burn --year {year}` first.")
     if not (folder / "sample.csv").exists():
         scars.check_access(project())
-        sample, key = images.draw(burn.read(burn_folder / "targets.csv"))
-        images.get_pictures(sample, config.IMAGE_DIR / str(year))
+        targets = burn.read(burn_folder / "targets.csv")
+        if look == 1:
+            sample, key = images.draw(targets)
+            images.get_pictures(sample, pictures)
+        else:
+            first_key = first_folder / "key.csv"
+            first_look = burn.read(first_key) if first_key.exists() else []
+            sample, key = images.draw_second(targets, first_look)
+            images.get_views(sample, pictures)
         images.write_sample(folder, sample, key)
-        print(f"{year}: {len(sample)} events. The pictures are in {config.IMAGE_DIR / str(year)}.")
+        print(f"{year}: {len(sample)} chips. The pictures are in {pictures}.")
         print(f"Write one answer for each chip in {folder / 'answers.csv'}: {images.ANSWERS}.")
     answers = images.read_answers(folder)
-    tables = {"image_check": images.count(answers)}
+    if look == 2:
+        # The person saw an opinion on these events before the second look.
+        answers = [row for row in answers if row[0] not in config.IMAGE_NOT_BLIND]
+    if not any(answer for _, _, answer in answers):
+        print(f"{year}: {folder / 'answers.csv'} has no answer. No table is made.")
+        return
+    tables = {f"image_check{mark}": images.count(answers)}
     if config.BURN_DNBR_MIN is not None:
         measures = burn.read(burn_folder / "measures.csv")
-        tables["image_agreement"] = images.agreement(answers, measures)
+        tables[f"image_agreement{mark}"] = images.agreement(answers, measures)
     write_tables(tables, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
