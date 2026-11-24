@@ -4,14 +4,11 @@ import csv
 import gzip
 import types
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 import numpy as np
 
 from chispa import live
-from chispa.sources import goes
 
-SAMPLES = Path(__file__).parent / "samples"
 NOW = datetime(2026, 11, 21, 19, 30, tzinfo=UTC)
 ROW = {
     "latitude": "-17.5",
@@ -51,55 +48,6 @@ def replace_sources(monkeypatch, firms_rows, scans):
     monkeypatch.setattr("chispa.sources.inpe.list_live", lambda since, now: [])
     grid = (np.array([[-17.5, -17.5]]), np.array([[-57.5, -57.4]]))
     monkeypatch.setattr("chispa.sources.goes.mask_grid", lambda scan: grid)
-
-
-def test_listing_gives_the_scan_time_and_the_publication_time():
-    scans = goes.parse_listing((SAMPLES / "goes19_listing.xml").read_text())
-    key, start, published_at = scans[0]
-    assert len(scans) == 2
-    assert key.endswith("_s20263251900215_e20263251909524_c20263251909594.nc")
-    assert start == datetime(2026, 11, 21, 19, 0, tzinfo=UTC)
-    assert published_at == datetime(2026, 11, 21, 19, 10, 10, tzinfo=UTC)
-
-
-def test_listing_gives_the_scans_from_a_time(monkeypatch):
-    listing = (SAMPLES / "goes19_listing.xml").read_text()
-    asked = []
-
-    class Answer:
-        text = listing
-
-    monkeypatch.setattr("chispa.sources.goes._get", lambda url: asked.append(url) or Answer())
-    since = datetime(2026, 11, 20, 19, 5, tzinfo=UTC)
-    # One listing for each day from the day of `since`. The sample has the scans of 21 November.
-    scans = goes.list_live(since, NOW)
-    assert [url[-9:] for url in asked] == ["2026/324/", "2026/325/"]
-    assert [scan[1].isoformat() for scan in scans] == [
-        "2026-11-21T19:00:00+00:00",
-        "2026-11-21T19:10:00+00:00",
-    ]
-    late = datetime(2026, 11, 21, 19, 5, tzinfo=UTC)
-    assert [scan[1].minute for scan in goes.list_live(late, NOW)] == [10]
-
-
-def test_listing_keeps_the_first_file_of_a_scan_and_no_scan_after_now(monkeypatch):
-    def entry(start, created, modified):
-        key = f"ABI-L2-FDCF/2026/325/19/OR_ABI-L2-FDCF-M6_G19_s2026325{start}215_c{created}.nc"
-        modified = f"<LastModified>2026-11-21T{modified}.000Z</LastModified>"
-        return f"<Contents><Key>{key}</Key>{modified}</Contents>"
-
-    class Answer:
-        # The scan of 19:00 has two files, and the bucket lists the later file first.
-        # The scan of 19:40 starts after the time of the pass.
-        text = (
-            entry("1900", "20263251924000", "19:25:00")
-            + entry("1900", "20263251909594", "19:10:10")
-            + entry("1940", "20263251949594", "19:50:10")
-        )
-
-    monkeypatch.setattr("chispa.sources.goes._get", lambda url: Answer())
-    scans = goes.list_live(NOW - timedelta(hours=1), NOW)
-    assert [(scan[1].minute, scan[2].minute) for scan in scans] == [(0, 10)]
 
 
 def test_row_of_a_long_pass_has_the_time_of_its_read(tmp_path, monkeypatch):
@@ -271,73 +219,30 @@ def test_mask_file_with_no_time_of_the_first_view_gets_an_estimate(tmp_path, mon
     assert day["mask"].shape == (2, 1, 2)
 
 
-def test_status_counts_the_lag_from_the_newest_pass_with_no_failure(tmp_path, monkeypatch):
-    monkeypatch.setattr("chispa.config.LIVE_START", datetime(2026, 11, 20, tzinfo=UTC))
-    monkeypatch.setattr("chispa.config.LIVE_POLL_LATE", timedelta(minutes=15))
-    folder = tmp_path / "live" / "polls"
-    folder.mkdir(parents=True)
-    header = "polled_at,source,item,result,new_rows\n"
-    good, failed = "2026-11-21T23:55:00+00:00", "2026-11-22T00:05:00+00:00"
-    (folder / "2026-11-21.csv").write_text(header + f"{good},firms,VIIRS_NOAA20_NRT,ok,5\n")
-    # Ten minutes later each source failed. That pass does not make the data newer.
-    (folder / "2026-11-22.csv").write_text(
-        header
-        + f"{failed},firms,VIIRS_NOAA20_NRT,failed: FIRMS request failed,0\n"
-        + f"{failed},goes,request,failed: ConnectionError,0\n"
+def test_mask_of_a_scan_is_in_its_file_one_time(tmp_path):
+    scan = datetime(2026, 11, 23, 3, 0, tzinfo=UTC)
+    times = live._times(scan + timedelta(minutes=12), scan + timedelta(minutes=10))
+    # A pass that stopped after this write reads the scan again.
+    live._add_mask(tmp_path, scan, times, MASK)
+    live._add_mask(tmp_path, scan, times, MASK)
+    assert np.load(tmp_path / "2026-11-23.npz")["times"].tolist() == [scan.isoformat()]
+
+
+def test_pass_after_a_long_stop_reads_back_to_the_newest_scan_that_a_pass_read(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr("chispa.config.LIVE_LOOKBACK", timedelta(days=4))
+    replace_sources(
+        monkeypatch, [], [SCAN]
+    )  # The last pass before the stop read the scan of 19:00.
+    live.poll(tmp_path, "key", NOW)
+    # The file of the scan of 19:20 came after that pass. The poller is back 4 days later, at
+    # 19:25: the time 4 days before it is after the start of that scan.
+    waiting = ("b/key.nc", SCAN[1] + timedelta(minutes=20), NOW + timedelta(minutes=1))
+    back, asked = NOW + timedelta(days=4, minutes=-5), []
+    monkeypatch.setattr(
+        "chispa.sources.goes.list_live", lambda since, now: asked.append(since) or [SCAN, waiting]
     )
-
-    def at(text):
-        return live.status(tmp_path, datetime.fromisoformat(text))
-
-    found = at("2026-11-22T00:10:00+00:00")
-    assert (found["archive"], found["newest_pass_at"], found["complete_pass_at"]) == (
-        False,
-        failed,
-        good,
-    )
-    assert found["late_at"] == "2026-11-22T00:10:00+00:00"  # 15 minutes after the good pass
-    assert found["sources"] == {
-        "firms": {"items": 1, "failed": 1, "new_rows": 0},
-        "goes": {"items": 1, "failed": 1, "new_rows": 0},
-    }
-    # A pass at the as-of time counts. In the live period with no pass, the values are None.
-    assert at(good)["complete_pass_at"] == good
-    empty = at("2026-11-21T00:00:00+00:00")
-    assert (empty["archive"], empty["newest_pass_at"], empty["complete_pass_at"]) == (
-        False,
-        None,
-        None,
-    )
-    # Before the live logs the store has archive data.
-    assert at("2026-11-19T00:00:00+00:00")["archive"] is True
-
-
-def test_answered_before_gives_the_newest_poll_that_read_the_source(tmp_path, monkeypatch):
-    monkeypatch.setattr("chispa.config.LIVE_START", datetime(2026, 11, 21, 18, tzinfo=UTC))
-    folder = tmp_path / "live" / "polls"
-    folder.mkdir(parents=True)
-    header = "polled_at,source,item,result,new_rows\n"
-    first, second = "2026-11-21T20:00:00+00:00", "2026-11-21T20:05:00+00:00"
-    third, back = "2026-11-21T20:10:00+00:00", "2026-11-23T00:05:00+00:00"
-    (folder / "2026-11-21.csv").write_text(
-        header
-        + f"{first},firms,MODIS_NRT,ok,0\n"
-        + f"{second},firms,MODIS_NRT,ok,0\n"
-        + f"{second},inpe,request,failed: ConnectionError,0\n"
-        + f"{third},firms,MODIS_NRT,failed: FIRMS request failed,0\n"
-    )
-    (folder / "2026-11-23.csv").write_text(header + f"{back},firms,MODIS_NRT,ok,12\n")
-
-    def before(text, source):
-        return live.answered_before(tmp_path, datetime.fromisoformat(text), source).isoformat()
-
-    # FIRMS failed at 20:10. A failure of INPE at 20:05 does not count for FIRMS.
-    assert before(back, "firms") == second
-    # INPE failed at 20:05. At 20:10 it had no row: it read nothing new and had no failure.
-    assert before(back, "inpe") == third
-    # The GOES rows of the poller have the source "noaa". Before the first poll: the live start.
-    assert before(back, "noaa") == third
-    assert before(first, "firms") == "2026-11-21T18:00:00+00:00"
-    # A row has the time of its read, 3 seconds after the start of its pass.
-    # That pass does not count.
-    assert before("2026-11-23T00:05:03+00:00", "firms") == second
+    results = live.poll(tmp_path, "key", back)
+    assert asked == [SCAN[1]]
+    assert [r["item"] for r in results if r["source"] == "goes"] == [waiting[1].isoformat()]

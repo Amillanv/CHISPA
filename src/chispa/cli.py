@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 
 from dotenv import load_dotenv
 
-from chispa import bucket, checks, config, live
+from chispa import bucket, checks, config, live, polls
 from chispa.build import add_live, build_store
 from chispa.evaluation.report import write_summary, write_tables
 from chispa.evaluation.run import evaluate
@@ -80,7 +80,8 @@ def main(arguments: list[str] | None = None) -> None:
             look = "1: the first look. 2: the same events again and boxes with no fire."
             check.add_argument("--look", type=int, choices=(1, 2), default=1, help=look)
     poll = commands.add_parser("poll", help="Do one pass of the live poller: record the new rows.")
-    since = "Read back to this UTC time, to fill a hole: 2026-11-20T00:00:00+00:00."
+    since = "Read back the GOES scans and the INPE files to this UTC time, to fill a hole: "
+    since += "2026-11-20T00:00:00+00:00. It does not change the FIRMS request."
     poll.add_argument("--since", type=datetime.fromisoformat, help=since)
     update = commands.add_parser("update", help="Put the live logs into the store and the events.")
     push = "Also copy complete logs to the bucket."
@@ -252,6 +253,8 @@ def run_poll(since: datetime | None) -> None:
         raise SystemExit("Give --since with a time zone: 2026-11-20T00:00:00+00:00.")
     now = datetime.now(UTC)
     results = live.poll(config.RAW_DIR, read_setting("FIRMS_API_KEY"), now, since)
+    back = (since or now - config.LIVE_LOOKBACK).isoformat(timespec="seconds")
+    print(f"asked: FIRMS for {config.LIVE_FIRMS_DAYS} days, GOES and INPE from {back}.")
     for source in ("firms", "goes", "inpe"):
         of_source = [result for result in results if result["source"] == source]
         failed = [result["result"] for result in of_source if result["result"] != "ok"]
@@ -262,13 +265,16 @@ def run_poll(since: datetime | None) -> None:
 
 
 def run_update(push: bool) -> None:
-    """Add the detections of the live logs to the store, then make the events of this year again."""
+    """Add the detections of the live logs to the store, then make the events again for each
+    year with a new detection."""
     now = datetime.now(UTC)
-    new = add_live(config.RAW_DIR, open_store(config.STORE_PATH))
+    new, years = add_live(config.RAW_DIR, open_store(config.STORE_PATH))
     print(f"store: {new} new detections.")
-    # The replay of the year from its start is simple. It gets slow when the year has much data.
-    run_fuse(now.year)
-    status = live.status(config.RAW_DIR, now)
+    # In January a log of December can get a row: then the year before has a new detection.
+    # The replay of a year from its start is simple. It gets slow when the year has much data.
+    for year in years:
+        run_fuse(year)
+    status = polls.status(config.RAW_DIR, now)
     if status["late_at"] is None or now > datetime.fromisoformat(status["late_at"]):
         newest = status["complete_pass_at"] or "no pass"
         print(f"live: LATE. The newest pass with no failure: {newest}. Do a check of the poller.")

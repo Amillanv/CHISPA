@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
-from chispa import config, fires, live
+from chispa import config, fires, polls
 from chispa.grid import pantanal_grid
 from chispa.models import Detection
 from chispa.sources import border, burnday, firms, goes, inpe, scars
@@ -114,7 +114,7 @@ def after_stop(detections: list[Detection], raw_dir: Path) -> list[Detection]:
     for detection in detections:
         seen = detection.available_at
         if seen not in answered:
-            answered[seen] = live.answered_before(raw_dir, seen, "firms")
+            answered[seen] = polls.answered_before(raw_dir, seen, "firms")
         if seen - answered[seen] > config.LIVE_POLL_LATE:
             guess = detection.observed_at + config.AVAILABLE_DELAY[detection.sensor_family]
             time = min(max(guess, answered[seen]), seen)
@@ -123,18 +123,28 @@ def after_stop(detections: list[Detection], raw_dir: Path) -> list[Detection]:
     return found
 
 
-def add_live(raw_dir: Path, store: sqlite3.Connection) -> int:
+def add_live(raw_dir: Path, store: sqlite3.Connection) -> tuple[int, list[int]]:
     """Add the detections of each live log that changed to the store. Return the number of new
-    detections.
+    detections, and each year in which a new detection became available.
 
     The store has the size of each log that it read. A log only grows: a log with a different
     size has new rows. Thus a computer that was off for some days reads each log that it did not
     read, and not only the logs of the newest days. The store ignores a detection that it holds.
     """
-    read, new = read_log_sizes(store), 0
+    read, new, years = read_log_sizes(store), 0, set()
+    poll_logs = (raw_dir / "live" / "polls").glob("*.csv")
+    newest_poll = max((path.stat().st_mtime for path in poll_logs), default=0.0)
     for source, path in live_logs(raw_dir):
-        name, size = path.relative_to(raw_dir).as_posix(), path.stat().st_size
-        if read.get(name) != size:
-            new += add_detections(store, read_log(source, path, raw_dir)[0])
-            save_log_size(store, name, size)
-    return new
+        name, facts = path.relative_to(raw_dir).as_posix(), path.stat()
+        # The estimate of a FIRMS row needs the poll log of its pass, and a pass writes the poll
+        # log last. A FIRMS log that is newer came in a copy that is not complete: it waits.
+        waits = source == "firms" and facts.st_mtime > newest_poll
+        if read.get(name) == facts.st_size or waits:
+            continue
+        detections = read_log(source, path, raw_dir)[0]
+        added = add_detections(store, detections)
+        if added:
+            years |= {detection.available_at.year for detection in detections}
+        new += added
+        save_log_size(store, name, facts.st_size)
+    return new, sorted(years)

@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
-from chispa import config, live
+from chispa import config, polls
 from chispa.fusion import LEVELS
 from chispa.issued import Replay
 from chispa.store import to_text
@@ -105,8 +105,8 @@ def with_stops(rows: list[dict], raw_dir: Path) -> list[dict]:
     """Add to each pass the hours of its time to CHISPA in which the poller did not read its source.
 
     That time starts at the observation, or at the newest poll before that read the source with
-    no failure (`live.answered_before`), and stops when CHISPA had the pass. It is the most that the
-    poller added to the delay: the poll log does not say when the source published the pass.
+    no failure (`polls.answered_before`), and stops when CHISPA had the pass. It is the most that
+    the poller added to the delay: the poll log does not say when the source published the pass.
     None: that time is not more than `config.LIVE_POLL_LATE`, or the pass has an estimated time.
     """
     answered: dict[tuple[str, str], datetime] = {}
@@ -117,7 +117,7 @@ def with_stops(rows: list[dict], raw_dir: Path) -> list[dict]:
         key = (row["available_at"], row["source"])
         at = datetime.fromisoformat(key[0])
         if key not in answered:
-            answered[key] = live.answered_before(raw_dir, at, key[1])
+            answered[key] = polls.answered_before(raw_dir, at, key[1])
         stop = at - max(answered[key], datetime.fromisoformat(row["observed_at"]))
         if stop > config.LIVE_POLL_LATE:
             row["poller_stop_h"] = round(stop / timedelta(hours=1), 2)
