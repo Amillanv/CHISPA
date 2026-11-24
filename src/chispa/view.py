@@ -115,7 +115,10 @@ def _place_scans(
             had = [scan + config.GOES_RAW_DELAY for scan in scans]
             if "seen" in saved:
                 got = [datetime.fromisoformat(str(time)) for time in saved["seen"]]
-                # The scan start plus the delay of a raw file stands for the publication time.
+                # A file of an earlier version has no publication time. For its scans, the scan
+                # start plus the delay of a raw file stands for it.
+                if "published" in saved:
+                    had = [datetime.fromisoformat(str(time)) for time in saved["published"]]
                 had = [live_available(*times)[0] for times in zip(got, had, strict=True)]
             groups = goes.mask_groups(saved["mask"][:, cells[0], cells[1]])
             for scan, when, group in zip(scans, had, groups, strict=True):

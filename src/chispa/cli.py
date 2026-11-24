@@ -264,7 +264,7 @@ def run_poll(since: datetime | None) -> None:
 def run_update(push: bool) -> None:
     """Add the detections of the live logs to the store, then make the events of this year again."""
     now = datetime.now(UTC)
-    new = add_live(config.RAW_DIR, open_store(config.STORE_PATH), now)
+    new = add_live(config.RAW_DIR, open_store(config.STORE_PATH))
     print(f"store: {new} new detections.")
     # The replay of the year from its start is simple. It gets slow when the year has much data.
     run_fuse(now.year)

@@ -87,7 +87,7 @@ Checked 2026-11-19 with live requests and one raw file.
 - The gap fill gave 150 680 detections from 4859 scans.
 - Some days in November 2024 have shorter holes. Each 2024 result must say that GOES has holes in this period.
 - A scan with no fire pixel gives no row. Thus we cannot find a hole in the FIRMS record from the row counts.
-- Some scans have two raw files. We read the newest file.
+- Some scans have two raw files. The read of the archive takes the newest file. The live poller takes the file that came first: a pass cannot wait for a second file.
 - We do not keep the raw GOES files, because the gap is approximately 11 GB. We keep one CSV file of fire pixels for each day.
 - The `source` value of these detections is `noaa`.
 
@@ -269,17 +269,14 @@ Checked 2026-11-21 at 20:13 UTC with live requests. The command `chispa poll` re
 - In 21 scans from 17:00 to 20:20 UTC on 2026-11-21, the Pantanal box had no fire pixel of the four classes.
 - In the scan of 20:20, the mask had the class "processed, no fire" for only 3 percent of the pixels near the box. 43 percent were cloud, and 51 percent had no background value. Thus "no detection" was not "no fire".
 
-Checked 2026-11-24 from 20:15 to 21:00 UTC, with live requests and the poller logs. No command of the repository makes these values again.
+Checked 2026-11-24 from 20:15 to 21:00 UTC with live requests.
 
 - The bucket `noaa-goes19` had 701 scans from 2026-11-20 00:00 to 2026-11-24 20:30 UTC. The file of a scan was in the bucket a median of 10.2 minutes after the scan start. The 90th percentile was 10.9 minutes, and the maximum was 12.1.
 - For 2026-11-23, FIRMS `GOES_NRT` gave 28 rows with the satellite `G19` in the box. The poller read 28 fire pixels from the raw files. The 28 had the same time, the same position to 2 decimals and the same class (25 of class 30, 3 of class 10). Thus the raw files gave the rows of the FIRMS product for that day.
 - A FIRMS request with a start date and 5 days gives the rows of past days for the three live products. A live request for 2 days does not give a row of the day before yesterday.
 - At 20:15 UTC the oldest INPE file of 10 minutes on the server was that of 2026-11-21 00:00. A file of 10 minutes was 1 kB to 77 kB.
-- INPE, publication minus observation, for the rows in the box of 21 to 24 November. A pass gives many rows with one value. GOES-19: median 20.1 minutes (404 rows). NOAA-21: 159.2 (196). NOAA-20: 204.2 (92). METOP-B: 134.1 (19). METOP-C: 123.1 (29).
-- FIRMS, first view by the poller minus observation, for the rows that a pass saw in 6 hours or less. NOAA-21: median 148.8 minutes (196 rows). NOAA-20: 230.6 (104). MODIS: 126.1 (45). These are few passes: they are not a delay report.
-- In normal operation, the poller first saw a GOES scan a median of 2.6 minutes after its publication (215 scans, 90th percentile 4.7), and an INPE file after 2.7 minutes (49 files).
-- The rules of the poller from 2026-11-24. A pass asks FIRMS for 5 days. It reads each GOES scan and each INPE file of the last 4 days that no pass read (`config.LIVE_LOOKBACK`). It keeps each INPE file in full in `live/inpe_files/`, with its publication time: the logs have only the rows in the Pantanal box.
-- One pass that read 3 scans used 0.1 GB of memory, with the fixed window of the box. With a search of the window in the full grid it used 3.4 GB.
+- The rules of the poller from 2026-11-24. A pass asks FIRMS for 5 days. It reads each GOES scan and each INPE file of the last 4 days that no pass read (`config.LIVE_LOOKBACK`). It keeps each INPE file in full in `live/inpe_files/`, with its publication time: the logs have only the rows in the Pantanal box. A stop of the poller of less than 4 days loses no GOES scan and no FIRMS row. The oldest INPE file was 3.8 days old: a stop of more than 3 days can lose INPE files.
+- The memory of one pass, as `/usr/bin/time -l venv/bin/chispa poll` gives it (maximum resident set size): 0.1 GB for a pass that read 3 scans, with the fixed window of the box. With a search of the window in the full grid it was 3.4 GB.
 
 ### 8.11 Sentinel-2 images
 

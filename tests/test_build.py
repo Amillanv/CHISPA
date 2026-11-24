@@ -54,7 +54,7 @@ def test_live_row_has_the_time_of_the_first_view_or_an_estimate_after_a_stop(tmp
         " -17.25, -58.36,NOAA-21,2026-11-21 16:56:00,"
         "2026-11-21T20:48:58+00:00,2026-11-21T20:20:02+00:00\n"
     )
-    found = {source: detections[0] for source, detections, _ in read_live(tmp_path / "raw", "")}
+    found = {source: detections[0] for source, detections, _ in read_live(tmp_path / "raw")}
     assert (found["noaa"].platform, found["inpe"].platform) == ("GOES19", "NOAA21")
     # The poller saw the GOES scan 5 minutes after its publication: the time is a measurement.
     assert found["noaa"].available_at == datetime(2026, 11, 21, 19, 15, tzinfo=UTC)
@@ -62,7 +62,6 @@ def test_live_row_has_the_time_of_the_first_view_or_an_estimate_after_a_stop(tmp
     # It saw the INPE file 29 minutes after its publication: a stop. Publication plus 3 minutes.
     assert found["inpe"].available_at == datetime(2026, 11, 21, 20, 23, 2, tzinfo=UTC)
     assert found["inpe"].available_estimated is True
-    assert list(read_live(tmp_path / "raw", "2026-11-22")) == []  # a log of an earlier day
 
 
 def test_firms_row_that_a_pass_saw_after_a_stop_gets_an_estimate(tmp_path, monkeypatch):
@@ -98,7 +97,7 @@ def test_firms_row_that_a_pass_saw_after_a_stop_gets_an_estimate(tmp_path, monke
         writer = csv.DictWriter(file, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
-    (found,) = [detections for source, detections, _ in read_live(tmp_path / "raw", "")]
+    (found,) = [detections for source, detections, _ in read_live(tmp_path / "raw")]
 
     def at(hour, minute=0):
         return datetime(2026, 11, 21, hour, minute, tzinfo=UTC)
@@ -111,3 +110,32 @@ def test_firms_row_that_a_pass_saw_after_a_stop_gets_an_estimate(tmp_path, monke
         (at(20), True),
         (at(20, 5), False),
     ]
+
+
+def test_update_reads_each_log_that_changed_and_no_other_log(tmp_path, monkeypatch):
+    from chispa import build
+
+    logs = tmp_path / "raw" / "live" / "goes"
+    logs.mkdir(parents=True)
+    header = "observed_at,lat,lon,mask,frp_mw,first_seen_at,published_at\n"
+
+    def row(day, hour):
+        start = f"2026-11-{day}T{hour}"
+        return f"{start}:00:00+00:00,-17.5,-57.5,10,20.7,{start}:13:00+00:00,{start}:10:10+00:00\n"
+
+    # The log of 1 November is old: a computer that was off for some weeks did not read it.
+    (logs / "2026-11-01.csv").write_text(header + row("01", "15"))
+    (logs / "2026-11-21.csv").write_text(header + row("21", "19"))
+    read, read_log = [], build.read_log
+    monkeypatch.setattr(
+        build, "read_log", lambda *args: read.append(args[1].name) or read_log(*args)
+    )
+    store = open_store(tmp_path / "store.sqlite")
+    assert build.add_live(tmp_path / "raw", store) == 2
+    assert build.add_live(tmp_path / "raw", store) == 0
+    assert read == ["2026-11-01.csv", "2026-11-21.csv"]  # the second update read no log
+    # A pass with `--since` fills a hole in the old log. The update reads only that log again.
+    with (logs / "2026-11-01.csv").open("a") as file:
+        file.write(row("01", "16"))
+    assert build.add_live(tmp_path / "raw", store) == 1
+    assert read[2:] == ["2026-11-01.csv"]
