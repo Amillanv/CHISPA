@@ -79,6 +79,9 @@ CREATE TABLE IF NOT EXISTS live_logs (
     path TEXT PRIMARY KEY,
     size INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS stale_years (
+    year INTEGER PRIMARY KEY
+);
 """
 
 COLUMNS = ", ".join(field.name for field in fields(Detection))
@@ -124,6 +127,23 @@ def read_log_sizes(connection: sqlite3.Connection) -> dict[str, int]:
 def save_log_size(connection: sqlite3.Connection, path: str, size: int) -> None:
     """Record that the store read a live log of this size."""
     connection.execute("INSERT OR REPLACE INTO live_logs VALUES (?, ?)", (path, size))
+    connection.commit()
+
+
+def mark_stale(connection: sqlite3.Connection, years: set[int]) -> None:
+    """Record that the events of these years are older than their detections."""
+    connection.executemany("INSERT OR IGNORE INTO stale_years VALUES (?)", [(y,) for y in years])
+    connection.commit()
+
+
+def stale_years(connection: sqlite3.Connection) -> list[int]:
+    """Return each year with events that are older than its detections."""
+    return [row[0] for row in connection.execute("SELECT year FROM stale_years ORDER BY year")]
+
+
+def clear_stale(connection: sqlite3.Connection, year: int) -> None:
+    """Record that the events of a year are made again."""
+    connection.execute("DELETE FROM stale_years WHERE year = ?", (year,))
     connection.commit()
 
 

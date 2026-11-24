@@ -248,3 +248,50 @@ def test_pass_after_a_long_stop_reads_back_to_the_newest_scan_that_a_pass_read(
     results = live.poll(tmp_path, "key", back)
     assert asked == [SCAN[1]]
     assert [r["item"] for r in results if r["source"] == "goes"] == [waiting[1].isoformat()]
+
+
+def test_pass_reads_inpe_before_the_read_back_of_goes(tmp_path, monkeypatch):
+    replace_sources(monkeypatch, [], [SCAN])
+    name = "focos_10min_20261121_1920.csv"
+    content = b"lat,lon,satelite,data\n-17.5,-57.5,NOAA-21,2026-11-21 16:56:00\n"
+    monkeypatch.setattr("chispa.sources.inpe.list_live", lambda since, now: [name])
+    monkeypatch.setattr("chispa.sources.inpe.read_live", lambda name: (NOW, content))
+    # INPE removes its files after some days. The NOAA bucket keeps each scan.
+    results = live.poll(tmp_path, "key", NOW)
+    assert [result["source"] for result in results] == ["firms", "inpe", "goes", "pass"]
+
+
+def test_inpe_file_that_a_pass_reads_again_is_in_the_logs_one_time(tmp_path):
+    name = "focos_10min_20261121_1920.csv"
+    content = b"lat,lon,satelite,data\n-17.5,-57.5,NOAA-21,2026-11-21 16:56:00\n"
+    first = live._times(NOW, NOW - timedelta(minutes=10))
+    # A pass stopped after the writes of the file. The next pass reads the file again, later.
+    assert live.keep_inpe(tmp_path, name, content, first) == 1
+    assert (
+        live.keep_inpe(tmp_path, name, content, live._times(NOW + timedelta(minutes=5), NOW)) == 1
+    )
+    listed = read(tmp_path / "inpe_files" / "2026-11-21.csv")
+    assert [(row["file"], row["first_seen_at"]) for row in listed] == [(name, NOW.isoformat())]
+    assert len(read(tmp_path / "inpe" / "2026-11-21.csv")) == 1
+
+
+def test_key_does_not_go_into_the_poll_log(tmp_path, monkeypatch):
+    replace_sources(monkeypatch, [], [])
+
+    def fail(product, key):
+        raise RuntimeError(f"FIRMS request failed ({product}): HTTP 400 'bad url /csv/{key}/x'")
+
+    monkeypatch.setattr("chispa.sources.firms.download_live", fail)
+    live.poll(tmp_path, "secret-key", NOW)
+    text = (tmp_path / "live" / "polls" / "2026-11-21.csv").read_text()
+    assert "secret-key" not in text
+    assert "bad url /csv/[key]/x" in text
+
+
+def test_firms_row_from_before_the_live_logs_is_not_in_a_live_log(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.LIVE_START", datetime(2026, 11, 21, tzinfo=UTC))
+    # A request gives 5 days. The row of 20 November is of the archive.
+    replace_sources(monkeypatch, [{**ROW, "acq_date": "2026-11-20"}, ROW], [])
+    results = live.poll(tmp_path, "key", NOW)
+    logs = sorted(path.name for path in (tmp_path / "live" / "firms").glob("*/*.csv"))
+    assert (results[0]["new_rows"], logs) == (1, ["2026-11-21.csv"])

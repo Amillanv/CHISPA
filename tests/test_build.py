@@ -131,18 +131,19 @@ def test_update_reads_each_log_that_changed_and_no_other_log(tmp_path, monkeypat
         build, "read_log", lambda *args: read.append(args[1].name) or read_log(*args)
     )
     store = open_store(tmp_path / "store.sqlite")
-    assert build.add_live(tmp_path / "raw", store) == (2, [2026])
-    assert build.add_live(tmp_path / "raw", store) == (0, [])
+    assert build.add_live(tmp_path / "raw", store) == (2, 0)
+    assert build.add_live(tmp_path / "raw", store) == (0, 0)
     assert read == ["2026-11-01.csv", "2026-11-21.csv"]  # the second update read no log
     # A pass with `--since` fills a hole in the old log. The update reads only that log again.
     with (logs / "2026-11-01.csv").open("a") as file:
         file.write(row("01", "16"))
-    assert build.add_live(tmp_path / "raw", store) == (1, [2026])
+    assert build.add_live(tmp_path / "raw", store) == (1, 0)
     assert read[2:] == ["2026-11-01.csv"]
 
 
-def test_update_gives_each_year_with_a_new_detection(tmp_path):
+def test_update_marks_each_year_with_a_new_detection_to_its_next_fusion(tmp_path):
     from chispa import build
+    from chispa.store import clear_stale, stale_years
 
     logs = tmp_path / "raw" / "live" / "goes"
     logs.mkdir(parents=True)
@@ -154,7 +155,13 @@ def test_update_gives_each_year_with_a_new_detection(tmp_path):
         )
         (logs / f"{day}.csv").write_text(header + row)
     store = open_store(tmp_path / "store.sqlite")
-    assert build.add_live(tmp_path / "raw", store) == (2, [2026, 2027])
+    assert build.add_live(tmp_path / "raw", store) == (2, 0)
+    assert stale_years(store) == [2026, 2027]
+    # An update that stops before the fusion leaves the marks: the next update has them.
+    assert build.add_live(tmp_path / "raw", store) == (0, 0)
+    assert stale_years(store) == [2026, 2027]
+    clear_stale(store, 2026)
+    assert stale_years(store) == [2027]
 
 
 def test_update_reads_a_firms_log_only_with_the_poll_log_of_its_pass(tmp_path, monkeypatch):
@@ -186,7 +193,7 @@ def test_update_reads_a_firms_log_only_with_the_poll_log_of_its_pass(tmp_path, m
     # A copy that is not complete: the FIRMS log is newer than the poll log. The log waits.
     os.utime(polls, (1000, 1000))
     os.utime(log, (2000, 2000))
-    assert build.add_live(tmp_path / "raw", store) == (0, [])
+    assert build.add_live(tmp_path / "raw", store) == (0, 0)
     # The next copy has the poll log of the pass. The update reads the FIRMS log.
     os.utime(polls, (3000, 3000))
-    assert build.add_live(tmp_path / "raw", store) == (1, [2026])
+    assert build.add_live(tmp_path / "raw", store) == (1, 0)

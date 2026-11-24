@@ -48,7 +48,9 @@ def poll(raw_dir: Path, key: str, now: datetime, since: datetime | None = None) 
     # FIRMS is the first read of a pass. Thus the start of a pass is the time of its FIRMS read,
     # to some seconds: `build.after_stop` finds a stop from the starts of the passes.
     results = [_poll_firms(live, product, key, now, clock) for product in firms.LIVE_PRODUCTS]
-    results += _poll_goes(live, since, now, clock) + _poll_inpe(live, since, now, clock)
+    # INPE removes its files after some days, and the NOAA bucket keeps each scan. Thus a pass
+    # after a stop reads INPE before the long read-back of GOES.
+    results += _poll_inpe(live, since, now, clock) + _poll_goes(live, since, now, clock)
     # The last row of a pass says that the pass read each source. A pass that stops has none.
     new_rows = sum(result["new_rows"] for result in results)
     return [*results, _log(live, _result(now, PASS_END, "end", "ok", new_rows))]
@@ -75,10 +77,14 @@ def _poll_firms(live: Path, product: str, key: str, now: datetime, clock: Clock)
     """Append the rows of one FIRMS product that are not in its logs. One log for each day."""
     try:
         rows = firms.download_live(product, key)
-    except RuntimeError as error:  # The message of this error does not contain the key.
-        return _log(live, _result(now, "firms", product, f"failed: {error}", 0))
+    except RuntimeError as error:
+        # The message can have a part of the answer of FIRMS. The key must not go into a log.
+        failure = f"failed: {error}".replace(key, "[key]")
+        return _log(live, _result(now, "firms", product, failure, 0))
     seen_at, new_rows = clock().isoformat(timespec="seconds"), 0
-    for day in sorted({row["acq_date"] for row in rows}):
+    # A request gives 5 days. The days before `config.LIVE_START` are in the archive.
+    first_day = config.LIVE_START.date().isoformat()
+    for day in sorted({row["acq_date"] for row in rows if row["acq_date"] >= first_day}):
         path = live / "firms" / product / f"{day}.csv"
         seen = {tuple(row[name] for name in FIRMS_KEY) for row in read_rows(path)}
         fresh = {}
@@ -176,16 +182,20 @@ def keep_inpe(live: Path, name: str, content: bytes, times: dict) -> int:
     """Save one INPE file as it came, and append its rows in the Pantanal box to the log.
 
     INPE removes a file after some days, and the log has only the rows in the box. The full file
-    keeps the rows of the other regions. A list for each day has the times of each file.
+    keeps the rows of the other regions. A list for each day has the times of each file: it is
+    the last write, and a file that is in the list is not written again.
     Return the number of rows in the box.
     """
     day = str(inpe.live_time(name).date())
+    rows = [row | times for row in inpe.box_rows(content)]
+    listed = live / "inpe_files" / f"{day}.csv"
+    if any(row["file"] == name for row in read_rows(listed)):
+        return len(rows)  # A pass that stopped after the writes of this file reads it again.
     folder = live / "inpe_files" / day
     folder.mkdir(parents=True, exist_ok=True)
     (folder / f"{name}.gz").write_bytes(gzip.compress(content, mtime=0))
-    _append(live / "inpe_files" / f"{day}.csv", [{"file": name} | times])
-    rows = [row | times for row in inpe.box_rows(content)]
     _append(live / "inpe" / f"{day}.csv", rows)
+    _append(listed, [{"file": name} | times])
     return len(rows)
 
 

@@ -15,7 +15,14 @@ from chispa import config, fires, polls
 from chispa.grid import pantanal_grid
 from chispa.models import Detection
 from chispa.sources import border, burnday, firms, goes, inpe, scars
-from chispa.store import add_detections, add_fires, open_store, read_log_sizes, save_log_size
+from chispa.store import (
+    add_detections,
+    add_fires,
+    mark_stale,
+    open_store,
+    read_log_sizes,
+    save_log_size,
+)
 
 
 def build_store(raw_dir: Path, store_path: Path) -> dict[str, list[int]]:
@@ -123,15 +130,18 @@ def after_stop(detections: list[Detection], raw_dir: Path, product: str) -> list
     return found
 
 
-def add_live(raw_dir: Path, store: sqlite3.Connection) -> tuple[int, list[int]]:
+def add_live(raw_dir: Path, store: sqlite3.Connection) -> tuple[int, int]:
     """Add the detections of each live log that changed to the store. Return the number of new
-    detections, and each year in which a new detection became available.
+    detections and the number of rejected rows.
 
     The store has the size of each log that it read. A log only grows: a log with a different
     size has new rows. Thus a computer that was off for some days reads each log that it did not
     read, and not only the logs of the newest days. The store ignores a detection that it holds.
+    Before the detections of a log go in, their years get a mark (`store.mark_stale`). The mark
+    stays to the end of the next fusion of the year: an update that stops in the middle loses
+    no fusion.
     """
-    read, new, years = read_log_sizes(store), 0, set()
+    read, new, rejected = read_log_sizes(store), 0, 0
     poll_logs = (raw_dir / "live" / "polls").glob("*.csv")
     newest_poll = max((path.stat().st_mtime for path in poll_logs), default=0.0)
     for source, path in live_logs(raw_dir):
@@ -143,10 +153,9 @@ def add_live(raw_dir: Path, store: sqlite3.Connection) -> tuple[int, list[int]]:
         waits = source == "firms" and facts.st_mtime > newest_poll
         if read.get(name) == facts.st_size or waits:
             continue
-        detections = read_log(source, path, raw_dir)[0]
-        added = add_detections(store, detections)
-        if added:
-            years |= {detection.available_at.year for detection in detections}
-        new += added
+        detections, bad = read_log(source, path, raw_dir)
+        mark_stale(store, {detection.available_at.year for detection in detections})
+        new += add_detections(store, detections)
+        rejected += bad
         save_log_size(store, name, facts.st_size)
-    return new, sorted(years)
+    return new, rejected
