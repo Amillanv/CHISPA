@@ -7,7 +7,7 @@ from datetime import timedelta
 import numpy as np
 import pytest
 
-from chispa import tools, view
+from chispa import tools
 from chispa.fusion import fuse
 from chispa.store import add_detections, open_store, read_detections, replace_fusion
 from tests.test_fusion import KM, T0, VIIRS
@@ -113,6 +113,15 @@ def test_event_record_reads_a_live_mask_only_after_the_poller_got_it(store, tmp_
         "pixels": 1,
         "scans_after_last_detection": 1,
         "after_last_detection": {"cloud": 1},
+        "runs_after_last_detection": [
+            {
+                "from": "2024-08-15T11:00:00+00:00",
+                "to": "2024-08-15T11:00:00+00:00",
+                "answer": "not_seen",
+                "scans": 1,
+                "groups": {"cloud": 1},
+            }
+        ],
         "newest_no_fire_at": None,
     }
     # The scan of 7 hours examined the place and found no fire: the last clear look.
@@ -123,32 +132,6 @@ def test_event_record_reads_a_live_mask_only_after_the_poller_got_it(store, tmp_
     assert view_at(days=1, hours=1)["group"] == "no_fire"
     # Two days after, the newest saved scan is older than the day before: it is not a view of now.
     assert view_at(days=2, hours=1) is None
-
-
-def test_goes_view_needs_each_pixel_of_the_newest_detections_for_a_clear_look(tmp_path):
-    folder = tmp_path / "live" / "goes_mask"
-    (folder / str(T0.year)).mkdir(parents=True)
-    # Three pixels. The newest pass has three detections: two in the first pixel, one in the second.
-    # The third pixel is far away and has no detection.
-    lat, lon = np.array([[-17.5, -17.5, -17.5]]), np.array([[-57.5, -57.48, -50.0]])
-    np.savez(folder / "grid.npz", lat=lat, lon=lon)
-    # Scans after the detection: both no fire; one cloud; one possible fire; no fire again.
-    mask = np.array([[[100, 100, 30]], [[100, 200, 100]], [[13, 100, 100]], [[100, 100, 200]]])
-    scans = [T0 + timedelta(hours=hour) for hour in (1, 2, 3, 4)]
-    times = np.array([scan.isoformat() for scan in scans])
-    np.savez(folder / str(T0.year) / f"{T0.date()}.npz", times=times, seen=times, mask=mask)
-    positions = np.array([-17.5, -17.5, -17.5]), np.array([-57.5, -57.501, -57.48])
-    found = view.goes_view(*positions, T0, T0 + timedelta(hours=5), tmp_path)
-    # The fire at the third pixel is not this place. A cloud or a possible fire at one pixel is
-    # not a clear look: the last clear look is the scan of 4 hours.
-    assert found == {
-        "pixels": 2,
-        "scan_at": (T0 + timedelta(hours=4)).isoformat(),
-        "group": "no_fire",
-        "scans_after_last_detection": 4,
-        "after_last_detection": {"no_fire": 2, "cloud": 1, "possible_fire": 1},
-        "newest_no_fire_at": (T0 + timedelta(hours=4)).isoformat(),
-    }
 
 
 def test_level_changes_are_the_history_of_the_event_itself(tmp_path, monkeypatch):

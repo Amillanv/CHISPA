@@ -1,7 +1,7 @@
 /* The right column: the list of events at the as-of time, and the record of one event.
    The record follows the questions of triage: where and how sure, is it moving, how did it get here,
    what do the sensors see now, what is near it. Each value is a field of the tool answer. */
-import { esc, num, pct, utc, day, dur, coord, km, compass, FAMILY, FAMILY_ORDER, INPUT, PART, GOES_GROUP, GOES_NOTE, goesCounts } from "./format.js";
+import { esc, num, pct, utc, day, dur, coord, km, compass, FAMILY, FAMILY_ORDER, INPUT, PART, GOES_GROUP, GOES_NOTE, when } from "./format.js";
 import { matrix } from "./matrix.js";
 import { vitals, timeline } from "./timeline.js";
 
@@ -81,7 +81,7 @@ export function dossier(root, { record, error, trackRecord, settings, open, zone
       ${triage(r, trackRecord, settings, open)}
       ${growth(r, settings)}
       ${timeline(r, tz, all, settings.live_start)}
-      ${sensorsNow(r)}
+      ${sensorsNow(r, tz)}
       ${place(r)}
       ${detections(r)}
     </div>`;
@@ -193,26 +193,16 @@ function short(text) {
   return `${day(text)} ${utc(text, false)}`;
 }
 
-function sensorsNow(r) {
+/* What the sensors see now. GOES: its newest scan, in one line. The scans after the last detection are in the timeline. */
+function sensorsNow(r, zone) {
   const g = r.goes_view;
-  const goes = g ? `${GOES_GROUP[g.group] ?? esc(g.group)}<small>${GOES_NOTE[g.group] ?? ""}. ${pixelsText(g)}, scan ${utc(g.scan_at)} UTC.</small>${goesAfter(g)}` : `–<small>no saved scan for this time</small>`;
+  const goes = g ? `${GOES_GROUP[g.group] ?? esc(g.group)}<small>Newest scan ${when(g.scan_at, zone)}: ${GOES_NOTE[g.group] ?? esc(g.group)}.</small>` : `–<small>no saved scan for this time</small>`;
+  const pixels = g ? ` title="${num(g.pixels)} GOES ${g.pixels === 1 ? "pixel" : "pixels"} at the place of the last detection"` : "";
   const n = r.viirs_passes_after_last_detection;
   const viirs = n === null ? `–<small>no pass list for this year</small>` : `${n === 0 ? "No pass" : `${n} ${n === 1 ? "pass" : "passes"}`} after the newest detection<small>${n ? "with no detection of this event" : "since the newest detection"}</small>`;
   return `<div class="block"><div class="label"><span>What the sensors see now</span></div>
-    <div class="see"><div><span class="who">GOES</span><span class="what">${goes}</span></div><div><span class="who">VIIRS</span><span class="what">${viirs}</span></div></div>
-    <p class="note">The place of the newest detections only. "Examined, no fire" does not say that the fire is out: GOES can miss a small fire, and cloud and smoke can hide it.</p></div>`;
-}
-
-/* The GOES pixels that `goes_view` read: the pixels of the detections of the newest pass. */
-function pixelsText(g) {
-  return g.pixels === 1 ? "The pixel of the newest detection" : `The ${num(g.pixels)} pixels of the newest detections`;
-}
-
-/* What GOES said in each saved scan after the newest detection: "11 scans after the newest detection: 11 could not decide." */
-function goesAfter(g) {
-  const total = g.scans_after_last_detection;
-  if (!total) return `<small>No saved scan after the newest detection yet.</small>`;
-  return `<small>${num(total)} saved ${total === 1 ? "scan" : "scans"} after the newest detection: ${goesCounts(g)}.</small>`;
+    <div class="see"><div${pixels}><span class="who">GOES</span><span class="what">${goes}</span></div><div><span class="who">VIIRS</span><span class="what">${viirs}</span></div></div>
+    <p class="note">"No fire" does not say that the fire is out: GOES can miss a small fire.</p></div>`;
 }
 
 function place(r) {

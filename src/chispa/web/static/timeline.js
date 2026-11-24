@@ -1,16 +1,10 @@
 /* The history of one event: the headline numbers and the timeline of its passes.
    A row is one pass: when a satellite saw it, how long it took to reach CHISPA, and the alert it made.
    Each value is a field of the event record. This file formats the values. It adds no fact. */
-import { esc, num, dur, hoursBetween, utc, day, zoned, offset, FAMILY, goesCounts } from "./format.js";
+import { esc, num, dur, hoursBetween, utc, day, offset, when, FAMILY, GOES_GROUP, ANSWER } from "./format.js";
 
 const FOLDED = 10; // the newest passes that the folded timeline shows, with each pass that made an alert
-
-/* A time in UTC ("08-20 17:25") or in Pantanal time ("20 Aug 13:25"). */
-function when(text, zone) {
-  if (!zone) return `${day(text)} ${utc(text, false)}`;
-  const t = zoned(text, zone);
-  return `${t.date.split(" ").slice(1).join(" ")} ${t.time}`;
-}
+const RUNS_FOLDED = 4; // the newest runs of GOES scans that the folded timeline shows, with each run of fire
 
 export function zoneName(r, zone) {
   return zone ? `Pantanal, ${offset(r.first_observed_at, zone)}` : "UTC";
@@ -69,11 +63,11 @@ export function timeline(r, zone, all, liveStart) {
   let last = -1;
   rows.forEach((p, n) => {
     if (!shown.has(p)) return;
-    if (n - last > 1) parts.push(`<button type="button" class="more" data-passes>${n - last - 1} more passes</button>`);
+    if (n - last > 1) parts.push(`<button type="button" class="more" data-passes>${n - last - 1} more ${n - last - 1 === 1 ? "pass" : "passes"}</button>`);
     parts.push(row(p, zone));
     last = n;
   });
-  parts.push(closing(r, zone));
+  parts.push(...runs(r, zone, all));
   const head = `<div class="pass head"><span>Observed</span><span>Sensor</span><span>To CHISPA</span><span>MW</span><span>Alert</span></div>`;
   return `<div class="block"><div class="label"><span>Timeline</span><span>${rows.length} of ${num(r.pass_count)} passes · ${zoneName(r, zone)}</span></div>
     <div class="passes">${head}${parts.join("")}</div>
@@ -83,21 +77,38 @@ export function timeline(r, zone, all, liveStart) {
     another satellite. MW is its largest fire power. "To CHISPA" is the time from the observation
     to the moment that CHISPA had the pass, and thus made its alert. From ${day(liveStart)} it is measured by the poller.
     Before, it is an estimate. A time in yellow includes a stop of the poller: up to the time of the stop is our delay.
-    The time when a source published a pass is not in the record. The last row gives what GOES said for the pixels
-    of the newest detections in each saved scan after the last detection.</p></div>`;
+    The time when a source published a pass is not in the record. After the last detection, a GOES row is a run of
+    saved scans with one answer for the place of the last detection. "Could not see" is cloud, no decision or glint.</p></div>`;
 }
 
-/* One row after the last detection: the GOES scans that examined the place and gave no detection (`goes_view`). */
-function closing(r, zone) {
-  const g = r.goes_view, n = g?.scans_after_last_detection;
-  if (!n) return "";
-  const title = `From the last detection, ${utc(r.last_observed_at)} UTC, to the newest scan, ${utc(g.scan_at)} UTC: `
-    + `what GOES said for the pixels of the newest detections in each saved scan. "Examined, no fire" is for each pixel. `
-    + `This does not say that the fire is out.`;
-  return `<div class="pass after" title="${title}">
-    <span class="t">${when(g.scan_at, zone)}</span>
+/* The rows after the last detection: the saved GOES scans, one row for each run of one answer (`goes_view`).
+   Folded: each run of fire or possible fire, and the newest runs. No row if no scan came after the last detection. */
+function runs(r, zone, all) {
+  const list = r.goes_view?.runs_after_last_detection ?? [];
+  const fire = (run) => run.answer === "fire" || run.answer === "possible_fire";
+  const rows = [];
+  let hidden = 0;
+  list.forEach((run, n) => {
+    if (!all && !fire(run) && n < list.length - RUNS_FOLDED) { hidden += 1; return; }
+    if (hidden) rows.push(`<button type="button" class="more" data-passes>${hidden} more GOES ${hidden === 1 ? "row" : "rows"}</button>`);
+    hidden = 0;
+    rows.push(runRow(run, r.goes_view.newest_no_fire_at, zone));
+  });
+  return rows;
+}
+
+function runRow(run, clear, zone) {
+  const groups = Object.entries(run.groups);
+  const detail = run.answer === "not_seen"
+    ? ` (${groups.length === 1 ? GOES_GROUP[groups[0][0]] : groups.map(([g, n]) => `${num(n)} ${GOES_GROUP[g] ?? esc(g)}`).join(" · ")})` : "";
+  const span = run.scans === 1 ? "" : `${num(run.scans)} scans to ${when(run.to, zone)}: `;
+  const look = run.to === clear ? " · last clear look" : "";
+  const title = `GOES scans from ${utc(run.from)} UTC to ${utc(run.to)} UTC at the place of the last detection. `
+    + `"Examined, no fire" is for each pixel of that place. It does not say that the fire is out: GOES can miss a small fire.`;
+  return `<div class="pass run ${run.answer}" title="${title}">
+    <span class="t">${when(run.from, zone)}</span>
     <span class="s"><i style="background:var(--abi)"></i>GOES</span>
-    <span class="x">${num(n)} ${n === 1 ? "scan" : "scans"} after the last detection: ${goesCounts(g)}</span></div>`;
+    <span class="x">${span}${ANSWER[run.answer]}${detail}${look}</span></div>`;
 }
 
 function row(p, zone) {
