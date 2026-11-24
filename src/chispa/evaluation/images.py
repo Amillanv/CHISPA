@@ -154,6 +154,17 @@ def read_answers(folder: Path) -> list[tuple[str, str, str]]:
     ]
 
 
+def later_only(folder: Path) -> set[str]:
+    """Return the id of each chip with the note `later only`.
+
+    For such a chip the person used the later picture in place of the picture after.
+    """
+    notes = {row["chip"]: row.get("note", "").lower() for row in burn.read(folder / "answers.csv")}
+    return {
+        row["id"] for row in burn.read(folder / "key.csv") if "later only" in notes[row["chip"]]
+    }
+
+
 def count(answers: list[tuple[str, str, str]]) -> list[dict]:
     """Return one row for each group: how many chips got each answer of the person.
 

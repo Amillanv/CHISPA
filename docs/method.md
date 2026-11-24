@@ -535,8 +535,8 @@ The rules for the person. Do them in this sequence for each chip:
 12. Work for a maximum of 30 minutes at one time. Change an answer only before you say that the file is complete.
 
 Rules 8 and 9, the exception of rule 10 and the last three sentences of rule 3 came on 2026-11-23, after questions of the owner in the work. The later picture can be more than
-30 days after the last detection, and the box rule reads only 30 days. Thus a comparison examines the chips with
-the note `later only` apart.
+30 days after the last detection, and the box rule reads only 30 days. Thus the table `burn_candidates_person` does not
+use the chips with the note `later only`: its column `later_only` gives their number. The answers of 2024 have no such chip.
 
 Three events have no value for a comparison: the owner saw the opinion of Claude on them (chips 7, 49 and 58 of the
 first look, events 20240016701, 20240006447 and 20240008269). They can be examples for the person.
@@ -546,13 +546,14 @@ The result of the second look (tables `image_check_2` and `image_agreement_2` of
 - Before a comparison with the key, a second reader read the chips with a note of doubt and a random set of the others.
   The second reader was a model, with the pictures and the rules only. The owner examined the chips with a different answer
   again, changed some answers, and said that the file was final. That check has no table, thus we give no number for it.
-- Unmatched HIGH events: the person said "burned" for 24 of the 53 chips with the answer "burned" or "not burned".
+- The three events that the person saw with an opinion are not in the two tables.
+- Unmatched HIGH events: the person said "burned" for 22 of the 50 chips with the answer "burned" or "not burned".
 - Matched HIGH events: 18 of 25. No-fire boxes: 3 of 57.
 - Thus a person says "burned" for few places with no fire, and for approximately half of the unmatched HIGH events.
   The 3 no-fire boxes can be errors of the person, or burns that no source shows.
 - The second look gave more answers than the first look, and more burns: it has more pictures of each chip.
-- The box rule agrees with the person for 90 of the 134 chips with a clear answer and a clear view for the rule.
-  It says "burned" for 30 of the 90 chips that the person called not burned.
+- The box rule agrees with the person for 89 of the 131 chips with a clear answer and a clear view for the rule.
+  It says "burned" for 29 of the 89 chips that the person called not burned.
 - Limits: one person, and a small sample. The events of the second look are those of the first look: the person saw them before.
 
 The result of the first look (tables `image_check` and `image_agreement` of 2024, 2026-11-23). The owner made the answers.
@@ -941,7 +942,9 @@ Each candidate gives the hectares of a box that it calls burned. It says "burned
   on grass, and the dark limit must stop the changes that are not burns.
 - NBR2 is (B11 - B12) / (B11 + B12), from the two short-wave bands. The short-wave rule came on 2026-11-23, after the
   first run of 2024: see the round on small burns below.
-- The Monitor map uses INPE hotspots (`docs/sources.md` section 8.18). It can answer for an event. It cannot find a fire with no hotspot.
+- `UNVERIFIED`: the method document of an earlier collection of the Monitor map says that it reads only the ground near
+  an INPE hotspot (`docs/sources.md` section 8.18). We did not confirm this for the asset that we read.
+  If it is true, the map can answer for an event, and it cannot find a fire with no hotspot.
 - Radar has one view each 12 days. Its possible value is an answer where Sentinel-2 has no clear view.
 
 The measures of a candidate, with the reference groups of section 11.10:
@@ -975,8 +978,8 @@ What 2023 shows (table `burn_candidates` of 2023, 2026-11-23). 2023 set the valu
 - For the unmatched HIGH events, the box rule says "burned" for 184 of 420, the dark rule for 117 of 420,
   and the Monitor map for 109 of 424.
 - Two cautions. The dark rule had 36 settings and the box rule 12: the best of more settings looks better in its own year.
-  The Monitor map reads only the ground near a hotspot, and a no-fire box has no detection near it: its no-fire share
-  is small by its design. It also comes from the group that makes the reference map.
+  If the Monitor map reads only the ground near a hotspot (`UNVERIFIED`), its no-fire share is small by its design:
+  a no-fire box has no detection near it. The map also comes from the group that makes the reference map.
   Thus the comparison with the answers of a person on 2024 is the fair one.
 
 What 2024 shows, first run (2026-11-23), with the settings of 2023. The tables of that run are in the commit of that day.
@@ -988,7 +991,11 @@ What 2024 shows, first run (2026-11-23), with the settings of 2023. The tables o
   for 29, the dark rule for 6 and the Monitor map for 7.
 - No candidate found each burn of the person: 29 of 42 for the box rule, 23 of 42 for the dark rule, 27 of 43 for the Monitor map.
   A look outside the repository said that the burns with no answer were mostly those that the person gave as small.
-- Radar is not better than the box rule in the difference, and it has an answer for fewer chips. It stops here.
+- Radar on 2024: its difference is 0.6337 for VV and 0.6454 for VH. The two are larger than that of the box rule (0.6209),
+  by less than the margin of 0.05. On 2023 the two were much less than that of the box rule.
+- Radar VV agrees with the person for 80 of 109 chips (0.7339): more than the box rule, and less than the dark rule and
+  the Monitor map. Radar VH agrees for 64 of 109. Radar has an answer for 109 of the 131 chips.
+- Thus radar is not the best candidate in a year, and it has fewer answers. We do no more work on it.
 - The dark rule and the Monitor map are not two answers to one question. The dark rule gives an answer at each clear
   view, some days after an event. The Monitor map gives one answer for a month, some weeks after that month.
 
