@@ -1,7 +1,7 @@
-candidate,key,min_ha,chips,person_burned,found,found_share,person_not_burned,called_burned,false_share,agree,agree_share,config,run_date
-box rule,0.3,10.0,131,42,29,0.6905,89,29,0.3258,89,0.6794,18b5fd2e0d5e,2026-11-23
-dark rule,0.3/0.2,1.0,131,42,28,0.6667,89,5,0.0562,112,0.855,18b5fd2e0d5e,2026-11-23
-short-wave rule,nbr2:0.1/0.2,1.0,131,42,32,0.7619,89,7,0.0787,114,0.8702,18b5fd2e0d5e,2026-11-23
-monitor,monitor,1.0,132,43,27,0.6279,89,7,0.0787,109,0.8258,18b5fd2e0d5e,2026-11-23
-radar VV,VV/3.0,25.0,109,36,21,0.5833,73,14,0.1918,80,0.7339,18b5fd2e0d5e,2026-11-23
-radar VH,VH/3.0,25.0,109,36,30,0.8333,73,39,0.5342,64,0.5872,18b5fd2e0d5e,2026-11-23
+candidate,key,min_ha,chips,later_only,person_burned,found,found_share,person_not_burned,called_burned,false_share,agree,agree_share,config,run_date
+box rule,0.3,10.0,131,0,42,29,0.6905,89,29,0.3258,89,0.6794,18b5fd2e0d5e,2026-11-24
+dark rule,0.3/0.2,1.0,131,0,42,28,0.6667,89,5,0.0562,112,0.855,18b5fd2e0d5e,2026-11-24
+short-wave rule,nbr2:0.1/0.2,1.0,131,0,42,32,0.7619,89,7,0.0787,114,0.8702,18b5fd2e0d5e,2026-11-24
+monitor,monitor,1.0,132,0,43,27,0.6279,89,7,0.0787,109,0.8258,18b5fd2e0d5e,2026-11-24
+radar VV,VV/3.0,25.0,109,0,36,21,0.5833,73,14,0.1918,80,0.7339,18b5fd2e0d5e,2026-11-24
+radar VH,VH/3.0,25.0,109,0,36,30,0.8333,73,39,0.5342,64,0.5872,18b5fd2e0d5e,2026-11-24

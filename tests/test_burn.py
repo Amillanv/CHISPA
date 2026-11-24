@@ -263,7 +263,41 @@ def test_candidate_against_a_person_counts_only_clear_answers_and_blind_events(m
         ("6", "unmatched", "cannot tell"),
         ("9", "matched", "burned"),  # The person saw an opinion on this event.
     ]
-    (found,) = candidates.person_table(answers, measures)
+    (found,) = candidates.person_table(answers, measures, apart=set())
     assert (found["chips"], found["person_burned"], found["found"]) == (4, 2, 1)
     assert (found["person_not_burned"], found["called_burned"]) == (2, 1)
     assert (found["agree"], found["agree_share"]) == (2, 0.5)
+    # A chip where the person used the later picture is not in the comparison. The table counts it.
+    (found,) = candidates.person_table(answers, measures, apart={"2"})
+    assert (found["chips"], found["person_burned"], found["later_only"]) == (3, 1, 1)
+
+
+def test_best_setting_of_two_equal_differences_is_the_smaller_area(monkeypatch):
+    monkeypatch.setattr("chispa.config.BURN_DNBR_STEPS", (0.2, 0.3))
+    monkeypatch.setattr("chispa.config.BURN_DARK_STEPS", ())
+    monkeypatch.setattr("chispa.config.BURN_NBR2_STEPS", ())
+    monkeypatch.setattr("chispa.config.RADAR_DB_STEPS", ())
+    monkeypatch.setattr("chispa.config.BURN_HA_STEPS", (10.0, 25.0))
+    monkeypatch.setattr("chispa.config.BURN_MIN_CLEAR", 0.5)
+    monkeypatch.setattr("chispa.config.BURN_CANDIDATES", {})
+    targets = [{"id": n, "group": group} for n, group in enumerate(("matched", "no fire"))]
+    # The fire has 30 hectares at step 0.2 and 12 at step 0.3. The no-fire box has 12 and 0.
+    measures = [
+        {"id": "0", "clear_share": 1.0, "scenes": 0, "0.2": 30, "0.3": 12, "monitor": 0},
+        {"id": "1", "clear_share": 1.0, "scenes": 0, "0.2": 12, "0.3": 0, "monitor": 0},
+    ]
+    rows = candidates.table(targets, measures, all_settings=True)
+    best = [(r["key"], r["min_ha"]) for r in rows if r["candidate"] == "box rule" and r["best"]]
+    # Step 0.2 with 25 hectares and step 0.3 with 10 hectares have a difference of 1.0.
+    assert best == [("0.3", 10.0)]
+
+
+def test_measures_of_different_settings_stop_a_run(tmp_path, monkeypatch):
+    path = tmp_path / "measures.csv"
+    path.write_text("id,settings,clear_share\n7,old-mark,1.0\n")
+    try:
+        candidates.measure([{"id": "7"}], path)
+    except RuntimeError as error:
+        assert "Delete it" in str(error)
+    else:
+        raise AssertionError("A file of different settings must stop the run.")

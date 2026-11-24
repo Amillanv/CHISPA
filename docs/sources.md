@@ -381,7 +381,9 @@ Checked 2026-11-23 (UTC) with requests from this computer and the key of the own
 - `satellite-v2` gives JPEG tiles for zoom 0 to 22. `v3` has the vector layers `water`, `waterway`, `transportation` and `place`, and others.
 - The dashboard shows the town names of the `place` layer: OpenStreetMap data. Not checked against a second source.
 - UNVERIFIED: the dates of the satellite mosaic for the Pantanal. Thus the page says that the image is not of the as-of time.
-- UNVERIFIED: the terms of the free plan for a public page. The page shows the attribution of each tile set.
+- UNVERIFIED: the terms of the free plan for a public page. The map has an attribution control for each tile set.
+  From 2026-11-23 a style rule of the owner hides the corner of the map that holds this control: the attribution is not
+  on the page. The page is only on the computer of the owner. Show the attribution again before a public page.
 
 ### 8.16 Time zone of the Pantanal
 
@@ -427,6 +429,8 @@ Checked 2026-11-23 with live requests to Earth Engine:
   For the 44 unmatched HIGH events it had 1 hectare or more for 13.
 
 Read 2026-11-23 by a research agent, on the pages of each owner. `UNVERIFIED`: no second read confirmed these facts.
+A web search on 2026-11-24 found the method document of collection 1 of the Monitor map, and no document for the
+collection of the asset that we read.
 
 - Monitor do Fogo: the method document of its collection 1 gives monthly Sentinel-2 mosaics, a deep learning model, and
   only the ground not farther than 5 km from an INPE hotspot. Licence CC BY 4.0. Thus it cannot show a fire with no hotspot.

@@ -6,7 +6,7 @@ Code makes this file. Do not edit it by hand.
 
 ### 2023 burn_candidates
 
-Configuration `18b5fd2e0d5e`, run on 2026-11-23.
+Configuration `18b5fd2e0d5e`, run on 2026-11-24.
 
 | candidate | key | min_ha | found_boxes | found_answers | found_burned | found_share | no_fire_boxes | no_fire_answers | no_fire_burned | no_fire_share | unmatched_boxes | unmatched_answers | unmatched_burned | unmatched_share | difference | chosen | best |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -15,9 +15,9 @@ Configuration `18b5fd2e0d5e`, run on 2026-11-23.
 | box rule | 0.1 | 25.0 | 100 | 99 | 97 | 0.9798 | 100 | 99 | 59 | 0.596 | 424 | 420 | 313 | 0.7452 | 0.3838 |  |  |
 | box rule | 0.2 | 1.0 | 100 | 99 | 98 | 0.9899 | 100 | 99 | 55 | 0.5556 | 424 | 420 | 346 | 0.8238 | 0.4343 |  |  |
 | box rule | 0.2 | 10.0 | 100 | 99 | 95 | 0.9596 | 100 | 99 | 38 | 0.3838 | 424 | 420 | 266 | 0.6333 | 0.5758 |  |  |
-| box rule | 0.2 | 25.0 | 100 | 99 | 94 | 0.9495 | 100 | 99 | 24 | 0.2424 | 424 | 420 | 196 | 0.4667 | 0.7071 |  | yes |
+| box rule | 0.2 | 25.0 | 100 | 99 | 94 | 0.9495 | 100 | 99 | 24 | 0.2424 | 424 | 420 | 196 | 0.4667 | 0.7071 |  |  |
 | box rule | 0.3 | 1.0 | 100 | 99 | 97 | 0.9798 | 100 | 99 | 34 | 0.3434 | 424 | 420 | 284 | 0.6762 | 0.6364 |  |  |
-| box rule | 0.3 | 10.0 | 100 | 99 | 91 | 0.9192 | 100 | 99 | 21 | 0.2121 | 424 | 420 | 184 | 0.4381 | 0.7071 | yes |  |
+| box rule | 0.3 | 10.0 | 100 | 99 | 91 | 0.9192 | 100 | 99 | 21 | 0.2121 | 424 | 420 | 184 | 0.4381 | 0.7071 | yes | yes |
 | box rule | 0.3 | 25.0 | 100 | 99 | 79 | 0.798 | 100 | 99 | 11 | 0.1111 | 424 | 420 | 122 | 0.2905 | 0.6869 |  |  |
 | box rule | 0.4 | 1.0 | 100 | 99 | 89 | 0.899 | 100 | 99 | 22 | 0.2222 | 424 | 420 | 216 | 0.5143 | 0.6768 |  |  |
 | box rule | 0.4 | 10.0 | 100 | 99 | 73 | 0.7374 | 100 | 99 | 8 | 0.0808 | 424 | 420 | 102 | 0.2429 | 0.6566 |  |  |
@@ -447,7 +447,7 @@ Configuration `1c24a22bc94c`, run on 2026-11-23.
 
 ### 2024 burn_candidates
 
-Configuration `18b5fd2e0d5e`, run on 2026-11-23.
+Configuration `18b5fd2e0d5e`, run on 2026-11-24.
 
 | candidate | key | min_ha | found_boxes | found_answers | found_burned | found_share | no_fire_boxes | no_fire_answers | no_fire_burned | no_fire_share | unmatched_boxes | unmatched_answers | unmatched_burned | unmatched_share | difference | chosen |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -460,16 +460,16 @@ Configuration `18b5fd2e0d5e`, run on 2026-11-23.
 
 ### 2024 burn_candidates_person
 
-Configuration `18b5fd2e0d5e`, run on 2026-11-23.
+Configuration `18b5fd2e0d5e`, run on 2026-11-24.
 
-| candidate | key | min_ha | chips | person_burned | found | found_share | person_not_burned | called_burned | false_share | agree | agree_share |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| box rule | 0.3 | 10.0 | 131 | 42 | 29 | 0.6905 | 89 | 29 | 0.3258 | 89 | 0.6794 |
-| dark rule | 0.3/0.2 | 1.0 | 131 | 42 | 28 | 0.6667 | 89 | 5 | 0.0562 | 112 | 0.855 |
-| short-wave rule | nbr2:0.1/0.2 | 1.0 | 131 | 42 | 32 | 0.7619 | 89 | 7 | 0.0787 | 114 | 0.8702 |
-| monitor | monitor | 1.0 | 132 | 43 | 27 | 0.6279 | 89 | 7 | 0.0787 | 109 | 0.8258 |
-| radar VV | VV/3.0 | 25.0 | 109 | 36 | 21 | 0.5833 | 73 | 14 | 0.1918 | 80 | 0.7339 |
-| radar VH | VH/3.0 | 25.0 | 109 | 36 | 30 | 0.8333 | 73 | 39 | 0.5342 | 64 | 0.5872 |
+| candidate | key | min_ha | chips | later_only | person_burned | found | found_share | person_not_burned | called_burned | false_share | agree | agree_share |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| box rule | 0.3 | 10.0 | 131 | 0 | 42 | 29 | 0.6905 | 89 | 29 | 0.3258 | 89 | 0.6794 |
+| dark rule | 0.3/0.2 | 1.0 | 131 | 0 | 42 | 28 | 0.6667 | 89 | 5 | 0.0562 | 112 | 0.855 |
+| short-wave rule | nbr2:0.1/0.2 | 1.0 | 131 | 0 | 42 | 32 | 0.7619 | 89 | 7 | 0.0787 | 114 | 0.8702 |
+| monitor | monitor | 1.0 | 132 | 0 | 43 | 27 | 0.6279 | 89 | 7 | 0.0787 | 109 | 0.8258 |
+| radar VV | VV/3.0 | 25.0 | 109 | 0 | 36 | 21 | 0.5833 | 73 | 14 | 0.1918 | 80 | 0.7339 |
+| radar VH | VH/3.0 | 25.0 | 109 | 0 | 36 | 30 | 0.8333 | 73 | 39 | 0.5342 | 64 | 0.5872 |
 
 ### 2024 burn_check
 
@@ -629,12 +629,12 @@ Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 ### 2024 image_agreement_2
 
-Configuration `c4dfd56d95ec`, run on 2026-11-23.
+Configuration `18b5fd2e0d5e`, run on 2026-11-24.
 
 | person | chips | rule_burned | rule_not_burned | rule_no_clear_view |
 |---|---|---|---|---|
-| burned | 45 | 30 | 14 | 1 |
-| not burned | 90 | 30 | 60 | 0 |
+| burned | 43 | 29 | 13 | 1 |
+| not burned | 89 | 29 | 60 | 0 |
 | cannot tell | 15 | 9 | 4 | 2 |
 
 ### 2024 image_check
@@ -648,11 +648,11 @@ Configuration `a84ef20c2e1b`, run on 2026-11-23.
 
 ### 2024 image_check_2
 
-Configuration `c4dfd56d95ec`, run on 2026-11-23.
+Configuration `18b5fd2e0d5e`, run on 2026-11-24.
 
 | group | sample | burned | not_burned | cannot_tell | no_answer | burned_share |
 |---|---|---|---|---|---|---|
-| HIGH events, unmatched | 60 | 24 | 29 | 7 | 0 | 0.4528 |
+| HIGH events, unmatched | 57 | 22 | 28 | 7 | 0 | 0.44 |
 | HIGH events, matched | 30 | 18 | 7 | 5 | 0 | 0.72 |
 | boxes, no fire | 60 | 3 | 54 | 3 | 0 | 0.0526 |
 

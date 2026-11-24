@@ -75,15 +75,21 @@ def run_candidates(year: int, project: Callable[[], str]) -> None:
     development = year == config.DEVELOPMENT_YEAR
     if not development and config.BURN_CANDIDATES is None:
         raise SystemExit(f"Set BURN_CANDIDATES on {config.DEVELOPMENT_YEAR} first.")
+    look = config.RESULTS_DIR / str(year) / "image_check_2"
+    has_look = (look / "sample.csv").exists()
+    if year == config.PART_TEST_YEAR and not has_look:
+        raise SystemExit(f"Run `chispa images --year {year} --test-run --look 2` first.")
+    # A person must not see an answer of a candidate before the answers of the person are complete.
+    if has_look and any(row[2] not in images.ANSWERS for row in images.read_answers(look)):
+        raise SystemExit(f"{look / 'answers.csv'} has a chip with no answer. Complete it first.")
     scars.check_access(project())
     targets = burn.read(targets_path)
     path = config.RESULTS_DIR / str(year) / "burn_candidates" / "measures.csv"
     candidates.measure(targets, path)
     tables = {"burn_candidates": candidates.table(targets, burn.read(path), development)}
-    look = config.RESULTS_DIR / str(year) / "image_check_2"
-    if (look / "answers.csv").exists() and config.BURN_CANDIDATES is not None:
-        answers = images.read_answers(look)
-        tables["burn_candidates_person"] = candidates.person_table(answers, burn.read(path))
+    if has_look and config.BURN_CANDIDATES is not None:
+        answers, apart = images.read_answers(look), images.later_only(look)
+        tables["burn_candidates_person"] = candidates.person_table(answers, burn.read(path), apart)
     write_tables(tables, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
     print(f"{year}: {len(targets)} boxes measured. See results/SUMMARY.md, table burn_candidates.")
@@ -120,6 +126,9 @@ def run_images(year: int, project: Callable[[], str], look: int) -> None:
         print(f"{year}: {len(sample)} chips. The pictures are in {pictures}.")
         print(f"Write one answer for each chip in {folder / 'answers.csv'}: {images.ANSWERS}.")
     answers = images.read_answers(folder)
+    if look == 2:
+        # The person saw an opinion on these events before the second look.
+        answers = [row for row in answers if row[0] not in config.IMAGE_NOT_BLIND]
     if not any(answer for _, _, answer in answers):
         print(f"{year}: {folder / 'answers.csv'} has no answer. No table is made.")
         return
