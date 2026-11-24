@@ -454,6 +454,7 @@ DASHBOARD_TIME_ZONE = "America/Campo_Grande"
 
 # Moments of recorded data that the page offers for a replay: days with many events.
 DASHBOARD_REPLAYS = (
+    datetime(2024, 10, 15, 13, 50, tzinfo=UTC),
     datetime(2024, 9, 10, 18, 0, tzinfo=UTC),
     datetime(2024, 8, 22, 0, 0, tzinfo=UTC),
     datetime(2023, 11, 15, 18, 0, tzinfo=UTC),

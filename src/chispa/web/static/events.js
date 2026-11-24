@@ -195,12 +195,17 @@ function short(text) {
 
 function sensorsNow(r) {
   const g = r.goes_view;
-  const goes = g ? `${GOES_GROUP[g.group] ?? esc(g.group)}<small>${GOES_NOTE[g.group] ?? ""}. Pixel at the centre, scan ${utc(g.scan_at)} UTC.</small>${goesAfter(g)}` : `–<small>no saved scan for this time</small>`;
+  const goes = g ? `${GOES_GROUP[g.group] ?? esc(g.group)}<small>${GOES_NOTE[g.group] ?? ""}. ${pixelsText(g)}, scan ${utc(g.scan_at)} UTC.</small>${goesAfter(g)}` : `–<small>no saved scan for this time</small>`;
   const n = r.viirs_passes_after_last_detection;
   const viirs = n === null ? `–<small>no pass list for this year</small>` : `${n === 0 ? "No pass" : `${n} ${n === 1 ? "pass" : "passes"}`} after the newest detection<small>${n ? "with no detection of this event" : "since the newest detection"}</small>`;
   return `<div class="block"><div class="label"><span>What the sensors see now</span></div>
     <div class="see"><div><span class="who">GOES</span><span class="what">${goes}</span></div><div><span class="who">VIIRS</span><span class="what">${viirs}</span></div></div>
-    <p class="note">One pixel. "Examined, no fire" does not say that the fire is out: GOES can miss a small fire, and cloud and smoke can hide it.</p></div>`;
+    <p class="note">The place of the newest detections only. "Examined, no fire" does not say that the fire is out: GOES can miss a small fire, and cloud and smoke can hide it.</p></div>`;
+}
+
+/* The GOES pixels that `goes_view` read: the pixels of the detections of the newest pass. */
+function pixelsText(g) {
+  return g.pixels === 1 ? "The pixel of the newest detection" : `The ${num(g.pixels)} pixels of the newest detections`;
 }
 
 /* What GOES said in each saved scan after the newest detection: "11 scans after the newest detection: 11 could not decide." */
