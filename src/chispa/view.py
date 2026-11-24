@@ -14,6 +14,7 @@ import numpy as np
 from scipy.spatial import cKDTree
 
 from chispa import config
+from chispa.arrival import live_available
 from chispa.sources import goes, passes
 from chispa.store import to_text
 
@@ -95,7 +96,8 @@ def _place_scans(
     """Return (group, pixels) of the place in each saved scan from `first` that we had at as-of.
 
     The recorded masks have one scan of each hour: we had one after the delay of a raw file.
-    The live masks have each scan of the poller, with the time when the poller got it.
+    The live masks have each scan of the poller, with the time when the poller got it. A scan
+    that the poller got after a stop counts from the estimate of `arrival.py`.
     The two have different grids: the number of pixels of the place is for the grid of the scan.
     """
     seen: dict[datetime, tuple[str, int]] = {}
@@ -112,7 +114,12 @@ def _place_scans(
             scans = [datetime.fromisoformat(str(time)).astimezone(UTC) for time in saved["times"]]
             had = [scan + config.GOES_RAW_DELAY for scan in scans]
             if "seen" in saved:
-                had = [datetime.fromisoformat(str(time)) for time in saved["seen"]]
+                got = [datetime.fromisoformat(str(time)) for time in saved["seen"]]
+                # A file of an earlier version has no publication time. For its scans, the scan
+                # start plus the delay of a raw file stands for it.
+                if "published" in saved:
+                    had = [datetime.fromisoformat(str(time)) for time in saved["published"]]
+                had = [live_available(*times)[0] for times in zip(got, had, strict=True)]
             groups = goes.mask_groups(saved["mask"][:, cells[0], cells[1]])
             for scan, when, group in zip(scans, had, groups, strict=True):
                 if when <= as_of:

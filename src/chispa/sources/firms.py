@@ -38,8 +38,6 @@ LATE_PRODUCTS = {
     "MODIS_SP": "MODIS_NRT",
 }
 FAMILIES = PRODUCTS | LIVE_PRODUCTS | {"VIIRS_SNPP_NRT": "viirs"}
-# A pass asks for 2 days, thus it also gets a late row of the day before.
-LIVE_DAYS = 2
 # The maximum number of days that the API gives in one request.
 MAX_DAYS = {"viirs": 5, "modis": 5, "abi": 2}
 # The `satellite` field -> our platform name. We ignore rows with other values:
@@ -110,7 +108,8 @@ def _download(product: str, start: date, days: int, key: str, raw_dir: Path) -> 
 def download_live(product: str, key: str) -> list[dict]:
     """Return the rows of the last days of one live product, with the fields that FIRMS gives."""
     box = ",".join(str(value) for value in config.PANTANAL_BOX)
-    text = _get(f"{API}/api/area/csv/{key}/{product}/{box}/{LIVE_DAYS}", product).text
+    days = config.LIVE_FIRMS_DAYS
+    text = _get(f"{API}/api/area/csv/{key}/{product}/{box}/{days}", product).text
     if not text.startswith(HEADER_START):
         raise RuntimeError(f"FIRMS gave no CSV for {product}: {text[:200]!r}")
     return list(csv.DictReader(io.StringIO(text)))
@@ -149,25 +148,23 @@ def parse_row(row: dict, sensor_family: str) -> Detection:
     clock = row["acq_time"].zfill(4)  # `513` is 05:13 UTC.
     observed_at = datetime(day.year, day.month, day.day, int(clock[:2]), int(clock[2:]), tzinfo=UTC)
     frp_mw = float(row["frp"])
+    # A live row has the time when we first saw it. A recorded row has only an estimate.
+    seen = row.get("first_seen_at")
     return Detection(
         source="firms",
         sensor_family=sensor_family,
         platform=PLATFORMS[row["satellite"]],
         observed_at=observed_at,
-        available_at=_available_at(row, observed_at, sensor_family),
+        available_at=datetime.fromisoformat(seen)
+        if seen
+        else observed_at + config.AVAILABLE_DELAY[sensor_family],
         lat=float(row["latitude"]),
         lon=float(row["longitude"]),
         footprint_m=_footprint_m(row, sensor_family),
         frp_mw=frp_mw if frp_mw >= 0 else None,  # FIRMS writes -999 for "no value".
         source_confidence=_confidence(row["confidence"], sensor_family),
+        available_estimated=not seen,
     )
-
-
-def _available_at(row: dict, observed_at: datetime, sensor_family: str) -> datetime:
-    # A live row has the time when we first saw it. A recorded row has only an estimate.
-    if row.get("first_seen_at"):
-        return datetime.fromisoformat(row["first_seen_at"])
-    return observed_at + config.AVAILABLE_DELAY[sensor_family]
 
 
 def _footprint_m(row: dict, sensor_family: str) -> float:

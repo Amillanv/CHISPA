@@ -11,7 +11,7 @@ import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from chispa import config, live, record, region
+from chispa import config, polls, record, region
 from chispa.store import to_text
 
 NEAR = """
@@ -100,7 +100,7 @@ def live_status(as_of: datetime) -> dict:
     in which no source failed, and the time from which the data is late. `live.py` gives each value.
     """
     _check(0.0, 0.0, as_of)
-    return {"as_of": to_text(as_of)} | live.status(config.RAW_DIR, as_of)
+    return {"as_of": to_text(as_of)} | polls.status(config.RAW_DIR, as_of)
 
 
 def evaluation_summary(year: int) -> dict:

@@ -1,8 +1,10 @@
 """Tests of the store build."""
 
+import csv
 import shutil
 from pathlib import Path
 
+from chispa import config
 from chispa.build import read_raw
 from chispa.store import add_detections, open_store
 
@@ -31,10 +33,13 @@ def test_build_reads_each_source(tmp_path):
     assert totals == {"firms": 12, "noaa": 1, "inpe": 10}
 
 
-def test_live_log_gives_the_time_of_the_first_view_as_available_at(tmp_path):
-    from datetime import UTC, datetime
+def test_live_row_has_the_time_of_the_first_view_or_an_estimate_after_a_stop(tmp_path, monkeypatch):
+    from datetime import UTC, datetime, timedelta
 
     from chispa.build import read_live
+
+    monkeypatch.setattr("chispa.config.LIVE_POLL_LATE", timedelta(minutes=15))
+    monkeypatch.setattr("chispa.config.LIVE_NORMAL_WAIT", timedelta(minutes=3))
 
     live = tmp_path / "raw" / "live"
     (live / "goes").mkdir(parents=True)
@@ -49,8 +54,146 @@ def test_live_log_gives_the_time_of_the_first_view_as_available_at(tmp_path):
         " -17.25, -58.36,NOAA-21,2026-11-21 16:56:00,"
         "2026-11-21T20:48:58+00:00,2026-11-21T20:20:02+00:00\n"
     )
-    found = {source: detections[0] for source, detections, _ in read_live(tmp_path / "raw", "")}
+    found = {source: detections[0] for source, detections, _ in read_live(tmp_path / "raw")}
     assert (found["noaa"].platform, found["inpe"].platform) == ("GOES19", "NOAA21")
+    # The poller saw the GOES scan 5 minutes after its publication: the time is a measurement.
     assert found["noaa"].available_at == datetime(2026, 11, 21, 19, 15, tzinfo=UTC)
-    assert found["inpe"].available_at == datetime(2026, 11, 21, 20, 48, 58, tzinfo=UTC)
-    assert list(read_live(tmp_path / "raw", "2026-11-22")) == []  # a log of an earlier day
+    assert found["noaa"].available_estimated is False
+    # It saw the INPE file 29 minutes after its publication: a stop. Publication plus 3 minutes.
+    assert found["inpe"].available_at == datetime(2026, 11, 21, 20, 23, 2, tzinfo=UTC)
+    assert found["inpe"].available_estimated is True
+
+
+def test_firms_row_that_a_pass_saw_after_a_stop_gets_an_estimate(tmp_path, monkeypatch):
+    from datetime import UTC, datetime, timedelta
+
+    from chispa.build import read_live
+
+    monkeypatch.setattr("chispa.config.LIVE_START", datetime(2026, 11, 21, tzinfo=UTC))
+    monkeypatch.setattr("chispa.config.LIVE_POLL_LATE", timedelta(minutes=15))
+    monkeypatch.setitem(config.AVAILABLE_DELAY, "viirs", timedelta(hours=3))
+    live = tmp_path / "raw" / "live"
+    (live / "polls").mkdir(parents=True)
+    # Passes at 10:00 and 10:05. Then a stop to 20:00, and a pass at 20:05.
+    (live / "polls" / "2026-11-21.csv").write_text(
+        "polled_at,source,item,result,new_rows\n"
+        + "".join(
+            f"2026-11-21T{time}:00+00:00,firms,VIIRS_NOAA21_NRT,ok,1\n"
+            for time in ("10:00", "10:05", "20:00", "20:05")
+        )
+    )
+    header = (SAMPLES / "firms_VIIRS_SNPP_SP.csv").read_text().splitlines()[0]
+    row = dict.fromkeys(header.split(","), "1") | {"satellite": "N21", "confidence": "n"}
+    row |= {"latitude": "-17.5", "longitude": "-57.5", "acq_date": "2026-11-21"}
+    rows = [
+        row | {"acq_time": "0500", "first_seen_at": "2026-11-21T10:05:00+00:00"},  # no stop
+        row | {"acq_time": "1300", "first_seen_at": "2026-11-21T20:00:00+00:00"},  # in the stop
+        row | {"acq_time": "0600", "first_seen_at": "2026-11-21T20:00:00+00:00"},  # before it
+        row | {"acq_time": "1830", "first_seen_at": "2026-11-21T20:00:00+00:00"},  # near its end
+        row | {"acq_time": "1900", "first_seen_at": "2026-11-21T20:05:00+00:00"},  # no stop
+    ]
+    (live / "firms" / "VIIRS_NOAA21_NRT").mkdir(parents=True)
+    with (live / "firms" / "VIIRS_NOAA21_NRT" / "2026-11-21.csv").open("w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+    (found,) = [detections for source, detections, _ in read_live(tmp_path / "raw")]
+
+    def at(hour, minute=0):
+        return datetime(2026, 11, 21, hour, minute, tzinfo=UTC)
+
+    # Observation plus 3 hours, not before the pass of 10:05 and not after the first view.
+    assert [(d.available_at, d.available_estimated) for d in found] == [
+        (at(10, 5), False),
+        (at(16), True),
+        (at(10, 5), True),
+        (at(20), True),
+        (at(20, 5), False),
+    ]
+
+
+def test_update_reads_each_log_that_changed_and_no_other_log(tmp_path, monkeypatch):
+    from chispa import build
+
+    logs = tmp_path / "raw" / "live" / "goes"
+    logs.mkdir(parents=True)
+    header = "observed_at,lat,lon,mask,frp_mw,first_seen_at,published_at\n"
+
+    def row(day, hour):
+        start = f"2026-11-{day}T{hour}"
+        return f"{start}:00:00+00:00,-17.5,-57.5,10,20.7,{start}:13:00+00:00,{start}:10:10+00:00\n"
+
+    # The log of 1 November is old: a computer that was off for some weeks did not read it.
+    (logs / "2026-11-01.csv").write_text(header + row("01", "15"))
+    (logs / "2026-11-21.csv").write_text(header + row("21", "19"))
+    read, read_log = [], build.read_log
+    monkeypatch.setattr(
+        build, "read_log", lambda *args: read.append(args[1].name) or read_log(*args)
+    )
+    store = open_store(tmp_path / "store.sqlite")
+    assert build.add_live(tmp_path / "raw", store) == (2, 0)
+    assert build.add_live(tmp_path / "raw", store) == (0, 0)
+    assert read == ["2026-11-01.csv", "2026-11-21.csv"]  # the second update read no log
+    # A pass with `--since` fills a hole in the old log. The update reads only that log again.
+    with (logs / "2026-11-01.csv").open("a") as file:
+        file.write(row("01", "16"))
+    assert build.add_live(tmp_path / "raw", store) == (1, 0)
+    assert read[2:] == ["2026-11-01.csv"]
+
+
+def test_update_marks_each_year_with_a_new_detection_to_its_next_fusion(tmp_path):
+    from chispa import build
+    from chispa.store import clear_stale, stale_years
+
+    logs = tmp_path / "raw" / "live" / "goes"
+    logs.mkdir(parents=True)
+    header = "observed_at,lat,lon,mask,frp_mw,first_seen_at,published_at\n"
+    # On 1 January the log of 31 December gets a row: the events of the two years must change.
+    for day in ("2026-12-31", "2027-01-01"):
+        row = (
+            f"{day}T15:00:00+00:00,-17.5,-57.5,10,20.7,{day}T15:13:00+00:00,{day}T15:10:10+00:00\n"
+        )
+        (logs / f"{day}.csv").write_text(header + row)
+    store = open_store(tmp_path / "store.sqlite")
+    assert build.add_live(tmp_path / "raw", store) == (2, 0)
+    assert stale_years(store) == [2026, 2027]
+    # An update that stops before the fusion leaves the marks: the next update has them.
+    assert build.add_live(tmp_path / "raw", store) == (0, 0)
+    assert stale_years(store) == [2026, 2027]
+    clear_stale(store, 2026)
+    assert stale_years(store) == [2027]
+
+
+def test_update_reads_a_firms_log_only_with_the_poll_log_of_its_pass(tmp_path, monkeypatch):
+    import os
+    from datetime import UTC, datetime
+
+    from chispa import build
+
+    monkeypatch.setattr("chispa.config.LIVE_START", datetime(2026, 11, 21, tzinfo=UTC))
+    live = tmp_path / "raw" / "live"
+    (live / "polls").mkdir(parents=True)
+    polls = live / "polls" / "2026-11-21.csv"
+    polls.write_text(
+        "polled_at,source,item,result,new_rows\n"
+        "2026-11-21T10:00:00+00:00,firms,VIIRS_NOAA21_NRT,ok,0\n"
+        "2026-11-21T10:05:00+00:00,firms,VIIRS_NOAA21_NRT,ok,1\n"
+    )
+    header = (SAMPLES / "firms_VIIRS_SNPP_SP.csv").read_text().splitlines()[0]
+    row = dict.fromkeys(header.split(","), "1") | {"satellite": "N21", "confidence": "n"}
+    row |= {"latitude": "-17.5", "longitude": "-57.5", "acq_date": "2026-11-21", "acq_time": "0500"}
+    row |= {"first_seen_at": "2026-11-21T10:05:00+00:00"}
+    log = live / "firms" / "VIIRS_NOAA21_NRT" / "2026-11-21.csv"
+    log.parent.mkdir(parents=True)
+    with log.open("w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=list(row))
+        writer.writeheader()
+        writer.writerow(row)
+    store = open_store(tmp_path / "store.sqlite")
+    # A copy that is not complete: the FIRMS log is newer than the poll log. The log waits.
+    os.utime(polls, (1000, 1000))
+    os.utime(log, (2000, 2000))
+    assert build.add_live(tmp_path / "raw", store) == (0, 0)
+    # The next copy has the poll log of the pass. The update reads the FIRMS log.
+    os.utime(polls, (3000, 3000))
+    assert build.add_live(tmp_path / "raw", store) == (1, 0)

@@ -123,8 +123,8 @@ The event is the event as it was at that time (`issued.py`), not the event of th
   `pass_count` is the number of all passes. A pass is the item of evidence of section 10.3. Its `available_at` is the first
   time that CHISPA had it. `alerts` has each level that the pass raised, in sequence, with the time when CHISPA had the
   detection that raised it: one pass can raise LOW and then MEDIUM, and its INPE row can come in a later poll than its FIRMS row.
-  `source` is the source of the first detection of the pass that CHISPA had. `estimated` is true before the live logs
-  (`config.LIVE_START`): there that time is the observation time plus an estimate. The poller measures it after that day.
+  `source` is the source of the first detection of the pass that CHISPA had. `estimated` is true if that time is an
+  estimate (`available_estimated`, section 9.2): a pass before the live logs, or a live pass that the poller first saw after a stop.
   `poller_stop_h` is the part of the time to CHISPA in which no poll read that source with no failure, if that part is more
   than `config.LIVE_POLL_LATE`. It starts at the observation or at the newest such poll before, the later of the two.
   It is the most that the poller added: the poll log does not say when the source published the pass. Else it is None.
@@ -136,6 +136,7 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 - `goes_view` reads the saved masks: one scan of each hour for the years that `chispa fetch goes_mask` got,
   and each scan that the live poller read. It uses only a scan that we had at the as-of time: a live mask has the time
   when the poller got it, and a recorded mask counts from the delay of a raw file after its scan start (`config.py`).
+  A live scan that the poller got after a stop counts from the estimate of section 9.2.
   The place is the GOES pixels of the detections of the newest passes: the place of "last seen". A newest pass has a
   detection at the newest observation time; two platforms can have one. Each detection goes to the pixel with the nearest
   centre, in kilometres. `pixels` gives how many pixels the place has in the grid of the newest scan.
@@ -196,12 +197,23 @@ Each source module returns records with these fields and no others.
 | `footprint_m` | number | The radius of position uncertainty. |
 | `frp_mw` | number or none | Fire radiative power. |
 | `source_confidence` | text | `low`, `nominal` or `high`, mapped from the source value. |
+| `available_estimated` | true or false | True if `available_at` is an estimate, not a measured time. |
 
 `available_at` is important.
 A satellite observation is not available at the moment of the observation.
 For a recorded detection it is an estimate: `observed_at` plus a fixed delay from `config.py`. Say so in the results.
-For a live detection it is a measurement: the time of the pass of the poller that first saw it.
+For a live detection it is a measurement: the time when a pass of the poller first read it.
 The live logs start on the day in `config.py`. The detections of 2026 before that day come from the archive, with the estimate.
+
+A live row that the poller first saw after a stop has no measured time: its first view has the time of our stop.
+It gets an estimate, and `available_estimated` is true. The owner agreed to this rule on 2026-11-24.
+
+- GOES and INPE give the publication time of each file. If the first view was more than `config.LIVE_POLL_LATE` after
+  the publication, `available_at` is the publication time plus `config.LIVE_NORMAL_WAIT`: an estimate of the wait to the next pass.
+- FIRMS gives no publication time. If no pass read FIRMS in the time `config.LIVE_POLL_LATE` before the first view,
+  `available_at` is `observed_at` plus the fixed delay. It is not before the newest pass before that read FIRMS,
+  and not after the first view.
+- The live logs keep the measured times of each row: the estimate changes no raw file. A delay report must not count these rows.
 
 ### 9.3 Missing values
 
@@ -1415,6 +1427,7 @@ When a choice changes, change its row in the same step.
 |---|---|---|
 | Satellites are the only sources. | We have no recorded camera data or community reports. | The results do not show what the other sensor families add. |
 | For recorded data, `available_at` is `observed_at` plus a fixed delay for each sensor family. | The archive files give no publication time. The live poller measures it (section 8.10). | The delays are estimates. Each result that uses `available_at` depends on them. |
+| A live row that the poller first saw after a stop gets an estimate of `available_at` (section 9.2). | A replay must show what a poller with no stop gives. The time of the first view is the time of our stop. | The estimate is not a measurement. For FIRMS it uses the fixed delay. |
 | The archive files stand for the live files. | The live files of 2023 and 2024 do not exist now (section 8.1). | A live detection can be different or absent. |
 | GOES has only the mask classes 10, 11, 30 and 31, all as "nominal". | FIRMS gives only these classes (section 8.2). | A live system can read the low-probability classes. We cannot measure their effect. |
 | The footprint of GOES and of each INPE sensor is one fixed radius. | The sources give no pixel size for these detections. | A real pixel changes with the view angle. The radius changes the fusion and the match. |

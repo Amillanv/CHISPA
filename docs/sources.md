@@ -87,7 +87,7 @@ Checked 2026-11-19 with live requests and one raw file.
 - The gap fill gave 150 680 detections from 4859 scans.
 - Some days in November 2024 have shorter holes. Each 2024 result must say that GOES has holes in this period.
 - A scan with no fire pixel gives no row. Thus we cannot find a hole in the FIRMS record from the row counts.
-- Some scans have two raw files. We read the newest file.
+- Some scans have two raw files. The read of the archive takes the newest file. The live poller takes the file that came first: a pass cannot wait for a second file.
 - We do not keep the raw GOES files, because the gap is approximately 11 GB. We keep one CSV file of fire pixels for each day.
 - The `source` value of these detections is `noaa`.
 
@@ -268,6 +268,15 @@ Checked 2026-11-21 at 20:13 UTC with live requests. The command `chispa poll` re
 - A raw GOES-19 file is approximately 2.1 MB. One day of scans is approximately 300 MB. The poller reads the files and does not keep them.
 - In 21 scans from 17:00 to 20:20 UTC on 2026-11-21, the Pantanal box had no fire pixel of the four classes.
 - In the scan of 20:20, the mask had the class "processed, no fire" for only 3 percent of the pixels near the box. 43 percent were cloud, and 51 percent had no background value. Thus "no detection" was not "no fire".
+
+Checked 2026-11-24 from 20:15 to 21:00 UTC with live requests.
+
+- The bucket `noaa-goes19` had 701 files with a scan start from 2026-11-20 00:00 to 2026-11-24 20:30 UTC: one file for each of 701 scan starts. 700 starts are the times at a multiple of 10 minutes, and one more scan started at 10:45 on 23 November. The file of a scan was in the bucket a median of 10.2 minutes after the scan start. The 90th percentile was 10.9 minutes, and the maximum was 12.1.
+- For 2026-11-23, FIRMS `GOES_NRT` gave 28 rows with the satellite `G19` in the box. The poller read 28 fire pixels from the raw files. The 28 had the same time, the same position to 2 decimals and the same class (25 of class 30, 3 of class 10). Thus the raw files gave the rows of the FIRMS product for that day.
+- A FIRMS request with a start date and 5 days gives the rows of past days for the three live products. A live request for 2 days does not give a row of the day before yesterday.
+- At 20:15 UTC the oldest INPE file of 10 minutes on the server was that of 2026-11-21 00:00. A file of 10 minutes was 1 kB to 77 kB.
+- The rules of the poller from 2026-11-24. A pass asks FIRMS for 5 days. It reads each GOES scan and each INPE file of the last 4 days that no pass read (`config.LIVE_LOOKBACK`). It keeps each INPE file in full in `live/inpe_files/`, with its publication time: the logs have only the rows in the Pantanal box. What a stop of the poller can lose is different for each source. GOES: a pass reads back to the newest scan that a pass read, and the bucket keeps each file. Thus a stop of each length gets its scans. The exception is a file that comes to the bucket out of sequence before a stop of more than 4 days. FIRMS: a live request has no start date, and it asks for the day of the request and the 4 days before it. Thus after a stop of 3 days or less, a request still asks for each day of the stop. We did not check that FIRMS then gives each row of those days. INPE: the oldest file was 3.8 days old, thus a stop of more than 3 days can lose files. The option `--since` of `chispa poll` changes the read-back of GOES and INPE, not the FIRMS request. A pass does not read back to before `config.LIVE_START`. The last row of a pass in the poll log says that the pass read each source: a pass with no such row stopped in the middle. The first pass with a last row started at 22:46 UTC on 2026-11-24. Each of the 10 passes from 22:06 to 22:45 UTC of that day, which wrote their rows one at a time with no last row, has its three FIRMS rows and ended. A pass reads FIRMS, then INPE, then GOES: INPE removes its files, and the bucket keeps each scan.
+- The memory of one pass, as `/usr/bin/time -l venv/bin/chispa poll` gives it (maximum resident set size): 0.1 GB for a pass that read 3 scans, with the fixed window of the box. With a search of the window in the full grid it was 3.4 GB.
 
 ### 8.11 Sentinel-2 images
 
