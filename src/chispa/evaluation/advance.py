@@ -82,6 +82,8 @@ def viirs_step(pixels: np.ndarray, at_a: float, at_b: float) -> dict | None:
     """Return the advance of the VIIRS pixels from the time of view A to the time of view B.
 
     The older pixels are those to view A. With no pixel in one of the two groups: None.
+    The advance is that of `growth.py`. The direction is from the centre of the older pixels to
+    the centre of the new pixels: the same definition as for the burned ground.
     """
     times, lat, lon = pixels
     old, new = times <= at_a, (times > at_a) & (times <= at_b)
@@ -89,7 +91,8 @@ def viirs_step(pixels: np.ndarray, at_a: float, at_b: float) -> dict | None:
         return None
     chosen = old | new
     step = growth.steps(lat[chosen], lon[chosen], new[chosen].astype(int), times[chosen])
-    return step[0]
+    centres = [(float(lat[group].mean()), float(lon[group].mean())) for group in (old, new)]
+    return {"advance_m": step[0]["advance_m"], "direction_deg": bearing(*centres)}
 
 
 def bearing(start: tuple, end: tuple) -> float:
@@ -116,8 +119,7 @@ def _measure(target: dict, pixels: np.ndarray) -> dict:
     ground = earthengine.again(request)
     if step is not None:
         row |= {"viirs_advance_m": round(step["advance_m"], 1)}
-        if step["direction_deg"] is not None:
-            row["viirs_direction_deg"] = round(step["direction_deg"], 1)
+        row["viirs_direction_deg"] = step["direction_deg"]
     if ground is not None:
         row |= {"ground_advance_m": ground["advance_m"], "old_ha": ground["old_ha"]}
         row |= {"new_ha": ground["new_ha"]}
@@ -156,11 +158,13 @@ def table(rows: list[dict]) -> list[dict]:
     """Return one row: how many events have the two advances, and how well the two agree.
 
     The ratio is the advance of VIIRS divided by the advance of the burned ground.
+    `config.py` has the limits of an agreement.
     """
     both = [row for row in rows if row["viirs_advance_m"] != "" and row["ground_advance_m"] != ""]
     pairs = [(float(row["viirs_advance_m"]), float(row["ground_advance_m"])) for row in both]
     ratios = [viirs / ground for viirs, ground in pairs if ground > 0]
-    near = sum(0.5 <= ratio <= 2 for ratio in ratios)
+    factor = config.ADVANCE_SAME_FACTOR
+    near = sum(1 / factor <= ratio <= factor for ratio in ratios)
     turns = [
         turn(float(row["viirs_direction_deg"]), float(row["ground_direction_deg"]))
         for row in both
@@ -178,11 +182,13 @@ def table(rows: list[dict]) -> list[dict]:
             if pairs
             else None,
             "ratio_median": round(statistics.median(ratios), 4) if ratios else None,
-            "in_factor_2": near,
-            "in_factor_2_share": share(near, len(ratios)),
+            "same_advance": near,
+            "same_advance_share": share(near, len(ratios)),
             "with_two_directions": len(turns),
             "turn_deg_median": round(statistics.median(turns), 1) if turns else None,
-            "in_45_degrees": sum(angle <= 45 for angle in turns),
-            "in_45_degrees_share": share(sum(angle <= 45 for angle in turns), len(turns)),
+            "same_direction": sum(angle <= config.ADVANCE_SAME_DEG for angle in turns),
+            "same_direction_share": share(
+                sum(angle <= config.ADVANCE_SAME_DEG for angle in turns), len(turns)
+            ),
         }
     ]

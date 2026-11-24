@@ -98,23 +98,25 @@ def _measure(target: dict) -> list[dict]:
     ]
 
 
-def measure(targets: list[dict], path: Path) -> None:
+def measure(targets: list[dict], path: Path, one=None, fields: tuple = ()) -> None:
     """Measure the curve of each target that is not in the file, and append it to the file.
 
     Each box is saved immediately. Thus a run that stops can continue.
     A file with different columns, or with curves of different values, stops the run.
+    `one` and `fields` are for a different measure of a box with the same file rules.
     """
+    one, fields = one or _measure, list(fields) or FIELDS
     old = burn.read(path) if path.exists() else []
-    if old and (list(old[0]) != FIELDS or {row["settings"] for row in old} != {signature()}):
+    if old and (list(old[0]) != fields or {row["settings"] for row in old} != {signature()}):
         raise RuntimeError(f"{path} has curves of different settings. Delete it, then run again.")
     done = {row["id"] for row in old}
     open_targets = [target for target in targets if str(target["id"]) not in done]
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", newline="") as file, ThreadPoolExecutor(max_workers=8) as workers:
-        writer = csv.DictWriter(file, fieldnames=FIELDS)
+        writer = csv.DictWriter(file, fieldnames=fields)
         if not done:
             writer.writeheader()
-        for rows in workers.map(_measure, open_targets):
+        for rows in workers.map(one, open_targets):
             writer.writerows(rows)
             file.flush()
 
@@ -137,9 +139,12 @@ def table(targets: list[dict], rows: list[dict]) -> list[dict]:
 
     `answer_share` says how frequently Sentinel-2 can give an answer that many days after
     the first detection. `hectares_median` is for the boxes that the curve calls burned.
+    `same_as_last_day` compares an answer with the answer of the same box at the last day,
+    for the boxes with the two answers (`with_last_day`).
     """
     group_of = {str(target["id"]): target["group"] for target in targets}
     rows = [row for row in rows if row["id"] in group_of]
+    last = {r["id"]: answer(r) for r in rows if int(r["day"]) == max(config.CURVE_DAYS)}
     table_rows = []
     for group in (name for name in LABELS if name in group_of.values()):
         for day in config.CURVE_DAYS:
@@ -149,6 +154,8 @@ def table(targets: list[dict], rows: list[dict]) -> list[dict]:
                 float(row["burned_ha"]) for row, found in zip(own, answers, strict=True) if found
             ]
             clear = sum(found is not None for found in answers)
+            pairs = [(found, last.get(row["id"])) for row, found in zip(own, answers, strict=True)]
+            pairs = [pair for pair in pairs if None not in pair]
             table_rows.append(
                 {
                     "group": LABELS[group],
@@ -159,6 +166,8 @@ def table(targets: list[dict], rows: list[dict]) -> list[dict]:
                     "burned": len(burned),
                     "burned_share": share(len(burned), clear),
                     "hectares_median": round(statistics.median(burned), 2) if burned else None,
+                    "with_last_day": len(pairs),
+                    "same_as_last_day": sum(early == late for early, late in pairs),
                 }
             )
     return table_rows

@@ -14,17 +14,14 @@ import ee
 import requests
 
 from chispa import config
+from chispa.earthengine import Box, region_of
 
-ASSET = "COPERNICUS/S2_SR_HARMONIZED"
+ASSET = config.SENTINEL2_ASSET
+CLOUD = config.SENTINEL2_CLOUD
+SCALE_M = config.SENTINEL2_SCALE_M
+
 # Short-wave infrared, near infrared and red. Healthy plants are green. A new burn is dark red.
 PICTURE = {"bands": ["B12", "B8", "B4"], "min": 0, "max": 4000}
-
-Box = tuple[float, float, float, float]  # south, west, north, east
-
-
-def region_of(box: Box) -> ee.Geometry:
-    south, west, north, east = box
-    return ee.Geometry.Rectangle([west, south, east, north])  # Earth Engine uses lon, lat.
 
 
 def find_image(box: Box, start: datetime, end: datetime, newest: bool) -> tuple[str, float] | None:
@@ -75,17 +72,6 @@ def save_picture(name: str, box: Box, outline: Box, path: Path) -> None:
     answer.raise_for_status()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(answer.content)
-
-
-# The scene classes of a pixel that we do not use: no data, defect, cloud shadow, water, cloud
-# and cirrus. Water that dries decreases the burn ratio as a burn does.
-NOT_CLEAR = (0, 1, 3, 6, 8, 9, 10)
-# The scene classes that hide the ground from a person: no data, defect, cloud and cirrus.
-# Cloud shadow is not in this list: the scene classes can give a new burn that class.
-CLOUD = (0, 1, 8, 9, 10)
-SCALE_M = 20  # The pixel size of the bands B8A and B12.
-
-Period = tuple[datetime, datetime]
 
 
 def cloud_free_views(box: Box, start: datetime, end: datetime) -> list[tuple[str, datetime, float]]:

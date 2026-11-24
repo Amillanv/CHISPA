@@ -25,13 +25,15 @@ from chispa.evaluation.moments import load_merges
 from chispa.evaluation.run import biome_detections, prepare
 
 
-def curve_table(rows: dict[str, list], models: dict[str, dict], burned: dict) -> list[dict]:
+def curve_table(rows: dict[str, list], models: dict[str, dict], outcome_of: tuple) -> list[dict]:
     """Return the model against the level, with the burn curve as the outcome of an alert.
 
-    `burned` gives, for an event of the end of the year, the answer of the curve at its last day.
+    `outcome_of` has the answer of the curve at its last day for each event of the end of the
+    year, and True if the year has a map of burn scars.
     An alert has the answer of the event that holds it. With no answer, it is not in the table.
-    The match separation is for the same alerts: a year with no map has no value for it.
+    The match values are for the same alerts. A year with no map has no value for them.
     """
+    burned, has_map = outcome_of
     table = []
     for moment in MOMENTS:
         model = models[moment]
@@ -53,8 +55,8 @@ def curve_table(rows: dict[str, list], models: dict[str, dict], burned: dict) ->
                     "burn_separation": separation(value, outcome),
                     "top_tenth": len(top),
                     "top_tenth_burned": int(outcome[top].sum()),
-                    "alerts_matched": int(matched.sum()),
-                    "match_separation": separation(value, matched),
+                    "alerts_matched": int(matched.sum()) if has_map else None,
+                    "match_separation": separation(value, matched) if has_map else None,
                 }
             )
     return table
@@ -77,4 +79,5 @@ def curve_tables(year: int, store_path: Path, raw_dir: Path, burned: dict) -> di
     merges = load_merges(sqlite3.connect(store_path), year)
     rows = moment_rows(detections, merges, links, layers)
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
-    return {"confidence_curve": curve_table(rows, confidence.load(path), burned)}
+    outcome_of = (burned, year in config.YEAR_ROLES)
+    return {"confidence_curve": curve_table(rows, confidence.load(path), outcome_of)}

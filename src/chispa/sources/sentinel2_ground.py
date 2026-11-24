@@ -11,7 +11,11 @@ from datetime import datetime, timedelta
 import ee
 
 from chispa import config
-from chispa.sources.sentinel2 import ASSET, NOT_CLEAR, SCALE_M, Box, Period, region_of
+from chispa.earthengine import Box, Period, region_of
+
+ASSET = config.SENTINEL2_ASSET
+NOT_CLEAR = config.SENTINEL2_NOT_CLEAR
+SCALE_M = config.SENTINEL2_SCALE_M
 
 
 def _clear(image: ee.Image) -> ee.Image:
@@ -199,7 +203,9 @@ def new_ground(box: Box, before: Period, times: tuple, rule: tuple) -> dict | No
     old = old.unmask(0).And(old_clear)
     new = now.unmask(0).And(now_clear).And(old_clear).And(old.Not())
     # The distance is in pixels, as a square. The largest distance is 1024 pixels.
-    far_m = old.fastDistanceTransform(1024).sqrt().multiply(SCALE_M).rename("far")
+    # Only a burned pixel in the box is the start of a distance, as for the areas and the centres.
+    inside = old.clip(region).unmask(0)
+    far_m = inside.fastDistanceTransform(1024).sqrt().multiply(SCALE_M).rename("far")
     hectares, place = ee.Image.pixelArea().divide(10_000), ee.Image.pixelLonLat()
     found = ee.Dictionary(
         {
@@ -225,3 +231,40 @@ def new_ground(box: Box, before: Period, times: tuple, rule: tuple) -> dict | No
         "new_place": (found["new"]["latitude"], found["new"]["longitude"]),
         "advance_m": round(found["far"]["far"], 1),
     }
+
+
+def joined(box: Box, before: Period, period: Period, rule: tuple) -> tuple | None:
+    """Return the clear share of a box and its burned hectares, with each image of a period joined.
+
+    This was the first definition of the burn curve: a pixel is burned if the rule calls it
+    burned in a minimum of one image. It failed its hypothesis, because each image adds its
+    errors (`docs/method.md` section 11.17). It stays only to make the table of that result.
+    Only an image that covers all of the box counts. With no view before the event: None.
+    """
+    region = region_of(box)
+    images = ee.ImageCollection(ASSET).filterBounds(region)
+    view = _view(images, before, newest=True)
+    if view is None:
+        return None
+    ratio = view.normalizedDifference(["B8A", "B12"])
+    sums = {"geometry": region, "scale": SCALE_M, "maxPixels": 1e10}
+
+    def flag(image: ee.Image) -> ee.Image:
+        seen = _clear(image)
+        raw = ratio.subtract(seen.normalizedDifference(["B8A", "B12"])).rename("change")
+        median = raw.reduceRegion(reducer=ee.Reducer.median(), **sums).get("change")
+        change = raw.subtract(ee.Image.constant(ee.Number(ee.Algorithms.If(median, median, 0))))
+        burned = change.gte(rule[0]).And(seen.select("B8A").divide(10_000).lte(rule[1]))
+        return burned.unmask(0).rename("burned").addBands(change.mask().rename("clear")).toByte()
+
+    flags = images.filterDate(period[0].isoformat(), period[1].isoformat())
+    flags = flags.filter(ee.Filter.contains(".geo", region)).map(flag)
+    nothing = ee.ImageCollection([ee.Image.constant([0, 0]).rename(["burned", "clear"]).toByte()])
+    ever = nothing.merge(flags).max()
+    patch_px = round(config.BURN_PATCH_HA * 10_000 / SCALE_M**2)
+    in_patch = ever.select("burned").selfMask().connectedPixelCount(patch_px + 1, True)
+    hectares = ee.Image.pixelArea().divide(10_000)
+    bands = [hectares.rename("box"), hectares.updateMask(ever.select("clear")).rename("clear")]
+    bands.append(hectares.updateMask(in_patch.gte(patch_px)).rename("burned"))
+    found = ee.Image.cat(bands).reduceRegion(reducer=ee.Reducer.sum(), **sums).getInfo()
+    return round(found["clear"] / found["box"], 4), round(found["burned"], 2)

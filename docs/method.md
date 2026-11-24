@@ -1069,15 +1069,19 @@ for the confidence, a target for the growth risk, and a reference for a year wit
 5. The clear share at a day is the share of the box with a view to that day. The curve has an answer at a day
    if that share is the minimum of the burn check or more.
 
-The table `burn_curve` gives, for each group of the burn check and each day, the boxes with an answer and the boxes
-that the curve calls burned. The table `burn_curve_check` compares the last day of the curve with two slower answers
+The table `burn_curve` gives, for each group of the burn check and each day, the boxes with an answer, the boxes
+that the curve calls burned, and how many boxes have the same answer at that day and at the last day. The table `burn_curve_check` compares the last day of the curve with two slower answers
 for the same boxes: the selected rule at its first clear view (table `burn_candidates`), and the Monitor map of the months.
 
 The first definition, and why it stopped (2026-11-24). It joined the burned pixels of each image to a day: a pixel was
 burned if a minimum of one image called it burned. We wrote its hypotheses before its run on 2023 to 2025.
 One was: for the no-fire boxes, the burned share at day 30 is not more than 0.05 above that of the selected rule.
 It was false in each of the three years: each image adds its errors, thus more images give more boxes with a false burn.
-The tables of that run are not in the repository, thus we give no number. The definition above replaced it.
+The table `burn_curve_joined` gives that result, from a measure that stays in the code only for this table:
+at day 30 the first definition called 22 of 98 no-fire boxes burned in 2023, 14 of 99 in 2024 and 16 of 100 in 2025.
+The definition above calls 13 of 98, 4 of 98 and 5 of 100. The definition above replaced it.
+The first run of the first definition was on 2026-11-24, on the boxes of the three years. Thus the result of the
+definition above is a second analysis of the same boxes: it is not an independent test.
 
 The hypotheses of the definition above, written on 2026-11-24 before its first run, for each year from 2023 to 2025.
 The curve has no setting of its own: the rule is frozen, and the days are round numbers.
@@ -1098,9 +1102,15 @@ in each year.
   events in 5 days, and for approximately 7 of 10 in 10 days.
 - At day 30 the curve and the selected rule give the same answer for each box with the two answers.
 - The no-fire boxes. The burned share is 0.0 to 0.0811 at day 5 and 0.0253 to 0.0779 at day 10. At day 30 it is that of
-  the selected rule: 0.1327 in 2023, 0.0408 in 2024 and 0.05 in 2025. Thus an early answer does not have more false burns.
+  the selected rule: 0.1327 in 2023, 0.0408 in 2024 and 0.05 in 2025.
 - The matched HIGH events. The burned share at day 10 is 0.8986, 0.8421 and 0.8636 in the three years. That of the
   selected rule is 0.9192, 0.8866 and 0.9. The largest difference is 0.0445, in 2024.
+- A correction after a review (2026-11-24). Hypothesis 4 ends with "an early answer is as good as a late answer".
+  The burned share of a different set of boxes does not show that. The table now compares the same boxes: for the
+  boxes with an answer at day 10 and at day 30, the two answers are the same for 299 of 305, 222 of 225 and 133 of 135
+  unmatched events in the three years, for 68 of 69, 56 of 57 and 65 of 66 matched events, and for 77 of 77, 79 of 79
+  and 78 of 79 no-fire boxes. Thus an early answer rarely changes. This does not say that the early answer is correct:
+  a check of the answer at day 10 against a person is not built. At day 10 the curve has no answer for 21 to 43 of 100 boxes.
 - The burned hectares increase with the day: the median of the matched events with a burn is 24 to 45 hectares at day 5,
   and 60 to 102 at day 30. More pixels get their view, and the larger events get their answer later.
 - The unmatched HIGH events with a burn at day 30: 144 of 419 in 2023, 85 of 295 in 2024 and 60 of 186 in 2025.
@@ -1149,7 +1159,8 @@ The result (tables `burn_curve_events` and `burn_curve_map` of 2023 to 2026, 202
 - Limits: the boxes are those of the burn check, not each event. We saw the results of the first definition before
   this one: it is a second analysis of the same boxes. The curve does not show the growth in an event: its images start
   after the last detection. The check against the Monitor map compares two answers that are not independent of the detections.
-  A check against the annual map for each pixel is not built. The advance of VIIRS against the new burned ground is not built.
+  Section 11.19 has the check against the annual map for each pixel. Section 11.20 has the advance of VIIRS against
+  the new burned ground.
 
 ### 11.18 The confidence against the burn curve, and the test of 2026
 
@@ -1244,10 +1255,14 @@ The command `chispa advance --year` makes the table `advance_check`.
 3. In each view, a pixel is burned by the selected rule, against the view before the event. The new burned ground is
    each pixel that is burned in view B and not in view A, with a clear view in the two.
 4. The advance of Sentinel-2 is a high percentile of the distance from each new burned pixel to the nearest pixel that
-   was burned in view A. Its direction is from the centre of the ground of view A to the centre of the new ground.
-5. The advance of VIIRS uses the same percentile and the same floor as section 11.13, with two groups of detections:
+   was burned in view A. Only the pixels in the box count.
+5. The advance of VIIRS uses the same percentile as section 11.13, with two groups of detections:
    those to the time of view A, and those from view A to view B.
-6. An event counts if the two satellites have a value: burned ground in view A, new burned ground, and VIIRS pixels in the two groups.
+6. The direction has one definition for the two satellites: from the centre of the older group to the centre of the
+   new group. It is not the direction of section 11.13, which uses the line from each new pixel to its nearest older pixel.
+7. Two advances agree if the larger is not more than a factor of the smaller. Two directions agree if the angle
+   between them is not more than a limit. `config.py` has the two values.
+8. An event counts if the two satellites have a value: burned ground in view A, new burned ground, and VIIRS pixels in the two groups.
 
 The hypotheses, written on 2026-11-24 before the first run, for each year from 2023 to 2025. A study outside the
 repository on 19 large fires of 2023 gave them (`PLAN.md`):
@@ -1262,10 +1277,14 @@ The result (table `advance_check` of 2023, 2024 and 2025, 2026-11-24).
 - The events with the two advances: 34 of 65 long events in 2023, 80 of 134 in 2024 and 5 of 7 in 2025.
   The other events had no two clear views, no burned ground in a view, or no VIIRS pixel in one of the two groups.
 - Hypothesis 1 is true in each year. The two advances agree to a factor of 2 for 23 of 34 events, for 57 of 80 and for
-  4 of 5. The median ratio of the advance of VIIRS to that of the burned ground is 0.9526, 1.0836 and 1.0993.
-- Hypothesis 2 is true in 2023 and in 2024: the two directions agree to 45 degrees for 23 of 34 events and for 45 of 74.
-  In 2025 it is 2 of 5: too few events for an answer.
-- The median advance of VIIRS is 2806 m, 3623 m and 5224 m. That of the burned ground is 3568 m, 3028 m and 4400 m.
+  4 of 5. The median ratio of the advance of VIIRS to that of the burned ground is 0.9526, 1.0782 and 1.0993.
+- Hypothesis 2, first run: true in 2023 and in 2024, and false in 2025 (2 of 5 events). That run compared two different
+  definitions of a direction: the centres for the burned ground, and the lines of section 11.13 for VIIRS.
+- A review asked for one definition (rule 6 above), and for the distance from the burned pixels of the box only.
+  The tables have this second run. The two directions agree to 45 degrees for 24 of 34 events in 2023, for 56 of 80
+  in 2024 and for 3 of 5 in 2025. Thus hypothesis 2 is true in each year in the second run. 2025 changed from false
+  to true by one event of five: it has too few events to support the hypothesis or to reject it.
+- The median advance of VIIRS is 2806 m, 3623 m and 5224 m. That of the burned ground is 3721 m, 3047 m and 4400 m.
 - Thus, for a fire of some days, the advance and the direction of the VIIRS pixels agree with the new burned ground for
   approximately 2 of 3 events. The measure of section 11.13 has a reference now, for these long events only.
 
