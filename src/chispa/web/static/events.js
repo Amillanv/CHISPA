@@ -68,8 +68,11 @@ export function dossier(root, { record, error, trackRecord, settings, open, zone
   if (!record) { root.innerHTML = `${top(null, on)}<div class="loading">Reading the event record.</div>`; wireTop(root, on); return; }
   const r = record;
   const tz = zone === "local" ? settings.time_zone : null;
+  // A redraw of the same event (a refresh, a tile, the time zone, more passes) keeps the scroll position.
+  const old = root.querySelector(".dz-scroll");
+  const page = old?.dataset.event === String(r.event_id) ? old.scrollTop : null;
   root.innerHTML = `${top(r, on)}
-    <div class="dz-scroll">
+    <div class="dz-scroll" data-event="${r.event_id}">
       <div class="dz-head" data-level="${r.level}">
         <span class="dz-level"><i></i>${r.level}</span>
         <div class="dz-where">${coord(r.lat, r.lon)}</div>
@@ -86,6 +89,7 @@ export function dossier(root, { record, error, trackRecord, settings, open, zone
       ${detections(r)}
     </div>`;
   wireTop(root, on);
+  if (page !== null) root.querySelector(".dz-scroll").scrollTop = page;
   root.querySelectorAll("[data-tile]").forEach((b) => b.addEventListener("click", () => on.tile(b.dataset.tile)));
   root.querySelectorAll("[data-zone]").forEach((b) => b.addEventListener("click", () => on.zone(b.dataset.zone)));
   root.querySelectorAll("[data-passes]").forEach((b) => b.addEventListener("click", on.passes));
