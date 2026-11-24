@@ -320,7 +320,7 @@ details.raw[open] summary::after { content: "−"; }
 .square:hover { color: var(--fg-1); border-color: var(--hair-2); }
 .square[aria-pressed="true"] { color: var(--blue-text); border-color: rgba(8, 124, 255, 0.45); }
 /* The map controls of MapLibre sit in the free area between the panels, not under them. */
-.maplibregl-ctrl-bottom-right { right: calc(var(--right) + 2 * var(--gutter)); bottom: calc(var(--history) + 2 * var(--gutter) + 36px); }
+.maplibregl-ctrl-bottom-right { display: none; right: calc(var(--right) + 2 * var(--gutter)); bottom: calc(var(--history) + 2 * var(--gutter) + 36px); }
 .maplibregl-ctrl-bottom-left { left: calc(var(--left) + 2 * var(--gutter)); bottom: calc(var(--history) + 2 * var(--gutter) + 18px); }
 .maplibregl-ctrl-attrib { background: rgba(0, 0, 0, 0.55) !important; font-size: 10px; }
 .maplibregl-ctrl-attrib a { color: var(--fg-3) !important; }
