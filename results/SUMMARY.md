@@ -1265,7 +1265,7 @@ Configuration `f453adfd141a`, run on 2026-11-24.
 
 ### 2026 confidence_curve
 
-Configuration `f453adfd141a`, run on 2026-11-24.
+Configuration `6bd1e62cdb0a`, run on 2026-11-24.
 
 | moment_h | measure | alerts | alerts_burned | burn_separation | top_tenth | top_tenth_burned | alerts_matched | match_separation |
 |---|---|---|---|---|---|---|---|---|
