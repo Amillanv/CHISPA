@@ -452,3 +452,13 @@ collection of the asset that we read.
 - Sentinel-1: Belenguer-Plomer et al. 2019 (DOI 10.1016/j.rse.2019.111345) give grassland as the worst class for
   backscatter change (Dice 0.28), with errors from soil moisture and floods.
 - ALARMES (LASA-UFRJ): burned area from VIIRS each day, at 500 m. The data comes by request.
+
+### 8.19 Textbelt, for a text to the owner
+
+Checked 2026-11-24 on the page of the service, and with one text. `chispa watch` uses it (`watch.py`).
+
+- One HTTPS POST to `https://textbelt.com/text` with the fields `phone`, `message` and `key` sends a text.
+- The answer is JSON. It has `success`, and then `quotaRemaining` or `error`.
+- The key `textbelt` gives 1 free text each day. A paid key has a quota of texts. The page does not give the prices. `UNVERIFIED`: the price of one text.
+- One text of 141 characters to a number in the United States got the answer `success`, with a quota of 1698 after it. The answer says that the service took the text. It does not say that the telephone got it.
+- The key and the telephone number are only in `.env`. The log of the texts (`live/texts/`) has the text and the result, and no number.

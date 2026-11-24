@@ -2,6 +2,7 @@
 
 The poller writes one row for each product, scan and file of a pass. This module reads those
 rows: for the lag of the live data, and for the time of the read before the pass of a row.
+It also has the reader and the writer of a log: each live log is a CSV file that only grows.
 """
 
 import csv
@@ -25,6 +26,19 @@ def read_rows(path: Path) -> list[dict]:
         return list(csv.DictReader(file))
 
 
+def append_rows(path: Path, rows: list[dict]) -> None:
+    """Add rows to the end of a log. A new log gets a header line."""
+    if not rows:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    is_new = not path.exists()
+    with path.open("a", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=list(rows[0]))
+        if is_new:
+            writer.writeheader()
+        writer.writerows(rows)
+
+
 def status(raw_dir: Path, as_of: datetime) -> dict:
     """Return how old the live data was at the as-of time, from the poll log.
 
@@ -40,7 +54,7 @@ def status(raw_dir: Path, as_of: datetime) -> dict:
     for polled_at, rows in _passes(raw_dir, as_of):
         if found["newest_pass_at"] is None:
             found |= {"newest_pass_at": polled_at, "sources": _results(rows)}
-        if _complete(polled_at, rows) and all(row["result"] == "ok" for row in rows):
+        if complete(polled_at, rows) and all(row["result"] == "ok" for row in rows):
             late = datetime.fromisoformat(polled_at) + config.LIVE_POLL_LATE
             return found | {"complete_pass_at": polled_at, "late_at": late.isoformat()}
     return found
@@ -64,13 +78,13 @@ def answered_before(
     next(passes, None)  # The pass that saw the row.
     for polled_at, rows in passes:
         mine = [row for row in rows if row["source"] == name and product in (None, row["item"])]
-        read = bool(mine) if product else _complete(polled_at, rows)
+        read = bool(mine) if product else complete(polled_at, rows)
         if read and all(row["result"] == "ok" for row in mine):
             return datetime.fromisoformat(polled_at)
     return config.LIVE_START
 
 
-def _complete(polled_at: str, rows: list[dict]) -> bool:
+def complete(polled_at: str, rows: list[dict]) -> bool:
     """Return True if a pass read each source: it has the last row of a pass.
 
     A pass from before `config.LIVE_PASS_END_FROM` has no such row, and it is complete.
