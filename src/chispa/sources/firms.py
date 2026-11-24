@@ -38,9 +38,6 @@ LATE_PRODUCTS = {
     "MODIS_SP": "MODIS_NRT",
 }
 FAMILIES = PRODUCTS | LIVE_PRODUCTS | {"VIIRS_SNPP_NRT": "viirs"}
-# A pass asks for the maximum of 5 days. Thus a stop of the poller of less than 4 days loses
-# no row. A request for 2 days lost a row of 2026-11-21 in a stop of 28 hours.
-LIVE_DAYS = 5
 # The maximum number of days that the API gives in one request.
 MAX_DAYS = {"viirs": 5, "modis": 5, "abi": 2}
 # The `satellite` field -> our platform name. We ignore rows with other values:
@@ -111,7 +108,8 @@ def _download(product: str, start: date, days: int, key: str, raw_dir: Path) -> 
 def download_live(product: str, key: str) -> list[dict]:
     """Return the rows of the last days of one live product, with the fields that FIRMS gives."""
     box = ",".join(str(value) for value in config.PANTANAL_BOX)
-    text = _get(f"{API}/api/area/csv/{key}/{product}/{box}/{LIVE_DAYS}", product).text
+    days = config.LIVE_FIRMS_DAYS
+    text = _get(f"{API}/api/area/csv/{key}/{product}/{box}/{days}", product).text
     if not text.startswith(HEADER_START):
         raise RuntimeError(f"FIRMS gave no CSV for {product}: {text[:200]!r}")
     return list(csv.DictReader(io.StringIO(text)))

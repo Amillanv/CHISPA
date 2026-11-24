@@ -15,7 +15,7 @@ from chispa import config, fires, live
 from chispa.grid import pantanal_grid
 from chispa.models import Detection
 from chispa.sources import border, burnday, firms, goes, inpe, scars
-from chispa.store import add_detections, add_fires, open_store
+from chispa.store import add_detections, add_fires, open_store, read_log_sizes, save_log_size
 
 
 def build_store(raw_dir: Path, store_path: Path) -> dict[str, list[int]]:
@@ -72,26 +72,34 @@ def read_raw(raw_dir: Path):
         if path.suffix in (".csv", ".zip"):
             detections, rejected, _ = inpe.parse_file(path)
             yield "inpe", detections, rejected
-    yield from read_live(raw_dir, first_day="")
+    yield from read_live(raw_dir)
 
 
-def read_live(raw_dir: Path, first_day: str):
-    """Give (source, detections, rejected rows) for each log of the live poller.
+def read_live(raw_dir: Path):
+    """Give (source, detections, rejected rows) for each log of the live poller."""
+    for source, path in live_logs(raw_dir):
+        yield source, *read_log(source, path, raw_dir)
 
-    `first_day` is a date as text. A log of an earlier day is not read.
-    """
+
+def live_logs(raw_dir: Path) -> list[tuple[str, Path]]:
+    """Return (source, path) for each log of the live poller, in a fixed sequence."""
     logs = raw_dir / "live"
-    for path in sorted((logs / "firms").glob("*/*.csv")):
-        if path.stem >= first_day:
-            detections, rejected = firms.parse_file(path, path.parent.name)
-            yield "firms", after_stop(detections, raw_dir), rejected
-    for path in sorted((logs / "goes").glob("*.csv")):
-        if path.stem >= first_day:
-            yield "noaa", goes.parse_file(path, "GOES19"), 0
-    for path in sorted((logs / "inpe").glob("*.csv")):
-        if path.stem >= first_day:
-            detections, rejected, _ = inpe.parse_file(path)
-            yield "inpe", detections, rejected
+    return (
+        [("firms", path) for path in sorted((logs / "firms").glob("*/*.csv"))]
+        + [("noaa", path) for path in sorted((logs / "goes").glob("*.csv"))]
+        + [("inpe", path) for path in sorted((logs / "inpe").glob("*.csv"))]
+    )
+
+
+def read_log(source: str, path: Path, raw_dir: Path) -> tuple[list[Detection], int]:
+    """Return the detections of one live log and the number of rejected rows."""
+    if source == "firms":
+        detections, rejected = firms.parse_file(path, path.parent.name)
+        return after_stop(detections, raw_dir), rejected
+    if source == "noaa":
+        return goes.parse_file(path, "GOES19"), 0
+    detections, rejected, _ = inpe.parse_file(path)
+    return detections, rejected
 
 
 def after_stop(detections: list[Detection], raw_dir: Path) -> list[Detection]:
@@ -115,11 +123,18 @@ def after_stop(detections: list[Detection], raw_dir: Path) -> list[Detection]:
     return found
 
 
-def add_live(raw_dir: Path, store: sqlite3.Connection, now: datetime) -> int:
-    """Add the detections of the newest logs to the store. Return the number of new detections.
+def add_live(raw_dir: Path, store: sqlite3.Connection) -> int:
+    """Add the detections of each live log that changed to the store. Return the number of new
+    detections.
 
-    The store ignores a detection that it holds. Thus a pass can read the same log again,
-    and `build` gives the same detections from the same logs.
+    The store has the size of each log that it read. A log only grows: a log with a different
+    size has new rows. Thus a computer that was off for some days reads each log that it did not
+    read, and not only the logs of the newest days. The store ignores a detection that it holds.
     """
-    first_day = (now - config.LIVE_COMPLETE_AFTER).date().isoformat()
-    return sum(add_detections(store, found) for _, found, _ in read_live(raw_dir, first_day))
+    read, new = read_log_sizes(store), 0
+    for source, path in live_logs(raw_dir):
+        name, size = path.relative_to(raw_dir).as_posix(), path.stat().st_size
+        if read.get(name) != size:
+            new += add_detections(store, read_log(source, path, raw_dir)[0])
+            save_log_size(store, name, size)
+    return new

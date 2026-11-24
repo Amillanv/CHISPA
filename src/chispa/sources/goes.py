@@ -162,14 +162,19 @@ def parse_listing(listing: str) -> list[tuple[str, datetime, datetime]]:
 
 
 def list_live(since: datetime, now: datetime) -> list[tuple[str, datetime, datetime]]:
-    """Return the GOES-19 scans with a start from `since` to `now`, in time sequence."""
+    """Return the GOES-19 scans with a start from `since` to `now`, in time sequence.
+
+    If a scan has two files, the file that came first stays: a pass cannot wait for a second
+    file. Thus a pass after a stop reads the file that a pass with no stop reads.
+    """
     scans = {}
     day = since.date()
     while day <= now.date():  # One listing for each day: a day has approximately 144 files.
         prefix = f"ABI-L2-FDCF/{day.year}/{day.timetuple().tm_yday:03d}/"
         for scan in parse_listing(_get(f"{LIVE_BUCKET}/?list-type=2&prefix={prefix}").text):
-            if scan[1] >= since:
-                scans.setdefault(scan[1], scan)  # If a scan has two files, the first file stays.
+            first = scans.get(scan[1], scan)
+            if since <= scan[1] <= now and scan[2] <= first[2]:
+                scans[scan[1]] = scan
         day += timedelta(days=1)
     return [scans[start] for start in sorted(scans)]
 

@@ -157,10 +157,12 @@ def test_live_scan_that_the_poller_got_after_a_stop_counts_from_its_publication(
         folder / str(T0.year) / f"{T0.date()}.npz",
         times=np.array([scan.isoformat()]),
         seen=np.array([(scan + timedelta(days=2)).isoformat()]),
+        published=np.array([(scan + timedelta(minutes=11)).isoformat()]),
         mask=np.array([[[100]]], dtype=np.uint8),
     )
     place = np.array([-17.5]), np.array([-57.5])
-    # A poller with no stop has the scan 13 minutes after its start: 10 to the file, 3 to the pass.
-    assert view.goes_view(*place, T0, scan + timedelta(minutes=12), tmp_path) is None
-    found = view.goes_view(*place, T0, scan + timedelta(minutes=13), tmp_path)
+    # A poller with no stop has the scan 3 minutes after the publication of its file: the file
+    # came 11 minutes after the scan start, not the 10 minutes of the estimate.
+    assert view.goes_view(*place, T0, scan + timedelta(minutes=13), tmp_path) is None
+    found = view.goes_view(*place, T0, scan + timedelta(minutes=14), tmp_path)
     assert (found["scan_at"], found["group"]) == (scan.isoformat(), "no_fire")

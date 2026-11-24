@@ -75,6 +75,10 @@ CREATE TABLE IF NOT EXISTS merges (
     absorbed_id INTEGER NOT NULL,
     into_id INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS live_logs (
+    path TEXT PRIMARY KEY,
+    size INTEGER NOT NULL
+);
 """
 
 COLUMNS = ", ".join(field.name for field in fields(Detection))
@@ -110,6 +114,17 @@ def add_detections(connection: sqlite3.Connection, detections: list[Detection]) 
     )
     connection.commit()
     return connection.total_changes - before
+
+
+def read_log_sizes(connection: sqlite3.Connection) -> dict[str, int]:
+    """Return the size of each live log at the time when the store read it."""
+    return dict(connection.execute("SELECT path, size FROM live_logs"))
+
+
+def save_log_size(connection: sqlite3.Connection, path: str, size: int) -> None:
+    """Record that the store read a live log of this size."""
+    connection.execute("INSERT OR REPLACE INTO live_logs VALUES (?, ?)", (path, size))
+    connection.commit()
 
 
 def read_detections(connection: sqlite3.Connection, start: datetime, end: datetime):

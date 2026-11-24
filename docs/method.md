@@ -202,14 +202,14 @@ Each source module returns records with these fields and no others.
 `available_at` is important.
 A satellite observation is not available at the moment of the observation.
 For a recorded detection it is an estimate: `observed_at` plus a fixed delay from `config.py`. Say so in the results.
-For a live detection it is a measurement: the time of the pass of the poller that first saw it.
+For a live detection it is a measurement: the time when a pass of the poller first read it.
 The live logs start on the day in `config.py`. The detections of 2026 before that day come from the archive, with the estimate.
 
 A live row that the poller first saw after a stop has no measured time: its first view has the time of our stop.
 It gets an estimate, and `available_estimated` is true. The owner agreed to this rule on 2026-11-24.
 
 - GOES and INPE give the publication time of each file. If the first view was more than `config.LIVE_POLL_LATE` after
-  the publication, `available_at` is the publication time plus `config.LIVE_NORMAL_WAIT`: the wait to the next pass.
+  the publication, `available_at` is the publication time plus `config.LIVE_NORMAL_WAIT`: an estimate of the wait to the next pass.
 - FIRMS gives no publication time. If no pass read FIRMS in the time `config.LIVE_POLL_LATE` before the first view,
   `available_at` is `observed_at` plus the fixed delay. It is not before the newest pass before that read FIRMS,
   and not after the first view.

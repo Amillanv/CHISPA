@@ -2,6 +2,7 @@
 
 import csv
 import gzip
+import types
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -79,6 +80,43 @@ def test_listing_gives_the_scans_from_a_time(monkeypatch):
     ]
     late = datetime(2026, 11, 21, 19, 5, tzinfo=UTC)
     assert [scan[1].minute for scan in goes.list_live(late, NOW)] == [10]
+
+
+def test_listing_keeps_the_first_file_of_a_scan_and_no_scan_after_now(monkeypatch):
+    def entry(start, created, modified):
+        key = f"ABI-L2-FDCF/2026/325/19/OR_ABI-L2-FDCF-M6_G19_s2026325{start}215_c{created}.nc"
+        modified = f"<LastModified>2026-11-21T{modified}.000Z</LastModified>"
+        return f"<Contents><Key>{key}</Key>{modified}</Contents>"
+
+    class Answer:
+        # The scan of 19:00 has two files, and the bucket lists the later file first.
+        # The scan of 19:40 starts after the time of the pass.
+        text = (
+            entry("1900", "20263251924000", "19:25:00")
+            + entry("1900", "20263251909594", "19:10:10")
+            + entry("1940", "20263251949594", "19:50:10")
+        )
+
+    monkeypatch.setattr("chispa.sources.goes._get", lambda url: Answer())
+    scans = goes.list_live(NOW - timedelta(hours=1), NOW)
+    assert [(scan[1].minute, scan[2].minute) for scan in scans] == [(0, 10)]
+
+
+def test_row_of_a_long_pass_has_the_time_of_its_read(tmp_path, monkeypatch):
+    # The file of the scan comes 2 minutes after the start of the pass, and the pass reads it later.
+    late = ("d/key.nc", NOW - timedelta(minutes=8), NOW + timedelta(minutes=2))
+    replace_sources(monkeypatch, [], [late])
+    ticks = iter(range(0, 6000, 300))  # Each look at the clock is 5 minutes after the one before.
+    monkeypatch.setattr("chispa.live.time", types.SimpleNamespace(monotonic=lambda: next(ticks)))
+    live.poll(tmp_path, "key", NOW)
+    log = read(tmp_path / "live" / "goes" / "2026-11-21.csv")
+    polls = read(tmp_path / "live" / "polls" / "2026-11-21.csv")
+    # The row has the time of its read, not the start of the pass: that is before the publication.
+    assert (log[0]["published_at"], log[0]["first_seen_at"]) == (
+        "2026-11-21T19:32:00+00:00",
+        "2026-11-21T19:40:00+00:00",
+    )
+    assert {row["polled_at"] for row in polls} == {NOW.isoformat()}
 
 
 def test_pass_reads_back_the_lookback_or_to_a_given_time(tmp_path, monkeypatch):
@@ -223,10 +261,13 @@ def test_mask_file_with_no_time_of_the_first_view_gets_an_estimate(tmp_path, mon
     # A file that an earlier version of the poller made: it has no `seen`.
     np.savez(folder / "2026-11-23.npz", times=np.array([first.isoformat()]), mask=MASK[None])
     second = first + timedelta(minutes=10)
-    live._add_mask(folder, second, second + timedelta(minutes=12), MASK)
+    times = live._times(second + timedelta(minutes=12), second + timedelta(minutes=11))
+    live._add_mask(folder, second, times, MASK)
     day = np.load(folder / "2026-11-23.npz")
     assert day["times"].tolist() == [first.isoformat(), second.isoformat()]
     assert day["seen"].tolist() == ["2026-11-23T03:10:00+00:00", "2026-11-23T03:22:00+00:00"]
+    # The old scan has the same estimate for its publication time. The new scan has its own time.
+    assert day["published"].tolist() == ["2026-11-23T03:10:00+00:00", "2026-11-23T03:21:00+00:00"]
     assert day["mask"].shape == (2, 1, 2)
 
 
@@ -297,3 +338,6 @@ def test_answered_before_gives_the_newest_poll_that_read_the_source(tmp_path, mo
     # The GOES rows of the poller have the source "noaa". Before the first poll: the live start.
     assert before(back, "noaa") == third
     assert before(first, "firms") == "2026-11-21T18:00:00+00:00"
+    # A row has the time of its read, 3 seconds after the start of its pass.
+    # That pass does not count.
+    assert before("2026-11-23T00:05:03+00:00", "firms") == second
