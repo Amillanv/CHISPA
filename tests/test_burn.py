@@ -4,7 +4,15 @@ from datetime import UTC, datetime
 
 import numpy as np
 
-from chispa.evaluation import burn, candidates, curve, images
+from chispa.evaluation import (
+    advance,
+    burn,
+    candidates,
+    confidence_curve,
+    curve,
+    images,
+    pixels,
+)
 from chispa.grid import Grid
 from chispa.sources import monitor
 
@@ -382,3 +390,97 @@ def test_burn_curve_against_the_map_counts_the_four_pairs(monkeypatch):
     assert (high["events"], high["burned"], high["matched"]) == (4, 2, 2)
     assert (high["burned_and_match"], high["burned_no_match"]) == (1, 1)
     assert (high["match_no_burn"], high["no_burn_no_match"], high["same_share"]) == (1, 1, 0.5)
+
+
+def test_confidence_against_the_curve_uses_only_alerts_with_an_answer_of_the_curve():
+    model = {"inputs": ["a"], "mean": [0.0], "spread": [1.0], "start": 0.0, "weights": [1.0]}
+
+    def alert(event, value, level, matched):
+        return {"event": event, "inputs": {"a": value}, "level": level, "matched": matched}
+
+    # Events 1 and 2 burned, event 3 did not. The curve has no answer for event 4.
+    rows = [alert(1, 2.0, 0, True), alert(2, 1.0, 0, False), alert(3, -1.0, 2, False)]
+    rows.append(alert(4, 5.0, 2, True))
+    burned = {1: True, 2: True, 3: False, 4: None}
+    models = {"0": model, "24": model}
+    found = confidence_curve.curve_table({"0": rows, "24": rows}, models, burned)
+    by_name = {(row["moment_h"], row["measure"]): row for row in found}
+    probability, level = by_name[("0", "probability")], by_name[("0", "level")]
+    assert (probability["alerts"], probability["alerts_burned"]) == (3, 2)
+    assert probability["burn_separation"] == 1.0  # The two burned alerts have the larger values.
+    assert level["burn_separation"] == 0.0  # The alert with no burn has the higher level.
+    assert probability["alerts_matched"] == 1
+
+
+def test_map_months_of_an_event_are_its_months_and_the_month_after(monkeypatch):
+    monkeypatch.setattr("chispa.config.EVAL_MONTHS_BEFORE", 1)
+    assert pixels.months_of(
+        datetime(2024, 8, 30, tzinfo=UTC), datetime(2024, 9, 2, tzinfo=UTC)
+    ) == [8, 9, 10]
+    # An event of December has no month after it in the same year.
+    assert pixels.months_of(
+        datetime(2024, 12, 5, tzinfo=UTC), datetime(2024, 12, 6, tzinfo=UTC)
+    ) == [12]
+
+
+def test_pixel_table_gives_the_shares_and_the_ratio_of_the_boxes_with_a_map(monkeypatch):
+    monkeypatch.setattr("chispa.config.BURN_HA_MIN", 10.0)
+    targets = [{"id": n, "group": "matched"} for n in (1, 2, 3)]
+
+    def areas(number, rule_ha, map_ha, both_ha):
+        return {
+            "id": str(number),
+            "clear_ha": 500,
+            "rule_ha": rule_ha,
+            "map_ha": map_ha,
+            "both_ha": both_ha,
+        }
+
+    # Box 3 has 2 hectares in the map: less than the minimum, thus it gives no ratio.
+    rows = [areas(1, 50.0, 100.0, 40.0), areas(2, 30.0, 20.0, 20.0), areas(3, 0.0, 2.0, 0.0)]
+    (matched,) = pixels.table(targets, rows)
+    assert (matched["rule_ha"], matched["map_ha"], matched["both_ha"]) == (80, 122, 60)
+    assert (matched["found_share"], matched["in_map_share"]) == (0.4918, 0.75)
+    assert (matched["boxes_with_map"], matched["ratio_median"]) == (2, 1.0)  # 0.5 and 1.5.
+
+
+def test_advance_views_are_the_first_clear_view_and_one_some_days_later(monkeypatch):
+    monkeypatch.setattr("chispa.config.IMAGE_MIN_CLEAR", 0.8)
+    monkeypatch.setattr("chispa.config.ADVANCE_VIEW_DAYS", 5)
+    monkeypatch.setattr("chispa.config.BURN_DAYS", 30)
+    first, last = datetime(2024, 8, 1, tzinfo=UTC), datetime(2024, 8, 12, tzinfo=UTC)
+
+    def view(day, part):
+        return "name", datetime(2024, 8, day, 14, tzinfo=UTC), part
+
+    views = [view(2, 0.3), view(4, 0.9), view(7, 1.0), view(9, 0.5), view(14, 0.95)]
+    at_a, at_b = advance.choose(views, first, last)
+    assert (at_a.day, at_b.day) == (4, 14)  # Day 7 is too near to view A. Day 9 has cloud.
+    assert advance.choose(views[:3], first, last) is None
+
+
+def test_advance_of_viirs_uses_the_pixels_before_and_after_view_a(monkeypatch):
+    monkeypatch.setattr("chispa.config.GROWTH_FLOOR_M", 850.0)
+    monkeypatch.setattr("chispa.config.GROWTH_ADVANCE_PERCENT", 90)
+    monkeypatch.setattr("chispa.config.GROWTH_SPEED_MIN_H", 6.0)
+    # Two old pixels at one place. Two new pixels approximately 5.5 km to the north.
+    pixels = np.array(
+        [[0, 10, 200, 210], [-19.0, -19.0, -18.95, -18.95], [-57.0, -57.0, -57.0, -57.0]]
+    )
+    step = advance.viirs_step(pixels, at_a=100, at_b=300)
+    assert 5400 < step["advance_m"] < 5700
+    assert round(step["direction_deg"]) in (0, 360)
+    assert advance.viirs_step(pixels, at_a=300, at_b=400) is None  # No pixel after view A.
+
+
+def test_advance_table_counts_the_events_that_agree(monkeypatch):
+    def row(viirs_m, ground_m, viirs_deg, ground_deg, view_b="2024-08-14"):
+        values = {"viirs_advance_m": viirs_m, "ground_advance_m": ground_m, "view_b": view_b}
+        return values | {"viirs_direction_deg": viirs_deg, "ground_direction_deg": ground_deg}
+
+    rows = [row(4000, 3000, 350, 10), row(9000, 3000, 90, 270), row("", "", "", "", view_b="")]
+    (found,) = advance.table(rows)
+    assert (found["events"], found["with_two_views"], found["with_two_advances"]) == (3, 2, 2)
+    assert (found["in_factor_2"], found["in_factor_2_share"]) == (1, 0.5)  # 1.33 and 3.0.
+    assert (found["turn_deg_median"], found["in_45_degrees"]) == (100.0, 1)  # 20 and 180 degrees.
+    assert advance.bearing((-19.0, -57.0), (-18.9, -57.0)) == 0.0

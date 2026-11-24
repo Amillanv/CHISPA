@@ -1,0 +1,4 @@
+group,boxes,rule_ha,map_ha,both_ha,found_share,in_map_share,rank_correlation,boxes_with_map,ratio_median,config,run_date
+"HIGH events, unmatched",424,55649,21372,3618,0.1693,0.065,0.2404,23,0.0009,f453adfd141a,2026-11-24
+"HIGH events, matched",100,92960,157635,58091,0.3685,0.6249,0.5214,82,0.4644,f453adfd141a,2026-11-24
+"boxes, no fire",100,325,0,0,,0.0,,0,,f453adfd141a,2026-11-24

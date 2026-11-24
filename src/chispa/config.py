@@ -196,7 +196,13 @@ CURVE_DAYS = (5, 10, 20, 30)
 CURVE_WAIT_DAYS = 5
 
 # A request to Earth Engine that fails is sent again, to this number of times.
-CURVE_TRIES = 3
+# Earth Engine refuses a request when too many run at one time.
+EARTHENGINE_TRIES = 5
+
+# The check of the advance needs an event that lasts this many days or more, and two views
+# with this many days or more between them. A fire must move between the two views.
+ADVANCE_MIN_DAYS = 6
+ADVANCE_VIEW_DAYS = 5
 
 # The rule says "burned" if the burned area of a box is one of these hectares or more.
 BURN_HA_STEPS = (1.0, 10.0, 25.0)

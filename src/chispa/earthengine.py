@@ -1,4 +1,4 @@
-"""Read a grid of pixels from Google Earth Engine.
+"""Read a grid of pixels from Google Earth Engine, and send a request again after a failure.
 
 Some sources are images in Earth Engine. Each of them needs the same request:
 the values of one image on one of our grids. Earth Engine limits the size of one request,
@@ -6,10 +6,14 @@ thus we read the grid in tiles.
 """
 
 import io
+import time
+from collections.abc import Callable
+from typing import Any
 
 import ee
 import numpy as np
 
+from chispa import config
 from chispa.grid import Grid
 
 TILE_PX = 512  # The side of one request in pixels.
@@ -51,3 +55,18 @@ def read_window(image: ee.Image, grid: Grid, start: tuple[int, int], size: tuple
         },
     }
     return np.load(io.BytesIO(ee.data.computePixels(request)))
+
+
+def again(request: Callable[[], Any]) -> Any:
+    """Send a request to Earth Engine. A request that fails is sent again after a pause.
+
+    Earth Engine refuses a request when too many run at one time. The last failure stops the run.
+    """
+    for attempt in range(1, config.EARTHENGINE_TRIES + 1):
+        try:
+            return request()
+        except ee.EEException:
+            if attempt == config.EARTHENGINE_TRIES:
+                raise
+            time.sleep(10 * attempt)
+    return None

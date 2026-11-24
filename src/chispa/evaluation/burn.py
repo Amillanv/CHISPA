@@ -21,7 +21,7 @@ from chispa.evaluation.match import Fields, Pairs
 from chispa.evaluation.report import share
 from chispa.evaluation.run import prepare
 from chispa.grid import Grid, pantanal_grid
-from chispa.sources import border, sentinel2
+from chispa.sources import border, sentinel2_ground
 
 LEVEL = "HIGH"
 GROUPS = ("unmatched", "matched", "no fire")
@@ -149,7 +149,7 @@ def _measure(target: dict) -> dict:
     box = with_margin(*(float(target[name]) for name in ("south", "west", "north", "east")))
     first = datetime.fromisoformat(target["first_observed_at"])
     last = datetime.fromisoformat(target["last_observed_at"])
-    areas = sentinel2.burned_areas(box, *periods(first, last))
+    areas = sentinel2_ground.burned_areas(box, *periods(first, last))
     steps = {str(step): areas.get(str(step), "") for step in config.BURN_DNBR_STEPS}
     start = {"id": target["id"], "clear_share": areas["clear_share"]}
     return {**start, "background": areas.get("background", ""), **steps}
