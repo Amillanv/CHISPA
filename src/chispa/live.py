@@ -5,7 +5,6 @@ the newest data of each live source and appends each new row to a log, with the 
 The logs are raw files: they only grow, and `build` can read them again.
 """
 
-import csv
 import gzip
 import time
 from collections.abc import Callable
@@ -16,7 +15,7 @@ import numpy as np
 import requests
 
 from chispa import config
-from chispa.polls import PASS_END, read_rows
+from chispa.polls import PASS_END, append_rows, read_rows
 from chispa.sources import firms, goes, inpe
 
 # The fields that identify one FIRMS row. A row that we saw before is not a new detection.
@@ -69,7 +68,7 @@ def _result(now: datetime, source: str, item: str, result: str, new_rows: int) -
 def _log(live: Path, result: dict) -> dict:
     """Write one result to the poll log at once, and return it. Thus a pass that stops in the
     middle reads again only the item that it did not complete."""
-    _append(live / "polls" / f"{result['polled_at'][:10]}.csv", [result])
+    append_rows(live / "polls" / f"{result['polled_at'][:10]}.csv", [result])
     return result
 
 
@@ -92,7 +91,7 @@ def _poll_firms(live: Path, product: str, key: str, now: datetime, clock: Clock)
             identity = tuple(row[name] for name in FIRMS_KEY)
             if row["acq_date"] == day and identity not in seen:
                 fresh[identity] = {**row, "first_seen_at": seen_at}
-        _append(path, list(fresh.values()))
+        append_rows(path, list(fresh.values()))
         new_rows += len(fresh)
     return _log(live, _result(now, "firms", product, "ok", new_rows))
 
@@ -147,10 +146,10 @@ def _poll_goes(live: Path, since: datetime, now: datetime, clock: Clock) -> list
                 dict(zip(goes.COLUMNS, [observed_at.isoformat(), *pixel], strict=True)) | times
                 for pixel in pixels
             ]
-            _append(live / "goes" / f"{observed_at.date()}.csv", rows)
+            append_rows(live / "goes" / f"{observed_at.date()}.csv", rows)
             # A scan with no fire pixel gives no row above. This row says what the scan could see.
             seen = {"observed_at": observed_at.isoformat()} | mask_counts | times
-            _append(live / "goes_mask" / f"{observed_at.date()}.csv", [seen])
+            append_rows(live / "goes_mask" / f"{observed_at.date()}.csv", [seen])
             _add_mask(live / "goes_mask" / str(observed_at.year), observed_at, times, mask)
             result = _result(now, "goes", observed_at.isoformat(), "ok", len(rows))
             results.append(_log(live, result))
@@ -194,8 +193,8 @@ def keep_inpe(live: Path, name: str, content: bytes, times: dict) -> int:
     folder = live / "inpe_files" / day
     folder.mkdir(parents=True, exist_ok=True)
     (folder / f"{name}.gz").write_bytes(gzip.compress(content, mtime=0))
-    _append(live / "inpe" / f"{day}.csv", rows)
-    _append(listed, [{"file": name} | times])
+    append_rows(live / "inpe" / f"{day}.csv", rows)
+    append_rows(listed, [{"file": name} | times])
     return len(rows)
 
 
@@ -233,16 +232,3 @@ def _add_mask(folder: Path, observed_at: datetime, times: dict, mask: np.ndarray
 
 def _had_at(scan_start: str) -> str:
     return (datetime.fromisoformat(str(scan_start)) + config.GOES_RAW_DELAY).isoformat()
-
-
-def _append(path: Path, rows: list[dict]) -> None:
-    """Add rows to the end of a log. A new log gets a header line."""
-    if not rows:
-        return
-    path.parent.mkdir(parents=True, exist_ok=True)
-    is_new = not path.exists()
-    with path.open("a", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=list(rows[0]))
-        if is_new:
-            writer.writeheader()
-        writer.writerows(rows)

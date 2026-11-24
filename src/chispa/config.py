@@ -431,6 +431,23 @@ LIVE_NORMAL_WAIT = timedelta(minutes=3)
 # complete: no pass of that time stopped in the middle (`docs/sources.md` section 8.10).
 LIVE_PASS_END_FROM = datetime(2026, 11, 24, 22, 46, tzinfo=UTC)
 
+# The timer of the server starts a pass at this interval (`deploy/chispa-poll.timer`).
+LIVE_POLL_EACH = timedelta(minutes=5)
+
+# --- Watch ---
+
+# The owner gets a text each morning. This is the time zone of the owner, and the hour of the
+# local day from which the text goes out.
+WATCH_TIME_ZONE = "America/New_York"
+WATCH_REPORT_HOUR = 8
+
+# The morning text is a report of this time before it.
+WATCH_REPORT_SPAN = timedelta(hours=24)
+
+# The report counts a scan or a file as not read only if it is older than this time. A GOES
+# file comes approximately 10 minutes after its scan start, and a pass starts each 5 minutes.
+WATCH_ITEM_MARGIN = timedelta(minutes=30)
+
 # --- Tools ---
 
 # The largest radius that a tool accepts, in kilometres. The Pantanal box is 780 km long.

@@ -186,7 +186,7 @@ venv/bin/chispa fetch settlements
 
 ### 5. Live operation
 
-A small server runs `chispa poll` each 5 minutes: the two files in `deploy/` are its systemd service and its timer. It needs only the FIRMS key.
+A small server runs `chispa poll` each 5 minutes: the files `chispa-poll` in `deploy/` are its systemd service and its timer. It needs only the FIRMS key. `chispa watch` sends a text to the owner each morning, and an alarm when the poller is late: the files `chispa-watch` start it, and it needs a Textbelt key and a telephone number in `.env`.
 A second computer copies the folder `data/raw/live/` from the server, then runs `venv/bin/chispa update`. [docs/sources.md](docs/sources.md) section 8.10 gives the rules of the poller.
 
 ## Later work
