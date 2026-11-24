@@ -136,7 +136,9 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 - `goes_view` reads the saved masks: one scan of each hour for the years that `chispa fetch goes_mask` got,
   and each scan that the live poller read. It uses only a scan that we had at the as-of time: a live mask has the time
   when the poller got it, and a recorded mask counts from the delay of a raw file after its scan start (`config.py`).
-  The place is the GOES pixels of the detections of the newest pass: the place of "last seen" (`pixels` gives how many).
+  The place is the GOES pixels of the detections of the newest passes: the place of "last seen". A newest pass has a
+  detection at the newest observation time; two platforms can have one. Each detection goes to the pixel with the nearest
+  centre, in kilometres. `pixels` gives how many pixels the place has in the grid of the newest scan.
   The event centre can be in a different pixel from the fire.
   In each scan the group of the place is the first group in this sequence that one of its pixels has: fire, possible fire,
   cloud, no background, blocked, water, not processed, no fire (`view.PLACE_GROUPS`).
@@ -145,6 +147,9 @@ The event is the event as it was at that time (`issued.py`), not the event of th
   `goes_view` gives the group of the place in the newest scan of the as-of day or the day before. If these days have no
   such scan, it is None. `scans_after_last_detection` is the number of saved scans after the newest detection, and
   `after_last_detection` counts them in each group. `newest_no_fire_at` is the newest of them with `no_fire`: the last clear look.
+  `runs_after_last_detection` gives the same scans in time sequence. The scans of one answer in a row are one run:
+  fire, possible fire, no fire, or "not_seen" (cloud, no background, blocked, water, not processed). A run gives its first
+  and last scan, its number of scans and the number in each group.
   The recorded masks have one scan of each hour, the live masks each scan.
   It is the place of the newest pass only. It does not say that a fire is out: GOES can miss a small fire.
 - The level and the confidence rank put the events in a sequence by their evidence for a match with a mapped fire.
@@ -1375,7 +1380,8 @@ The agent must:
 8. Pantanal time is the time of the zone in `config.py`, with its offset on the page. Data, tools and results stay in UTC.
 9. A time to CHISPA that includes a stop of the poller (`poller_stop_h`) has a mark with the most that the stop added.
    The last clear look is the newest GOES scan after the last detection with "examined, no fire".
-   The last row of the timeline counts what GOES said in each saved scan after the last detection.
+   After the last detection, the timeline has one row for each run of GOES scans with one answer. Folded, it keeps each
+   run of fire or possible fire and the newest runs.
    The page does not say that a fire is out.
 
 ## 13. Assumptions and decisions

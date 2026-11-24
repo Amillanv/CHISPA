@@ -227,8 +227,7 @@ def event_record(store: sqlite3.Connection, event_id: int, as_of: datetime, raw_
     record["absorbed"] = history.absorbed(replay, root)
     record["newest_detections"] = newest_detections(found)
     last_seen = datetime.fromtimestamp(int(found["observed"].max()), UTC)
-    numbers = history.pass_numbers(found)
-    newest = numbers == numbers[int(found["observed"].argmax())]  # The pass of "last seen".
+    newest = history.newest(found)
     place = (found["lat"][newest], found["lon"][newest])
     record["goes_view"] = view.goes_view(*place, last_seen, as_of, raw_dir)
     record["viirs_passes_after_last_detection"] = view.passes_after(found, as_of, raw_dir)
