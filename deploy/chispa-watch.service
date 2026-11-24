@@ -1,0 +1,14 @@
+# The watch of the CHISPA live poller: send each text that is due to the owner.
+# Install: copy the two files to /etc/systemd/system/, then `systemctl enable --now chispa-watch.timer`.
+# The file .env needs TEXTBELT_KEY and ALERT_PHONE_NUMBER.
+[Unit]
+Description=CHISPA watch: the morning text and the alarm for a late poller
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=chispa
+WorkingDirectory=/home/chispa/chispa
+ExecStart=/home/chispa/chispa/venv/bin/chispa watch
+TimeoutStartSec=120

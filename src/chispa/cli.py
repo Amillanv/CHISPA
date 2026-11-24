@@ -6,10 +6,11 @@ One command for each step lets a reader make each result again.
 import argparse
 import os
 from datetime import UTC, datetime, timedelta
+from functools import partial
 
 from dotenv import load_dotenv
 
-from chispa import bucket, checks, config, live, polls
+from chispa import bucket, checks, config, live, polls, watch
 from chispa.build import add_live, build_store
 from chispa.evaluation.report import write_summary, write_tables
 from chispa.evaluation.run import evaluate
@@ -84,6 +85,7 @@ def main(arguments: list[str] | None = None) -> None:
     since += "2026-11-20T00:00:00+00:00. It does not change the FIRMS request."
     poll.add_argument("--since", type=datetime.fromisoformat, help=since)
     commands.add_parser("update", help="Put the live logs into the store and the events.")
+    commands.add_parser("watch", help="Send each text that is due: the report or an alarm.")
     dashboard = commands.add_parser("serve", help="Start the dashboard on this computer.")
     dashboard.add_argument("--port", type=int, default=8000)
     for name, text in NOT_BUILT.items():
@@ -120,6 +122,11 @@ def main(arguments: list[str] | None = None) -> None:
         run_poll(chosen.since)
     elif chosen.command == "update":
         run_update()
+    elif chosen.command == "watch":
+        key, phone = read_setting("TEXTBELT_KEY"), read_setting("ALERT_PHONE_NUMBER")
+        send = partial(watch.send_text, phone=phone, key=key)
+        for kind, sent in watch.run(config.RAW_DIR, datetime.now(UTC), send):
+            print(f"watch: the text '{kind}' {'went out' if sent else 'failed'}.")
     elif chosen.command == "serve":
         server.serve(chosen.port)
     else:
