@@ -16,27 +16,42 @@ from chispa import config
 from chispa.sources import goes, passes
 from chispa.store import to_text
 
+# The group of a scan for the pixels of a place: the first group in this sequence that a pixel has.
+# Thus "no_fire" says that GOES examined each pixel and found no fire.
+PLACE_GROUPS = (
+    "fire",
+    "possible_fire",
+    "cloud",
+    "no_background",
+    "blocked",
+    "water",
+    "not_processed",
+    "no_fire",
+)
+
 
 def goes_view(
-    lat: float, lon: float, last_seen: datetime, as_of: datetime, raw_dir: Path
+    lats: np.ndarray, lons: np.ndarray, last_seen: datetime, as_of: datetime, raw_dir: Path
 ) -> dict | None:
-    """Return what GOES said for the place: in its newest scan, and in each scan after `last_seen`.
+    """Return what GOES said for a place: in its newest scan, and in each scan after `last_seen`.
 
-    `last_seen` is the newest observation of the event. `scans_after_last_detection` is the number
-    of saved scans after it, and `after_last_detection` counts them in each mask group.
-    `newest_no_fire_at` is the newest of those scans in which GOES examined the place and found
-    no fire: the last clear look. None: no such scan.
+    The place is the GOES pixels of the positions, the detections of the newest pass of the event:
+    the place of "last seen". `last_seen` is the newest observation of the event.
+    `scans_after_last_detection` is the number of saved scans after it, and `after_last_detection`
+    counts them in each group (`PLACE_GROUPS`). `newest_no_fire_at` is the newest of those scans in
+    which GOES examined each pixel and found no fire: the last clear look. None: no such scan.
     The newest scan is from the day of the as-of time or the day before. If these days have no saved
     scan that we had at the as-of time, the answer is None: an older scan is not a view of now.
     """
     recent = as_of.date() - timedelta(days=1)
-    seen = _place_scans(lat, lon, min(last_seen.date(), recent), as_of, raw_dir)
+    seen, pixels = _place_scans(lats, lons, min(last_seen.date(), recent), as_of, raw_dir)
     newest = max((scan for scan in seen if scan.date() >= recent), default=None)
     if newest is None:
         return None
     after = {scan: group for scan, group in seen.items() if scan > last_seen}
     clear = [scan for scan, group in after.items() if group == "no_fire"]
     return {
+        "pixels": pixels,
         "scan_at": to_text(newest),
         "group": seen[newest],
         "scans_after_last_detection": len(after),
@@ -45,34 +60,46 @@ def goes_view(
     }
 
 
-def _place_scans(lat: float, lon: float, first: date, as_of: datetime, raw_dir: Path) -> dict:
-    """Return the mask group of the place in each saved scan from `first` that we had at as-of.
+def _place_scans(
+    lats: np.ndarray, lons: np.ndarray, first: date, as_of: datetime, raw_dir: Path
+) -> tuple[dict, int]:
+    """Return the group of the place in each saved scan from `first` that we had at the as-of time,
+    and the number of its pixels.
 
     The recorded masks have one scan of each hour: we had one after the delay of a raw file.
     The live masks have each scan of the poller, with the time when the poller got it.
     """
     seen: dict[datetime, str] = {}
+    pixels = 0
     for folder in (raw_dir / "goes_mask", raw_dir / "live" / "goes_mask"):
-        cell = None
+        cells = None
         for number in range((as_of.date() - first).days + 1):
             day = first + timedelta(days=number)
             path = folder / str(day.year) / f"{day}.npz"
             if not path.exists():
                 continue
             saved = np.load(path)
-            if cell is None:
-                place = np.load(folder / "grid.npz")
-                nearest = ((place["lat"] - lat) ** 2 + (place["lon"] - lon) ** 2).argmin()
-                cell = np.unravel_index(nearest, place["lat"].shape)
+            if cells is None:
+                cells = _cells(np.load(folder / "grid.npz"), lats, lons)
+                pixels = max(pixels, len(cells[0]))
             scans = [datetime.fromisoformat(str(time)).astimezone(UTC) for time in saved["times"]]
             had = [scan + config.GOES_RAW_DELAY for scan in scans]
             if "seen" in saved:
                 had = [datetime.fromisoformat(str(time)) for time in saved["seen"]]
-            groups = goes.mask_groups(saved["mask"][:, cell[0], cell[1]])
+            groups = goes.mask_groups(saved["mask"][:, cells[0], cells[1]])
             for scan, when, group in zip(scans, had, groups, strict=True):
                 if when <= as_of:
-                    seen.setdefault(scan, str(group))
-    return seen
+                    seen.setdefault(scan, min(group.tolist(), key=PLACE_GROUPS.index))
+    return seen, pixels
+
+
+def _cells(place: np.lib.npyio.NpzFile, lats: np.ndarray, lons: np.ndarray) -> tuple:
+    """Return the rows and columns of the grid pixels nearest to the positions, with no repeat."""
+    nearest = {
+        int(((place["lat"] - lat) ** 2 + (place["lon"] - lon) ** 2).argmin())
+        for lat, lon in zip(lats, lons, strict=True)
+    }
+    return np.unravel_index(np.array(sorted(nearest)), place["lat"].shape)
 
 
 def passes_after(found: dict, as_of: datetime, raw_dir: Path) -> int | None:

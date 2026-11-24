@@ -53,8 +53,8 @@ def passes(found: dict, event_id: int) -> tuple[list[dict], int]:
     """Return the passes to show and the number of all passes of the event.
 
     The passes to show are the newest passes (`config.py` gives how many) and each pass that
-    made the level go up. They are in the sequence in which they became available: the sequence
-    in which the fusion had them, and thus the sequence of the alerts.
+    made the level go up. They are in the sequence of their observation. A pass that a satellite
+    saw first can come to CHISPA last: `available_at` and the time of each alert say when.
     `alerts` has each level that the pass raised, with the time when CHISPA had the detection
     that raised it. The rows of one pass can come in two polls: FIRMS first, INPE later.
     `source` is the source of the first detection of the pass that CHISPA had.
@@ -88,7 +88,7 @@ def passes(found: dict, event_id: int) -> tuple[list[dict], int]:
                 "alerts": raised.get(number, []),
             }
         )
-    return sorted(rows, key=lambda row: (row["available_at"], row["observed_at"])), count
+    return sorted(rows, key=lambda row: (row["observed_at"], row["available_at"])), count
 
 
 def with_stops(rows: list[dict], raw_dir: Path) -> list[dict]:
