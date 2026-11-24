@@ -4,12 +4,16 @@ The store is a result, not a source. This module makes it again from the raw fol
 Thus a change in a parser, or a new raw file, needs only a new build.
 """
 
+import sqlite3
+from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 
-from chispa import config, fires
+from chispa import config, fires, live
 from chispa.grid import pantanal_grid
+from chispa.models import Detection
 from chispa.sources import border, burnday, firms, goes, inpe, scars
 from chispa.store import add_detections, add_fires, open_store
 
@@ -76,15 +80,46 @@ def read_live(raw_dir: Path, first_day: str):
 
     `first_day` is a date as text. A log of an earlier day is not read.
     """
-    live = raw_dir / "live"
-    for path in sorted((live / "firms").glob("*/*.csv")):
+    logs = raw_dir / "live"
+    for path in sorted((logs / "firms").glob("*/*.csv")):
         if path.stem >= first_day:
             detections, rejected = firms.parse_file(path, path.parent.name)
-            yield "firms", detections, rejected
-    for path in sorted((live / "goes").glob("*.csv")):
+            yield "firms", after_stop(detections, raw_dir), rejected
+    for path in sorted((logs / "goes").glob("*.csv")):
         if path.stem >= first_day:
             yield "noaa", goes.parse_file(path, "GOES19"), 0
-    for path in sorted((live / "inpe").glob("*.csv")):
+    for path in sorted((logs / "inpe").glob("*.csv")):
         if path.stem >= first_day:
             detections, rejected, _ = inpe.parse_file(path)
             yield "inpe", detections, rejected
+
+
+def after_stop(detections: list[Detection], raw_dir: Path) -> list[Detection]:
+    """Give an estimate to each live FIRMS detection that a pass first saw after a stop.
+
+    FIRMS gives no publication time. After a stop of the poller, the time of the first view is
+    the time of our stop. The estimate is the observation time plus the delay in `config.py`.
+    It is not before the newest pass before that read FIRMS, and not after the first view.
+    """
+    answered: dict[datetime, datetime] = {}
+    found = []
+    for detection in detections:
+        seen = detection.available_at
+        if seen not in answered:
+            answered[seen] = live.answered_before(raw_dir, seen, "firms")
+        if seen - answered[seen] > config.LIVE_POLL_LATE:
+            guess = detection.observed_at + config.AVAILABLE_DELAY[detection.sensor_family]
+            time = min(max(guess, answered[seen]), seen)
+            detection = replace(detection, available_at=time, available_estimated=True)
+        found.append(detection)
+    return found
+
+
+def add_live(raw_dir: Path, store: sqlite3.Connection, now: datetime) -> int:
+    """Add the detections of the newest logs to the store. Return the number of new detections.
+
+    The store ignores a detection that it holds. Thus a pass can read the same log again,
+    and `build` gives the same detections from the same logs.
+    """
+    first_day = (now - config.LIVE_COMPLETE_AFTER).date().isoformat()
+    return sum(add_detections(store, found) for _, found, _ in read_live(raw_dir, first_day))

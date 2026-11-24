@@ -25,6 +25,7 @@ class Detection:
     footprint_m: float
     frp_mw: float | None
     source_confidence: str
+    available_estimated: bool  # True: `available_at` is an estimate, not a measured time.
 
     def __post_init__(self) -> None:
         """Reject a record that breaks the data conventions."""

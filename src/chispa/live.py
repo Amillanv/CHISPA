@@ -6,7 +6,7 @@ The logs are raw files: they only grow, and `build` can read them again.
 """
 
 import csv
-import sqlite3
+import gzip
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -14,9 +14,7 @@ import numpy as np
 import requests
 
 from chispa import config
-from chispa.build import read_live
 from chispa.sources import firms, goes, inpe
-from chispa.store import add_detections
 
 # The source of a detection, as the poll log names it. The GOES rows of the poller come from NOAA.
 POLL_SOURCE = {"firms": "firms", "inpe": "inpe", "noaa": "goes"}
@@ -25,26 +23,19 @@ POLL_SOURCE = {"firms": "firms", "inpe": "inpe", "noaa": "goes"}
 FIRMS_KEY = ("satellite", "acq_date", "acq_time", "latitude", "longitude")
 
 
-def poll(raw_dir: Path, key: str, now: datetime) -> list[dict]:
+def poll(raw_dir: Path, key: str, now: datetime, since: datetime | None = None) -> list[dict]:
     """Do one pass at the time `now`. Return one result for each product, scan and file.
 
+    A pass reads each GOES scan and each INPE file from `since` that no pass read. With no
+    `since` it reads back `config.LIVE_LOOKBACK`. Thus a shorter stop of the poller loses no data.
     A source that fails does not stop the pass. The next pass gets its data.
     """
     live = raw_dir / "live"
+    since = since or now - config.LIVE_LOOKBACK
     results = [_poll_firms(live, product, key, now) for product in firms.LIVE_PRODUCTS]
-    results += _poll_goes(live, now) + _poll_inpe(live, now)
+    results += _poll_goes(live, since, now) + _poll_inpe(live, since, now)
     _append(live / "polls" / f"{now.date()}.csv", results)
     return results
-
-
-def ingest(raw_dir: Path, store: sqlite3.Connection, now: datetime) -> int:
-    """Add the detections of the newest logs to the store. Return the number of new detections.
-
-    The store ignores a detection that it holds. Thus a pass can read the same log again,
-    and `build` gives the same detections from the same logs.
-    """
-    first_day = (now - config.LIVE_COMPLETE_AFTER).date().isoformat()
-    return sum(add_detections(store, found) for _, found, _ in read_live(raw_dir, first_day))
 
 
 def _result(now: datetime, source: str, item: str, result: str, new_rows: int) -> dict:
@@ -77,9 +68,9 @@ def _poll_firms(live: Path, product: str, key: str, now: datetime) -> dict:
     return _result(now, "firms", product, "ok", new_rows)
 
 
-def _done(live: Path, source: str, now: datetime) -> set[str]:
-    """Return the items of one source that a pass of today or of the day before read."""
-    days = (now.date() - timedelta(days=1), now.date())
+def _done(live: Path, source: str, since: datetime, now: datetime) -> set[str]:
+    """Return the items of one source that a pass read, from the day of `since`."""
+    days = [since.date() + timedelta(days=n) for n in range((now.date() - since.date()).days + 1)]
     return {
         row["item"]
         for day in days
@@ -95,13 +86,14 @@ def _times(now: datetime, published_at: datetime) -> dict:
     }
 
 
-def _poll_goes(live: Path, now: datetime) -> list[dict]:
-    """Read each GOES scan that no pass read before. Append its fire pixels to a log,
+def _poll_goes(live: Path, since: datetime, now: datetime) -> list[dict]:
+    """Read each GOES scan from `since` that no pass read before. Append its fire pixels to a log,
     and its mask counts to a second log."""
-    done = _done(live, "goes", now)
+    done = _done(live, "goes", since, now)
     results = []
     try:
-        new_scans = [scan for scan in goes.list_live(now) if scan[1].isoformat() not in done]
+        scans = goes.list_live(since, now)
+        new_scans = [scan for scan in scans if scan[1].isoformat() not in done]
         if new_scans and not (live / "goes_mask" / "grid.npz").exists():
             lat, lon = goes.mask_grid(new_scans[0])
             (live / "goes_mask").mkdir(parents=True, exist_ok=True)
@@ -125,21 +117,38 @@ def _poll_goes(live: Path, now: datetime) -> list[dict]:
     return results
 
 
-def _poll_inpe(live: Path, now: datetime) -> list[dict]:
-    """Read each INPE file of 10 minutes that no pass read before. Append its rows to a log."""
-    done = _done(live, "inpe", now)
+def _poll_inpe(live: Path, since: datetime, now: datetime) -> list[dict]:
+    """Read each INPE file of 10 minutes from `since` that no pass read before.
+    Keep the full file, and append its rows in the Pantanal box to a log."""
+    done = _done(live, "inpe", since, now)
     results = []
     try:
-        for name in inpe.list_live(now):
+        for name in inpe.list_live(since, now):
             if name in done:
                 continue
-            published_at, rows = inpe.read_live(name)
-            rows = [row | _times(now, published_at) for row in rows]
-            _append(live / "inpe" / f"{inpe.live_time(name).date()}.csv", rows)
-            results.append(_result(now, "inpe", name, "ok", len(rows)))
+            published_at, content = inpe.read_live(name)
+            rows = keep_inpe(live, name, content, _times(now, published_at))
+            results.append(_result(now, "inpe", name, "ok", rows))
     except requests.RequestException as error:
         results.append(_result(now, "inpe", "request", f"failed: {type(error).__name__}", 0))
     return results
+
+
+def keep_inpe(live: Path, name: str, content: bytes, times: dict) -> int:
+    """Save one INPE file as it came, and append its rows in the Pantanal box to the log.
+
+    INPE removes a file after some days, and the log has only the rows in the box. The full file
+    keeps the rows of the other regions. A list for each day has the times of each file.
+    Return the number of rows in the box.
+    """
+    day = str(inpe.live_time(name).date())
+    folder = live / "inpe_files" / day
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / f"{name}.gz").write_bytes(gzip.compress(content, mtime=0))
+    _append(live / "inpe_files" / f"{day}.csv", [{"file": name} | times])
+    rows = [row | times for row in inpe.box_rows(content)]
+    _append(live / "inpe" / f"{day}.csv", rows)
+    return len(rows)
 
 
 def _add_mask(folder: Path, observed_at: datetime, seen_at: datetime, mask: np.ndarray) -> None:

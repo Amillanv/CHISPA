@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS detections (
     footprint_m REAL NOT NULL,
     frp_mw REAL,
     source_confidence TEXT NOT NULL,
+    available_estimated INTEGER NOT NULL,
     UNIQUE (source, platform, observed_at, lat, lon)
 );
 CREATE INDEX IF NOT EXISTS detections_available_at ON detections (available_at);
@@ -90,6 +91,9 @@ def open_store(path: Path) -> sqlite3.Connection:
     path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(path)
     connection.executescript(SCHEMA)
+    columns = [row[1] for row in connection.execute("PRAGMA table_info(detections)")]
+    if "available_estimated" not in columns:
+        raise RuntimeError(f"{path} is from an older version. Run `chispa build`, then `fuse`.")
     return connection
 
 
@@ -182,4 +186,5 @@ def _to_row(detection: Detection) -> tuple:
 def _from_row(row: tuple) -> Detection:
     values = list(row)
     values[3], values[4] = datetime.fromisoformat(row[3]), datetime.fromisoformat(row[4])
+    values[10] = bool(row[10])
     return Detection(*values)

@@ -17,6 +17,7 @@ from pathlib import Path
 import requests
 
 from chispa import config
+from chispa.arrival import live_available
 from chispa.models import Detection
 
 FOLDER = "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/mensal/Brasil/"
@@ -80,12 +81,12 @@ def _download(name: str, raw_dir: Path) -> Path:
     return path
 
 
-def list_live(now: datetime) -> list[str]:
-    """Return the names of the files of 10 minutes of the last hours. `config.py` gives how many."""
+def list_live(since: datetime, now: datetime) -> list[str]:
+    """Return the names of the files of 10 minutes with a time from `since` to `now`."""
     listing = requests.get(LIVE_FOLDER, timeout=60)
     listing.raise_for_status()
     names = sorted(set(re.findall(r"focos_10min_\d{8}_\d{4}\.csv", listing.text)))
-    return [name for name in names if now - config.LIVE_LOOKBACK <= live_time(name) <= now]
+    return [name for name in names if since <= live_time(name) <= now]
 
 
 def live_time(name: str) -> datetime:
@@ -93,13 +94,17 @@ def live_time(name: str) -> datetime:
     return datetime.strptime(name, "focos_10min_%Y%m%d_%H%M.csv").replace(tzinfo=UTC)
 
 
-def read_live(name: str) -> tuple[datetime, list[dict]]:
-    """Return the publication time of one file of 10 minutes, and its rows in the Pantanal box."""
+def read_live(name: str) -> tuple[datetime, bytes]:
+    """Return the publication time and the content of one file of 10 minutes."""
     answer = requests.get(LIVE_FOLDER + name, timeout=60)
     answer.raise_for_status()
-    published_at = parsedate_to_datetime(answer.headers["Last-Modified"])
-    rows = csv.DictReader(io.StringIO(answer.text))
-    return published_at, [row for row in rows if _in_box(float(row["lat"]), float(row["lon"]))]
+    return parsedate_to_datetime(answer.headers["Last-Modified"]), answer.content
+
+
+def box_rows(content: bytes) -> list[dict]:
+    """Return the rows of one file of 10 minutes that are in the Pantanal box."""
+    rows = csv.DictReader(io.StringIO(content.decode("utf-8")))
+    return [row for row in rows if _in_box(float(row["lat"]), float(row["lon"]))]
 
 
 def parse_file(path: Path) -> tuple[list[Detection], int, Counter]:
@@ -140,18 +145,22 @@ def parse_row(row: dict) -> Detection:
         tzinfo=UTC
     )
     # A live row has the time when we first saw it. A recorded row has only an estimate.
-    seen = row.get("first_seen_at")
+    available_at, estimated = observed_at + config.AVAILABLE_DELAY[sensor_family], True
+    if row.get("first_seen_at"):
+        available_at, estimated = live_available(
+            datetime.fromisoformat(row["first_seen_at"]),
+            datetime.fromisoformat(row["published_at"]),
+        )
     return Detection(
         source="inpe",
         sensor_family=sensor_family,
         platform=platform,
         observed_at=observed_at,
-        available_at=datetime.fromisoformat(seen)
-        if seen
-        else observed_at + config.AVAILABLE_DELAY[sensor_family],
+        available_at=available_at,
         lat=float(row["lat"]),
         lon=float(row["lon"]),
         footprint_m=config.INPE_FOOTPRINT_M[sensor_family],
         frp_mw=float(row["frp"]) if row.get("frp") else None,  # Some rows have no value.
         source_confidence="nominal",  # INPE gives no confidence value.
+        available_estimated=estimated,
     )

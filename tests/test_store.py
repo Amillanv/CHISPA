@@ -1,7 +1,10 @@
 """Tests of the SQLite store."""
 
+import sqlite3
 from dataclasses import replace
 from datetime import timedelta
+
+import pytest
 
 from chispa.store import add_detections, open_store, read_detections
 from tests.test_models import GOOD, NOON
@@ -26,3 +29,12 @@ def test_read_uses_available_at_and_sorts_by_it(tmp_path):
     # GOOD was observed at noon but was available three hours later.
     assert list(read_detections(store, NOON, NOON + timedelta(hours=1))) == []
     assert [d for _, d in read_detections(store, NOON, NOON + timedelta(hours=6))] == [GOOD, late]
+
+
+def test_store_of_an_older_version_stops_with_an_instruction(tmp_path):
+    # A store from before the field `available_estimated`.
+    old = sqlite3.connect(tmp_path / "old.sqlite")
+    old.execute("CREATE TABLE detections (id INTEGER PRIMARY KEY, available_at TEXT NOT NULL)")
+    old.close()
+    with pytest.raises(RuntimeError, match="chispa build"):
+        open_store(tmp_path / "old.sqlite")
