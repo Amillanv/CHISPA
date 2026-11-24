@@ -83,8 +83,8 @@ export function timeline(r, zone, all, liveStart) {
     another satellite. MW is its largest fire power. "To CHISPA" is the time from the observation
     to the moment that CHISPA had the pass, and thus made its alert. From ${day(liveStart)} it is measured by the poller.
     Before, it is an estimate. A time in yellow includes a stop of the poller: up to the time of the stop is our delay.
-    The time when a source published a pass is not in the record. The last row gives what GOES said for the pixel
-    at the event centre in each saved scan after the last detection.</p></div>`;
+    The time when a source published a pass is not in the record. The last row gives what GOES said for the pixels
+    of the newest detections in each saved scan after the last detection.</p></div>`;
 }
 
 /* One row after the last detection: the GOES scans that examined the place and gave no detection (`goes_view`). */
@@ -92,7 +92,8 @@ function closing(r, zone) {
   const g = r.goes_view, n = g?.scans_after_last_detection;
   if (!n) return "";
   const title = `From the last detection, ${utc(r.last_observed_at)} UTC, to the newest scan, ${utc(g.scan_at)} UTC: `
-    + `what GOES said for the pixel at the event centre in each saved scan. This does not say that the fire is out.`;
+    + `what GOES said for the pixels of the newest detections in each saved scan. "Examined, no fire" is for each pixel. `
+    + `This does not say that the fire is out.`;
   return `<div class="pass after" title="${title}">
     <span class="t">${when(g.scan_at, zone)}</span>
     <span class="s"><i style="background:var(--abi)"></i>GOES</span>
