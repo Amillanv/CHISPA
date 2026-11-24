@@ -27,7 +27,7 @@ from chispa.sources import (
     scars,
     settlements,
 )
-from chispa.store import open_store, read_detections, replace_fusion
+from chispa.store import clear_stale, open_store, read_detections, replace_fusion, stale_years
 from chispa.web import server
 
 YEAR_SOURCES = ("firms", "goes", "goes_mask", "inpe", "passes", "scars", "burnday", "landcover")
@@ -270,14 +270,17 @@ def run_poll(since: datetime | None) -> None:
 
 def run_update() -> None:
     """Add the detections of the live logs to the store, then make the events again for each
-    year with a new detection."""
+    year with a mark: its events are older than its detections."""
     now = datetime.now(UTC)
-    new, years = add_live(config.RAW_DIR, open_store(config.STORE_PATH))
-    print(f"store: {new} new detections.")
-    # In January a log of December can get a row: then the year before has a new detection.
+    store = open_store(config.STORE_PATH)
+    new, rejected = add_live(config.RAW_DIR, store)
+    print(f"store: {new} new detections, {rejected} rows rejected.")
+    # In January a log of December can get a row: then the year before has a mark also.
     # The replay of a year from its start is simple. It gets slow when the year has much data.
-    for year in years:
+    # The mark of a year goes only after its fusion: an update that stops makes it the next time.
+    for year in stale_years(store):
         run_fuse(year)
+        clear_stale(store, year)
     status = polls.status(config.RAW_DIR, now)
     if status["late_at"] is None or now > datetime.fromisoformat(status["late_at"]):
         newest = status["complete_pass_at"] or "no pass"

@@ -412,9 +412,9 @@ LIVE_START = datetime(2026, 11, 20, tzinfo=UTC)
 # (`docs/sources.md` section 8.10). Thus a stop of more than 3 days can lose INPE files.
 LIVE_LOOKBACK = timedelta(days=4)
 
-# One live request to FIRMS gives the rows of this many days: the maximum of the API. They are
-# the day of the request and the days before it. Thus a stop of the poller of 3 days or less
-# loses no FIRMS row.
+# One live request to FIRMS asks for this many days: the maximum of the API. They are the day
+# of the request and the days before it. Thus after a stop of 3 days or less, a request still
+# asks for each day of the stop.
 LIVE_FIRMS_DAYS = 5
 
 # The poller runs each 5 minutes. Late: this time with no pass in which all sources answered.
@@ -427,9 +427,9 @@ LIVE_POLL_LATE = timedelta(minutes=15)
 LIVE_NORMAL_WAIT = timedelta(minutes=3)
 
 # From this time, the last row of a pass in the poll log says that the pass read each source.
-# A pass from before it has no such row: the poller of that time wrote the rows of a pass at
-# its end, thus each pass in the log is complete.
-LIVE_PASS_END_FROM = datetime(2026, 11, 25, tzinfo=UTC)
+# It is the minute of the first pass with such a row. Each pass in the log from before it is
+# complete: no pass of that time stopped in the middle (`docs/sources.md` section 8.10).
+LIVE_PASS_END_FROM = datetime(2026, 11, 24, 22, 46, tzinfo=UTC)
 
 # --- Tools ---
 
