@@ -1,0 +1,4 @@
+person,chips,rule_burned,rule_not_burned,rule_no_clear_view,config,run_date
+burned,43,29,13,1,18b5fd2e0d5e,2026-11-24
+not burned,89,29,60,0,18b5fd2e0d5e,2026-11-24
+cannot tell,15,9,4,2,18b5fd2e0d5e,2026-11-24
