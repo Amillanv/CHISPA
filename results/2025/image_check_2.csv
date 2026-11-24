@@ -1,0 +1,4 @@
+group,sample,burned,not_burned,cannot_tell,no_answer,burned_share,config,run_date
+"HIGH events, unmatched",30,6,17,7,0,0.2609,18b5fd2e0d5e,2026-11-24
+"HIGH events, matched",20,16,2,2,0,0.8889,18b5fd2e0d5e,2026-11-24
+"boxes, no fire",30,0,30,0,0,0.0,18b5fd2e0d5e,2026-11-24

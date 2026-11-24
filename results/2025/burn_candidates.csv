@@ -1,0 +1,7 @@
+candidate,key,min_ha,found_boxes,found_answers,found_burned,found_share,no_fire_boxes,no_fire_answers,no_fire_burned,no_fire_share,unmatched_boxes,unmatched_answers,unmatched_burned,unmatched_share,difference,chosen,config,run_date
+box rule,0.3,10.0,100,100,83,0.83,100,100,17,0.17,193,186,93,0.5,0.66,yes,18b5fd2e0d5e,2026-11-24
+dark rule,0.3/0.2,1.0,100,100,90,0.9,100,100,5,0.05,193,186,60,0.3226,0.85,yes,18b5fd2e0d5e,2026-11-24
+short-wave rule,nbr2:0.1/0.2,1.0,100,100,92,0.92,100,100,13,0.13,193,186,82,0.4409,0.79,yes,18b5fd2e0d5e,2026-11-24
+monitor,monitor,1.0,100,100,89,0.89,100,100,0,0.0,193,193,66,0.342,0.89,yes,18b5fd2e0d5e,2026-11-24
+radar VV,VV/3.0,25.0,100,95,52,0.5474,100,90,17,0.1889,193,165,51,0.3091,0.3585,yes,18b5fd2e0d5e,2026-11-24
+radar VH,VH/3.0,25.0,100,95,74,0.7789,100,90,27,0.3,193,165,88,0.5333,0.4789,yes,18b5fd2e0d5e,2026-11-24
