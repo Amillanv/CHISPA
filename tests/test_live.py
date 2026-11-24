@@ -1,6 +1,7 @@
 """Tests of the live poller. They use no network: the source functions are replaced."""
 
 import csv
+import gzip
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -38,7 +39,7 @@ def replace_sources(monkeypatch, firms_rows, scans):
     """One FIRMS product that gives `firms_rows`, and GOES scans with one fire pixel each."""
     monkeypatch.setattr("chispa.sources.firms.LIVE_PRODUCTS", {"VIIRS_NOAA21_NRT": "viirs"})
     monkeypatch.setattr("chispa.sources.firms.download_live", lambda product, key: firms_rows)
-    monkeypatch.setattr("chispa.sources.goes.list_live", lambda now: scans)
+    monkeypatch.setattr("chispa.sources.goes.list_live", lambda since, now: scans)
     monkeypatch.setattr(
         "chispa.sources.goes.read_live",
         lambda new: [
@@ -46,7 +47,7 @@ def replace_sources(monkeypatch, firms_rows, scans):
             for _, start, published in new
         ],
     )
-    monkeypatch.setattr("chispa.sources.inpe.list_live", lambda now: [])
+    monkeypatch.setattr("chispa.sources.inpe.list_live", lambda since, now: [])
     grid = (np.array([[-17.5, -17.5]]), np.array([[-57.5, -57.4]]))
     monkeypatch.setattr("chispa.sources.goes.mask_grid", lambda scan: grid)
 
@@ -58,6 +59,59 @@ def test_listing_gives_the_scan_time_and_the_publication_time():
     assert key.endswith("_s20263251900215_e20263251909524_c20263251909594.nc")
     assert start == datetime(2026, 11, 21, 19, 0, tzinfo=UTC)
     assert published_at == datetime(2026, 11, 21, 19, 10, 10, tzinfo=UTC)
+
+
+def test_listing_gives_the_scans_from_a_time(monkeypatch):
+    listing = (SAMPLES / "goes19_listing.xml").read_text()
+    asked = []
+
+    class Answer:
+        text = listing
+
+    monkeypatch.setattr("chispa.sources.goes._get", lambda url: asked.append(url) or Answer())
+    since = datetime(2026, 11, 20, 19, 5, tzinfo=UTC)
+    # One listing for each day from the day of `since`. The sample has the scans of 21 November.
+    scans = goes.list_live(since, NOW)
+    assert [url[-9:] for url in asked] == ["2026/324/", "2026/325/"]
+    assert [scan[1].isoformat() for scan in scans] == [
+        "2026-11-21T19:00:00+00:00",
+        "2026-11-21T19:10:00+00:00",
+    ]
+    late = datetime(2026, 11, 21, 19, 5, tzinfo=UTC)
+    assert [scan[1].minute for scan in goes.list_live(late, NOW)] == [10]
+
+
+def test_pass_reads_back_the_lookback_or_to_a_given_time(tmp_path, monkeypatch):
+    replace_sources(monkeypatch, [], [])
+    monkeypatch.setattr("chispa.config.LIVE_LOOKBACK", timedelta(days=4))
+    asked = []
+    monkeypatch.setattr(
+        "chispa.sources.goes.list_live", lambda since, now: asked.append(since) or []
+    )
+    live.poll(tmp_path, "key", NOW)
+    live.poll(tmp_path, "key", NOW, datetime(2026, 11, 1, tzinfo=UTC))
+    assert asked == [NOW - timedelta(days=4), datetime(2026, 11, 1, tzinfo=UTC)]
+
+
+def test_scan_of_a_stop_is_read_when_the_poller_is_back(tmp_path, monkeypatch):
+    replace_sources(monkeypatch, [], [SCAN])
+    live.poll(tmp_path, "key", NOW)
+    # The poller stops for two days. The bucket then lists the old scan and two new scans.
+    back = NOW + timedelta(days=2)
+    missed = ("b/key.nc", SCAN[1] + timedelta(hours=20), SCAN[2] + timedelta(hours=20))
+    newest = ("c/key.nc", back - timedelta(minutes=20), back - timedelta(minutes=10))
+    replace_sources(monkeypatch, [], [SCAN, missed, newest])
+    results = live.poll(tmp_path, "key", back)
+    # The scan that a pass read two days before is not read again.
+    assert [result["item"] for result in results if result["source"] == "goes"] == [
+        missed[1].isoformat(),
+        newest[1].isoformat(),
+    ]
+    log = read(tmp_path / "live" / "goes" / "2026-11-22.csv")
+    assert (log[0]["published_at"], log[0]["first_seen_at"]) == (
+        missed[2].isoformat(),
+        back.isoformat(),
+    )
 
 
 def test_row_keeps_the_time_of_the_first_pass_that_saw_it(tmp_path, monkeypatch):
@@ -119,19 +173,36 @@ def test_source_that_fails_does_not_stop_the_pass(tmp_path, monkeypatch):
     ]
 
 
-def test_inpe_file_is_read_one_time(tmp_path, monkeypatch):
+def test_inpe_file_is_read_one_time_and_kept_in_full(tmp_path, monkeypatch):
     replace_sources(monkeypatch, [], [])
     name = "focos_10min_20261121_1920.csv"
     published_at = datetime(2026, 11, 21, 19, 20, 6, tzinfo=UTC)
-    row = {"lat": "-17.5", "lon": "-57.5", "satelite": "NOAA-21", "data": "2026-11-21 16:56:00"}
-    monkeypatch.setattr("chispa.sources.inpe.list_live", lambda now: [name])
-    monkeypatch.setattr("chispa.sources.inpe.read_live", lambda name: (published_at, [row]))
+    # One row in the Pantanal box, and one row in a different region.
+    content = (
+        b"lat,lon,satelite,data\n"
+        b"-17.5,-57.5,NOAA-21,2026-11-21 16:56:00\n"
+        b"-3.1,-60.0,NOAA-21,2026-11-21 16:58:00\n"
+    )
+    monkeypatch.setattr("chispa.sources.inpe.list_live", lambda since, now: [name])
+    monkeypatch.setattr("chispa.sources.inpe.read_live", lambda name: (published_at, content))
     first = live.poll(tmp_path, "key", NOW)
     again = live.poll(tmp_path, "key", NOW + timedelta(minutes=5))
     log = read(tmp_path / "live" / "inpe" / "2026-11-21.csv")
-    assert [result["item"] for result in first if result["source"] == "inpe"] == [name]
+    assert [(r["item"], r["new_rows"]) for r in first if r["source"] == "inpe"] == [(name, 1)]
     assert [result for result in again if result["source"] == "inpe"] == []
-    assert (log[0]["satelite"], log[0]["published_at"]) == ("NOAA-21", "2026-11-21T19:20:06+00:00")
+    assert [(row["lat"], row["published_at"]) for row in log] == [
+        ("-17.5", "2026-11-21T19:20:06+00:00")
+    ]
+    # The full file has the two rows, and the list of the day has its times.
+    files = tmp_path / "live" / "inpe_files"
+    assert gzip.decompress((files / "2026-11-21" / f"{name}.gz").read_bytes()) == content
+    assert read(files / "2026-11-21.csv") == [
+        {
+            "file": name,
+            "first_seen_at": "2026-11-21T19:30:00+00:00",
+            "published_at": "2026-11-21T19:20:06+00:00",
+        }
+    ]
 
 
 def test_only_a_log_that_gets_no_more_rows_is_complete(tmp_path, monkeypatch):

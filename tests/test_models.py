@@ -19,6 +19,7 @@ GOOD = Detection(
     footprint_m=375.0,
     frp_mw=None,
     source_confidence="nominal",
+    available_estimated=True,
 )
 
 

@@ -25,6 +25,8 @@ def found():
         "frp_mw": np.array([30.0, 40.0, NAN, 10.0, 5.0, NAN, 2.0]),
         "level": np.array([0, 0, 1, 1, 2, 2, 2]),
         "issued": np.array([100] * 7),
+        # The time of the last detection is a measurement. The other times are estimates.
+        "estimated": np.array([True] * 6 + [False]),
     }
 
 
@@ -38,7 +40,6 @@ def levels(row):
 
 def test_passes_are_in_the_sequence_of_observation_and_say_which_pass_raised_the_level(monkeypatch):
     monkeypatch.setattr("chispa.config.TOOL_MAX_PASSES", 60)
-    monkeypatch.setattr("chispa.config.LIVE_START", datetime.fromtimestamp(2400, UTC))
     rows, count = history.passes(found(), 100)
     assert count == 5
     summary = [(r["platform"], r["detections"], r["max_frp_mw"], levels(r)) for r in rows]
@@ -53,7 +54,7 @@ def test_passes_are_in_the_sequence_of_observation_and_say_which_pass_raised_the
     # SNPP saw the fire first, and CHISPA had it last of the first four passes.
     assert (rows[0]["observed_at"], rows[0]["available_at"]) == (at(0), at(10800))
     assert (rows[1]["observed_at"], rows[1]["available_at"]) == (at(300), at(2100))
-    # Before the live logs the time of availability is an estimate. NOAA20 is after their start.
+    # A pass says if its time is an estimate: it is that of the detection that CHISPA had first.
     assert [r["estimated"] for r in rows] == [True, True, True, True, False]
 
 
@@ -78,6 +79,7 @@ def test_one_pass_can_raise_the_level_two_times_and_each_level_has_its_time():
         "frp_mw": np.array([80.0, NAN, 30.0]),
         "level": np.array([0, 1, 2]),
         "issued": np.array([100] * 3),
+        "estimated": np.array([False] * 3),
     }
     rows, count = history.passes(passes, 100)
     assert count == 2

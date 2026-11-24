@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from dotenv import load_dotenv
 
 from chispa import bucket, checks, config, live
-from chispa.build import build_store
+from chispa.build import add_live, build_store
 from chispa.evaluation.report import write_summary, write_tables
 from chispa.evaluation.run import evaluate
 from chispa.fusion import LEVELS, fuse
@@ -79,8 +79,12 @@ def main(arguments: list[str] | None = None) -> None:
         if name == "images":
             look = "1: the first look. 2: the same events again and boxes with no fire."
             check.add_argument("--look", type=int, choices=(1, 2), default=1, help=look)
-    poll = commands.add_parser("poll", help="Do one pass of the live poller.")
-    poll.add_argument("--push", action="store_true", help="Also copy complete logs to the bucket.")
+    poll = commands.add_parser("poll", help="Do one pass of the live poller: record the new rows.")
+    since = "Read back to this UTC time, to fill a hole: 2026-11-20T00:00:00+00:00."
+    poll.add_argument("--since", type=datetime.fromisoformat, help=since)
+    update = commands.add_parser("update", help="Put the live logs into the store and the events.")
+    push = "Also copy complete logs to the bucket."
+    update.add_argument("--push", action="store_true", help=push)
     dashboard = commands.add_parser("serve", help="Start the dashboard on this computer.")
     dashboard.add_argument("--port", type=int, default=8000)
     for name, text in NOT_BUILT.items():
@@ -114,7 +118,9 @@ def main(arguments: list[str] | None = None) -> None:
     elif chosen.command == "images":
         checks.run_images(chosen.year, lambda: read_setting("EE_PROJECT"), chosen.look)
     elif chosen.command == "poll":
-        run_poll(chosen.push)
+        run_poll(chosen.since)
+    elif chosen.command == "update":
+        run_update(chosen.push)
     elif chosen.command == "serve":
         server.serve(chosen.port)
     else:
@@ -236,10 +242,16 @@ def run_evaluate(year: int) -> None:
     print(f"{year}: the tables are in {config.RESULTS_DIR / str(year)}. See results/SUMMARY.md.")
 
 
-def run_poll(push: bool) -> None:
-    """Do one pass of the live poller, then update the store and the events of this year."""
+def run_poll(since: datetime | None) -> None:
+    """Do one pass of the live poller: record each new row with the time of the pass.
+
+    A pass does not change the store. Thus a small server can record, and `update` can run
+    on a different computer that has a copy of the logs.
+    """
+    if since is not None and since.utcoffset() is None:
+        raise SystemExit("Give --since with a time zone: 2026-11-20T00:00:00+00:00.")
     now = datetime.now(UTC)
-    results = live.poll(config.RAW_DIR, read_setting("FIRMS_API_KEY"), now)
+    results = live.poll(config.RAW_DIR, read_setting("FIRMS_API_KEY"), now, since)
     for source in ("firms", "goes", "inpe"):
         of_source = [result for result in results if result["source"] == source]
         failed = [result["result"] for result in of_source if result["result"] != "ok"]
@@ -247,10 +259,19 @@ def run_poll(push: bool) -> None:
         print(f"{source}: {len(of_source)} items, {new_rows} new rows, {len(failed)} failed.")
         for text in sorted(set(failed)):
             print(f"  {text}")
-    new = live.ingest(config.RAW_DIR, open_store(config.STORE_PATH), now)
+
+
+def run_update(push: bool) -> None:
+    """Add the detections of the live logs to the store, then make the events of this year again."""
+    now = datetime.now(UTC)
+    new = add_live(config.RAW_DIR, open_store(config.STORE_PATH), now)
     print(f"store: {new} new detections.")
     # The replay of the year from its start is simple. It gets slow when the year has much data.
     run_fuse(now.year)
+    status = live.status(config.RAW_DIR, now)
+    if status["late_at"] is None or now > datetime.fromisoformat(status["late_at"]):
+        newest = status["complete_pass_at"] or "no pass"
+        print(f"live: LATE. The newest pass with no failure: {newest}. Do a check of the poller.")
     if push:
         new_files = bucket.push(config.RAW_DIR, live.complete_logs(config.RAW_DIR, now))
         print(f"live: {new_files} complete logs copied to the bucket.")

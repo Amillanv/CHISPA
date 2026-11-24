@@ -4,6 +4,7 @@ A brigade must know how late an alert was: the time from the first observation t
 the time from each pass to the moment when CHISPA had it. A pass is the item of evidence of the
 fusion (`docs/method.md` 10.3): one scan of GOES, or the detections of one other platform in the
 pass gap. Before the live logs, the time when a detection became available is an estimate.
+It is also an estimate for a live detection that the poller first saw after a stop.
 """
 
 from datetime import UTC, datetime, timedelta
@@ -68,8 +69,8 @@ def passes(found: dict, event_id: int) -> tuple[list[dict], int]:
     `alerts` has each level that the pass raised, with the time when CHISPA had the detection
     that raised it. The rows of one pass can come in two polls: FIRMS first, INPE later.
     `source` is the source of the first detection of the pass that CHISPA had.
-    `estimated` is True for a pass before the live logs: then the time when it became available
-    is the observation time plus an estimate (`config.AVAILABLE_DELAY`).
+    `estimated` is True if the time when the pass became available is an estimate: a pass before
+    the live logs, or a live pass that the poller first saw after a stop (`arrival.py`).
     """
     numbers = pass_numbers(found)
     count = int(numbers.max()) + 1
@@ -79,17 +80,16 @@ def passes(found: dict, event_id: int) -> tuple[list[dict], int]:
         level = {"level": LEVELS[int(found["level"][i])], "at": _text(found["available"][i])}
         raised.setdefault(int(numbers[i]), []).append(level)
     shown = sorted(set(range(max(0, count - config.TOOL_MAX_PASSES), count)) | set(raised))
-    live_s = config.LIVE_START.timestamp()
     rows = []
     for number in shown:
         members = np.nonzero(numbers == number)[0]
         power = found["frp_mw"][members]
-        observed = float(found["observed"][members].min())
+        first = members[np.argmin(found["available"][members])]
         rows.append(
             {
-                "observed_at": _text(observed),
-                "available_at": _text(found["available"][members].min()),
-                "estimated": observed < live_s,
+                "observed_at": _text(float(found["observed"][members].min())),
+                "available_at": _text(found["available"][first]),
+                "estimated": bool(found["estimated"][first]),
                 "sensor_family": str(found["family"][members[0]]),
                 "platform": str(found["platform"][members[0]]),
                 "source": str(found["source"][members[0]]),
