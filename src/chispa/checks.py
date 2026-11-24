@@ -9,7 +9,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 
 from chispa import config
-from chispa.evaluation import advance, burn, candidates, curve, images, pixels
+from chispa.evaluation import advance, burn, candidates, curve, images, joined, pixels
 from chispa.evaluation.confidence import confidence_tables
 from chispa.evaluation.confidence_curve import curve_tables
 from chispa.evaluation.events import events_with_a_match
@@ -137,6 +137,10 @@ def run_event_curves(year: int, project: Callable[[], str]) -> None:
     folder = config.DATA_DIR / "curves"
     targets = curve.event_targets(year, config.STORE_PATH, config.RAW_DIR, datetime.now(UTC))
     burn.write(folder / f"{year}_events.csv", targets)
+    if year not in config.YEAR_ROLES:
+        # The events of the year in progress can change: a later detection can merge two events.
+        # An old curve can thus be of a different box. Each run measures all its events again.
+        (folder / f"{year}_days.csv").unlink(missing_ok=True)
     curve.measure(targets, folder / f"{year}_days.csv")
     rows = burn.read(folder / f"{year}_days.csv")
     tables = {"burn_curve_events": curve.table(targets, rows)}
@@ -163,6 +167,10 @@ def run_curve(year: int, project: Callable[[], str]) -> None:
     rows = burn.read(path)
     tables = {"burn_curve": curve.table(targets, rows)}
     tables["burn_curve_check"] = curve.check_table(targets, rows, burn.read(other))
+    # The first definition of the curve failed. Its table is a result as each other table.
+    joined.measure(targets, folder / "burn_curve" / "joined.csv")
+    first = burn.read(folder / "burn_curve" / "joined.csv")
+    tables["burn_curve_joined"] = joined.table(targets, first, rows)
     write_tables(tables, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
     print(f"{year}: {len(targets)} boxes. See results/SUMMARY.md, table burn_curve.")

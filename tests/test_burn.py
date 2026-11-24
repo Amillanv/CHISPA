@@ -11,6 +11,7 @@ from chispa.evaluation import (
     confidence_curve,
     curve,
     images,
+    joined,
     pixels,
 )
 from chispa.grid import Grid
@@ -335,6 +336,8 @@ def test_burn_curve_counts_the_answers_and_the_burned_boxes_at_each_day(monkeypa
     assert (by_day[5]["boxes"], by_day[5]["answers"], by_day[5]["burned"]) == (2, 1, 0)
     assert (by_day[30]["answers"], by_day[30]["burned"], by_day[30]["burned_share"]) == (2, 1, 0.5)
     assert by_day[30]["hectares_median"] == 12.0
+    # Box 2 has the same answer at day 5 and at day 30. Box 1 has no answer at day 5.
+    assert (by_day[5]["with_last_day"], by_day[5]["same_as_last_day"]) == (1, 1)
 
 
 def test_burn_curve_check_compares_the_last_day_with_the_rule_and_the_map(monkeypatch):
@@ -402,14 +405,18 @@ def test_confidence_against_the_curve_uses_only_alerts_with_an_answer_of_the_cur
     rows = [alert(1, 2.0, 0, True), alert(2, 1.0, 0, False), alert(3, -1.0, 2, False)]
     rows.append(alert(4, 5.0, 2, True))
     burned = {1: True, 2: True, 3: False, 4: None}
-    models = {"0": model, "24": model}
-    found = confidence_curve.curve_table({"0": rows, "24": rows}, models, burned)
+    models, moments = {"0": model, "24": model}, {"0": rows, "24": rows}
+    found = confidence_curve.curve_table(moments, models, (burned, True))
     by_name = {(row["moment_h"], row["measure"]): row for row in found}
     probability, level = by_name[("0", "probability")], by_name[("0", "level")]
     assert (probability["alerts"], probability["alerts_burned"]) == (3, 2)
     assert probability["burn_separation"] == 1.0  # The two burned alerts have the larger values.
     assert level["burn_separation"] == 0.0  # The alert with no burn has the higher level.
     assert probability["alerts_matched"] == 1
+    # A year with no map has no value for a match: it is not 0.
+    no_map = confidence_curve.curve_table(moments, models, (burned, False))[0]
+    assert (no_map["alerts_matched"], no_map["match_separation"]) == (None, None)
+    assert no_map["burn_separation"] == 1.0
 
 
 def test_map_months_of_an_event_are_its_months_and_the_month_after(monkeypatch):
@@ -474,6 +481,9 @@ def test_advance_of_viirs_uses_the_pixels_before_and_after_view_a(monkeypatch):
 
 
 def test_advance_table_counts_the_events_that_agree(monkeypatch):
+    monkeypatch.setattr("chispa.config.ADVANCE_SAME_FACTOR", 2.0)
+    monkeypatch.setattr("chispa.config.ADVANCE_SAME_DEG", 45.0)
+
     def row(viirs_m, ground_m, viirs_deg, ground_deg, view_b="2024-08-14"):
         values = {"viirs_advance_m": viirs_m, "ground_advance_m": ground_m, "view_b": view_b}
         return values | {"viirs_direction_deg": viirs_deg, "ground_direction_deg": ground_deg}
@@ -481,6 +491,21 @@ def test_advance_table_counts_the_events_that_agree(monkeypatch):
     rows = [row(4000, 3000, 350, 10), row(9000, 3000, 90, 270), row("", "", "", "", view_b="")]
     (found,) = advance.table(rows)
     assert (found["events"], found["with_two_views"], found["with_two_advances"]) == (3, 2, 2)
-    assert (found["in_factor_2"], found["in_factor_2_share"]) == (1, 0.5)  # 1.33 and 3.0.
-    assert (found["turn_deg_median"], found["in_45_degrees"]) == (100.0, 1)  # 20 and 180 degrees.
+    assert (found["same_advance"], found["same_advance_share"]) == (1, 0.5)  # 1.33 and 3.0.
+    assert (found["turn_deg_median"], found["same_direction"]) == (100.0, 1)  # 20 and 180 degrees.
     assert advance.bearing((-19.0, -57.0), (-18.9, -57.0)) == 0.0
+
+
+def test_joined_table_gives_the_first_definition_and_the_curve_for_the_same_boxes(monkeypatch):
+    curve_config(monkeypatch)
+    targets = [{"id": n, "group": "no fire"} for n in (1, 2)]
+    # The joined definition calls box 2 burned. The curve does not.
+    first = [
+        {"id": "1", "clear_share": 1.0, "burned_ha": 0},
+        {"id": "2", "clear_share": 1.0, "burned_ha": 9.0},
+    ]
+    days = [curve_row(1, 30, 1.0, 0), curve_row(2, 30, 1.0, 0)]
+    (row,) = joined.table(targets, first, days)
+    assert (row["group"], row["day"], row["boxes"]) == ("boxes, no fire", 30, 2)
+    assert (row["joined_answers"], row["joined_burned"], row["joined_burned_share"]) == (2, 1, 0.5)
+    assert (row["curve_burned"], row["curve_burned_share"]) == (0, 0.0)

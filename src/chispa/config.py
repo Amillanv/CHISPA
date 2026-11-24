@@ -131,6 +131,21 @@ EVAL_MARGIN_M = 250.0
 # The limits of the fire size classes in hectares.
 EVAL_SIZE_CLASSES_HA = (10.0, 100.0, 1000.0, 10000.0)
 
+# --- Sentinel-2 ---
+
+SENTINEL2_ASSET = "COPERNICUS/S2_SR_HARMONIZED"
+
+# The scene classes of a pixel that a rule does not use: no data, defect, cloud shadow, water,
+# cloud and cirrus. Water that dries decreases the burn ratio as a burn does.
+SENTINEL2_NOT_CLEAR = (0, 1, 3, 6, 8, 9, 10)
+
+# The scene classes that hide the ground from a person: no data, defect, cloud and cirrus.
+# Cloud shadow is not in this list: the scene classes can give a new burn that class.
+SENTINEL2_CLOUD = (0, 1, 8, 9, 10)
+
+# The pixel size of the bands B8A and B12, in metres.
+SENTINEL2_SCALE_M = 20
+
 # --- Burn check ---
 
 # The burn check asks Sentinel-2 if the ground at an event burned.
@@ -203,6 +218,11 @@ EARTHENGINE_TRIES = 5
 # with this many days or more between them. A fire must move between the two views.
 ADVANCE_MIN_DAYS = 6
 ADVANCE_VIEW_DAYS = 5
+
+# Two advances agree if the larger is not more than this number of times the smaller.
+# Two directions agree if the angle between them is not more than this number of degrees.
+ADVANCE_SAME_FACTOR = 2.0
+ADVANCE_SAME_DEG = 45.0
 
 # The rule says "burned" if the burned area of a box is one of these hectares or more.
 BURN_HA_STEPS = (1.0, 10.0, 25.0)

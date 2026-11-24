@@ -8,6 +8,7 @@ thus we read the grid in tiles.
 import io
 import time
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any
 
 import ee
@@ -17,6 +18,15 @@ from chispa import config
 from chispa.grid import Grid
 
 TILE_PX = 512  # The side of one request in pixels.
+
+Box = tuple[float, float, float, float]  # south, west, north, east
+Period = tuple[datetime, datetime]
+
+
+def region_of(box: Box) -> ee.Geometry:
+    """Return a box as a rectangle of Earth Engine."""
+    south, west, north, east = box
+    return ee.Geometry.Rectangle([west, south, east, north])  # Earth Engine uses lon, lat.
 
 
 def read_grid(image: ee.Image, grid: Grid) -> np.ndarray:
