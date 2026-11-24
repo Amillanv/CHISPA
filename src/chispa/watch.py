@@ -6,6 +6,7 @@ text when it is good again. A log has each text, and the module reads its state 
 A server that is off sends no text: an absent morning text is then the sign.
 """
 
+import math
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -57,7 +58,7 @@ def due(raw_dir: Path, now: datetime) -> list[tuple[str, str]]:
     if not late and alarm is not None and alarm["kind"] == "late":
         since = datetime.fromisoformat(alarm["sent_at"])
         good = f"CHISPA {now:%d %b %H:%M} UTC: the poller is good again."
-        texts.append(("back", f"{good} It was late from {since:%d %b %H:%M} UTC."))
+        texts.append(("back", f"{good} The alarm went out at {since:%d %b %H:%M} UTC."))
     zone = ZoneInfo(config.WATCH_TIME_ZONE)
     report = _newest(raw_dir, ("report",))
     day = report and datetime.fromisoformat(report["sent_at"]).astimezone(zone).date()
@@ -99,6 +100,8 @@ def report_text(raw_dir: Path, now: datetime, late: bool) -> str:
 def send_text(text: str, phone: str, key: str) -> tuple[bool, str]:
     """Send one text with Textbelt. Return True if it went out, and a note for the log.
 
+    An answer that does not come counts as a failure, and the next run sends the text again.
+    Thus a text can come two times, and an alarm cannot be lost.
     The note has no key and no telephone number.
     """
     try:
@@ -131,22 +134,24 @@ def _newest(raw_dir: Path, kinds: tuple[str, ...]) -> dict | None:
 
 
 def _poll_rows(raw_dir: Path, start: datetime, now: datetime) -> list[dict]:
-    """Return the rows of the poll log of each pass that started after `start`."""
+    """Return the rows of the poll log of each pass that started after `start`, to `now`."""
     days = [start.date() + timedelta(days=n) for n in range((now.date() - start.date()).days + 1)]
     logs = [raw_dir / "live" / "polls" / f"{day}.csv" for day in days]
     rows = [row for path in logs for row in polls.read_rows(path)]
-    return [row for row in rows if datetime.fromisoformat(row["polled_at"]) > start]
+    return [row for row in rows if start < datetime.fromisoformat(row["polled_at"]) <= now]
 
 
 def _not_read(rows: list[dict], source: str, start: datetime, end: datetime) -> int:
     """Return the number of times of 10 minutes from `start` to `end` with no item of the
-    source that a pass read. GOES has a scan, and INPE has a file, at each such time."""
-    step = int(config.GOES_SCAN.total_seconds())
+    source that a pass read. GOES has a scan, and INPE has a file, at each such time.
+    An extra scan that started between two such times does not count for one of them."""
+    step = config.GOES_SCAN.total_seconds()
     read = set()
     for row in rows:
         if row["source"] == source and row["result"] == "ok":
             item = row["item"]
             time = inpe.live_time(item) if source == "inpe" else datetime.fromisoformat(item)
-            read.add(int(time.timestamp()) // step)
-    first, last = -(-int(start.timestamp()) // step), int(end.timestamp()) // step
+            if time.timestamp() % step == 0:
+                read.add(int(time.timestamp() // step))
+    first, last = math.ceil(start.timestamp() / step), math.floor(end.timestamp() / step)
     return sum(number not in read for number in range(first, last + 1))

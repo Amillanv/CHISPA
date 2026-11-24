@@ -125,8 +125,11 @@ def main(arguments: list[str] | None = None) -> None:
     elif chosen.command == "watch":
         key, phone = read_setting("TEXTBELT_KEY"), read_setting("ALERT_PHONE_NUMBER")
         send = partial(watch.send_text, phone=phone, key=key)
-        for kind, sent in watch.run(config.RAW_DIR, datetime.now(UTC), send):
+        done = watch.run(config.RAW_DIR, datetime.now(UTC), send)
+        for kind, sent in done:
             print(f"watch: the text '{kind}' {'went out' if sent else 'failed'}.")
+        if not all(sent for _, sent in done):
+            raise SystemExit(1)  # The service then shows the run as failed.
     elif chosen.command == "serve":
         server.serve(chosen.port)
     else:
