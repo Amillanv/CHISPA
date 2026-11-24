@@ -4,14 +4,25 @@ The store is a result, not a source. This module makes it again from the raw fol
 Thus a change in a parser, or a new raw file, needs only a new build.
 """
 
+import sqlite3
+from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 
-from chispa import config, fires
+from chispa import config, fires, polls
 from chispa.grid import pantanal_grid
+from chispa.models import Detection
 from chispa.sources import border, burnday, firms, goes, inpe, scars
-from chispa.store import add_detections, add_fires, open_store
+from chispa.store import (
+    add_detections,
+    add_fires,
+    mark_stale,
+    open_store,
+    read_log_sizes,
+    save_log_size,
+)
 
 
 def build_store(raw_dir: Path, store_path: Path) -> dict[str, list[int]]:
@@ -68,23 +79,83 @@ def read_raw(raw_dir: Path):
         if path.suffix in (".csv", ".zip"):
             detections, rejected, _ = inpe.parse_file(path)
             yield "inpe", detections, rejected
-    yield from read_live(raw_dir, first_day="")
+    yield from read_live(raw_dir)
 
 
-def read_live(raw_dir: Path, first_day: str):
-    """Give (source, detections, rejected rows) for each log of the live poller.
+def read_live(raw_dir: Path):
+    """Give (source, detections, rejected rows) for each log of the live poller."""
+    for source, path in live_logs(raw_dir):
+        yield source, *read_log(source, path, raw_dir)
 
-    `first_day` is a date as text. A log of an earlier day is not read.
+
+def live_logs(raw_dir: Path) -> list[tuple[str, Path]]:
+    """Return (source, path) for each log of the live poller, in a fixed sequence."""
+    logs = raw_dir / "live"
+    return (
+        [("firms", path) for path in sorted((logs / "firms").glob("*/*.csv"))]
+        + [("noaa", path) for path in sorted((logs / "goes").glob("*.csv"))]
+        + [("inpe", path) for path in sorted((logs / "inpe").glob("*.csv"))]
+    )
+
+
+def read_log(source: str, path: Path, raw_dir: Path) -> tuple[list[Detection], int]:
+    """Return the detections of one live log and the number of rejected rows."""
+    if source == "firms":
+        detections, rejected = firms.parse_file(path, path.parent.name)
+        return after_stop(detections, raw_dir, path.parent.name), rejected
+    if source == "noaa":
+        return goes.parse_file(path, "GOES19"), 0
+    detections, rejected, _ = inpe.parse_file(path)
+    return detections, rejected
+
+
+def after_stop(detections: list[Detection], raw_dir: Path, product: str) -> list[Detection]:
+    """Give an estimate to each live FIRMS detection that a pass first saw after a stop.
+
+    FIRMS gives no publication time. After a stop of the poller, the time of the first view is
+    the time of our stop. The estimate is the observation time plus the delay in `config.py`.
+    It is not before the newest pass before that read FIRMS, and not after the first view.
     """
-    live = raw_dir / "live"
-    for path in sorted((live / "firms").glob("*/*.csv")):
-        if path.stem >= first_day:
-            detections, rejected = firms.parse_file(path, path.parent.name)
-            yield "firms", detections, rejected
-    for path in sorted((live / "goes").glob("*.csv")):
-        if path.stem >= first_day:
-            yield "noaa", goes.parse_file(path, "GOES19"), 0
-    for path in sorted((live / "inpe").glob("*.csv")):
-        if path.stem >= first_day:
-            detections, rejected, _ = inpe.parse_file(path)
-            yield "inpe", detections, rejected
+    answered: dict[datetime, datetime] = {}
+    found = []
+    for detection in detections:
+        seen = detection.available_at
+        if seen not in answered:
+            answered[seen] = polls.answered_before(raw_dir, seen, "firms", product)
+        if seen - answered[seen] > config.LIVE_POLL_LATE:
+            guess = detection.observed_at + config.AVAILABLE_DELAY[detection.sensor_family]
+            time = min(max(guess, answered[seen]), seen)
+            detection = replace(detection, available_at=time, available_estimated=True)
+        found.append(detection)
+    return found
+
+
+def add_live(raw_dir: Path, store: sqlite3.Connection) -> tuple[int, int]:
+    """Add the detections of each live log that changed to the store. Return the number of new
+    detections and the number of rejected rows.
+
+    The store has the size of each log that it read. A log only grows: a log with a different
+    size has new rows. Thus a computer that was off for some days reads each log that it did not
+    read, and not only the logs of the newest days. The store ignores a detection that it holds.
+    Before the detections of a log go in, their years get a mark (`store.mark_stale`). The mark
+    stays to the end of the next fusion of the year: an update that stops in the middle loses
+    no fusion.
+    """
+    read, new, rejected = read_log_sizes(store), 0, 0
+    poll_logs = (raw_dir / "live" / "polls").glob("*.csv")
+    newest_poll = max((path.stat().st_mtime for path in poll_logs), default=0.0)
+    for source, path in live_logs(raw_dir):
+        name, facts = path.relative_to(raw_dir).as_posix(), path.stat()
+        # The estimate of a FIRMS row needs the poll log of its pass. A pass writes the poll row
+        # of a product directly after the rows of that product, and `rsync` takes the times of
+        # all files before it copies one. Thus a FIRMS log that is newer than the poll log came
+        # in a copy that is not complete: it waits for the next update.
+        waits = source == "firms" and facts.st_mtime > newest_poll
+        if read.get(name) == facts.st_size or waits:
+            continue
+        detections, bad = read_log(source, path, raw_dir)
+        mark_stale(store, {detection.available_at.year for detection in detections})
+        new += add_detections(store, detections)
+        rejected += bad
+        save_log_size(store, name, facts.st_size)
+    return new, rejected

@@ -1,12 +1,14 @@
 """The live poller: get new detections from the live sources and record when we first saw them.
 
 Recorded data does not say when a detection became available. One pass of the poller gets
-the newest data of each live source and appends each new row to a log, with the time of the pass.
+the newest data of each live source and appends each new row to a log, with the time of its read.
 The logs are raw files: they only grow, and `build` can read them again.
 """
 
 import csv
-import sqlite3
+import gzip
+import time
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -14,37 +16,44 @@ import numpy as np
 import requests
 
 from chispa import config
-from chispa.build import read_live
+from chispa.polls import PASS_END, read_rows
 from chispa.sources import firms, goes, inpe
-from chispa.store import add_detections
-
-# The source of a detection, as the poll log names it. The GOES rows of the poller come from NOAA.
-POLL_SOURCE = {"firms": "firms", "inpe": "inpe", "noaa": "goes"}
 
 # The fields that identify one FIRMS row. A row that we saw before is not a new detection.
 FIRMS_KEY = ("satellite", "acq_date", "acq_time", "latitude", "longitude")
 
+# The clock of one pass: it gives the time of a read.
+Clock = Callable[[], datetime]
 
-def poll(raw_dir: Path, key: str, now: datetime) -> list[dict]:
-    """Do one pass at the time `now`. Return one result for each product, scan and file.
 
+def poll(raw_dir: Path, key: str, now: datetime, since: datetime | None = None) -> list[dict]:
+    """Do one pass that starts at `now`. Return one result for each product, scan and file,
+    and one last result for the pass.
+
+    A pass reads each GOES scan and each INPE file from `since` that no pass read. With no
+    `since` it reads back `config.LIVE_LOOKBACK`. It does not read back to before
+    `config.LIVE_START`. `since` does not change the FIRMS request.
+    INPE removes a file after some days: a stop of that length loses INPE files.
     A source that fails does not stop the pass. The next pass gets its data.
     """
     live = raw_dir / "live"
-    results = [_poll_firms(live, product, key, now) for product in firms.LIVE_PRODUCTS]
-    results += _poll_goes(live, now) + _poll_inpe(live, now)
-    _append(live / "polls" / f"{now.date()}.csv", results)
-    return results
+    # The live logs start at `config.LIVE_START`: the archive has the data from before it.
+    since = max(since or now - config.LIVE_LOOKBACK, config.LIVE_START).astimezone(UTC)
+    started = time.monotonic()
 
+    def clock() -> datetime:
+        # A row has the time of its read: a long pass reads its last file minutes after its start.
+        return now + timedelta(seconds=time.monotonic() - started)
 
-def ingest(raw_dir: Path, store: sqlite3.Connection, now: datetime) -> int:
-    """Add the detections of the newest logs to the store. Return the number of new detections.
-
-    The store ignores a detection that it holds. Thus a pass can read the same log again,
-    and `build` gives the same detections from the same logs.
-    """
-    first_day = (now - config.LIVE_COMPLETE_AFTER).date().isoformat()
-    return sum(add_detections(store, found) for _, found, _ in read_live(raw_dir, first_day))
+    # FIRMS is the first read of a pass. Thus the start of a pass is the time of its FIRMS read,
+    # to some seconds: `build.after_stop` finds a stop from the starts of the passes.
+    results = [_poll_firms(live, product, key, now, clock) for product in firms.LIVE_PRODUCTS]
+    # INPE removes its files after some days, and the NOAA bucket keeps each scan. Thus a pass
+    # after a stop reads INPE before the long read-back of GOES.
+    results += _poll_inpe(live, since, now, clock) + _poll_goes(live, since, now, clock)
+    # The last row of a pass says that the pass read each source. A pass that stops has none.
+    new_rows = sum(result["new_rows"] for result in results)
+    return [*results, _log(live, _result(now, PASS_END, "end", "ok", new_rows))]
 
 
 def _result(now: datetime, source: str, item: str, result: str, new_rows: int) -> dict:
@@ -57,112 +66,166 @@ def _result(now: datetime, source: str, item: str, result: str, new_rows: int) -
     }
 
 
-def _poll_firms(live: Path, product: str, key: str, now: datetime) -> dict:
+def _log(live: Path, result: dict) -> dict:
+    """Write one result to the poll log at once, and return it. Thus a pass that stops in the
+    middle reads again only the item that it did not complete."""
+    _append(live / "polls" / f"{result['polled_at'][:10]}.csv", [result])
+    return result
+
+
+def _poll_firms(live: Path, product: str, key: str, now: datetime, clock: Clock) -> dict:
     """Append the rows of one FIRMS product that are not in its logs. One log for each day."""
     try:
         rows = firms.download_live(product, key)
-    except RuntimeError as error:  # The message of this error does not contain the key.
-        return _result(now, "firms", product, f"failed: {error}", 0)
-    new_rows = 0
-    for day in sorted({row["acq_date"] for row in rows}):
+    except RuntimeError as error:
+        # The message can have a part of the answer of FIRMS. The key must not go into a log.
+        failure = f"failed: {error}".replace(key, "[key]")
+        return _log(live, _result(now, "firms", product, failure, 0))
+    seen_at, new_rows = clock().isoformat(timespec="seconds"), 0
+    # A request gives 5 days. The days before `config.LIVE_START` are in the archive.
+    first_day = config.LIVE_START.date().isoformat()
+    for day in sorted({row["acq_date"] for row in rows if row["acq_date"] >= first_day}):
         path = live / "firms" / product / f"{day}.csv"
-        seen = {tuple(row[name] for name in FIRMS_KEY) for row in _read(path)}
+        seen = {tuple(row[name] for name in FIRMS_KEY) for row in read_rows(path)}
         fresh = {}
         for row in rows:
             identity = tuple(row[name] for name in FIRMS_KEY)
             if row["acq_date"] == day and identity not in seen:
-                fresh[identity] = {**row, "first_seen_at": now.isoformat(timespec="seconds")}
+                fresh[identity] = {**row, "first_seen_at": seen_at}
         _append(path, list(fresh.values()))
         new_rows += len(fresh)
-    return _result(now, "firms", product, "ok", new_rows)
+    return _log(live, _result(now, "firms", product, "ok", new_rows))
 
 
-def _done(live: Path, source: str, now: datetime) -> set[str]:
-    """Return the items of one source that a pass of today or of the day before read."""
-    days = (now.date() - timedelta(days=1), now.date())
+def _done(live: Path, source: str, since: datetime, now: datetime) -> set[str]:
+    """Return the items of one source that a pass read, from the day of `since`."""
+    days = [since.date() + timedelta(days=n) for n in range((now.date() - since.date()).days + 1)]
     return {
         row["item"]
         for day in days
-        for row in _read(live / "polls" / f"{day}.csv")
+        for row in read_rows(live / "polls" / f"{day}.csv")
         if row["source"] == source and row["result"] == "ok"
     }
 
 
-def _times(now: datetime, published_at: datetime) -> dict:
+def _newest_read(live: Path, source: str) -> str | None:
+    """Return the newest item of one source that a pass read. None: no pass read an item."""
+    for path in sorted((live / "polls").glob("*.csv"), reverse=True):
+        rows = [row for row in read_rows(path) if row["source"] == source]
+        items = [row["item"] for row in rows if row["result"] == "ok"]
+        if items:
+            return max(items)
+    return None
+
+
+def _times(seen_at: datetime, published_at: datetime) -> dict:
     return {
-        "first_seen_at": now.isoformat(timespec="seconds"),
+        "first_seen_at": seen_at.isoformat(timespec="seconds"),
         "published_at": published_at.isoformat(timespec="seconds"),
     }
 
 
-def _poll_goes(live: Path, now: datetime) -> list[dict]:
-    """Read each GOES scan that no pass read before. Append its fire pixels to a log,
-    and its mask counts to a second log."""
-    done = _done(live, "goes", now)
+def _poll_goes(live: Path, since: datetime, now: datetime, clock: Clock) -> list[dict]:
+    """Read each GOES scan from `since` that no pass read before. Append its fire pixels to a log,
+    and its mask counts to a second log. Each row has the time of the read of its scan."""
+    # The NOAA bucket keeps each file. Thus a pass reads back to the newest scan that a pass
+    # read, if that scan is older than `since`: a stop of each length gets its scans.
+    newest = _newest_read(live, "goes")
+    since = min(since, datetime.fromisoformat(newest)) if newest else since
+    done = _done(live, "goes", since, now)
     results = []
     try:
-        new_scans = [scan for scan in goes.list_live(now) if scan[1].isoformat() not in done]
+        scans = goes.list_live(since, now)
+        new_scans = [scan for scan in scans if scan[1].isoformat() not in done]
         if new_scans and not (live / "goes_mask" / "grid.npz").exists():
             lat, lon = goes.mask_grid(new_scans[0])
             (live / "goes_mask").mkdir(parents=True, exist_ok=True)
             np.savez_compressed(live / "goes_mask" / "grid.npz", lat=lat, lon=lon)
         for observed_at, published_at, pixels, mask_counts, mask in goes.read_live(new_scans):
+            times = _times(clock(), published_at)
             rows = [
-                dict(zip(goes.COLUMNS, [observed_at.isoformat(), *pixel], strict=True))
-                | _times(now, published_at)
+                dict(zip(goes.COLUMNS, [observed_at.isoformat(), *pixel], strict=True)) | times
                 for pixel in pixels
             ]
             _append(live / "goes" / f"{observed_at.date()}.csv", rows)
             # A scan with no fire pixel gives no row above. This row says what the scan could see.
-            seen = (
-                {"observed_at": observed_at.isoformat()} | mask_counts | _times(now, published_at)
-            )
+            seen = {"observed_at": observed_at.isoformat()} | mask_counts | times
             _append(live / "goes_mask" / f"{observed_at.date()}.csv", [seen])
-            _add_mask(live / "goes_mask" / str(observed_at.year), observed_at, now, mask)
-            results.append(_result(now, "goes", observed_at.isoformat(), "ok", len(rows)))
+            _add_mask(live / "goes_mask" / str(observed_at.year), observed_at, times, mask)
+            result = _result(now, "goes", observed_at.isoformat(), "ok", len(rows))
+            results.append(_log(live, result))
     except requests.RequestException as error:
-        results.append(_result(now, "goes", "request", f"failed: {type(error).__name__}", 0))
+        result = _result(now, "goes", "request", f"failed: {type(error).__name__}", 0)
+        results.append(_log(live, result))
     return results
 
 
-def _poll_inpe(live: Path, now: datetime) -> list[dict]:
-    """Read each INPE file of 10 minutes that no pass read before. Append its rows to a log."""
-    done = _done(live, "inpe", now)
+def _poll_inpe(live: Path, since: datetime, now: datetime, clock: Clock) -> list[dict]:
+    """Read each INPE file of 10 minutes from `since` that no pass read before.
+    Keep the full file, and append its rows in the Pantanal box to a log."""
+    done = _done(live, "inpe", since, now)
     results = []
     try:
-        for name in inpe.list_live(now):
+        for name in inpe.list_live(since, now):
             if name in done:
                 continue
-            published_at, rows = inpe.read_live(name)
-            rows = [row | _times(now, published_at) for row in rows]
-            _append(live / "inpe" / f"{inpe.live_time(name).date()}.csv", rows)
-            results.append(_result(now, "inpe", name, "ok", len(rows)))
+            published_at, content = inpe.read_live(name)
+            rows = keep_inpe(live, name, content, _times(clock(), published_at))
+            results.append(_log(live, _result(now, "inpe", name, "ok", rows)))
     except requests.RequestException as error:
-        results.append(_result(now, "inpe", "request", f"failed: {type(error).__name__}", 0))
+        result = _result(now, "inpe", "request", f"failed: {type(error).__name__}", 0)
+        results.append(_log(live, result))
     return results
 
 
-def _add_mask(folder: Path, observed_at: datetime, seen_at: datetime, mask: np.ndarray) -> None:
-    """Add the mask of one scan to the mask file of its day, with the time when we first had it.
+def keep_inpe(live: Path, name: str, content: bytes, times: dict) -> int:
+    """Save one INPE file as it came, and append its rows in the Pantanal box to the log.
+
+    INPE removes a file after some days, and the log has only the rows in the box. The full file
+    keeps the rows of the other regions. A list for each day has the times of each file: it is
+    the last write, and a file that is in the list is not written again.
+    Return the number of rows in the box.
+    """
+    day = str(inpe.live_time(name).date())
+    rows = [row | times for row in inpe.box_rows(content)]
+    listed = live / "inpe_files" / f"{day}.csv"
+    if any(row["file"] == name for row in read_rows(listed)):
+        return len(rows)  # A pass that stopped after the writes of this file reads it again.
+    folder = live / "inpe_files" / day
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / f"{name}.gz").write_bytes(gzip.compress(content, mtime=0))
+    _append(live / "inpe" / f"{day}.csv", rows)
+    _append(listed, [{"file": name} | times])
+    return len(rows)
+
+
+def _add_mask(folder: Path, observed_at: datetime, times: dict, mask: np.ndarray) -> None:
+    """Add the mask of one scan to the mask file of its day, with the time when we first had it
+    and the publication time of its file.
 
     The file has the form of the recorded masks. Thus the event record reads the two in one way:
     for a place, it can say if GOES examined it, or if cloud hid it.
     """
     path = folder / f"{observed_at.date()}.npz"
-    times, seen = np.array([], dtype="U25"), np.array([], dtype="U25")
+    scans = seen = published = np.array([], dtype="U25")
     masks = np.empty((0, *mask.shape), dtype=np.uint8)
     if path.exists():
         day = np.load(path)
-        times, masks = day["times"], day["mask"]
-        # A file from before 2026-11-23 has no time of the first view. For its scans we use
-        # the scan start plus the delay of a raw file, as for a recorded mask.
-        seen = day["seen"] if "seen" in day else np.array([_had_at(time) for time in times])
+        scans, masks = day["times"], day["mask"]
+        # A file of an earlier version has no time of the first view, or no publication time.
+        # For its scans we use the scan start plus the delay of a raw file, as for a recorded mask.
+        estimate = np.array([_had_at(scan) for scan in scans])
+        seen = day["seen"] if "seen" in day else estimate
+        published = day["published"] if "published" in day else estimate
+        if observed_at.isoformat() in scans:
+            return  # A pass that stopped after this write reads the scan again.
     folder.mkdir(parents=True, exist_ok=True)
     part = path.with_suffix(".part.npz")  # A pass that stops in the middle does not break the file.
     np.savez_compressed(
         part,
-        times=np.append(times, observed_at.isoformat()),
-        seen=np.append(seen, seen_at.isoformat(timespec="seconds")),
+        times=np.append(scans, observed_at.isoformat()),
+        seen=np.append(seen, times["first_seen_at"]),
+        published=np.append(published, times["published_at"]),
         mask=np.concatenate([masks, mask[None]]),
     )
     part.replace(path)
@@ -170,82 +233,6 @@ def _add_mask(folder: Path, observed_at: datetime, seen_at: datetime, mask: np.n
 
 def _had_at(scan_start: str) -> str:
     return (datetime.fromisoformat(str(scan_start)) + config.GOES_RAW_DELAY).isoformat()
-
-
-def complete_logs(raw_dir: Path, now: datetime) -> list[Path]:
-    """Return the logs that get no more rows. Only these logs can go to the bucket,
-    because a file in the bucket never changes."""
-    last = (now - config.LIVE_COMPLETE_AFTER).date().isoformat()
-    return sorted(path for path in (raw_dir / "live").rglob("*.csv") if path.stem <= last)
-
-
-def status(raw_dir: Path, as_of: datetime) -> dict:
-    """Return how old the live data was at the as-of time, from the poll log.
-
-    `archive` is True before the first day of the live logs: then the store has archive data.
-    `newest_pass_at` is the newest pass, with a result for each source. `complete_pass_at` is the
-    newest pass in which no source failed: the store has the data of each source to that pass.
-    A pass in which a source failed does not make the data newer. `late_at` is the time from which
-    the data is late. The answer gives no failure text: a text can hold a key or an address.
-    """
-    found = {"archive": as_of < config.LIVE_START, "newest_pass_at": None, "sources": None}
-    found |= {"complete_pass_at": None, "late_at": None}
-    for polled_at, rows in _passes(raw_dir, as_of):
-        if found["newest_pass_at"] is None:
-            found |= {"newest_pass_at": polled_at, "sources": _results(rows)}
-        if all(row["result"] == "ok" for row in rows):
-            late = datetime.fromisoformat(polled_at) + config.LIVE_POLL_LATE
-            return found | {"complete_pass_at": polled_at, "late_at": late.isoformat()}
-    return found
-
-
-def answered_before(raw_dir: Path, at: datetime, source: str) -> datetime:
-    """Return the time of the newest poll before `at` that read a source with no failure.
-
-    `source` is the source of a detection. A poll with no row for the source read nothing new
-    and had no failure (`_results`). Before the first such poll: the first day of the live logs.
-    """
-    name = POLL_SOURCE[source]
-    for polled_at, rows in _passes(raw_dir, at - timedelta(seconds=1)):
-        if not any(row["source"] == name and row["result"] != "ok" for row in rows):
-            return datetime.fromisoformat(polled_at)
-    return config.LIVE_START
-
-
-def _passes(raw_dir: Path, as_of: datetime):
-    """Give (time, rows) for each pass at or before the as-of time, the newest first."""
-    day = as_of.astimezone(UTC).date().isoformat()
-    for path in sorted((raw_dir / "live" / "polls").glob("*.csv"), reverse=True):
-        if path.stem > day:
-            continue
-        passes: dict[str, list[dict]] = {}
-        for row in _read(path):
-            if datetime.fromisoformat(row["polled_at"]) <= as_of:
-                passes.setdefault(row["polled_at"], []).append(row)
-        yield from sorted(
-            passes.items(), key=lambda item: datetime.fromisoformat(item[0]), reverse=True
-        )
-
-
-def _results(rows: list[dict]) -> dict[str, dict]:
-    """Return, for each source of one pass, its items, its failed items and its new rows.
-
-    A source with no row read no new scan or file and recorded no failure in that pass.
-    """
-    sources: dict[str, dict] = {}
-    for row in rows:
-        found = sources.setdefault(row["source"], {"items": 0, "failed": 0, "new_rows": 0})
-        found["items"] += 1
-        found["failed"] += row["result"] != "ok"
-        found["new_rows"] += int(row["new_rows"])
-    return sources
-
-
-def _read(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
-    with path.open(newline="") as file:
-        return list(csv.DictReader(file))
 
 
 def _append(path: Path, rows: list[dict]) -> None:

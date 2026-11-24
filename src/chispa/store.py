@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS detections (
     footprint_m REAL NOT NULL,
     frp_mw REAL,
     source_confidence TEXT NOT NULL,
+    available_estimated INTEGER NOT NULL,
     UNIQUE (source, platform, observed_at, lat, lon)
 );
 CREATE INDEX IF NOT EXISTS detections_available_at ON detections (available_at);
@@ -74,6 +75,13 @@ CREATE TABLE IF NOT EXISTS merges (
     absorbed_id INTEGER NOT NULL,
     into_id INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS live_logs (
+    path TEXT PRIMARY KEY,
+    size INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS stale_years (
+    year INTEGER PRIMARY KEY
+);
 """
 
 COLUMNS = ", ".join(field.name for field in fields(Detection))
@@ -90,6 +98,9 @@ def open_store(path: Path) -> sqlite3.Connection:
     path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(path)
     connection.executescript(SCHEMA)
+    columns = [row[1] for row in connection.execute("PRAGMA table_info(detections)")]
+    if "available_estimated" not in columns:
+        raise RuntimeError(f"{path} is from an older version. Run `chispa build`, then `fuse`.")
     return connection
 
 
@@ -106,6 +117,34 @@ def add_detections(connection: sqlite3.Connection, detections: list[Detection]) 
     )
     connection.commit()
     return connection.total_changes - before
+
+
+def read_log_sizes(connection: sqlite3.Connection) -> dict[str, int]:
+    """Return the size of each live log at the time when the store read it."""
+    return dict(connection.execute("SELECT path, size FROM live_logs"))
+
+
+def save_log_size(connection: sqlite3.Connection, path: str, size: int) -> None:
+    """Record that the store read a live log of this size."""
+    connection.execute("INSERT OR REPLACE INTO live_logs VALUES (?, ?)", (path, size))
+    connection.commit()
+
+
+def mark_stale(connection: sqlite3.Connection, years: set[int]) -> None:
+    """Record that the events of these years are older than their detections."""
+    connection.executemany("INSERT OR IGNORE INTO stale_years VALUES (?)", [(y,) for y in years])
+    connection.commit()
+
+
+def stale_years(connection: sqlite3.Connection) -> list[int]:
+    """Return each year with events that are older than its detections."""
+    return [row[0] for row in connection.execute("SELECT year FROM stale_years ORDER BY year")]
+
+
+def clear_stale(connection: sqlite3.Connection, year: int) -> None:
+    """Record that the events of a year are made again."""
+    connection.execute("DELETE FROM stale_years WHERE year = ?", (year,))
+    connection.commit()
 
 
 def read_detections(connection: sqlite3.Connection, start: datetime, end: datetime):
@@ -182,4 +221,5 @@ def _to_row(detection: Detection) -> tuple:
 def _from_row(row: tuple) -> Detection:
     values = list(row)
     values[3], values[4] = datetime.fromisoformat(row[3]), datetime.fromisoformat(row[4])
+    values[10] = bool(row[10])
     return Detection(*values)

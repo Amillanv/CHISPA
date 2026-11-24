@@ -53,7 +53,7 @@ All the work follows eight stages. Each stage gives one part of the alert, and e
 ## Status
 
 - `chispa build` gets the raw files from a public bucket and makes a SQLite store. The bucket has the raw files of 2023 to 2025 for the detections and the mapped fires: 4.1 million detections for 2023 and 2024. The files of 2026 are not in the bucket: `chispa fetch` gets them. `chispa fuse` groups the detections of one year into events with a confidence level. `chispa evaluate` compares them with the mapped fires.
-- `chispa poll` does one pass of the live poller: it records each new detection with the time of the pass, then updates the store and the events. It needs a FIRMS key.
+- `chispa poll` does one pass of the live poller: it records each new detection with the time of the pass. It needs a FIRMS key. `chispa update` puts the live logs into the store and makes the events of the year again.
 - `tools.py` answers questions about the alerts and the results at a given time. [docs/method.md](docs/method.md) section 12.1 lists the tools, and section 7.3 gives the event record.
 - `chispa serve` starts the dashboard on this computer. It shows the events at an as-of time, live or as a replay. It only calls the tools. Section 12.6 of the method gives its rules. The map needs a MapTiler key in `.env` (`MAPTILER_KEY`).
 - `chispa burn` asks Sentinel-2 if the ground at each unmatched HIGH event burned. `chispa images` lets a person check a sample. The owner did this check for 2024. The second look (`--look 2`) has no-fire boxes and one more picture of each place.
@@ -183,6 +183,11 @@ venv/bin/chispa fetch settlements
 - `fetch goes` fills a gap of 50 days in the FIRMS record of GOES-16. It reads approximately 11 GB of raw files. `fetch inpe` downloads approximately 1.4 GB for the two years. The INPE server is slow.
 - `chispa severity` needs the three layers, and the land cover of the year before the events. They are not in the bucket.
 - `fetch scars` and `fetch burnday` read from Earth Engine. Then run `venv/bin/chispa build` to make the store again.
+
+### 5. Live operation
+
+A small server runs `chispa poll` each 5 minutes: the two files in `deploy/` are its systemd service and its timer. It needs only the FIRMS key.
+A second computer copies the folder `data/raw/live/` from the server, then runs `venv/bin/chispa update`. [docs/sources.md](docs/sources.md) section 8.10 gives the rules of the poller.
 
 ## Later work
 

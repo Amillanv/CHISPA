@@ -19,6 +19,7 @@ VIIRS = Detection(
     footprint_m=200.0,
     frp_mw=5.0,
     source_confidence="nominal",
+    available_estimated=True,
 )
 KM = 1 / 110.574  # one kilometre north, in degrees
 

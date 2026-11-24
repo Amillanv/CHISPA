@@ -24,14 +24,16 @@ from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
 from chispa import config
+from chispa.arrival import live_available
 from chispa.models import Detection
 
 BUCKET = "https://noaa-goes16.s3.amazonaws.com"
 SCAN_START = re.compile(r"<Key>(ABI-L2-FDCF/[^<]*_s(\d{4})(\d{3})(\d{2})(\d{2})[^<]*\.nc)</Key>")
 COLUMNS = ["observed_at", "lat", "lon", "mask", "frp_mw"]
 
-# The part of the grid that holds the Pantanal box: rows, then columns. `find_window` gave it
-# for a GOES-16 file of 2024-08-15 and for a GOES-19 file of 2025-08-15: the two are the same.
+# The part of the grid that holds the Pantanal box: rows, then columns. The positions of the full
+# grid gave it for a GOES-16 file of 2024-08-15 and for GOES-19 files of 2025-08-15 and
+# 2026-11-24: the three are the same. Do not calculate the full grid in a pass: it needs 3 GB.
 MASK_WINDOW = (slice(3542, 3898), slice(3481, 3766))
 
 # GOES-19 replaced GOES-16 in 2025. Its bucket gives the time when each file arrived.
@@ -115,15 +117,13 @@ def _download_day(day: date, raw_dir: Path) -> Path:
     if path.exists():
         return path
     scans = [scan for scan in _list_scans(day) if _in_gap(scan[1])]
-    rows, window = [], None
+    rows = []
     with ThreadPoolExecutor(max_workers=8) as pool:
         contents = pool.map(lambda scan: _get(f"{_bucket(day)}/{scan[0]}").content, scans)
         for (_, observed_at), content in zip(scans, contents, strict=True):
             with netCDF4.Dataset("scan.nc", memory=content) as dataset:
-                window = window or find_window(dataset)
-                rows += [
-                    [observed_at.isoformat(), *pixel] for pixel in read_pixels(dataset, window)
-                ]
+                pixels = read_pixels(dataset, MASK_WINDOW)
+                rows += [[observed_at.isoformat(), *pixel] for pixel in pixels]
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as file:
         csv.writer(file).writerows([COLUMNS, *rows])
@@ -161,14 +161,24 @@ def parse_listing(listing: str) -> list[tuple[str, datetime, datetime]]:
     return scans
 
 
-def list_live(now: datetime) -> list[tuple[str, datetime, datetime]]:
-    """Return the GOES-19 scans of the last hours, in time sequence. `config.py` gives how many."""
+def list_live(since: datetime, now: datetime) -> list[tuple[str, datetime, datetime]]:
+    """Return the GOES-19 scans with a start from `since` to `now`, in time sequence.
+
+    If a scan has two files, the file that came first stays: a pass cannot wait for a second
+    file. Thus a pass after a stop reads the file that a pass with no stop reads.
+    """
     scans = {}
-    for back in range(int(config.LIVE_LOOKBACK / timedelta(hours=1)), -1, -1):
-        hour = now - timedelta(hours=back)
-        prefix = f"ABI-L2-FDCF/{hour.year}/{hour.timetuple().tm_yday:03d}/{hour.hour:02d}/"
+    day, last = (
+        since.astimezone(UTC).date(),
+        now.astimezone(UTC).date(),
+    )  # A listing is of a UTC day.
+    while day <= last:  # One listing for each day: a day has approximately 144 files.
+        prefix = f"ABI-L2-FDCF/{day.year}/{day.timetuple().tm_yday:03d}/"
         for scan in parse_listing(_get(f"{LIVE_BUCKET}/?list-type=2&prefix={prefix}").text):
-            scans.setdefault(scan[1], scan)  # If a scan has two files, the first file stays.
+            first = scans.get(scan[1], scan)
+            if since <= scan[1] <= now and scan[2] <= first[2]:
+                scans[scan[1]] = scan
+        day += timedelta(days=1)
     return [scans[start] for start in sorted(scans)]
 
 
@@ -178,14 +188,12 @@ def read_live(scans: list[tuple[str, datetime, datetime]]):
     The mask counts say how many pixels of the Pantanal box each mask group has.
     The mask is the class of each pixel of the mask window, as `download_masks` saves it.
     """
-    window = None
     for key, observed_at, published_at in scans:
         content = _get(f"{LIVE_BUCKET}/{key}").content
         with netCDF4.Dataset("scan.nc", memory=content) as dataset:
-            window = window or find_window(dataset)
-            counts = count_mask(dataset, window)
+            counts = count_mask(dataset, MASK_WINDOW)
             mask = dataset["Mask"][MASK_WINDOW[0], MASK_WINDOW[1]].filled(0).astype(np.uint8)
-            yield observed_at, published_at, read_pixels(dataset, window), counts, mask
+            yield observed_at, published_at, read_pixels(dataset, MASK_WINDOW), counts, mask
 
 
 def mask_grid(scan: tuple[str, datetime, datetime]) -> tuple[np.ndarray, np.ndarray]:
@@ -234,17 +242,6 @@ def to_lat_lon(x: np.ndarray, y: np.ndarray, projection) -> tuple[np.ndarray, np
     return np.rad2deg(lat), np.rad2deg(lon)
 
 
-def find_window(dataset: netCDF4.Dataset) -> tuple[slice, slice]:
-    """Return the (rows, columns) part of the grid that contains the Pantanal box.
-
-    The grid is the same in each file. Thus we find the window one time for each day.
-    """
-    x, y = np.meshgrid(dataset["x"][:].filled(), dataset["y"][:].filled())
-    lat, lon = to_lat_lon(x, y, dataset["goes_imager_projection"])
-    rows, columns = np.where(_in_box(lat, lon))
-    return slice(rows.min(), rows.max() + 1), slice(columns.min(), columns.max() + 1)
-
-
 def _in_box(lat: np.ndarray, lon: np.ndarray) -> np.ndarray:
     west, south, east, north = config.PANTANAL_BOX
     return (lat >= south) & (lat <= north) & (lon >= west) & (lon <= east)
@@ -277,18 +274,22 @@ def parse_file(path: Path, platform: str) -> list[Detection]:
 def _parse_row(row: dict, platform: str) -> Detection:
     observed_at = datetime.fromisoformat(row["observed_at"])
     # A live row has the time when we first saw it. A recorded row has only an estimate.
-    seen = row.get("first_seen_at")
+    available_at, estimated = observed_at + config.AVAILABLE_DELAY["abi"], True
+    if row.get("first_seen_at"):
+        available_at, estimated = live_available(
+            datetime.fromisoformat(row["first_seen_at"]),
+            datetime.fromisoformat(row["published_at"]),
+        )
     return Detection(
         source="noaa",
         sensor_family="abi",
         platform=platform,
         observed_at=observed_at,
-        available_at=datetime.fromisoformat(seen)
-        if seen
-        else observed_at + config.AVAILABLE_DELAY["abi"],
+        available_at=available_at,
         lat=float(row["lat"]),
         lon=float(row["lon"]),
         footprint_m=config.GOES_FOOTPRINT_M,
         frp_mw=float(row["frp_mw"]) if row["frp_mw"] else None,
         source_confidence=config.GOES_CONFIDENCE[int(row["mask"])],
+        available_estimated=estimated,
     )

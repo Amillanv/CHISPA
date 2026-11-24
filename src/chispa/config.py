@@ -406,16 +406,30 @@ SCAR_TILE_PX = 2048
 # from this day, the detections come from the poller, with the time when we first saw them.
 LIVE_START = datetime(2026, 11, 20, tzinfo=UTC)
 
-# One pass of the poller reads the GOES scans and the INPE files of this many hours before it.
-# Thus a short stop of the poller loses no data. A scan or a file that is older is not read.
-LIVE_LOOKBACK = timedelta(hours=3)
+# One pass of the poller reads each GOES scan and each INPE file of this time before it that no
+# pass read. For GOES it also reads back to the newest scan that a pass read: a stop of each
+# length gets its scans. INPE removes a file after some days: its oldest file was 3.8 days old
+# (`docs/sources.md` section 8.10). Thus a stop of more than 3 days can lose INPE files.
+LIVE_LOOKBACK = timedelta(days=4)
+
+# One live request to FIRMS asks for this many days: the maximum of the API. They are the day
+# of the request and the days before it. Thus after a stop of 3 days or less, a request still
+# asks for each day of the stop.
+LIVE_FIRMS_DAYS = 5
 
 # The poller runs each 5 minutes. Late: this time with no pass in which all sources answered.
+# A row that a pass first saw later than this after its publication came after a stop.
 LIVE_POLL_LATE = timedelta(minutes=15)
 
-# A live log of a day can get new rows for this long after the start of that day:
-# a FIRMS request for 2 days gives rows of the day before. Then the log is complete.
-LIVE_COMPLETE_AFTER = timedelta(days=2)
+# The time from the publication of a scan or a file to the next pass, in normal operation.
+# A row that a pass saw late gets its publication time plus this estimate. It is not a
+# measurement: the poller runs each 5 minutes, thus the mean wait is approximately half of that.
+LIVE_NORMAL_WAIT = timedelta(minutes=3)
+
+# From this time, the last row of a pass in the poll log says that the pass read each source.
+# It is the minute of the first pass with such a row. Each pass in the log from before it is
+# complete: no pass of that time stopped in the middle (`docs/sources.md` section 8.10).
+LIVE_PASS_END_FROM = datetime(2026, 11, 24, 22, 46, tzinfo=UTC)
 
 # --- Tools ---
 

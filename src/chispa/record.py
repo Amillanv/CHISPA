@@ -23,10 +23,12 @@ MERGES = (
     "SELECT CAST(strftime('%s', at) AS INTEGER), absorbed_id, into_id FROM merges WHERE at <= ?"
 )
 FIELDS = ("lat", "lon", "frp_mw", "family", "platform", "source", "high", "observed", "available")
+FIELDS += ("estimated",)
 DETECTIONS = """
 SELECT d.lat, d.lon, d.frp_mw, d.sensor_family, d.platform, d.source, d.source_confidence = 'high',
        CAST(strftime('%s', d.observed_at) AS INTEGER),
-       CAST(strftime('%s', d.available_at) AS INTEGER), m.level, m.issued_id
+       CAST(strftime('%s', d.available_at) AS INTEGER), d.available_estimated,
+       m.level, m.issued_id
 FROM detections d JOIN memberships m ON m.detection_id = d.id
 WHERE m.issued_id IN ({marks}) AND d.available_at <= ? ORDER BY d.available_at, d.id
 """
@@ -55,8 +57,8 @@ def read(store: sqlite3.Connection, ids: list[int], as_of: datetime) -> dict:
     columns = list(zip(*rows, strict=True))
     found = {name: np.array(column) for name, column in zip(FIELDS, columns, strict=False)}
     found["frp_mw"] = np.array(columns[2], dtype=float)
-    found["level"] = np.array([LEVELS.index(level) for level in columns[9]])
-    found["issued"] = np.array(columns[10])
+    found["level"] = np.array([LEVELS.index(level) for level in columns[10]])
+    found["issued"] = np.array(columns[11])
     return found
 
 
