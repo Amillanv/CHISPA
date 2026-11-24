@@ -118,7 +118,8 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 - The land cover is the map of the year before the first detection of the event, not later than the last year of the map
   (`config.py`). If that file is absent, the record has no severity and no rank, and a note.
 - `level_changes` has the changes of the event itself. An alert that the event absorbed had its own levels before the merge.
-- `passes` has the newest passes and each pass that raised the level (`config.py`), in the sequence in which CHISPA had them.
+- `passes` has the newest passes and each pass that raised the level (`config.py`), in the sequence of their observation.
+  A pass that a satellite saw first can come to CHISPA last: `available_at` and the times in `alerts` say when.
   `pass_count` is the number of all passes. A pass is the item of evidence of section 10.3. Its `available_at` is the first
   time that CHISPA had it. `alerts` has each level that the pass raised, in sequence, with the time when CHISPA had the
   detection that raised it: one pass can raise LOW and then MEDIUM, and its INPE row can come in a later poll than its FIRMS row.
@@ -1371,6 +1372,7 @@ The agent must:
 8. Pantanal time is the time of the zone in `config.py`, with its offset on the page. Data, tools and results stay in UTC.
 9. A time to CHISPA that includes a stop of the poller (`poller_stop_h`) has a mark with the most that the stop added.
    The last clear look is the newest GOES scan after the last detection with "examined, no fire".
+   The last row of the timeline counts what GOES said in each saved scan after the last detection.
    The page does not say that a fire is out.
 
 ## 13. Assumptions and decisions

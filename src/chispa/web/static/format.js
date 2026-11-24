@@ -108,6 +108,13 @@ export const GOES_GROUP = {
   fire: "fire", possible_fire: "possible fire", no_fire: "examined, no fire", cloud: "cloud",
   no_background: "could not decide", water: "water", blocked: "blocked", not_processed: "not processed",
 };
+/* What GOES said in each saved scan after the last detection (`goes_view`), the largest group first:
+   "28 examined, no fire · 2 possible fire · 1 could not decide". */
+export function goesCounts(g) {
+  return Object.entries(g.after_last_detection).sort((a, b) => b[1] - a[1])
+    .map(([group, n]) => `${num(n)} ${GOES_GROUP[group] ?? esc(group)}`).join(" · ");
+}
+
 export const GOES_NOTE = {
   fire: "GOES found fire", possible_fire: "GOES found a possible fire", no_fire: "GOES examined the pixel and found no fire",
   cloud: "GOES did not examine the pixel", no_background: "GOES could not compute a background value for the pixel",

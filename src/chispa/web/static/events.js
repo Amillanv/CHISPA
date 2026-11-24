@@ -1,7 +1,7 @@
 /* The right column: the list of events at the as-of time, and the record of one event.
    The record follows the questions of triage: where and how sure, is it moving, how did it get here,
    what do the sensors see now, what is near it. Each value is a field of the tool answer. */
-import { esc, num, pct, utc, day, dur, coord, km, compass, FAMILY, FAMILY_ORDER, INPUT, PART, GOES_GROUP, GOES_NOTE } from "./format.js";
+import { esc, num, pct, utc, day, dur, coord, km, compass, FAMILY, FAMILY_ORDER, INPUT, PART, GOES_GROUP, GOES_NOTE, goesCounts } from "./format.js";
 import { matrix } from "./matrix.js";
 import { vitals, timeline } from "./timeline.js";
 
@@ -205,11 +205,9 @@ function sensorsNow(r) {
 
 /* What GOES said in each saved scan after the newest detection: "11 scans after the newest detection: 11 could not decide." */
 function goesAfter(g) {
-  const counts = Object.entries(g.after_last_detection).sort((a, b) => b[1] - a[1]);
   const total = g.scans_after_last_detection;
   if (!total) return `<small>No saved scan after the newest detection yet.</small>`;
-  const parts = counts.map(([group, n]) => `${num(n)} ${GOES_GROUP[group] ?? esc(group)}`).join(" · ");
-  return `<small>${num(total)} saved ${total === 1 ? "scan" : "scans"} after the newest detection: ${parts}.</small>`;
+  return `<small>${num(total)} saved ${total === 1 ? "scan" : "scans"} after the newest detection: ${goesCounts(g)}.</small>`;
 }
 
 function place(r) {
