@@ -131,11 +131,62 @@ def test_update_reads_each_log_that_changed_and_no_other_log(tmp_path, monkeypat
         build, "read_log", lambda *args: read.append(args[1].name) or read_log(*args)
     )
     store = open_store(tmp_path / "store.sqlite")
-    assert build.add_live(tmp_path / "raw", store) == 2
-    assert build.add_live(tmp_path / "raw", store) == 0
+    assert build.add_live(tmp_path / "raw", store) == (2, [2026])
+    assert build.add_live(tmp_path / "raw", store) == (0, [])
     assert read == ["2026-11-01.csv", "2026-11-21.csv"]  # the second update read no log
     # A pass with `--since` fills a hole in the old log. The update reads only that log again.
     with (logs / "2026-11-01.csv").open("a") as file:
         file.write(row("01", "16"))
-    assert build.add_live(tmp_path / "raw", store) == 1
+    assert build.add_live(tmp_path / "raw", store) == (1, [2026])
     assert read[2:] == ["2026-11-01.csv"]
+
+
+def test_update_gives_each_year_with_a_new_detection(tmp_path):
+    from chispa import build
+
+    logs = tmp_path / "raw" / "live" / "goes"
+    logs.mkdir(parents=True)
+    header = "observed_at,lat,lon,mask,frp_mw,first_seen_at,published_at\n"
+    # On 1 January the log of 31 December gets a row: the events of the two years must change.
+    for day in ("2026-12-31", "2027-01-01"):
+        row = (
+            f"{day}T15:00:00+00:00,-17.5,-57.5,10,20.7,{day}T15:13:00+00:00,{day}T15:10:10+00:00\n"
+        )
+        (logs / f"{day}.csv").write_text(header + row)
+    store = open_store(tmp_path / "store.sqlite")
+    assert build.add_live(tmp_path / "raw", store) == (2, [2026, 2027])
+
+
+def test_update_reads_a_firms_log_only_with_the_poll_log_of_its_pass(tmp_path, monkeypatch):
+    import os
+    from datetime import UTC, datetime
+
+    from chispa import build
+
+    monkeypatch.setattr("chispa.config.LIVE_START", datetime(2026, 11, 21, tzinfo=UTC))
+    live = tmp_path / "raw" / "live"
+    (live / "polls").mkdir(parents=True)
+    polls = live / "polls" / "2026-11-21.csv"
+    polls.write_text(
+        "polled_at,source,item,result,new_rows\n"
+        "2026-11-21T10:00:00+00:00,firms,VIIRS_NOAA21_NRT,ok,0\n"
+        "2026-11-21T10:05:00+00:00,firms,VIIRS_NOAA21_NRT,ok,1\n"
+    )
+    header = (SAMPLES / "firms_VIIRS_SNPP_SP.csv").read_text().splitlines()[0]
+    row = dict.fromkeys(header.split(","), "1") | {"satellite": "N21", "confidence": "n"}
+    row |= {"latitude": "-17.5", "longitude": "-57.5", "acq_date": "2026-11-21", "acq_time": "0500"}
+    row |= {"first_seen_at": "2026-11-21T10:05:00+00:00"}
+    log = live / "firms" / "VIIRS_NOAA21_NRT" / "2026-11-21.csv"
+    log.parent.mkdir(parents=True)
+    with log.open("w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=list(row))
+        writer.writeheader()
+        writer.writerow(row)
+    store = open_store(tmp_path / "store.sqlite")
+    # A copy that is not complete: the FIRMS log is newer than the poll log. The log waits.
+    os.utime(polls, (1000, 1000))
+    os.utime(log, (2000, 2000))
+    assert build.add_live(tmp_path / "raw", store) == (0, [])
+    # The next copy has the poll log of the pass. The update reads the FIRMS log.
+    os.utime(polls, (3000, 3000))
+    assert build.add_live(tmp_path / "raw", store) == (1, [2026])

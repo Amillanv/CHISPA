@@ -407,13 +407,14 @@ SCAR_TILE_PX = 2048
 LIVE_START = datetime(2026, 11, 20, tzinfo=UTC)
 
 # One pass of the poller reads each GOES scan and each INPE file of this time before it that no
-# pass read. Thus a shorter stop of the poller loses no GOES scan. INPE removes a file of
-# 10 minutes after some days: its oldest file was 3.8 days old (`docs/sources.md` section 8.10).
-# Thus a stop of more than 3 days can lose INPE files.
+# pass read. For GOES it also reads back to the newest scan that a pass read: no stop loses a
+# scan. INPE removes a file of 10 minutes after some days: its oldest file was 3.8 days old
+# (`docs/sources.md` section 8.10). Thus a stop of more than 3 days can lose INPE files.
 LIVE_LOOKBACK = timedelta(days=4)
 
-# One live request to FIRMS gives the rows of this many days: the maximum of the API.
-# Thus a stop of the poller of less than 4 days loses no FIRMS row.
+# One live request to FIRMS gives the rows of this many days: the maximum of the API. They are
+# the day of the request and the days before it. Thus a stop of the poller of 3 days or less
+# loses no FIRMS row.
 LIVE_FIRMS_DAYS = 5
 
 # The poller runs each 5 minutes. Late: this time with no pass in which all sources answered.
