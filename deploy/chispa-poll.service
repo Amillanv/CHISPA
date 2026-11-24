@@ -1,5 +1,5 @@
 # One pass of the CHISPA live poller. The timer starts it each 5 minutes.
-# Install: copy the two files to /etc/systemd/system/, then `systemctl enable --now chispa-poll.timer`.
+# Install: copy the two files to /etc/systemd/system/. Then run `systemctl enable --now chispa-poll.timer`.
 [Unit]
 Description=CHISPA live poller: one pass
 Wants=network-online.target

@@ -1,0 +1,11 @@
+# Start the watch of the CHISPA live poller each 5 minutes, 2 minutes after the start of a pass.
+[Unit]
+Description=CHISPA watch: each 5 minutes
+
+[Timer]
+OnCalendar=*:2/5
+AccuracySec=1s
+Persistent=true
+
+[Install]
+WantedBy=timers.target
