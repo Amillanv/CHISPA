@@ -4,7 +4,16 @@ from datetime import UTC, datetime
 
 import numpy as np
 
-from chispa.evaluation import burn, candidates, images
+from chispa.evaluation import (
+    advance,
+    burn,
+    candidates,
+    confidence_curve,
+    curve,
+    images,
+    joined,
+    pixels,
+)
 from chispa.grid import Grid
 from chispa.sources import monitor
 
@@ -301,3 +310,202 @@ def test_measures_of_different_settings_stop_a_run(tmp_path, monkeypatch):
         assert "Delete it" in str(error)
     else:
         raise AssertionError("A file of different settings must stop the run.")
+
+
+def curve_config(monkeypatch):
+    monkeypatch.setattr("chispa.config.CURVE_DAYS", (5, 30))
+    monkeypatch.setattr("chispa.config.BURN_MIN_CLEAR", 0.5)
+    monkeypatch.setattr("chispa.config.BURN_RULE", "dark rule")
+    candidates_of = {"dark rule": ("0.3/0.2", 1.0), "monitor": ("monitor", 1.0)}
+    monkeypatch.setattr("chispa.config.BURN_CANDIDATES", candidates_of)
+
+
+def curve_row(number, day, clear_share, hectares):
+    return {"id": str(number), "day": str(day), "clear_share": clear_share, "burned_ha": hectares}
+
+
+def test_burn_curve_counts_the_answers_and_the_burned_boxes_at_each_day(monkeypatch):
+    curve_config(monkeypatch)
+    targets = [{"id": 1, "group": "matched"}, {"id": 2, "group": "matched"}]
+    # Box 1 has cloud at day 5, and 12 hectares at day 30. Box 2 is clear, with no burn.
+    rows = [curve_row(1, 5, 0.1, 0), curve_row(1, 30, 0.9, 12.0)]
+    rows += [curve_row(2, 5, 1.0, 0), curve_row(2, 30, 1.0, 0.4)]
+    by_day = {
+        r["day"]: r for r in curve.table(targets, rows) if r["group"] == "HIGH events, matched"
+    }
+    assert (by_day[5]["boxes"], by_day[5]["answers"], by_day[5]["burned"]) == (2, 1, 0)
+    assert (by_day[30]["answers"], by_day[30]["burned"], by_day[30]["burned_share"]) == (2, 1, 0.5)
+    assert by_day[30]["hectares_median"] == 12.0
+    # Box 2 has the same answer at day 5 and at day 30. Box 1 has no answer at day 5.
+    assert (by_day[5]["with_last_day"], by_day[5]["same_as_last_day"]) == (1, 1)
+
+
+def test_burn_curve_check_compares_the_last_day_with_the_rule_and_the_map(monkeypatch):
+    curve_config(monkeypatch)
+    targets = [{"id": n, "group": "matched"} for n in (1, 2, 3)]
+    rows = [curve_row(1, 30, 1.0, 12.0), curve_row(2, 30, 1.0, 0), curve_row(3, 30, 1.0, 5.0)]
+
+    def other(number, rule_ha, monitor_ha):
+        return {
+            "id": str(number),
+            "clear_share": 1.0,
+            "scenes": 0,
+            "0.3/0.2": rule_ha,
+            "monitor": monitor_ha,
+        }
+
+    # The rule agrees for each box. The map does not have the burn of box 3.
+    measures = [other(1, 9.0, 30.0), other(2, 0, 0), other(3, 2.0, 0)]
+    table = curve.check_table(targets, rows, measures)
+    matched = next(row for row in table if row["group"] == "HIGH events, matched")
+    assert (matched["rule_boxes"], matched["rule_same"]) == (3, 3)
+    assert (matched["monitor_boxes"], matched["monitor_same"], matched["monitor_same_share"]) == (
+        3,
+        2,
+        0.6667,
+    )
+    assert matched["rule_rank_correlation"] == 1.0
+
+
+def test_burn_curve_of_events_has_one_group_for_each_level(monkeypatch):
+    curve_config(monkeypatch)
+    targets = [{"id": 1, "group": "LOW"}, {"id": 2, "group": "HIGH"}, {"id": 3, "group": "HIGH"}]
+    rows = [curve_row(n, day, 1.0, ha) for n, ha in ((1, 0), (2, 20.0), (3, 0)) for day in (5, 30)]
+    rows.append(curve_row(9, 30, 1.0, 50.0))  # An event that is not in the list now.
+    found = {(r["group"], r["day"]): r for r in curve.table(targets, rows)}
+    assert set(found) == {
+        ("LOW events", 5),
+        ("LOW events", 30),
+        ("HIGH events", 5),
+        ("HIGH events", 30),
+    }
+    assert (found[("HIGH events", 30)]["answers"], found[("HIGH events", 30)]["burned"]) == (2, 1)
+    assert found[("LOW events", 30)]["burned_share"] == 0.0
+
+
+def test_burn_curve_against_the_map_counts_the_four_pairs(monkeypatch):
+    curve_config(monkeypatch)
+    targets = [{"id": n, "group": "HIGH"} for n in (1, 2, 3, 4, 5)]
+    # Event 5 has cloud: the curve has no answer for it, thus it is not in the table.
+    rows = [curve_row(1, 30, 1.0, 20.0), curve_row(2, 30, 1.0, 20.0), curve_row(3, 30, 1.0, 0)]
+    rows += [curve_row(4, 30, 1.0, 0), curve_row(5, 30, 0.1, 0)]
+    (high,) = curve.map_table(targets, rows, matched={1, 3, 5})
+    assert (high["events"], high["burned"], high["matched"]) == (4, 2, 2)
+    assert (high["burned_and_match"], high["burned_no_match"]) == (1, 1)
+    assert (high["match_no_burn"], high["no_burn_no_match"], high["same_share"]) == (1, 1, 0.5)
+
+
+def test_confidence_against_the_curve_uses_only_alerts_with_an_answer_of_the_curve():
+    model = {"inputs": ["a"], "mean": [0.0], "spread": [1.0], "start": 0.0, "weights": [1.0]}
+
+    def alert(event, value, level, matched):
+        return {"event": event, "inputs": {"a": value}, "level": level, "matched": matched}
+
+    # Events 1 and 2 burned, event 3 did not. The curve has no answer for event 4.
+    rows = [alert(1, 2.0, 0, True), alert(2, 1.0, 0, False), alert(3, -1.0, 2, False)]
+    rows.append(alert(4, 5.0, 2, True))
+    burned = {1: True, 2: True, 3: False, 4: None}
+    models, moments = {"0": model, "24": model}, {"0": rows, "24": rows}
+    found = confidence_curve.curve_table(moments, models, (burned, True))
+    by_name = {(row["moment_h"], row["measure"]): row for row in found}
+    probability, level = by_name[("0", "probability")], by_name[("0", "level")]
+    assert (probability["alerts"], probability["alerts_burned"]) == (3, 2)
+    assert probability["burn_separation"] == 1.0  # The two burned alerts have the larger values.
+    assert level["burn_separation"] == 0.0  # The alert with no burn has the higher level.
+    assert probability["alerts_matched"] == 1
+    # A year with no map has no value for a match: it is not 0.
+    no_map = confidence_curve.curve_table(moments, models, (burned, False))[0]
+    assert (no_map["alerts_matched"], no_map["match_separation"]) == (None, None)
+    assert no_map["burn_separation"] == 1.0
+
+
+def test_map_months_of_an_event_are_its_months_and_the_month_after(monkeypatch):
+    monkeypatch.setattr("chispa.config.EVAL_MONTHS_BEFORE", 1)
+    assert pixels.months_of(
+        datetime(2024, 8, 30, tzinfo=UTC), datetime(2024, 9, 2, tzinfo=UTC)
+    ) == [8, 9, 10]
+    # An event of December has no month after it in the same year.
+    assert pixels.months_of(
+        datetime(2024, 12, 5, tzinfo=UTC), datetime(2024, 12, 6, tzinfo=UTC)
+    ) == [12]
+
+
+def test_pixel_table_gives_the_shares_and_the_ratio_of_the_boxes_with_a_map(monkeypatch):
+    monkeypatch.setattr("chispa.config.BURN_HA_MIN", 10.0)
+    targets = [{"id": n, "group": "matched"} for n in (1, 2, 3)]
+
+    def areas(number, rule_ha, map_ha, both_ha):
+        return {
+            "id": str(number),
+            "clear_ha": 500,
+            "rule_ha": rule_ha,
+            "map_ha": map_ha,
+            "both_ha": both_ha,
+        }
+
+    # Box 3 has 2 hectares in the map: less than the minimum, thus it gives no ratio.
+    rows = [areas(1, 50.0, 100.0, 40.0), areas(2, 30.0, 20.0, 20.0), areas(3, 0.0, 2.0, 0.0)]
+    (matched,) = pixels.table(targets, rows)
+    assert (matched["rule_ha"], matched["map_ha"], matched["both_ha"]) == (80, 122, 60)
+    assert (matched["found_share"], matched["in_map_share"]) == (0.4918, 0.75)
+    assert (matched["boxes_with_map"], matched["ratio_median"]) == (2, 1.0)  # 0.5 and 1.5.
+
+
+def test_advance_views_are_the_first_clear_view_and_one_some_days_later(monkeypatch):
+    monkeypatch.setattr("chispa.config.IMAGE_MIN_CLEAR", 0.8)
+    monkeypatch.setattr("chispa.config.ADVANCE_VIEW_DAYS", 5)
+    monkeypatch.setattr("chispa.config.BURN_DAYS", 30)
+    first, last = datetime(2024, 8, 1, tzinfo=UTC), datetime(2024, 8, 12, tzinfo=UTC)
+
+    def view(day, part):
+        return "name", datetime(2024, 8, day, 14, tzinfo=UTC), part
+
+    views = [view(2, 0.3), view(4, 0.9), view(7, 1.0), view(9, 0.5), view(14, 0.95)]
+    at_a, at_b = advance.choose(views, first, last)
+    assert (at_a.day, at_b.day) == (4, 14)  # Day 7 is too near to view A. Day 9 has cloud.
+    assert advance.choose(views[:3], first, last) is None
+
+
+def test_advance_of_viirs_uses_the_pixels_before_and_after_view_a(monkeypatch):
+    monkeypatch.setattr("chispa.config.GROWTH_FLOOR_M", 850.0)
+    monkeypatch.setattr("chispa.config.GROWTH_ADVANCE_PERCENT", 90)
+    monkeypatch.setattr("chispa.config.GROWTH_SPEED_MIN_H", 6.0)
+    # Two old pixels at one place. Two new pixels approximately 5.5 km to the north.
+    pixels = np.array(
+        [[0, 10, 200, 210], [-19.0, -19.0, -18.95, -18.95], [-57.0, -57.0, -57.0, -57.0]]
+    )
+    step = advance.viirs_step(pixels, at_a=100, at_b=300)
+    assert 5400 < step["advance_m"] < 5700
+    assert round(step["direction_deg"]) in (0, 360)
+    assert advance.viirs_step(pixels, at_a=300, at_b=400) is None  # No pixel after view A.
+
+
+def test_advance_table_counts_the_events_that_agree(monkeypatch):
+    monkeypatch.setattr("chispa.config.ADVANCE_SAME_FACTOR", 2.0)
+    monkeypatch.setattr("chispa.config.ADVANCE_SAME_DEG", 45.0)
+
+    def row(viirs_m, ground_m, viirs_deg, ground_deg, view_b="2024-08-14"):
+        values = {"viirs_advance_m": viirs_m, "ground_advance_m": ground_m, "view_b": view_b}
+        return values | {"viirs_direction_deg": viirs_deg, "ground_direction_deg": ground_deg}
+
+    rows = [row(4000, 3000, 350, 10), row(9000, 3000, 90, 270), row("", "", "", "", view_b="")]
+    (found,) = advance.table(rows)
+    assert (found["events"], found["with_two_views"], found["with_two_advances"]) == (3, 2, 2)
+    assert (found["same_advance"], found["same_advance_share"]) == (1, 0.5)  # 1.33 and 3.0.
+    assert (found["turn_deg_median"], found["same_direction"]) == (100.0, 1)  # 20 and 180 degrees.
+    assert advance.bearing((-19.0, -57.0), (-18.9, -57.0)) == 0.0
+
+
+def test_joined_table_gives_the_first_definition_and_the_curve_for_the_same_boxes(monkeypatch):
+    curve_config(monkeypatch)
+    targets = [{"id": n, "group": "no fire"} for n in (1, 2)]
+    # The joined definition calls box 2 burned. The curve does not.
+    first = [
+        {"id": "1", "clear_share": 1.0, "burned_ha": 0},
+        {"id": "2", "clear_share": 1.0, "burned_ha": 9.0},
+    ]
+    days = [curve_row(1, 30, 1.0, 0), curve_row(2, 30, 1.0, 0)]
+    (row,) = joined.table(targets, first, days)
+    assert (row["group"], row["day"], row["boxes"]) == ("boxes, no fire", 30, 2)
+    assert (row["joined_answers"], row["joined_burned"], row["joined_burned_share"]) == (2, 1, 0.5)
+    assert (row["curve_burned"], row["curve_burned_share"]) == (0, 0.0)

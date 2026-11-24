@@ -1,0 +1,4 @@
+group,events,burned,matched,burned_and_match,burned_no_match,match_no_burn,no_burn_no_match,same_share,config,run_date
+LOW events,2693,593,611,342,251,269,1831,0.8069,e06a03177d61,2026-11-24
+MEDIUM events,2037,714,767,471,243,296,1027,0.7354,e06a03177d61,2026-11-24
+HIGH events,1018,704,624,578,126,46,268,0.831,e06a03177d61,2026-11-24

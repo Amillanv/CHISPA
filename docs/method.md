@@ -1028,6 +1028,270 @@ box rule, by 0.05 or more, and a larger agreement with the answers of a person o
 The person makes those answers before a candidate runs on 2025: 80 chips, with the rules of section 11.10.
 If the hypothesis is false, the box rule stays, and we say so.
 
+The result of the test (tables `burn_candidates`, `burn_candidates_person` and `image_check_2` of 2025, 2026-11-24).
+The command ran one time, after the 80 answers of the person were complete.
+
+- The person said "burned" for 6 of 23 unmatched HIGH events with a clear answer, for 16 of 18 with a match, and for
+  0 of 30 no-fire boxes. No answer of 2025 has the area `small`.
+- The difference: 0.66 for the box rule (83 of 100 found, 17 of 100 no-fire boxes), 0.79 for the short-wave rule
+  (92 and 13), 0.85 for the dark rule (90 and 5), 0.89 for the Monitor map (89 and 0), 0.3585 for radar VV and 0.4789 for radar VH.
+- The agreement with the person, for 71 chips: 58 for the box rule, 57 for the short-wave rule, 64 for the dark rule
+  and 61 for the Monitor map. For radar it is 43 and 45 of 64 chips.
+- The hypothesis is false. The short-wave rule has the larger difference (0.79 against 0.66). It does not have the larger
+  agreement with the person (0.8028 against 0.8169): it said "burned" for 12 of the 49 chips that the person called not burned.
+  The box rule said so for 9. Thus the gain of the short-wave rule on 2024 came from the selection of its setting on those chips.
+- The dark rule was in the table for a comparison, with a setting that we froze before the run. Its difference is 0.85,
+  and it agrees with the person for 64 of 71 chips: more than the box rule by 0.19 and by 0.0845.
+  It was not the first candidate. Thus a choice of the dark rule now is a choice after the test, and we say so.
+  Its difference was also larger than that of the box rule on 2023 and on 2024, with this setting.
+- By the rule of the hypothesis the box rule stays. The owner decides if the dark rule replaces it.
+- The owner decided on 2026-11-24: the dark rule gives the burned ground of an event (`config.BURN_RULE`).
+  It is a choice after the test. The reasons: its setting was frozen before the run of 2025, and its difference was
+  larger than that of the box rule in 2023, 2024 and 2025.
+- Radar is far below the box rule on 2025. The Monitor map is near the dark rule: it gives one answer for a month.
+- Limits: 71 chips, and one person. The answers of 2025 have no small burn, thus this test says nothing on small burns.
+  The no-fire boxes do not use the person: the short-wave rule said "burned" for 13 of 100, and the dark rule for 5.
+
+### 11.17 The burn curve
+
+Question: how much ground of an event burned by a number of days after its first detection?
+The selected rule of section 11.16 gives one answer, at the first clear view after the last detection.
+The burn curve gives an answer at fixed days after the first detection (`config.CURVE_DAYS`): it is a label
+for the confidence, a target for the growth risk, and a reference for a year with no map of burn scars.
+`sentinel2.py` makes the curve of a box. The command `chispa curve --year` makes the tables.
+
+1. The box, the view before the event, the clear pixels and the minimum patch are those of the burn check (section 11.10).
+2. A day counts from the first detection. The answer of a day uses the images from the day after the last detection
+   to the end of that day. An event that still burns at a day has no answer at that day.
+3. Each pixel has one view: its oldest clear view in those images. A pixel is burned by the selected rule:
+   the dNBR against the view before, minus the background, and the dark limit.
+4. Thus a later day adds the pixels that got their first clear view. It does not look at a pixel a second time.
+5. The clear share at a day is the share of the box with a view to that day. The curve has an answer at a day
+   if that share is the minimum of the burn check or more.
+
+The table `burn_curve` gives, for each group of the burn check and each day, the boxes with an answer, the boxes
+that the curve calls burned, and how many boxes have the same answer at that day and at the last day. The table `burn_curve_check` compares the last day of the curve with two slower answers
+for the same boxes: the selected rule at its first clear view (table `burn_candidates`), and the Monitor map of the months.
+
+The first definition, and why it stopped (2026-11-24). It joined the burned pixels of each image to a day: a pixel was
+burned if a minimum of one image called it burned. We wrote its hypotheses before its run on 2023 to 2025.
+One was: for the no-fire boxes, the burned share at day 30 is not more than 0.05 above that of the selected rule.
+It was false in each of the three years: each image adds its errors, thus more images give more boxes with a false burn.
+The table `burn_curve_joined` gives that result, from a measure that stays in the code only for this table:
+at day 30 the first definition called 22 of 98 no-fire boxes burned in 2023, 14 of 99 in 2024 and 16 of 100 in 2025.
+The definition above calls 13 of 98, 4 of 98 and 5 of 100. The definition above replaced it.
+The first run of the first definition was on 2026-11-24, on the boxes of the three years. Thus the result of the
+definition above is a second analysis of the same boxes: it is not an independent test.
+
+The hypotheses of the definition above, written on 2026-11-24 before its first run, for each year from 2023 to 2025.
+The curve has no setting of its own: the rule is frozen, and the days are round numbers.
+
+1. The curve has an answer for half of the boxes or more at day 10, and for 9 of 10 boxes or more at day 30.
+2. At day 30 the curve and the selected rule give the same answer for 95 of 100 boxes or more, in each group.
+3. For the no-fire boxes, the burned share of the curve at each day is not more than 0.05 above that of the selected rule.
+4. For the matched HIGH events, the burned share of the curve at day 10 is not more than 0.05 below that of the selected rule.
+   Thus an early answer is as good as a late answer.
+
+If hypothesis 3 or 4 is false, we do not use the early answers of the curve as a label.
+
+The result (tables `burn_curve` and `burn_curve_check` of 2023, 2024 and 2025, 2026-11-24): the four hypotheses are true
+in each year.
+
+- The answers. At day 5 the curve has an answer for 22 to 39 of 100 boxes of a group. At day 10 it has one for 57 to 79,
+  at day 20 for 87 to 96, and at day 30 for 95 to 100. Thus Sentinel-2 gives an answer for approximately one third of the
+  events in 5 days, and for approximately 7 of 10 in 10 days.
+- At day 30 the curve and the selected rule give the same answer for each box with the two answers.
+- The no-fire boxes. The burned share is 0.0 to 0.0811 at day 5 and 0.0253 to 0.0779 at day 10. At day 30 it is that of
+  the selected rule: 0.1327 in 2023, 0.0408 in 2024 and 0.05 in 2025.
+- The matched HIGH events. The burned share at day 10 is 0.8986, 0.8421 and 0.8636 in the three years. That of the
+  selected rule is 0.9192, 0.8866 and 0.9. The largest difference is 0.0445, in 2024.
+- A correction after a review (2026-11-24). Hypothesis 4 ends with "an early answer is as good as a late answer".
+  The burned share of a different set of boxes does not show that. The table now compares the same boxes: for the
+  boxes with an answer at day 10 and at day 30, the two answers are the same for 299 of 305, 222 of 225 and 133 of 135
+  unmatched events in the three years, for 68 of 69, 56 of 57 and 65 of 66 matched events, and for 77 of 77, 79 of 79
+  and 78 of 79 no-fire boxes. Thus an early answer rarely changes. This does not say that the early answer is correct:
+  a check of the answer at day 10 against a person is not built. At day 10 the curve has no answer for 21 to 43 of 100 boxes.
+- The burned hectares increase with the day: the median of the matched events with a burn is 24 to 45 hectares at day 5,
+  and 60 to 102 at day 30. More pixels get their view, and the larger events get their answer later.
+- The unmatched HIGH events with a burn at day 30: 144 of 419 in 2023, 85 of 295 in 2024 and 60 of 186 in 2025.
+- The Monitor map of the months gives the same answer as the curve at day 30 for 83 to 89 of 100 matched events,
+  for 72 to 78 of 100 unmatched events, and for 87 to 96 of 100 no-fire boxes. The rank correlation of the hectares
+  is 0.6835 to 0.7768 for the matched events. The two answers agree in part: no one of them is the reference of the other.
+- Thus the curve can be a label at a day, with its answer share: "no answer" is not "not burned".
+
+The curve of each event (`chispa curve --year --events`, table `burn_curve_events`).
+
+1. The events are those of a year with their centre in the biome. The box of an event is the box of its detections at the
+   end of the year, with the margin of the burn check. The group of an event is its final level.
+2. An event of the year in progress is in the list only when its last day of the curve is some days in the past (`config.py`).
+3. The curves are in `data/curves/`, with the events that they measured. The files are large: they are not in the repository.
+   The command makes them again. A year needs no map of burn scars: 2026 has curves.
+4. The table gives, for each level and each day, the events with an answer and the events that the curve calls burned.
+5. For a year with a map, the table `burn_curve_map` compares the answer of the curve at day 30 with the match of each event.
+
+The hypothesis, written on 2026-11-24 before the first result: in each year from 2023 to 2026, the burned share at day 30
+increases with the final level: LOW, then MEDIUM, then HIGH. The matched share of the events does this against the map
+(section 11.2). The curve uses no map, thus it is a second answer to the same question, and the first one for 2026.
+If it is false in a year, the level or the curve says a different thing than the map in that year, and we say so.
+
+The result (tables `burn_curve_events` and `burn_curve_map` of 2023 to 2026, 2026-11-24).
+
+- The events with a curve: 5821 in 2023, 6112 in 2024, 1692 in 2025, and 1085 in 2026, with a first detection from
+  1 January to 19 October.
+- The hypothesis is true in each of the four years. The burned share at day 30 for LOW, MEDIUM and HIGH events:
+  593 of 2693, 714 of 2037 and 704 of 1018 in 2023. 957 of 2814, 798 of 1724 and 1097 of 1410 in 2024.
+  179 of 929, 118 of 347 and 229 of 370 in 2025. 114 of 549, 95 of 219 and 235 of 310 in 2026.
+- Thus the levels have the same sequence in 2026, a year with no map and with no rule that we set on it.
+- The answers at day 10: 61 to 75 of 100 events of a level in 2023 and 2024, 71 to 78 in 2025, and 83 to 87 in 2026.
+- The curve against the map, for the events with an answer of the curve. The two give the same answer for 0.831, 0.8816
+  and 0.8189 of the HIGH events in 2023, 2024 and 2025, for 0.7354, 0.7146 and 0.6657 of the MEDIUM events, and for
+  0.8069, 0.7175 and 0.7374 of the LOW events.
+- The two differ in the two directions. In 2025, 47 HIGH events have a burn and no match: a burn that the map does not
+  have, or an error of the curve. In 2024, 650 LOW events have a match and no burn: a small burn that the curve does not
+  find, or a match with a large fire that is near and not at the place of the event. We cannot separate these causes
+  without a person.
+- Thus the curve is not a copy of the map, and the map is not a copy of the curve. Give the reference with each result.
+
+- Limits: the box of an event at the end of the year can hold more than one fire, and a very large event has a very
+  large box. A level uses the number of passes, thus an event with a HIGH level lasts longer: it has its answer later.
+  The curve does not find most small burns (section 11.16), and a LOW event is more frequently a small fire.
+
+- Limits: the boxes are those of the burn check, not each event. We saw the results of the first definition before
+  this one: it is a second analysis of the same boxes. The curve does not show the growth in an event: its images start
+  after the last detection. The check against the Monitor map compares two answers that are not independent of the detections.
+  Section 11.19 has the check against the annual map for each pixel. Section 11.20 has the advance of VIIRS against
+  the new burned ground.
+
+### 11.18 The confidence against the burn curve, and the test of 2026
+
+Section 11.15 ended with: a new test of the confidence model needs 2026, when its map of burn scars exists.
+The burn curve (section 11.17) gives an outcome for 2026 now. The command `chispa confidence --year` makes the table
+`confidence_curve` for a year with curves of its events.
+
+1. The model is the frozen model of section 11.15: its weights are from 2023, with the match with the map as the label.
+   Nothing of it changes.
+2. The alerts are those of section 11.15, as they were at moment 0 and at moment 24.
+3. The outcome of an alert is the answer of the burn curve at day 30 for the event that holds the alert at the end of
+   the year: burned or not burned. An alert of an event with no answer of the curve is not in the table.
+4. The measure is the burn separation: the probability that an alert with a burn has a larger value than an alert with none.
+   The table gives it for the probability of the model and for the level. A year with a map also has the match separation
+   for the same alerts.
+
+The hypotheses, written on 2026-11-24 before the first run of the command:
+
+1. In 2026, at moment 0, the burn separation of the probability is larger than that of the level.
+2. In 2026, at moment 24, the burn separation of the probability is larger than that of the level.
+
+2026 gave the model no weight, no input and no setting, and it gave the dark rule no setting.
+2025 has the same table for a comparison: there the two outcomes exist for the same alerts.
+If a hypothesis is false, the rank is not better than the level for the burned ground in 2026, and we say so.
+
+The result of the test (table `confidence_curve` of 2026, 2026-11-24). The command ran one time.
+2026 has 1103 alerts at moment 0 with an answer of the curve, and 467 of them have a burn. At moment 24 it has 1078 and 444.
+
+- Hypothesis 1 is true. At moment 0 the burn separation of the probability is 0.8242. That of the level is 0.6097.
+- Hypothesis 2 is true. At moment 24 it is 0.8439 for the probability and 0.7481 for the level.
+- The top tenth at moment 0: 108 of the 110 alerts with the largest probabilities have a burn. For the level: 59 of 110.
+- The same table for 2025, where the alerts have the two outcomes: the burn separation of the probability is 0.7722 at
+  moment 0, and its match separation is 0.8339. For the level the two are 0.6161 and 0.6097.
+  Thus the model is better than the level against each outcome. It is nearer to the label that it learned.
+- Thus the model puts new alerts in a better sequence than the level in 2026 also: a year that gave it nothing,
+  against an outcome that is not the map. Its value stays a rank, not a probability (section 11.15).
+
+- Limits: the outcome is the answer of a rule, not a map and not a person. The rule does not find most small burns.
+  The model learned the match with the map: a burn is a different label. The events of 2026 are those to 19 October.
+  The detections of 2026 before the live logs are from the archive, with an estimate of `available_at`.
+
+### 11.19 The hectares of the rule against the map
+
+The checks of sections 11.16 and 11.17 are for "burned" or "not burned". The burn curve also gives hectares, and the
+growth risk needs them as its target. This section compares the burned pixels of the selected rule with the pixels of the
+annual map of burn scars. The command `chispa pixels --year` makes the table `burn_pixels`.
+
+1. The boxes are those of the burn check. The rule is the selected rule at its first clear view after the event.
+2. The map pixels are those of the annual map with a burn from the month of the first detection to one month after the
+   month of the last detection, in the same year (the month rule of section 11.4).
+3. Only the pixels with a clear view of the rule count. For each box: the hectares of the rule, the hectares of the map,
+   and the hectares that the two have.
+4. The table gives, for each group: the sums of the three areas, the share of the map area that the rule finds, the share
+   of the rule area that the map has, the rank correlation of the two hectares of a box, and the median of their ratio.
+   The ratio is for the boxes where the map has the minimum area of the box rule or more.
+
+The hypotheses, written on 2026-11-24 before the first run, for the matched HIGH events of each year from 2023 to 2025:
+
+1. The rank correlation between the hectares of the rule and the hectares of the map is 0.7 or more.
+2. The median ratio of the hectares of the rule to the hectares of the map is from 0.5 to 2.
+
+If hypothesis 1 is true and hypothesis 2 is false, the hectares of the rule give a sequence of the events and not an area.
+If hypothesis 1 is false, the hectares are not a target for the growth risk.
+
+The result (table `burn_pixels` of 2023, 2024 and 2025, 2026-11-24): the two hypotheses are false in each year.
+
+- The rank correlation for the matched HIGH events is 0.5214 in 2023, 0.6498 in 2024 and 0.6694 in 2025: less than 0.7.
+- The median ratio is 0.4644, 0.2153 and 0.3954: the rule has less than half of the hectares of the map for the typical event.
+- The rule finds 0.3685, 0.3392 and 0.4815 of the map area in the boxes. 0.6249, 0.7947 and 0.5563 of the rule area is in the map.
+- The no-fire boxes have 325, 64 and 40 hectares of the rule in 100 boxes: the rule calls little ground burned with no fire.
+- Thus the selected rule says if the ground of an event burned. It does not give the burned area, and its hectares are
+  not a target for the growth risk. The curve stays a label: "burned", "not burned" or "no answer".
+- Possible causes, not separated: the rule subtracts the background of a box, its two limits were selected for few false
+  burns, and the map pixels of the months of an event can be of a different fire in the same box.
+- A look outside the repository, with no table: in the same boxes the hectares of the Monitor map are nearer to those of
+  the annual map than the hectares of the rule. The two maps come from one group, thus this is not an independent check.
+
+- Limits: the map is not exact. It does not have each small burn, and its month can be one month late.
+  The rule subtracts the background of a box, thus it finds less in a box where most of the ground burned.
+  The map has pixels of 30 m, and the rule has pixels of 20 m. An event of December has no month after it in the same year.
+
+### 11.20 The advance of VIIRS against the new burned ground
+
+Section 11.13 gives the advance and the direction of an event from its VIIRS pixels. That measure had no reference in
+the repository. This section compares it with the new burned ground between two Sentinel-2 images of the same event.
+The command `chispa advance --year` makes the table `advance_check`.
+
+1. The events are the HIGH events of a year with their centre in the biome, with VIIRS detections, and with a time
+   from the first detection to the last detection of the minimum in `config.py` or more.
+2. View A is the first image after the first detection with the minimum share of the box with no cloud (section 11.10).
+   View B is the first such image a minimum number of days after view A, not later than the last detection plus the days of the burn check.
+3. In each view, a pixel is burned by the selected rule, against the view before the event. The new burned ground is
+   each pixel that is burned in view B and not in view A, with a clear view in the two.
+4. The advance of Sentinel-2 is a high percentile of the distance from each new burned pixel to the nearest pixel that
+   was burned in view A. Only the pixels in the box count.
+5. The advance of VIIRS uses the same percentile as section 11.13, with two groups of detections:
+   those to the time of view A, and those from view A to view B.
+6. The direction has one definition for the two satellites: from the centre of the older group to the centre of the
+   new group. It is not the direction of section 11.13, which uses the line from each new pixel to its nearest older pixel.
+7. Two advances agree if the larger is not more than a factor of the smaller. Two directions agree if the angle
+   between them is not more than a limit. `config.py` has the two values.
+8. An event counts if the two satellites have a value: burned ground in view A, new burned ground, and VIIRS pixels in the two groups.
+
+The hypotheses, written on 2026-11-24 before the first run, for each year from 2023 to 2025. A study outside the
+repository on 19 large fires of 2023 gave them (`PLAN.md`):
+
+1. For more than half of the events, the two advances agree to a factor of 2.
+2. For more than half of the events with a direction of VIIRS, the two directions agree to 45 degrees.
+
+If a hypothesis is false, the advance or the direction of an alert has no support from the burned ground, and we say so.
+
+The result (table `advance_check` of 2023, 2024 and 2025, 2026-11-24).
+
+- The events with the two advances: 34 of 65 long events in 2023, 80 of 134 in 2024 and 5 of 7 in 2025.
+  The other events had no two clear views, no burned ground in a view, or no VIIRS pixel in one of the two groups.
+- Hypothesis 1 is true in each year. The two advances agree to a factor of 2 for 23 of 34 events, for 57 of 80 and for
+  4 of 5. The median ratio of the advance of VIIRS to that of the burned ground is 0.9526, 1.0782 and 1.0993.
+- Hypothesis 2, first run: true in 2023 and in 2024, and false in 2025 (2 of 5 events). That run compared two different
+  definitions of a direction: the centres for the burned ground, and the lines of section 11.13 for VIIRS.
+- A review asked for one definition (rule 6 above), and for the distance from the burned pixels of the box only.
+  The tables have this second run. The two directions agree to 45 degrees for 24 of 34 events in 2023, for 56 of 80
+  in 2024 and for 3 of 5 in 2025. Thus hypothesis 2 is true in each year in the second run. 2025 changed from false
+  to true by one event of five: it has too few events to support the hypothesis or to reject it.
+- The median advance of VIIRS is 2806 m, 3623 m and 5224 m. That of the burned ground is 3721 m, 3047 m and 4400 m.
+- Thus, for a fire of some days, the advance and the direction of the VIIRS pixels agree with the new burned ground for
+  approximately 2 of 3 events. The measure of section 11.13 has a reference now, for these long events only.
+
+- Limits: the rule does not give a correct burned area (section 11.19): this check uses where its pixels are, not how
+  many. An event needs two clear views in its days: these are long events, mostly large fires. The check says nothing
+  about one step of 12 hours, or about a small fire. The distance of a pixel has a largest value of approximately 20 km.
+
 ## 12. Agent and MCP rules
 
 ### 12.1 Tools

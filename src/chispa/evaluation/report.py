@@ -74,7 +74,8 @@ def write_summary(results_dir: Path) -> None:
     """Make `SUMMARY.md` again from all the CSV files in the results folder."""
     lines = ["# Results", "", "Code makes this file. Do not edit it by hand.", ""]
     for folder in sorted(path for path in results_dir.iterdir() if path.is_dir()):
-        role = config.YEAR_ROLES[int(folder.name)]
+        # A year with no role has no map of burn scars: only the tables that need no map.
+        role = config.YEAR_ROLES.get(int(folder.name), "year with no map of burn scars")
         lines += [f"## {folder.name} ({role})", ""]
         for path in sorted(folder.glob("*.csv")):
             with path.open(newline="") as file:
