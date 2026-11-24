@@ -25,3 +25,9 @@ def test_result_command_for_a_test_year_needs_a_clear_decision(capsys):
             main([command, "--year", "2025"])
         assert "test year of the later parts" in str(stop.value)
         assert "--test-run" in str(stop.value)
+
+
+def test_poll_does_not_read_back_to_before_the_live_logs():
+    with pytest.raises(SystemExit) as stop:
+        main(["poll", "--since", "2026-11-01T00:00:00+00:00"])
+    assert "The live logs start on 2026-11-20" in str(stop.value)

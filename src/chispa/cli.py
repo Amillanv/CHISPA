@@ -83,9 +83,7 @@ def main(arguments: list[str] | None = None) -> None:
     since = "Read back the GOES scans and the INPE files to this UTC time, to fill a hole: "
     since += "2026-11-20T00:00:00+00:00. It does not change the FIRMS request."
     poll.add_argument("--since", type=datetime.fromisoformat, help=since)
-    update = commands.add_parser("update", help="Put the live logs into the store and the events.")
-    push = "Also copy complete logs to the bucket."
-    update.add_argument("--push", action="store_true", help=push)
+    commands.add_parser("update", help="Put the live logs into the store and the events.")
     dashboard = commands.add_parser("serve", help="Start the dashboard on this computer.")
     dashboard.add_argument("--port", type=int, default=8000)
     for name, text in NOT_BUILT.items():
@@ -121,7 +119,7 @@ def main(arguments: list[str] | None = None) -> None:
     elif chosen.command == "poll":
         run_poll(chosen.since)
     elif chosen.command == "update":
-        run_update(chosen.push)
+        run_update()
     elif chosen.command == "serve":
         server.serve(chosen.port)
     else:
@@ -251,10 +249,16 @@ def run_poll(since: datetime | None) -> None:
     """
     if since is not None and since.utcoffset() is None:
         raise SystemExit("Give --since with a time zone: 2026-11-20T00:00:00+00:00.")
+    if since is not None and since < config.LIVE_START:
+        start = config.LIVE_START.date()
+        raise SystemExit(f"The live logs start on {start}. For the days before it, use `fetch`.")
     now = datetime.now(UTC)
     results = live.poll(config.RAW_DIR, read_setting("FIRMS_API_KEY"), now, since)
-    back = (since or now - config.LIVE_LOOKBACK).isoformat(timespec="seconds")
-    print(f"asked: FIRMS for {config.LIVE_FIRMS_DAYS} days, GOES and INPE from {back}.")
+    back = max(since or now - config.LIVE_LOOKBACK, config.LIVE_START).astimezone(UTC)
+    print(f"asked: FIRMS for {config.LIVE_FIRMS_DAYS} days. INPE from {back:%Y-%m-%d %H:%M} UTC.")
+    print(
+        "asked: GOES from the same time, or from the newest scan that a pass read if it is older."
+    )
     for source in ("firms", "goes", "inpe"):
         of_source = [result for result in results if result["source"] == source]
         failed = [result["result"] for result in of_source if result["result"] != "ok"]
@@ -264,7 +268,7 @@ def run_poll(since: datetime | None) -> None:
             print(f"  {text}")
 
 
-def run_update(push: bool) -> None:
+def run_update() -> None:
     """Add the detections of the live logs to the store, then make the events again for each
     year with a new detection."""
     now = datetime.now(UTC)
@@ -278,6 +282,3 @@ def run_update(push: bool) -> None:
     if status["late_at"] is None or now > datetime.fromisoformat(status["late_at"]):
         newest = status["complete_pass_at"] or "no pass"
         print(f"live: LATE. The newest pass with no failure: {newest}. Do a check of the poller.")
-    if push:
-        new_files = bucket.push(config.RAW_DIR, live.complete_logs(config.RAW_DIR, now))
-        print(f"live: {new_files} complete logs copied to the bucket.")

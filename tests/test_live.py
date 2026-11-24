@@ -3,7 +3,7 @@
 import csv
 import gzip
 import types
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 
 import numpy as np
 
@@ -70,13 +70,22 @@ def test_row_of_a_long_pass_has_the_time_of_its_read(tmp_path, monkeypatch):
 def test_pass_reads_back_the_lookback_or_to_a_given_time(tmp_path, monkeypatch):
     replace_sources(monkeypatch, [], [])
     monkeypatch.setattr("chispa.config.LIVE_LOOKBACK", timedelta(days=4))
+    monkeypatch.setattr("chispa.config.LIVE_START", datetime(2026, 10, 1, tzinfo=UTC))
     asked = []
     monkeypatch.setattr(
         "chispa.sources.goes.list_live", lambda since, now: asked.append(since) or []
     )
     live.poll(tmp_path, "key", NOW)
-    live.poll(tmp_path, "key", NOW, datetime(2026, 11, 1, tzinfo=UTC))
-    assert asked == [NOW - timedelta(days=4), datetime(2026, 11, 1, tzinfo=UTC)]
+    # A time with a different offset: 02:00 at +02:00 is 00:00 UTC. The pass uses the UTC time.
+    live.poll(tmp_path, "key", NOW, datetime(2026, 11, 1, 2, tzinfo=timezone(timedelta(hours=2))))
+    # A pass does not read back to before the start of the live logs.
+    live.poll(tmp_path, "key", NOW, datetime(2026, 9, 1, tzinfo=UTC))
+    assert asked == [
+        NOW - timedelta(days=4),
+        datetime(2026, 11, 1, tzinfo=UTC),
+        datetime(2026, 10, 1, tzinfo=UTC),
+    ]
+    assert [since.utcoffset() for since in asked] == [timedelta(0)] * 3
 
 
 def test_scan_of_a_stop_is_read_when_the_poller_is_back(tmp_path, monkeypatch):
@@ -139,9 +148,11 @@ def test_each_pass_is_in_the_poll_log(tmp_path, monkeypatch):
     replace_sources(monkeypatch, [ROW], [SCAN])
     live.poll(tmp_path, "key", NOW)
     polls = read(tmp_path / "live" / "polls" / "2026-11-21.csv")
+    # The last row says that the pass read each source: a pass that stops has no such row.
     assert [(row["source"], row["result"], row["new_rows"]) for row in polls] == [
         ("firms", "ok", "1"),
         ("goes", "ok", "1"),
+        ("pass", "ok", "2"),
     ]
 
 
@@ -156,6 +167,7 @@ def test_source_that_fails_does_not_stop_the_pass(tmp_path, monkeypatch):
     assert [(result["source"], result["result"][:6]) for result in results] == [
         ("firms", "failed"),
         ("goes", "ok"),
+        ("pass", "ok"),
     ]
 
 
@@ -189,16 +201,6 @@ def test_inpe_file_is_read_one_time_and_kept_in_full(tmp_path, monkeypatch):
             "published_at": "2026-11-21T19:20:06+00:00",
         }
     ]
-
-
-def test_only_a_log_that_gets_no_more_rows_is_complete(tmp_path, monkeypatch):
-    monkeypatch.setattr("chispa.config.LIVE_COMPLETE_AFTER", timedelta(days=2))
-    for day in ("2026-11-19", "2026-11-20", "2026-11-21"):
-        path = tmp_path / "live" / "goes" / f"{day}.csv"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("observed_at\n")
-    # At 19:30 on 21 November, the log of 19 November is 2 days old. The log of 20 November is not.
-    assert [path.stem for path in live.complete_logs(tmp_path, NOW)] == ["2026-11-19"]
 
 
 def test_mask_file_with_no_time_of_the_first_view_gets_an_estimate(tmp_path, monkeypatch):

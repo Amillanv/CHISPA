@@ -407,8 +407,8 @@ SCAR_TILE_PX = 2048
 LIVE_START = datetime(2026, 11, 20, tzinfo=UTC)
 
 # One pass of the poller reads each GOES scan and each INPE file of this time before it that no
-# pass read. For GOES it also reads back to the newest scan that a pass read: no stop loses a
-# scan. INPE removes a file of 10 minutes after some days: its oldest file was 3.8 days old
+# pass read. For GOES it also reads back to the newest scan that a pass read: a stop of each
+# length gets its scans. INPE removes a file after some days: its oldest file was 3.8 days old
 # (`docs/sources.md` section 8.10). Thus a stop of more than 3 days can lose INPE files.
 LIVE_LOOKBACK = timedelta(days=4)
 
@@ -426,9 +426,10 @@ LIVE_POLL_LATE = timedelta(minutes=15)
 # measurement: the poller runs each 5 minutes, thus the mean wait is approximately half of that.
 LIVE_NORMAL_WAIT = timedelta(minutes=3)
 
-# A live log of a day can get new rows for this long after the start of that day: a pass reads
-# back `LIVE_LOOKBACK`, and a FIRMS request gives `LIVE_FIRMS_DAYS`. Then the log is complete.
-LIVE_COMPLETE_AFTER = max(LIVE_LOOKBACK + timedelta(days=1), timedelta(days=LIVE_FIRMS_DAYS))
+# From this time, the last row of a pass in the poll log says that the pass read each source.
+# A pass from before it has no such row: the poller of that time wrote the rows of a pass at
+# its end, thus each pass in the log is complete.
+LIVE_PASS_END_FROM = datetime(2026, 11, 25, tzinfo=UTC)
 
 # --- Tools ---
 

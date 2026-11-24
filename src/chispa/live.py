@@ -9,14 +9,14 @@ import csv
 import gzip
 import time
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
 import requests
 
 from chispa import config
-from chispa.polls import read_rows
+from chispa.polls import PASS_END, read_rows
 from chispa.sources import firms, goes, inpe
 
 # The fields that identify one FIRMS row. A row that we saw before is not a new detection.
@@ -27,15 +27,18 @@ Clock = Callable[[], datetime]
 
 
 def poll(raw_dir: Path, key: str, now: datetime, since: datetime | None = None) -> list[dict]:
-    """Do one pass that starts at `now`. Return one result for each product, scan and file.
+    """Do one pass that starts at `now`. Return one result for each product, scan and file,
+    and one last result for the pass.
 
     A pass reads each GOES scan and each INPE file from `since` that no pass read. With no
-    `since` it reads back `config.LIVE_LOOKBACK`. `since` does not change the FIRMS request.
+    `since` it reads back `config.LIVE_LOOKBACK`. It does not read back to before
+    `config.LIVE_START`. `since` does not change the FIRMS request.
     INPE removes a file after some days: a stop of that length loses INPE files.
     A source that fails does not stop the pass. The next pass gets its data.
     """
     live = raw_dir / "live"
-    since = since or now - config.LIVE_LOOKBACK
+    # The live logs start at `config.LIVE_START`: the archive has the data from before it.
+    since = max(since or now - config.LIVE_LOOKBACK, config.LIVE_START).astimezone(UTC)
     started = time.monotonic()
 
     def clock() -> datetime:
@@ -45,7 +48,10 @@ def poll(raw_dir: Path, key: str, now: datetime, since: datetime | None = None) 
     # FIRMS is the first read of a pass. Thus the start of a pass is the time of its FIRMS read,
     # to some seconds: `build.after_stop` finds a stop from the starts of the passes.
     results = [_poll_firms(live, product, key, now, clock) for product in firms.LIVE_PRODUCTS]
-    return results + _poll_goes(live, since, now, clock) + _poll_inpe(live, since, now, clock)
+    results += _poll_goes(live, since, now, clock) + _poll_inpe(live, since, now, clock)
+    # The last row of a pass says that the pass read each source. A pass that stops has none.
+    new_rows = sum(result["new_rows"] for result in results)
+    return [*results, _log(live, _result(now, PASS_END, "end", "ok", new_rows))]
 
 
 def _result(now: datetime, source: str, item: str, result: str, new_rows: int) -> dict:
@@ -117,7 +123,7 @@ def _poll_goes(live: Path, since: datetime, now: datetime, clock: Clock) -> list
     """Read each GOES scan from `since` that no pass read before. Append its fire pixels to a log,
     and its mask counts to a second log. Each row has the time of the read of its scan."""
     # The NOAA bucket keeps each file. Thus a pass reads back to the newest scan that a pass
-    # read, if that scan is older than `since`: a stop of each length loses no scan.
+    # read, if that scan is older than `since`: a stop of each length gets its scans.
     newest = _newest_read(live, "goes")
     since = min(since, datetime.fromisoformat(newest)) if newest else since
     done = _done(live, "goes", since, now)
@@ -217,13 +223,6 @@ def _add_mask(folder: Path, observed_at: datetime, times: dict, mask: np.ndarray
 
 def _had_at(scan_start: str) -> str:
     return (datetime.fromisoformat(str(scan_start)) + config.GOES_RAW_DELAY).isoformat()
-
-
-def complete_logs(raw_dir: Path, now: datetime) -> list[Path]:
-    """Return the logs that get no more rows. Only these logs can go to the bucket,
-    because a file in the bucket never changes."""
-    last = (now - config.LIVE_COMPLETE_AFTER).date().isoformat()
-    return sorted(path for path in (raw_dir / "live").rglob("*.csv") if path.stem <= last)
 
 
 def _append(path: Path, rows: list[dict]) -> None:

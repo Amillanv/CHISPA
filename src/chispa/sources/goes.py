@@ -168,8 +168,11 @@ def list_live(since: datetime, now: datetime) -> list[tuple[str, datetime, datet
     file. Thus a pass after a stop reads the file that a pass with no stop reads.
     """
     scans = {}
-    day = since.date()
-    while day <= now.date():  # One listing for each day: a day has approximately 144 files.
+    day, last = (
+        since.astimezone(UTC).date(),
+        now.astimezone(UTC).date(),
+    )  # A listing is of a UTC day.
+    while day <= last:  # One listing for each day: a day has approximately 144 files.
         prefix = f"ABI-L2-FDCF/{day.year}/{day.timetuple().tm_yday:03d}/"
         for scan in parse_listing(_get(f"{LIVE_BUCKET}/?list-type=2&prefix={prefix}").text):
             first = scans.get(scan[1], scan)
