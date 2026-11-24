@@ -50,18 +50,24 @@ def test_report_counts_the_passes_the_items_that_no_pass_read_and_the_new_rows(t
             "10:00:00+00:00,pass,end,ok,9",
             "10:05:00+00:00,firms,MODIS_NRT,ok,0",
             "10:05:00+00:00,goes,2026-11-25T09:50:00+00:00,ok,1",
-            "10:05:00+00:00,pass,end,ok,1",
+            "10:05:00+00:00,goes,2026-11-25T09:35:00+00:00,ok,2",  # an extra scan, not at 09:30
+            "10:05:00+00:00,pass,end,ok,3",
             "10:10:00+00:00,firms,MODIS_NRT,failed: FIRMS request failed,0",
             "10:10:00+00:00,pass,end,ok,0",
             "10:15:00+00:00,firms,MODIS_NRT,ok,1",  # This pass stopped: it has no last row.
+            "10:45:00+00:00,firms,MODIS_NRT,ok,7",  # after the time of the report
+            "10:45:00+00:00,pass,end,ok,7",
         ],
     )
     # One hour has 12 passes of the timer. 3 of the 4 passes after 09:30 are complete.
     # The times of 10 minutes from 09:30 to 10:00: GOES has 09:40 and 09:50, INPE has 09:50.
     assert watch.report_text(tmp_path, at("10:30"), False) == (
         "CHISPA 25 Nov 10:30 UTC: OK. 1 h: 3 of 12 passes, 1 with a failure. "
-        "Not read: GOES 2, INPE 3. New rows: FIRMS 3, GOES 4, INPE 4."
+        "Not read: GOES 2, INPE 3. New rows: FIRMS 3, GOES 6, INPE 4."
     )
+    # Half a second later, the time of 09:30 is before the start of the hour: one time less.
+    later = watch.report_text(tmp_path, at("10:30") + timedelta(seconds=0.5), False)
+    assert "Not read: GOES 1, INPE 2." in later
 
 
 def test_alarm_goes_out_one_time_when_the_poller_is_late_and_one_time_when_it_is_back(tmp_path):
@@ -84,7 +90,8 @@ def test_alarm_goes_out_one_time_when_the_poller_is_late_and_one_time_when_it_is
     assert watch.due(tmp_path, at("10:32")) == [
         (
             "back",
-            "CHISPA 25 Nov 10:32 UTC: the poller is good again. It was late from 25 Nov 10:20 UTC.",
+            "CHISPA 25 Nov 10:32 UTC: the poller is good again. "
+            "The alarm went out at 25 Nov 10:20 UTC.",
         )
     ]
     assert watch.run(tmp_path, at("10:32"), sends()) == [("back", True)]
