@@ -15,7 +15,7 @@ from pathlib import Path
 from chispa import config
 from chispa.evaluation import burn
 from chispa.evaluation.report import share
-from chispa.sources import monitor, sentinel1, sentinel2
+from chispa.sources import monitor, sentinel1, sentinel2_ground
 
 GROUPS = {"matched": "found", "no fire": "no_fire", "unmatched": "unmatched"}
 
@@ -62,7 +62,7 @@ def _measure(target: dict) -> dict:
     last = datetime.fromisoformat(target["last_observed_at"])
     periods = burn.periods(first, last)
     found = {
-        **sentinel2.burned_areas(box, *periods),
+        **sentinel2_ground.burned_areas(box, *periods),
         **sentinel1.changed_areas(box, *periods),
         "monitor": monitor.burned_ha(box, first, last),
     }

@@ -79,6 +79,7 @@ def moment_rows(detections: Fields, merges: list, links: tuple, layers: severity
         spans = [link_fire[first_link[d] : first_link[d + 1]] for d in chosen.tolist()]
         row["own_fires"] = frozenset(np.concatenate(spans).tolist())
         row["matched"] = bool(row["fires"])
+        row["event"] = int(detections["event"][first])
         rows[moment].append(row)
     return rows
 

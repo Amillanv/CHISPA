@@ -131,6 +131,21 @@ EVAL_MARGIN_M = 250.0
 # The limits of the fire size classes in hectares.
 EVAL_SIZE_CLASSES_HA = (10.0, 100.0, 1000.0, 10000.0)
 
+# --- Sentinel-2 ---
+
+SENTINEL2_ASSET = "COPERNICUS/S2_SR_HARMONIZED"
+
+# The scene classes of a pixel that a rule does not use: no data, defect, cloud shadow, water,
+# cloud and cirrus. Water that dries decreases the burn ratio as a burn does.
+SENTINEL2_NOT_CLEAR = (0, 1, 3, 6, 8, 9, 10)
+
+# The scene classes that hide the ground from a person: no data, defect, cloud and cirrus.
+# Cloud shadow is not in this list: the scene classes can give a new burn that class.
+SENTINEL2_CLOUD = (0, 1, 8, 9, 10)
+
+# The pixel size of the bands B8A and B12, in metres.
+SENTINEL2_SCALE_M = 20
+
 # --- Burn check ---
 
 # The burn check asks Sentinel-2 if the ground at an event burned.
@@ -182,6 +197,32 @@ BURN_CANDIDATES: dict | None = {
     "radar VV": ("VV/3.0", 25.0),
     "radar VH": ("VH/3.0", 25.0),
 }
+
+# The candidate that gives the burned ground of an event. The owner selected the dark rule on
+# 2026-11-24, after the test of 2025: `docs/method.md` section 11.16 says why.
+BURN_RULE = "dark rule"
+
+# The burn curve gives the burned ground of an event at each clear view, to the last of these
+# days after its first detection. The table gives the state at each of these days.
+CURVE_DAYS = (5, 10, 20, 30)
+
+# An event gets its curve when its last day is this many days in the past. An image is in
+# Earth Engine some days after its scan. The number of days is an estimate.
+CURVE_WAIT_DAYS = 5
+
+# A request to Earth Engine that fails is sent again, to this number of times.
+# Earth Engine refuses a request when too many run at one time.
+EARTHENGINE_TRIES = 5
+
+# The check of the advance needs an event that lasts this many days or more, and two views
+# with this many days or more between them. A fire must move between the two views.
+ADVANCE_MIN_DAYS = 6
+ADVANCE_VIEW_DAYS = 5
+
+# Two advances agree if the larger is not more than this number of times the smaller.
+# Two directions agree if the angle between them is not more than this number of degrees.
+ADVANCE_SAME_FACTOR = 2.0
+ADVANCE_SAME_DEG = 45.0
 
 # The rule says "burned" if the burned area of a box is one of these hectares or more.
 BURN_HA_STEPS = (1.0, 10.0, 25.0)

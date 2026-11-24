@@ -6,12 +6,16 @@ which has the commands that get data, make the store and make the events.
 """
 
 from collections.abc import Callable
+from datetime import UTC, datetime
 
 from chispa import config
-from chispa.evaluation import burn, candidates, images
+from chispa.evaluation import advance, burn, candidates, curve, images, joined, pixels
 from chispa.evaluation.confidence import confidence_tables
+from chispa.evaluation.confidence_curve import curve_tables
+from chispa.evaluation.events import events_with_a_match
 from chispa.evaluation.growth import step_rows
 from chispa.evaluation.report import write_summary, write_tables
+from chispa.evaluation.run import prepare
 from chispa.evaluation.severity import severity_tables
 from chispa.evaluation.visibility import month_table, visibility
 from chispa.sources import scars
@@ -27,7 +31,13 @@ def run_table(name: str, year: int) -> None:
     if name == "severity":
         tables = severity_tables(*arguments)
     elif name == "confidence":
-        tables = confidence_tables(*arguments)
+        # A year with no map of burn scars has only the table against the burn curve.
+        tables = confidence_tables(*arguments) if year in config.YEAR_ROLES else {}
+        curves = config.DATA_DIR / "curves" / f"{year}_days.csv"
+        if curves.exists():
+            tables |= curve_tables(*arguments, curve.last_answers(curves))
+        if not tables:
+            raise SystemExit(f"Run `chispa curve --year {year} --events` first.")
     elif name == "growth":
         tables = {"growth_steps": step_rows(*arguments)}
     else:
@@ -93,6 +103,77 @@ def run_candidates(year: int, project: Callable[[], str]) -> None:
     write_tables(tables, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
     print(f"{year}: {len(targets)} boxes measured. See results/SUMMARY.md, table burn_candidates.")
+
+
+def run_advance(year: int, project: Callable[[], str]) -> None:
+    """Compare the advance of VIIRS with the new burned ground, for the long events of a year."""
+    scars.check_access(project())
+    targets, viirs = advance.long_events(year, config.STORE_PATH, config.RAW_DIR)
+    path = config.RESULTS_DIR / str(year) / "advance_check" / "events.csv"
+    advance.measure(targets, viirs, path)
+    write_tables({"advance_check": advance.table(burn.read(path))}, year, config.RESULTS_DIR)
+    write_summary(config.RESULTS_DIR)
+    print(f"{year}: {len(targets)} events. See results/SUMMARY.md, table advance_check.")
+
+
+def run_pixels(year: int, project: Callable[[], str]) -> None:
+    """Compare the burned pixels of the selected rule with the map, in each box."""
+    folder = config.RESULTS_DIR / str(year)
+    scars.check_access(project())
+    targets = burn.read(folder / "burn_check" / "targets.csv")
+    path = folder / "burn_pixels" / "areas.csv"
+    pixels.measure(targets, path)
+    write_tables({"burn_pixels": pixels.table(targets, burn.read(path))}, year, config.RESULTS_DIR)
+    write_summary(config.RESULTS_DIR)
+    print(f"{year}: {len(targets)} boxes. See results/SUMMARY.md, table burn_pixels.")
+
+
+def run_event_curves(year: int, project: Callable[[], str]) -> None:
+    """Measure the burn curve of each event of a year in the biome, and make its table.
+
+    The curves are large files. They are in the data folder, as the store. A year needs no map.
+    """
+    scars.check_access(project())
+    folder = config.DATA_DIR / "curves"
+    targets = curve.event_targets(year, config.STORE_PATH, config.RAW_DIR, datetime.now(UTC))
+    burn.write(folder / f"{year}_events.csv", targets)
+    if year not in config.YEAR_ROLES:
+        # The events of the year in progress can change: a later detection can merge two events.
+        # An old curve can thus be of a different box. Each run measures all its events again.
+        (folder / f"{year}_days.csv").unlink(missing_ok=True)
+    curve.measure(targets, folder / f"{year}_days.csv")
+    rows = burn.read(folder / f"{year}_days.csv")
+    tables = {"burn_curve_events": curve.table(targets, rows)}
+    if year in config.YEAR_ROLES:
+        # A year with a map of burn scars: the curve against the match of each event.
+        detections, pairs, _, _ = prepare(year, config.STORE_PATH, config.RAW_DIR)
+        matched = events_with_a_match(detections, pairs)
+        tables["burn_curve_map"] = curve.map_table(targets, rows, matched)
+    write_tables(tables, year, config.RESULTS_DIR)
+    write_summary(config.RESULTS_DIR)
+    print(f"{year}: {len(targets)} events. See results/SUMMARY.md, table burn_curve_events.")
+
+
+def run_curve(year: int, project: Callable[[], str]) -> None:
+    """Measure the burn curve of each box of the burn check, and make its tables."""
+    folder = config.RESULTS_DIR / str(year)
+    other = folder / "burn_candidates" / "measures.csv"
+    if not other.exists():
+        raise SystemExit(f"Run `chispa candidates --year {year}` first.")
+    scars.check_access(project())
+    targets = burn.read(folder / "burn_check" / "targets.csv")
+    path = folder / "burn_curve" / "days.csv"
+    curve.measure(targets, path)
+    rows = burn.read(path)
+    tables = {"burn_curve": curve.table(targets, rows)}
+    tables["burn_curve_check"] = curve.check_table(targets, rows, burn.read(other))
+    # The first definition of the curve failed. Its table is a result as each other table.
+    joined.measure(targets, folder / "burn_curve" / "joined.csv")
+    first = burn.read(folder / "burn_curve" / "joined.csv")
+    tables["burn_curve_joined"] = joined.table(targets, first, rows)
+    write_tables(tables, year, config.RESULTS_DIR)
+    write_summary(config.RESULTS_DIR)
+    print(f"{year}: {len(targets)} boxes. See results/SUMMARY.md, table burn_curve.")
 
 
 def run_images(year: int, project: Callable[[], str], look: int) -> None:
