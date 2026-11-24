@@ -1,7 +1,7 @@
 /* The history of one event: the headline numbers and the timeline of its passes.
    A row is one pass: when a satellite saw it, how long it took to reach CHISPA, and the alert it made.
    Each value is a field of the event record. This file formats the values. It adds no fact. */
-import { esc, num, dur, hoursBetween, utc, day, zoned, offset, FAMILY } from "./format.js";
+import { esc, num, dur, hoursBetween, utc, day, zoned, offset, FAMILY, goesCounts } from "./format.js";
 
 const FOLDED = 10; // the newest passes that the folded timeline shows, with each pass that made an alert
 
@@ -19,7 +19,9 @@ export function zoneName(r, zone) {
 /* The four numbers of triage time: age, the delay of the first alert, the last detection and the last clear look. */
 export function vitals(r, zone) {
   const newest = r.newest_detections[0];
-  const first = r.passes.find((p) => p.alerts.length);
+  // The rows are in the sequence of observation: the pass of the first alert is the pass with the earliest alert.
+  const raised = r.passes.filter((p) => p.alerts.length);
+  const first = raised.length ? raised.reduce((a, b) => (b.alerts[0].at < a.alerts[0].at ? b : a)) : null;
   const delay = first ? hoursBetween(first.observed_at, first.alerts[0].at) : null;
   const seen = newest ? `${FAMILY[newest.sensor_family]} ${esc(newest.platform)}, ` : "";
   return `<div class="vitals">
@@ -71,16 +73,31 @@ export function timeline(r, zone, all, liveStart) {
     parts.push(row(p, zone));
     last = n;
   });
+  parts.push(closing(r, zone));
   const head = `<div class="pass head"><span>Observed</span><span>Sensor</span><span>To CHISPA</span><span>MW</span><span>Alert</span></div>`;
   return `<div class="block"><div class="label"><span>Timeline</span><span>${rows.length} of ${num(r.pass_count)} passes · ${zoneName(r, zone)}</span></div>
     <div class="passes">${head}${parts.join("")}</div>
     ${absorbed(r, zone)}
     ${days(r)}
-    <p class="note">The rows are in the sequence in which CHISPA had the passes. A pass is one GOES scan, or one pass of
+    <p class="note">The rows are in the sequence of observation. A pass is one GOES scan with a detection, or one pass of
     another satellite. MW is its largest fire power. "To CHISPA" is the time from the observation
     to the moment that CHISPA had the pass, and thus made its alert. From ${day(liveStart)} it is measured by the poller.
     Before, it is an estimate. A time in yellow includes a stop of the poller: up to the time of the stop is our delay.
-    The time when a source published a pass is not in the record.</p></div>`;
+    The time when a source published a pass is not in the record. The last row gives what GOES said for the pixels
+    of the newest detections in each saved scan after the last detection.</p></div>`;
+}
+
+/* One row after the last detection: the GOES scans that examined the place and gave no detection (`goes_view`). */
+function closing(r, zone) {
+  const g = r.goes_view, n = g?.scans_after_last_detection;
+  if (!n) return "";
+  const title = `From the last detection, ${utc(r.last_observed_at)} UTC, to the newest scan, ${utc(g.scan_at)} UTC: `
+    + `what GOES said for the pixels of the newest detections in each saved scan. "Examined, no fire" is for each pixel. `
+    + `This does not say that the fire is out.`;
+  return `<div class="pass after" title="${title}">
+    <span class="t">${when(g.scan_at, zone)}</span>
+    <span class="s"><i style="background:var(--abi)"></i>GOES</span>
+    <span class="x">${num(n)} ${n === 1 ? "scan" : "scans"} after the last detection: ${goesCounts(g)}</span></div>`;
 }
 
 function row(p, zone) {

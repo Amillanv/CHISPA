@@ -36,21 +36,23 @@ def levels(row):
     return [alert["level"] for alert in row["alerts"]]
 
 
-def test_passes_follow_the_fusion_and_say_which_pass_raised_the_level(monkeypatch):
+def test_passes_are_in_the_sequence_of_observation_and_say_which_pass_raised_the_level(monkeypatch):
     monkeypatch.setattr("chispa.config.TOOL_MAX_PASSES", 60)
     monkeypatch.setattr("chispa.config.LIVE_START", datetime.fromtimestamp(2400, UTC))
     rows, count = history.passes(found(), 100)
     assert count == 5
     summary = [(r["platform"], r["detections"], r["max_frp_mw"], levels(r)) for r in rows]
     assert summary == [
+        ("SNPP", 2, 5.0, ["HIGH"]),
         ("GOES16", 2, 40.0, ["LOW"]),
         ("GOES16", 1, None, ["MEDIUM"]),
         ("GOES16", 1, 10.0, []),
-        ("SNPP", 2, 5.0, ["HIGH"]),
         ("NOAA20", 1, 2.0, []),
     ]
     # A pass has its first observation and the first time that CHISPA had it.
-    assert (rows[0]["observed_at"], rows[0]["available_at"]) == (at(300), at(2100))
+    # SNPP saw the fire first, and CHISPA had it last of the first four passes.
+    assert (rows[0]["observed_at"], rows[0]["available_at"]) == (at(0), at(10800))
+    assert (rows[1]["observed_at"], rows[1]["available_at"]) == (at(300), at(2100))
     # Before the live logs the time of availability is an estimate. NOAA20 is after their start.
     assert [r["estimated"] for r in rows] == [True, True, True, True, False]
 
@@ -60,7 +62,7 @@ def test_record_shows_the_newest_passes_and_each_pass_that_raised_the_level(monk
     rows, count = history.passes(found(), 100)
     # The newest pass is NOAA20. The GOES scan of 1200 raised nothing: it is not shown.
     assert count == 5
-    assert [levels(r) for r in rows] == [["LOW"], ["MEDIUM"], ["HIGH"], []]
+    assert [levels(r) for r in rows] == [["HIGH"], ["LOW"], ["MEDIUM"], []]
     assert rows[-1]["platform"] == "NOAA20"
 
 
