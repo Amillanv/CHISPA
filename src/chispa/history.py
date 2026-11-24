@@ -49,6 +49,16 @@ def pass_numbers(found: dict) -> np.ndarray:
     return numbers
 
 
+def newest(found: dict) -> np.ndarray:
+    """Return True for each detection of the newest passes: the place of "last seen".
+
+    A newest pass has a detection at the newest observation time. Two platforms can see an event
+    at the same time: then each of the two passes is a newest pass.
+    """
+    numbers = pass_numbers(found)
+    return np.isin(numbers, numbers[found["observed"] == found["observed"].max()])
+
+
 def passes(found: dict, event_id: int) -> tuple[list[dict], int]:
     """Return the passes to show and the number of all passes of the event.
 

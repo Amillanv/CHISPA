@@ -110,3 +110,16 @@ def test_stop_counts_only_the_part_of_the_time_to_chispa_with_no_poll(tmp_path, 
     # Observed one minute before the poll: the stop added one minute at most. That is not late.
     # Observed before the stop: the stop added two hours at most. Observed in it: one hour.
     assert [r["poller_stop_h"] for r in rows] == [None, 2.0, 1.0]
+
+
+def test_the_newest_passes_are_each_pass_with_a_detection_at_the_newest_time():
+    # GOES at 100 s. NOAA20 at 900 s and 960 s: one pass. AQUA at 960 s: the same newest time.
+    found = {
+        "family": np.array(["abi", "viirs", "viirs", "modis"]),
+        "platform": np.array(["GOES16", "NOAA20", "NOAA20", "AQUA"]),
+        "observed": np.array([100.0, 900.0, 960.0, 960.0]),
+    }
+    assert history.newest(found).tolist() == [False, True, True, True]
+    # The sequence of the input does not change the answer.
+    back = {name: values[::-1] for name, values in found.items()}
+    assert history.newest(back).tolist() == [True, True, True, False]

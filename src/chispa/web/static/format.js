@@ -109,16 +109,24 @@ export const GOES_GROUP = {
   fire: "fire", possible_fire: "possible fire", no_fire: "examined, no fire", cloud: "cloud",
   no_background: "could not decide", water: "water", blocked: "blocked", not_processed: "not processed",
 };
-/* What GOES said in each saved scan after the last detection (`goes_view`), the largest group first:
-   "28 examined, no fire · 2 possible fire · 1 could not decide". */
-export function goesCounts(g) {
-  return Object.entries(g.after_last_detection).sort((a, b) => b[1] - a[1])
-    .map(([group, n]) => `${num(n)} ${GOES_GROUP[group] ?? esc(group)}`).join(" · ");
-}
-
+/* What the group of the newest scan means for the place of the last detection. */
 export const GOES_NOTE = {
-  fire: "GOES found fire", possible_fire: "GOES found a possible fire", no_fire: "GOES examined each pixel and found no fire",
-  cloud: "cloud: GOES did not examine a pixel", no_background: "GOES could not compute a background value for a pixel",
-  water: "GOES does not examine water", blocked: "view angle or sun glint: GOES did not examine a pixel",
-  not_processed: "GOES did not process a pixel",
+  fire: "GOES saw fire at the place of the last detection",
+  possible_fire: "GOES saw a possible fire there, too weak for a detection",
+  no_fire: "GOES saw the place of the last detection and found no fire",
+  cloud: "GOES could not see the place of the last detection",
+  no_background: "GOES could not compute a background value, and made no decision",
+  water: "GOES does not examine water",
+  blocked: "the view angle or sun glint blocked the view",
+  not_processed: "GOES did not process the place",
 };
+
+/* The answer of a run of GOES scans (`goes_view.runs_after_last_detection`). */
+export const ANSWER = { fire: "fire", possible_fire: "possible fire", no_fire: "examined, no fire", not_seen: "could not see" };
+
+/* A time in UTC ("08-20 17:25") or in a time zone ("20 Aug 13:25"). */
+export function when(text, zone) {
+  if (!zone) return `${day(text)} ${utc(text, false)}`;
+  const t = zoned(text, zone);
+  return `${t.date.split(" ").slice(1).join(" ")} ${t.time}`;
+}
