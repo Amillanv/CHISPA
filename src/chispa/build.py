@@ -95,14 +95,14 @@ def read_log(source: str, path: Path, raw_dir: Path) -> tuple[list[Detection], i
     """Return the detections of one live log and the number of rejected rows."""
     if source == "firms":
         detections, rejected = firms.parse_file(path, path.parent.name)
-        return after_stop(detections, raw_dir), rejected
+        return after_stop(detections, raw_dir, path.parent.name), rejected
     if source == "noaa":
         return goes.parse_file(path, "GOES19"), 0
     detections, rejected, _ = inpe.parse_file(path)
     return detections, rejected
 
 
-def after_stop(detections: list[Detection], raw_dir: Path) -> list[Detection]:
+def after_stop(detections: list[Detection], raw_dir: Path, product: str) -> list[Detection]:
     """Give an estimate to each live FIRMS detection that a pass first saw after a stop.
 
     FIRMS gives no publication time. After a stop of the poller, the time of the first view is
@@ -114,7 +114,7 @@ def after_stop(detections: list[Detection], raw_dir: Path) -> list[Detection]:
     for detection in detections:
         seen = detection.available_at
         if seen not in answered:
-            answered[seen] = polls.answered_before(raw_dir, seen, "firms")
+            answered[seen] = polls.answered_before(raw_dir, seen, "firms", product)
         if seen - answered[seen] > config.LIVE_POLL_LATE:
             guess = detection.observed_at + config.AVAILABLE_DELAY[detection.sensor_family]
             time = min(max(guess, answered[seen]), seen)
@@ -136,8 +136,10 @@ def add_live(raw_dir: Path, store: sqlite3.Connection) -> tuple[int, list[int]]:
     newest_poll = max((path.stat().st_mtime for path in poll_logs), default=0.0)
     for source, path in live_logs(raw_dir):
         name, facts = path.relative_to(raw_dir).as_posix(), path.stat()
-        # The estimate of a FIRMS row needs the poll log of its pass, and a pass writes the poll
-        # log last. A FIRMS log that is newer came in a copy that is not complete: it waits.
+        # The estimate of a FIRMS row needs the poll log of its pass. A pass writes the poll row
+        # of a product directly after the rows of that product, and `rsync` takes the times of
+        # all files before it copies one. Thus a FIRMS log that is newer than the poll log came
+        # in a copy that is not complete: it waits for the next update.
         waits = source == "firms" and facts.st_mtime > newest_poll
         if read.get(name) == facts.st_size or waits:
             continue

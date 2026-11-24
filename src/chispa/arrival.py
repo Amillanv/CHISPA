@@ -1,9 +1,11 @@
-"""When could CHISPA use a live row? The time of the first view, or an estimate after a stop.
+"""When could CHISPA use a live row? The time of its first read, or an estimate for a late read.
 
-The poller records when it first saw each row. After a stop of the poller that time is late:
-it is the time of our stop, not the time of the source. GOES and INPE give the publication
-time of each file. Thus a row that the poller saw late gets the time that a poller with no
-stop gives: the publication time plus the normal wait to the next pass.
+The poller records when it first read each row. After a stop of the poller that time is late:
+it is the time of our stop, not the time of the source. A long pass after a stop has the same
+effect on the files that it reads last. GOES and INPE give the publication time of each file.
+Thus a row that the poller read late gets the time that a poller with no stop gives: the
+publication time plus the normal wait to the next pass. The logs keep the measured time, and
+the detection has a mark (`available_estimated`). The owner agreed to this rule on 2026-11-24.
 """
 
 from datetime import datetime

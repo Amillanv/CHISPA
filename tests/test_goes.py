@@ -1,6 +1,6 @@
 """Tests of the raw GOES module."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -91,3 +91,16 @@ def test_listing_keeps_the_first_file_of_a_scan_and_no_scan_after_now(monkeypatc
     monkeypatch.setattr("chispa.sources.goes._get", lambda url: Answer())
     scans = goes.list_live(NOW - timedelta(hours=1), NOW)
     assert [(scan[1].minute, scan[2].minute) for scan in scans] == [(0, 10)]
+
+
+def test_listing_is_of_the_utc_day_of_each_limit(monkeypatch):
+    asked = []
+
+    class Answer:
+        text = ""
+
+    monkeypatch.setattr("chispa.sources.goes._get", lambda url: asked.append(url) or Answer())
+    # 01:00 at +02:00 on 22 November is 23:00 UTC on 21 November: day 325, then day 326.
+    since = datetime(2026, 11, 22, 1, tzinfo=timezone(timedelta(hours=2)))
+    goes.list_live(since, datetime(2026, 11, 22, 0, 30, tzinfo=UTC))
+    assert [url[-9:] for url in asked] == ["2026/325/", "2026/326/"]
