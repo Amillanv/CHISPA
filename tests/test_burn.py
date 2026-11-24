@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 import numpy as np
 
-from chispa.evaluation import burn, candidates, images
+from chispa.evaluation import burn, candidates, curve, images
 from chispa.grid import Grid
 from chispa.sources import monitor
 
@@ -301,3 +301,84 @@ def test_measures_of_different_settings_stop_a_run(tmp_path, monkeypatch):
         assert "Delete it" in str(error)
     else:
         raise AssertionError("A file of different settings must stop the run.")
+
+
+def curve_config(monkeypatch):
+    monkeypatch.setattr("chispa.config.CURVE_DAYS", (5, 30))
+    monkeypatch.setattr("chispa.config.BURN_MIN_CLEAR", 0.5)
+    monkeypatch.setattr("chispa.config.BURN_RULE", "dark rule")
+    candidates_of = {"dark rule": ("0.3/0.2", 1.0), "monitor": ("monitor", 1.0)}
+    monkeypatch.setattr("chispa.config.BURN_CANDIDATES", candidates_of)
+
+
+def curve_row(number, day, clear_share, hectares):
+    return {"id": str(number), "day": str(day), "clear_share": clear_share, "burned_ha": hectares}
+
+
+def test_burn_curve_counts_the_answers_and_the_burned_boxes_at_each_day(monkeypatch):
+    curve_config(monkeypatch)
+    targets = [{"id": 1, "group": "matched"}, {"id": 2, "group": "matched"}]
+    # Box 1 has cloud at day 5, and 12 hectares at day 30. Box 2 is clear, with no burn.
+    rows = [curve_row(1, 5, 0.1, 0), curve_row(1, 30, 0.9, 12.0)]
+    rows += [curve_row(2, 5, 1.0, 0), curve_row(2, 30, 1.0, 0.4)]
+    by_day = {
+        r["day"]: r for r in curve.table(targets, rows) if r["group"] == "HIGH events, matched"
+    }
+    assert (by_day[5]["boxes"], by_day[5]["answers"], by_day[5]["burned"]) == (2, 1, 0)
+    assert (by_day[30]["answers"], by_day[30]["burned"], by_day[30]["burned_share"]) == (2, 1, 0.5)
+    assert by_day[30]["hectares_median"] == 12.0
+
+
+def test_burn_curve_check_compares_the_last_day_with_the_rule_and_the_map(monkeypatch):
+    curve_config(monkeypatch)
+    targets = [{"id": n, "group": "matched"} for n in (1, 2, 3)]
+    rows = [curve_row(1, 30, 1.0, 12.0), curve_row(2, 30, 1.0, 0), curve_row(3, 30, 1.0, 5.0)]
+
+    def other(number, rule_ha, monitor_ha):
+        return {
+            "id": str(number),
+            "clear_share": 1.0,
+            "scenes": 0,
+            "0.3/0.2": rule_ha,
+            "monitor": monitor_ha,
+        }
+
+    # The rule agrees for each box. The map does not have the burn of box 3.
+    measures = [other(1, 9.0, 30.0), other(2, 0, 0), other(3, 2.0, 0)]
+    table = curve.check_table(targets, rows, measures)
+    matched = next(row for row in table if row["group"] == "HIGH events, matched")
+    assert (matched["rule_boxes"], matched["rule_same"]) == (3, 3)
+    assert (matched["monitor_boxes"], matched["monitor_same"], matched["monitor_same_share"]) == (
+        3,
+        2,
+        0.6667,
+    )
+    assert matched["rule_rank_correlation"] == 1.0
+
+
+def test_burn_curve_of_events_has_one_group_for_each_level(monkeypatch):
+    curve_config(monkeypatch)
+    targets = [{"id": 1, "group": "LOW"}, {"id": 2, "group": "HIGH"}, {"id": 3, "group": "HIGH"}]
+    rows = [curve_row(n, day, 1.0, ha) for n, ha in ((1, 0), (2, 20.0), (3, 0)) for day in (5, 30)]
+    rows.append(curve_row(9, 30, 1.0, 50.0))  # An event that is not in the list now.
+    found = {(r["group"], r["day"]): r for r in curve.table(targets, rows)}
+    assert set(found) == {
+        ("LOW events", 5),
+        ("LOW events", 30),
+        ("HIGH events", 5),
+        ("HIGH events", 30),
+    }
+    assert (found[("HIGH events", 30)]["answers"], found[("HIGH events", 30)]["burned"]) == (2, 1)
+    assert found[("LOW events", 30)]["burned_share"] == 0.0
+
+
+def test_burn_curve_against_the_map_counts_the_four_pairs(monkeypatch):
+    curve_config(monkeypatch)
+    targets = [{"id": n, "group": "HIGH"} for n in (1, 2, 3, 4, 5)]
+    # Event 5 has cloud: the curve has no answer for it, thus it is not in the table.
+    rows = [curve_row(1, 30, 1.0, 20.0), curve_row(2, 30, 1.0, 20.0), curve_row(3, 30, 1.0, 0)]
+    rows += [curve_row(4, 30, 1.0, 0), curve_row(5, 30, 0.1, 0)]
+    (high,) = curve.map_table(targets, rows, matched={1, 3, 5})
+    assert (high["events"], high["burned"], high["matched"]) == (4, 2, 2)
+    assert (high["burned_and_match"], high["burned_no_match"]) == (1, 1)
+    assert (high["match_no_burn"], high["no_burn_no_match"], high["same_share"]) == (1, 1, 0.5)

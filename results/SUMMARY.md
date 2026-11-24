@@ -171,6 +171,35 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 | HIGH events, matched | 655 | 100 | 99 | 0.4 | 25.0 | 65 | 0.6566 |  |
 | boxes, no fire |  | 100 | 99 | 0.4 | 25.0 | 5 | 0.0505 |  |
 
+### 2023 burn_curve
+
+Configuration `dac8767c2e22`, run on 2026-11-24.
+
+| group | day | boxes | answers | answer_share | burned | burned_share | hectares_median |
+|---|---|---|---|---|---|---|---|
+| HIGH events, unmatched | 5 | 424 | 144 | 0.3396 | 37 | 0.2569 | 7.39 |
+| HIGH events, unmatched | 10 | 424 | 305 | 0.7193 | 91 | 0.2984 | 8.92 |
+| HIGH events, unmatched | 20 | 424 | 405 | 0.9552 | 140 | 0.3457 | 10.11 |
+| HIGH events, unmatched | 30 | 424 | 419 | 0.9882 | 144 | 0.3437 | 10.11 |
+| HIGH events, matched | 5 | 100 | 29 | 0.29 | 24 | 0.8276 | 44.5 |
+| HIGH events, matched | 10 | 100 | 69 | 0.69 | 62 | 0.8986 | 72.43 |
+| HIGH events, matched | 20 | 100 | 93 | 0.93 | 86 | 0.9247 | 96.62 |
+| HIGH events, matched | 30 | 100 | 99 | 0.99 | 91 | 0.9192 | 101.82 |
+| boxes, no fire | 5 | 100 | 37 | 0.37 | 3 | 0.0811 | 8.98 |
+| boxes, no fire | 10 | 100 | 77 | 0.77 | 6 | 0.0779 | 10.2 |
+| boxes, no fire | 20 | 100 | 94 | 0.94 | 11 | 0.117 | 11.32 |
+| boxes, no fire | 30 | 100 | 98 | 0.98 | 13 | 0.1327 | 11.32 |
+
+### 2023 burn_curve_check
+
+Configuration `dac8767c2e22`, run on 2026-11-24.
+
+| group | rule_boxes | rule_same | rule_same_share | rule_rank_correlation | monitor_boxes | monitor_same | monitor_same_share | monitor_rank_correlation |
+|---|---|---|---|---|---|---|---|---|
+| HIGH events, unmatched | 419 | 419 | 1.0 | 1.0 | 419 | 326 | 0.778 | 0.5431 |
+| HIGH events, matched | 99 | 99 | 1.0 | 0.9998 | 99 | 88 | 0.8889 | 0.6835 |
+| boxes, no fire | 98 | 98 | 1.0 | 1.0 | 98 | 85 | 0.8673 | 0.3282 |
+
 ### 2023 burn_rule
 
 Configuration `0ea7b8f424c7`, run on 2026-11-22.
@@ -482,6 +511,35 @@ Configuration `0ea7b8f424c7`, run on 2026-11-22.
 | HIGH events, matched | 1273 | 100 | 97 | 0.3 | 10.0 | 82 | 0.8454 | yes |
 | boxes, no fire |  | 100 | 98 | 0.3 | 10.0 | 22 | 0.2245 | yes |
 
+### 2024 burn_curve
+
+Configuration `dac8767c2e22`, run on 2026-11-24.
+
+| group | day | boxes | answers | answer_share | burned | burned_share | hectares_median |
+|---|---|---|---|---|---|---|---|
+| HIGH events, unmatched | 5 | 309 | 115 | 0.3722 | 23 | 0.2 | 11.27 |
+| HIGH events, unmatched | 10 | 309 | 225 | 0.7282 | 55 | 0.2444 | 9.37 |
+| HIGH events, unmatched | 20 | 309 | 288 | 0.932 | 82 | 0.2847 | 9.11 |
+| HIGH events, unmatched | 30 | 309 | 295 | 0.9547 | 85 | 0.2881 | 9.48 |
+| HIGH events, matched | 5 | 100 | 22 | 0.22 | 19 | 0.8636 | 23.99 |
+| HIGH events, matched | 10 | 100 | 57 | 0.57 | 48 | 0.8421 | 45.67 |
+| HIGH events, matched | 20 | 100 | 87 | 0.87 | 76 | 0.8736 | 61.15 |
+| HIGH events, matched | 30 | 100 | 96 | 0.96 | 85 | 0.8854 | 93.16 |
+| boxes, no fire | 5 | 100 | 39 | 0.39 | 0 | 0.0 |  |
+| boxes, no fire | 10 | 100 | 79 | 0.79 | 2 | 0.0253 | 3.53 |
+| boxes, no fire | 20 | 100 | 96 | 0.96 | 4 | 0.0417 | 6.4 |
+| boxes, no fire | 30 | 100 | 98 | 0.98 | 4 | 0.0408 | 6.4 |
+
+### 2024 burn_curve_check
+
+Configuration `dac8767c2e22`, run on 2026-11-24.
+
+| group | rule_boxes | rule_same | rule_same_share | rule_rank_correlation | monitor_boxes | monitor_same | monitor_same_share | monitor_rank_correlation |
+|---|---|---|---|---|---|---|---|---|
+| HIGH events, unmatched | 295 | 295 | 1.0 | 1.0 | 295 | 216 | 0.7322 | 0.3625 |
+| HIGH events, matched | 96 | 96 | 1.0 | 0.9994 | 96 | 85 | 0.8854 | 0.7155 |
+| boxes, no fire | 98 | 98 | 1.0 | 1.0 | 98 | 94 | 0.9592 |  |
+
 ### 2024 burn_rule
 
 Configuration `0ea7b8f424c7`, run on 2026-11-22.
@@ -774,6 +832,64 @@ Configuration `18b5fd2e0d5e`, run on 2026-11-23.
 | HIGH events, matched | 214 | 100 | 100 | 0.3 | 10.0 | 83 | 0.83 | yes |
 | boxes, no fire |  | 100 | 100 | 0.3 | 10.0 | 17 | 0.17 | yes |
 
+### 2025 burn_curve
+
+Configuration `dac8767c2e22`, run on 2026-11-24.
+
+| group | day | boxes | answers | answer_share | burned | burned_share | hectares_median |
+|---|---|---|---|---|---|---|---|
+| HIGH events, unmatched | 5 | 193 | 72 | 0.3731 | 15 | 0.2083 | 21.38 |
+| HIGH events, unmatched | 10 | 193 | 135 | 0.6995 | 33 | 0.2444 | 8.41 |
+| HIGH events, unmatched | 20 | 193 | 180 | 0.9326 | 54 | 0.3 | 7.54 |
+| HIGH events, unmatched | 30 | 193 | 186 | 0.9637 | 60 | 0.3226 | 8.1 |
+| HIGH events, matched | 5 | 100 | 30 | 0.3 | 27 | 0.9 | 41.95 |
+| HIGH events, matched | 10 | 100 | 66 | 0.66 | 57 | 0.8636 | 50.88 |
+| HIGH events, matched | 20 | 100 | 94 | 0.94 | 82 | 0.8723 | 63.5 |
+| HIGH events, matched | 30 | 100 | 100 | 1.0 | 90 | 0.9 | 60.42 |
+| boxes, no fire | 5 | 100 | 37 | 0.37 | 0 | 0.0 |  |
+| boxes, no fire | 10 | 100 | 79 | 0.79 | 3 | 0.038 | 7.57 |
+| boxes, no fire | 20 | 100 | 96 | 0.96 | 4 | 0.0417 | 10.23 |
+| boxes, no fire | 30 | 100 | 100 | 1.0 | 5 | 0.05 | 7.57 |
+
+### 2025 burn_curve_check
+
+Configuration `dac8767c2e22`, run on 2026-11-24.
+
+| group | rule_boxes | rule_same | rule_same_share | rule_rank_correlation | monitor_boxes | monitor_same | monitor_same_share | monitor_rank_correlation |
+|---|---|---|---|---|---|---|---|---|
+| HIGH events, unmatched | 186 | 186 | 1.0 | 1.0 | 186 | 133 | 0.7151 | 0.4421 |
+| HIGH events, matched | 100 | 100 | 1.0 | 0.999 | 100 | 83 | 0.83 | 0.7768 |
+| boxes, no fire | 100 | 100 | 1.0 | 1.0 | 100 | 95 | 0.95 |  |
+
+### 2025 burn_curve_events
+
+Configuration `f453adfd141a`, run on 2026-11-24.
+
+| group | day | boxes | answers | answer_share | burned | burned_share | hectares_median |
+|---|---|---|---|---|---|---|---|
+| LOW events | 5 | 958 | 466 | 0.4864 | 82 | 0.176 | 6.8 |
+| LOW events | 10 | 958 | 745 | 0.7777 | 125 | 0.1678 | 5.44 |
+| LOW events | 20 | 958 | 895 | 0.9342 | 171 | 0.1911 | 5.49 |
+| LOW events | 30 | 958 | 929 | 0.9697 | 179 | 0.1927 | 5.72 |
+| MEDIUM events | 5 | 357 | 150 | 0.4202 | 46 | 0.3067 | 5.95 |
+| MEDIUM events | 10 | 357 | 265 | 0.7423 | 82 | 0.3094 | 6.04 |
+| MEDIUM events | 20 | 357 | 329 | 0.9216 | 111 | 0.3374 | 5.85 |
+| MEDIUM events | 30 | 357 | 347 | 0.972 | 118 | 0.3401 | 5.85 |
+| HIGH events | 5 | 377 | 134 | 0.3554 | 71 | 0.5299 | 39.78 |
+| HIGH events | 10 | 377 | 266 | 0.7056 | 150 | 0.5639 | 45.53 |
+| HIGH events | 20 | 377 | 354 | 0.939 | 211 | 0.596 | 42.02 |
+| HIGH events | 30 | 377 | 370 | 0.9814 | 229 | 0.6189 | 41.98 |
+
+### 2025 burn_curve_map
+
+Configuration `f453adfd141a`, run on 2026-11-24.
+
+| group | events | burned | matched | burned_and_match | burned_no_match | match_no_burn | no_burn_no_match | same_share |
+|---|---|---|---|---|---|---|---|---|
+| LOW events | 929 | 179 | 251 | 93 | 86 | 158 | 592 | 0.7374 |
+| MEDIUM events | 347 | 118 | 128 | 65 | 53 | 63 | 166 | 0.6657 |
+| HIGH events | 370 | 229 | 202 | 182 | 47 | 20 | 121 | 0.8189 |
+
 ### 2025 burn_rule
 
 Configuration `18b5fd2e0d5e`, run on 2026-11-23.
@@ -1002,6 +1118,27 @@ Configuration `1c24a22bc94c`, run on 2026-11-23.
 | 2025-10 | 31 | 0 | 744 | 0.71 | 0.27 | 5 |
 | 2025-11 | 30 | 0 | 702 | 0.58 | 0.31 | 4 |
 | 2025-12 | 31 | 0 | 744 | 0.44 | 0.44 | 6 |
+
+## 2026 (year with no map of burn scars)
+
+### 2026 burn_curve_events
+
+Configuration `f453adfd141a`, run on 2026-11-24.
+
+| group | day | boxes | answers | answer_share | burned | burned_share | hectares_median |
+|---|---|---|---|---|---|---|---|
+| LOW events | 5 | 554 | 285 | 0.5144 | 63 | 0.2211 | 7.23 |
+| LOW events | 10 | 554 | 472 | 0.852 | 99 | 0.2097 | 6.98 |
+| LOW events | 20 | 554 | 537 | 0.9693 | 111 | 0.2067 | 6.98 |
+| LOW events | 30 | 554 | 549 | 0.991 | 114 | 0.2077 | 7.0 |
+| MEDIUM events | 5 | 220 | 106 | 0.4818 | 44 | 0.4151 | 10.32 |
+| MEDIUM events | 10 | 220 | 182 | 0.8273 | 80 | 0.4396 | 13.04 |
+| MEDIUM events | 20 | 220 | 215 | 0.9773 | 92 | 0.4279 | 12.52 |
+| MEDIUM events | 30 | 220 | 219 | 0.9955 | 95 | 0.4338 | 12.07 |
+| HIGH events | 5 | 311 | 147 | 0.4727 | 101 | 0.6871 | 61.98 |
+| HIGH events | 10 | 311 | 269 | 0.865 | 203 | 0.7546 | 73.92 |
+| HIGH events | 20 | 311 | 306 | 0.9839 | 232 | 0.7582 | 77.99 |
+| HIGH events | 30 | 311 | 310 | 0.9968 | 235 | 0.7581 | 77.34 |
 
 Limits of these results:
 
