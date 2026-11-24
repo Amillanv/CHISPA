@@ -1028,6 +1028,27 @@ box rule, by 0.05 or more, and a larger agreement with the answers of a person o
 The person makes those answers before a candidate runs on 2025: 80 chips, with the rules of section 11.10.
 If the hypothesis is false, the box rule stays, and we say so.
 
+The result of the test (tables `burn_candidates`, `burn_candidates_person` and `image_check_2` of 2025, 2026-11-24).
+The command ran one time, after the 80 answers of the person were complete.
+
+- The person said "burned" for 6 of 23 unmatched HIGH events with a clear answer, for 16 of 18 with a match, and for
+  0 of 30 no-fire boxes. No answer of 2025 has the area `small`.
+- The difference: 0.66 for the box rule (83 of 100 found, 17 of 100 no-fire boxes), 0.79 for the short-wave rule
+  (92 and 13), 0.85 for the dark rule (90 and 5), 0.89 for the Monitor map (89 and 0), 0.3585 for radar VV and 0.4789 for radar VH.
+- The agreement with the person, for 71 chips: 58 for the box rule, 57 for the short-wave rule, 64 for the dark rule
+  and 61 for the Monitor map. For radar it is 43 and 45 of 64 chips.
+- The hypothesis is false. The short-wave rule has the larger difference (0.79 against 0.66). It does not have the larger
+  agreement with the person (0.8028 against 0.8169): it said "burned" for 12 of the 49 chips that the person called not burned.
+  The box rule said so for 9. Thus the gain of the short-wave rule on 2024 came from the selection of its setting on those chips.
+- The dark rule was in the table for a comparison, with a setting that we froze before the run. Its difference is 0.85,
+  and it agrees with the person for 64 of 71 chips: more than the box rule by 0.19 and by 0.0845.
+  It was not the first candidate. Thus a choice of the dark rule now is a choice after the test, and we say so.
+  Its difference was also larger than that of the box rule on 2023 and on 2024, with this setting.
+- By the rule of the hypothesis the box rule stays. The owner decides if the dark rule replaces it.
+- Radar is far below the box rule on 2025. The Monitor map is near the dark rule: it gives one answer for a month.
+- Limits: 71 chips, and one person. The answers of 2025 have no small burn, thus this test says nothing on small burns.
+  The no-fire boxes do not use the person: the short-wave rule said "burned" for 13 of 100, and the dark rule for 5.
+
 ## 12. Agent and MCP rules
 
 ### 12.1 Tools

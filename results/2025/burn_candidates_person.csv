@@ -1,0 +1,7 @@
+candidate,key,min_ha,chips,later_only,person_burned,found,found_share,person_not_burned,called_burned,false_share,agree,agree_share,config,run_date
+box rule,0.3,10.0,71,0,22,18,0.8182,49,9,0.1837,58,0.8169,18b5fd2e0d5e,2026-11-24
+dark rule,0.3/0.2,1.0,71,0,22,20,0.9091,49,5,0.102,64,0.9014,18b5fd2e0d5e,2026-11-24
+short-wave rule,nbr2:0.1/0.2,1.0,71,0,22,20,0.9091,49,12,0.2449,57,0.8028,18b5fd2e0d5e,2026-11-24
+monitor,monitor,1.0,71,0,22,17,0.7727,49,5,0.102,61,0.8592,18b5fd2e0d5e,2026-11-24
+radar VV,VV/3.0,25.0,64,0,21,8,0.381,43,8,0.186,43,0.6719,18b5fd2e0d5e,2026-11-24
+radar VH,VH/3.0,25.0,64,0,21,16,0.7619,43,14,0.3256,45,0.7031,18b5fd2e0d5e,2026-11-24

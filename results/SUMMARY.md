@@ -737,6 +737,32 @@ Configuration `1c24a22bc94c`, run on 2026-11-23.
 
 ## 2025 (test year of the later parts)
 
+### 2025 burn_candidates
+
+Configuration `18b5fd2e0d5e`, run on 2026-11-24.
+
+| candidate | key | min_ha | found_boxes | found_answers | found_burned | found_share | no_fire_boxes | no_fire_answers | no_fire_burned | no_fire_share | unmatched_boxes | unmatched_answers | unmatched_burned | unmatched_share | difference | chosen |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| box rule | 0.3 | 10.0 | 100 | 100 | 83 | 0.83 | 100 | 100 | 17 | 0.17 | 193 | 186 | 93 | 0.5 | 0.66 | yes |
+| dark rule | 0.3/0.2 | 1.0 | 100 | 100 | 90 | 0.9 | 100 | 100 | 5 | 0.05 | 193 | 186 | 60 | 0.3226 | 0.85 | yes |
+| short-wave rule | nbr2:0.1/0.2 | 1.0 | 100 | 100 | 92 | 0.92 | 100 | 100 | 13 | 0.13 | 193 | 186 | 82 | 0.4409 | 0.79 | yes |
+| monitor | monitor | 1.0 | 100 | 100 | 89 | 0.89 | 100 | 100 | 0 | 0.0 | 193 | 193 | 66 | 0.342 | 0.89 | yes |
+| radar VV | VV/3.0 | 25.0 | 100 | 95 | 52 | 0.5474 | 100 | 90 | 17 | 0.1889 | 193 | 165 | 51 | 0.3091 | 0.3585 | yes |
+| radar VH | VH/3.0 | 25.0 | 100 | 95 | 74 | 0.7789 | 100 | 90 | 27 | 0.3 | 193 | 165 | 88 | 0.5333 | 0.4789 | yes |
+
+### 2025 burn_candidates_person
+
+Configuration `18b5fd2e0d5e`, run on 2026-11-24.
+
+| candidate | key | min_ha | chips | later_only | person_burned | found | found_share | person_not_burned | called_burned | false_share | agree | agree_share |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| box rule | 0.3 | 10.0 | 71 | 0 | 22 | 18 | 0.8182 | 49 | 9 | 0.1837 | 58 | 0.8169 |
+| dark rule | 0.3/0.2 | 1.0 | 71 | 0 | 22 | 20 | 0.9091 | 49 | 5 | 0.102 | 64 | 0.9014 |
+| short-wave rule | nbr2:0.1/0.2 | 1.0 | 71 | 0 | 22 | 20 | 0.9091 | 49 | 12 | 0.2449 | 57 | 0.8028 |
+| monitor | monitor | 1.0 | 71 | 0 | 22 | 17 | 0.7727 | 49 | 5 | 0.102 | 61 | 0.8592 |
+| radar VV | VV/3.0 | 25.0 | 64 | 0 | 21 | 8 | 0.381 | 43 | 8 | 0.186 | 43 | 0.6719 |
+| radar VH | VH/3.0 | 25.0 | 64 | 0 | 21 | 16 | 0.7619 | 43 | 14 | 0.3256 | 45 | 0.7031 |
+
 ### 2025 burn_check
 
 Configuration `18b5fd2e0d5e`, run on 2026-11-23.
@@ -877,6 +903,26 @@ Configuration `a84ef20c2e1b`, run on 2026-11-23.
 | 6 to 18 | 377 | 502.52 | 1812.74 | 850.0 | 118 | 0.313 | 124.08 | 316.08 | 161 |
 | 18 to 24.5 | 137 | 466.03 | 2271.48 | 850.0 | 46 | 0.3358 | 75.25 | 150.74 | 137 |
 | all | 1775 | 328.82 | 1213.84 | 850.0 | 320 | 0.1803 | 105.77 | 222.27 | 318 |
+
+### 2025 image_agreement_2
+
+Configuration `18b5fd2e0d5e`, run on 2026-11-24.
+
+| person | chips | rule_burned | rule_not_burned | rule_no_clear_view |
+|---|---|---|---|---|
+| burned | 22 | 18 | 4 | 0 |
+| not burned | 49 | 9 | 40 | 0 |
+| cannot tell | 9 | 6 | 2 | 1 |
+
+### 2025 image_check_2
+
+Configuration `18b5fd2e0d5e`, run on 2026-11-24.
+
+| group | sample | burned | not_burned | cannot_tell | no_answer | burned_share |
+|---|---|---|---|---|---|---|
+| HIGH events, unmatched | 30 | 6 | 17 | 7 | 0 | 0.2609 |
+| HIGH events, matched | 20 | 16 | 2 | 2 | 0 | 0.8889 |
+| boxes, no fire | 30 | 0 | 30 | 0 | 0 | 0.0 |
 
 ### 2025 merge_gain
 
