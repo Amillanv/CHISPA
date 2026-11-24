@@ -36,6 +36,7 @@
   --right: 392px;
   --history: 200px;
   --bar: 44px;
+  --font: 'Michroma', sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -79,7 +80,7 @@ button { cursor: pointer; }
 .bar { grid-area: bar; display: grid; grid-template-columns: var(--left) 1fr auto; align-items: center; gap: var(--gutter); pointer-events: none; }
 .bar > * { pointer-events: auto; }
 .brand { display: flex; align-items: center; gap: 11px; padding-left: 4px; }
-.wordmark { font: 500 13px/1 var(--ui); letter-spacing: 0.34em; }
+.wordmark { font: 500 13px/1 var(--font); letter-spacing: 0.34em; }
 .region { font-size: 12px; color: var(--fg-3); padding-left: 11px; border-left: 1px solid var(--hair-2); }
 .clock { justify-self: center; display: flex; align-items: stretch; height: 38px; background: var(--ink-1); border: 1px solid var(--hair); border-radius: var(--r); backdrop-filter: blur(18px); }
 .mode { display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 0; background: none; border-right: 1px solid var(--hair); font: 500 10.5px/1 var(--ui); letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-2); }
