@@ -152,6 +152,37 @@ BURN_DNBR_STEPS = (0.1, 0.2, 0.3, 0.4)
 # A burned pixel counts only in a patch of this many hectares or more.
 BURN_PATCH_HA = 1.0
 
+# A candidate rule also needs a dark ground after the event: a near infrared reflectance (band B8A)
+# of one of these limits or less. A burn is dark. Bare ground and a dry field are bright.
+BURN_DARK_STEPS = (0.15, 0.2, 0.25)
+
+# The steps of the short-wave burn ratio, NBR2 = (B11 - B12) / (B11 + B12). A burn on grass
+# changes this ratio more than it changes the burn ratio with near infrared.
+BURN_NBR2_STEPS = (0.05, 0.1, 0.2, 0.3)
+
+# The Monitor do Fogo map of a month can show a burn of the month before. Thus we read the months
+# from the first detection of an event to this many months after its last detection.
+MONITOR_MONTHS_AFTER = 1
+
+# The steps of the change of the radar backscatter that we count, in decibels.
+RADAR_DB_STEPS = (1.0, 2.0, 3.0)
+
+# The setting of each candidate for the burned ground: the key of its measure and the minimum
+# hectares. The box rule keeps the pair of the burn check. The Monitor map and radar have the
+# setting with the largest difference between the found share and the no-fire share on the
+# development year (table `burn_candidates`, set on 2023 on 2026-11-23).
+# The dark rule and the short-wave rule have the setting with the largest agreement with the
+# answers of a person on 2024 (`docs/method.md` section 11.16, set on 2026-11-23). On 2023 the
+# dark rule had its largest difference at ("0.2/0.15", 1.0).
+BURN_CANDIDATES: dict | None = {
+    "box rule": ("0.3", 10.0),
+    "dark rule": ("0.3/0.2", 1.0),
+    "short-wave rule": ("nbr2:0.1/0.2", 1.0),
+    "monitor": ("monitor", 1.0),
+    "radar VV": ("VV/3.0", 25.0),
+    "radar VH": ("VH/3.0", 25.0),
+}
+
 # The rule says "burned" if the burned area of a box is one of these hectares or more.
 BURN_HA_STEPS = (1.0, 10.0, 25.0)
 
@@ -181,6 +212,28 @@ IMAGE_MAX_CLOUD = 20.0
 # The ground size of one pixel of a picture in metres, and the largest side of a picture in pixels.
 IMAGE_M_PER_PX = 10.0
 IMAGE_MAX_PX = 2048
+
+# The second look of the image check: the events of the first look again, and this number of
+# no-fire boxes. A no-fire box shows how frequently a person says "burned" with no fire.
+IMAGE_NO_FIRE = 60
+
+# A year with no first look has a smaller sample for the second look: this number of boxes
+# from the start of each group of the burn check.
+IMAGE_TEST_SAMPLE = {"unmatched": 30, "matched": 20, "no fire": 30}
+
+# A picture of the second look needs this share of its box with no cloud, or more. The first look
+# used the cloud of the full image tile: it gave no picture for some boxes with a clear sky.
+IMAGE_MIN_CLEAR = 0.8
+
+# The second look has one more picture: a later view, this many days or more after the picture
+# after the event, and not later than this many days after the last detection.
+# A burn stays in the later view. A shadow or water does not.
+IMAGE_LATER_MIN_DAYS = 5
+IMAGE_LATER_DAYS = 60
+
+# Events that are in no comparison with the answers of the person: the person saw an opinion on
+# them before the second look (`docs/method.md` section 11.10).
+IMAGE_NOT_BLIND = ("20240016701", "20240006447", "20240008269")
 
 # --- Measured growth ---
 

@@ -58,6 +58,7 @@ def main(arguments: list[str] | None = None) -> None:
     evaluation.add_argument("--year", type=int, required=True)
     evaluation.add_argument("--test-run", action="store_true", help="Permit the test year.")
     names = {"burn": "burn check", "images": "image check", "visibility": "visibility table"}
+    names["candidates"] = "table of the candidates for the burned ground"
     for name, text in (
         names
         | {
@@ -69,6 +70,9 @@ def main(arguments: list[str] | None = None) -> None:
         check = commands.add_parser(name, help=f"Make the {text} of one fused year.")
         check.add_argument("--year", type=int, required=True)
         check.add_argument("--test-run", action="store_true", help="Permit the test year.")
+        if name == "images":
+            look = "1: the first look. 2: the same events again and boxes with no fire."
+            check.add_argument("--look", type=int, choices=(1, 2), default=1, help=look)
     poll = commands.add_parser("poll", help="Do one pass of the live poller.")
     poll.add_argument("--push", action="store_true", help="Also copy complete logs to the bucket.")
     dashboard = commands.add_parser("serve", help="Start the dashboard on this computer.")
@@ -88,12 +92,14 @@ def main(arguments: list[str] | None = None) -> None:
         run_fuse(chosen.year)
     elif chosen.command == "evaluate":
         run_evaluate(chosen.year)
+    elif chosen.command == "candidates":
+        checks.run_candidates(chosen.year, lambda: read_setting("EE_PROJECT"))
     elif chosen.command == "burn":
         checks.run_burn(chosen.year, lambda: read_setting("EE_PROJECT"))
     elif chosen.command in ("visibility", "growth", "severity", "confidence"):
         checks.run_table(chosen.command, chosen.year)
     elif chosen.command == "images":
-        checks.run_images(chosen.year, lambda: read_setting("EE_PROJECT"))
+        checks.run_images(chosen.year, lambda: read_setting("EE_PROJECT"), chosen.look)
     elif chosen.command == "poll":
         run_poll(chosen.push)
     elif chosen.command == "serve":
@@ -110,6 +116,7 @@ def permit_year(chosen: argparse.Namespace) -> None:
     is_result = chosen.command in (
         "evaluate",
         "burn",
+        "candidates",
         "images",
         "visibility",
         "growth",

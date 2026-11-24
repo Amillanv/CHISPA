@@ -283,6 +283,10 @@ Checked 2026-11-22 with live requests to Earth Engine.
 - One measure of the burn check for one box took approximately 2 seconds, and 6 seconds for a box of 50 km.
 - The 152 pictures of the 2024 image check are 181 MB. They are in `data/images/`, not in the bucket.
 - For the 90 events of the 2024 sample, 69 have a picture before and a picture after. 13 have no picture before, and 15 have no picture after.
+- Checked 2026-11-23: the scene classes of the pixels of a box give its share with no cloud for each image, in one request
+  of less than 1 second for 18 images. With a minimum share of 0.8, 80 of the same 90 events have the two pictures.
+  For the 150 chips of the second look, the picture after came 5 days or less after the last detection for 64 chips,
+  10 days or less for 113, and 30 days or less for 142. The 422 pictures are 471 MB.
 - `UNVERIFIED`: the terms. We believe that Copernicus Sentinel data is free and open with an attribution. Do a check before we publish a picture.
 
 ### 8.12 GOES mask and polar-orbit pass times
@@ -388,3 +392,50 @@ The dashboard shows Pantanal time. No result uses it.
 - Each of the two zones had UTC-4 at each hour from 2020-01-01 to 2026-12-31 (UTC): 61 368 hours with one offset.
 - From 2019-01-01, the only change of each zone was on 2019-02-17 at 03:00 UTC: from UTC-3 to UTC-4, the end of summer time.
 - The page uses the copy of the database in the browser. A very old browser can have different rules. Not checked.
+
+### 8.17 Sentinel-1 radar, and how frequently Sentinel-2 views a place
+
+Checked 2026-11-23 with live requests to Earth Engine, at three points of the Pantanal box: centre, north and south.
+The command `chispa candidates` reads Sentinel-1, as a candidate for the burned ground (`docs/method.md` section 11.16).
+
+- Asset: `COPERNICUS/S1_GRD`. One orbit views the three points: descending, relative orbit 141, mode IW, bands VV and VH.
+- Sentinel-1 gives one view each 12 days. 2023 and 2024 had 28 or 29 days with a scene at each point, all from Sentinel-1A.
+  The largest time between two views was 24 days in 2023 and 2024, and 36 days in 2025 at two of the points.
+- The south point also had Sentinel-1C in 2025. In 2026 each point had two satellites, and still one view each 12 days.
+- Sentinel-2 at the centre point: one view each 5 days, and 74, 86 and 77 days with an image in 2024, 2025 and 2026
+  (2026 to 16 November). The largest time between two views was 5 days in 2024 and 2026, and 10 days in 2025.
+- Thus radar is not quicker than Sentinel-2 at these points. Its possible value is a view through cloud.
+- Checked 2026-11-23 with `chispa candidates --year 2023`: 139 of the 624 boxes had no scene before their event or no scene
+  after it. Two boxes near longitude -55.7 and -55.1 had no scene in all of 2023: the asset does not have all of the Pantanal box.
+- For the 90 events of the 2024 image check, the first image with little cloud (section 8.11) came 5 days or less
+  after the last detection for 30 events, 10 days or less for 57, and 30 days or less for 75. A check outside the repository.
+- `UNVERIFIED`: the terms of Sentinel-1 data, the time from a scan to its file in Earth Engine, and how well the
+  backscatter shows a burn on grass or on wetland.
+
+### 8.18 Candidates for the burned ground
+
+The command `chispa candidates` reads the Monitor do Fogo asset (`docs/method.md` section 11.16). No command reads the other sources.
+
+Checked 2026-11-23 with live requests to Earth Engine:
+
+- MapBiomas Monitor do Fogo: the asset `projects/mapbiomas-public/assets/brazil/fire/monitor/mapbiomas_fire_monthly_burned_v1`
+  is a collection of 94 images, one for each month from January 2019 to October 2026. The band is `FireMonth`.
+  The properties say collection 2 and source IPAM. The first image has pixels of 30 m. The asset changed last on 2026-11-09.
+- Thus a map of the burned ground of a month exists some weeks after that month, also for 2026.
+- A first look outside the repository, in the boxes of the 63 chips of 2024 with a clear answer of the person:
+  the asset had 1 hectare or more for 22 of the 30 chips that the person called burned, and for 9 of the 33 others.
+  For the 44 unmatched HIGH events it had 1 hectare or more for 13.
+
+Read 2026-11-23 by a research agent, on the pages of each owner. `UNVERIFIED`: no second read confirmed these facts.
+
+- Monitor do Fogo: the method document of its collection 1 gives monthly Sentinel-2 mosaics, a deep learning model, and
+  only the ground not farther than 5 km from an INPE hotspot. Licence CC BY 4.0. Thus it cannot show a fire with no hotspot.
+- OlmoEarth (Ai2): an encoder for Sentinel-2 L2A, Sentinel-1 and Landsat. It gives embeddings. The agent found no model,
+  weights or benchmark for burned area. A use needs our labels and a head for two dates. The weights have the
+  "OlmoEarth Artifact License": it prohibits military and extractive uses. The package `olmoearth-pretrain-minimal`
+  has 5 dependencies, with torch. No speed on a laptop is published.
+- Prithvi-EO-2.0 (NASA and IBM): weights for burn scars exist, with Apache-2.0. The input is one date of 6 HLS bands at 30 m.
+  The training fires are in the United States, from MTBS: fires of approximately 200 hectares or more.
+- Sentinel-1: Belenguer-Plomer et al. 2019 (DOI 10.1016/j.rse.2019.111345) give grassland as the worst class for
+  backscatter change (Dice 0.28), with errors from soil moisture and floods.
+- ALARMES (LASA-UFRJ): burned area from VIIRS each day, at 500 m. The data comes by request.
