@@ -1367,6 +1367,9 @@ The agent must:
 2. The page has one as-of time. Live: the time of the request, again each few minutes. Replay: a recorded moment.
    The history band counts the steps to the as-of time with the events of the as-of time. In a replay it can also
    show the steps after the as-of time, dark, with the events of the end of the window.
+   A swipe moves the window of the band by whole steps, and the as-of time stays. Live, the window ends at the latest
+   at the as-of time. A window that ends before the as-of time also counts its steps with the events of the as-of time:
+   the steps from its start to the as-of time must fit in one answer of `activity` (`config.TOOL_MAX_STEPS`).
 3. The base image is a mosaic. It is not an image of the as-of time. A burn scar in it can be of a different year.
 4. The growth matrix shows the steps of the record on a log scale, with the floor as a ring. A ray is a past step, not a forecast.
 5. The level, the rank and the severity stay separate. The rank and the level say "no check" for an event out of the biome.
