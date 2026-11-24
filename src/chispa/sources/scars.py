@@ -86,3 +86,9 @@ def find_scars(months: np.ndarray) -> np.ndarray:
         numbers[burned] = labels[burned] + count
         count += found
     return numbers
+
+
+def month_marks(year: int, months: list[int]) -> ee.Image:
+    """Return an image that is 1 where the map of a year has a burn in one of the months."""
+    burned = ee.Image(config.SCAR_ASSET).select(f"burned_monthly_{year}").unmask(0)
+    return burned.remap(months, [1] * len(months), 0).rename("mapped")

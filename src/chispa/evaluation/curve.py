@@ -9,19 +9,18 @@ import csv
 import hashlib
 import sqlite3
 import statistics
-import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+from functools import partial
 from pathlib import Path
 
-import ee
 from scipy import stats
 
-from chispa import config
+from chispa import config, earthengine
 from chispa.evaluation import burn, candidates
 from chispa.evaluation.report import share
 from chispa.grid import layer_grid
-from chispa.sources import border, sentinel2
+from chispa.sources import border, sentinel2_ground
 
 FIELDS = ["id", "settings", "day", "views", "clear_share", "burned_ha"]
 LABELS = {
@@ -80,18 +79,6 @@ def event_targets(year: int, store_path: Path, raw_dir: Path, now: datetime) -> 
     return targets
 
 
-def _request(box: tuple, before: tuple, start: datetime, ends: dict) -> dict:
-    """Return the curve of a box. A request that fails is sent again after a pause."""
-    for attempt in range(1, config.CURVE_TRIES + 1):
-        try:
-            return sentinel2.burned_by_day(box, before, start, ends, rule()[0])
-        except ee.EEException:
-            if attempt == config.CURVE_TRIES:
-                raise
-            time.sleep(10 * attempt)
-    return {}
-
-
 def _measure(target: dict) -> list[dict]:
     """Return one row for each day of the curve of one box. A day with no answer has empty values.
 
@@ -102,7 +89,8 @@ def _measure(target: dict) -> list[dict]:
     first = datetime.fromisoformat(target["first_observed_at"])
     before, after = burn.periods(first, datetime.fromisoformat(target["last_observed_at"]))
     ends = {day: min(first + timedelta(days=day), after[1]) for day in config.CURVE_DAYS}
-    found = _request(box, before, after[0], ends)
+    request = partial(sentinel2_ground.burned_by_day, box, before, after[0], ends, rule()[0])
+    found = earthengine.again(request)
     start = {"id": target["id"], "settings": signature()}
     return [
         {**start, "day": day, **dict(zip(FIELDS[3:], found.get(day, ("", "", "")), strict=True))}
@@ -136,6 +124,12 @@ def answer(row: dict) -> bool | None:
     if float(row["clear_share"] or 0) < config.BURN_MIN_CLEAR:
         return None
     return float(row["burned_ha"] or 0) >= rule()[1]
+
+
+def last_answers(path: Path) -> dict[int, bool | None]:
+    """Return the answer of the curve at its last day for each event in a file of curves."""
+    last = max(config.CURVE_DAYS)
+    return {int(row["id"]): answer(row) for row in burn.read(path) if int(row["day"]) == last}
 
 
 def table(targets: list[dict], rows: list[dict]) -> list[dict]:

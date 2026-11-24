@@ -60,6 +60,8 @@ def main(arguments: list[str] | None = None) -> None:
     names = {"burn": "burn check", "images": "image check", "visibility": "visibility table"}
     names["candidates"] = "table of the candidates for the burned ground"
     names["curve"] = "burn curve of the boxes of the burn check"
+    names["pixels"] = "table of the burned pixels of the rule against the map"
+    names["advance"] = "table of the advance of VIIRS against the new burned ground"
     for name, text in (
         names
         | {
@@ -96,6 +98,10 @@ def main(arguments: list[str] | None = None) -> None:
         run_fuse(chosen.year)
     elif chosen.command == "evaluate":
         run_evaluate(chosen.year)
+    elif chosen.command == "advance":
+        checks.run_advance(chosen.year, lambda: read_setting("EE_PROJECT"))
+    elif chosen.command == "pixels":
+        checks.run_pixels(chosen.year, lambda: read_setting("EE_PROJECT"))
     elif chosen.command == "curve":
         run = checks.run_event_curves if chosen.events else checks.run_curve
         run(chosen.year, lambda: read_setting("EE_PROJECT"))
@@ -125,6 +131,8 @@ def permit_year(chosen: argparse.Namespace) -> None:
         "burn",
         "candidates",
         "curve",
+        "pixels",
+        "advance",
         "images",
         "visibility",
         "growth",
