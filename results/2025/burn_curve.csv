@@ -1,0 +1,13 @@
+group,day,boxes,answers,answer_share,burned,burned_share,hectares_median,config,run_date
+"HIGH events, unmatched",5,193,72,0.3731,15,0.2083,21.38,dac8767c2e22,2026-11-24
+"HIGH events, unmatched",10,193,135,0.6995,33,0.2444,8.41,dac8767c2e22,2026-11-24
+"HIGH events, unmatched",20,193,180,0.9326,54,0.3,7.54,dac8767c2e22,2026-11-24
+"HIGH events, unmatched",30,193,186,0.9637,60,0.3226,8.1,dac8767c2e22,2026-11-24
+"HIGH events, matched",5,100,30,0.3,27,0.9,41.95,dac8767c2e22,2026-11-24
+"HIGH events, matched",10,100,66,0.66,57,0.8636,50.88,dac8767c2e22,2026-11-24
+"HIGH events, matched",20,100,94,0.94,82,0.8723,63.5,dac8767c2e22,2026-11-24
+"HIGH events, matched",30,100,100,1.0,90,0.9,60.42,dac8767c2e22,2026-11-24
+"boxes, no fire",5,100,37,0.37,0,0.0,,dac8767c2e22,2026-11-24
+"boxes, no fire",10,100,79,0.79,3,0.038,7.57,dac8767c2e22,2026-11-24
+"boxes, no fire",20,100,96,0.96,4,0.0417,10.23,dac8767c2e22,2026-11-24
+"boxes, no fire",30,100,100,1.0,5,0.05,7.57,dac8767c2e22,2026-11-24

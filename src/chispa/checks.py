@@ -6,12 +6,15 @@ which has the commands that get data, make the store and make the events.
 """
 
 from collections.abc import Callable
+from datetime import UTC, datetime
 
 from chispa import config
-from chispa.evaluation import burn, candidates, images
+from chispa.evaluation import burn, candidates, curve, images
 from chispa.evaluation.confidence import confidence_tables
+from chispa.evaluation.events import events_with_a_match
 from chispa.evaluation.growth import step_rows
 from chispa.evaluation.report import write_summary, write_tables
+from chispa.evaluation.run import prepare
 from chispa.evaluation.severity import severity_tables
 from chispa.evaluation.visibility import month_table, visibility
 from chispa.sources import scars
@@ -93,6 +96,46 @@ def run_candidates(year: int, project: Callable[[], str]) -> None:
     write_tables(tables, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
     print(f"{year}: {len(targets)} boxes measured. See results/SUMMARY.md, table burn_candidates.")
+
+
+def run_event_curves(year: int, project: Callable[[], str]) -> None:
+    """Measure the burn curve of each event of a year in the biome, and make its table.
+
+    The curves are large files. They are in the data folder, as the store. A year needs no map.
+    """
+    scars.check_access(project())
+    folder = config.DATA_DIR / "curves"
+    targets = curve.event_targets(year, config.STORE_PATH, config.RAW_DIR, datetime.now(UTC))
+    burn.write(folder / f"{year}_events.csv", targets)
+    curve.measure(targets, folder / f"{year}_days.csv")
+    rows = burn.read(folder / f"{year}_days.csv")
+    tables = {"burn_curve_events": curve.table(targets, rows)}
+    if year in config.YEAR_ROLES:
+        # A year with a map of burn scars: the curve against the match of each event.
+        detections, pairs, _, _ = prepare(year, config.STORE_PATH, config.RAW_DIR)
+        matched = events_with_a_match(detections, pairs)
+        tables["burn_curve_map"] = curve.map_table(targets, rows, matched)
+    write_tables(tables, year, config.RESULTS_DIR)
+    write_summary(config.RESULTS_DIR)
+    print(f"{year}: {len(targets)} events. See results/SUMMARY.md, table burn_curve_events.")
+
+
+def run_curve(year: int, project: Callable[[], str]) -> None:
+    """Measure the burn curve of each box of the burn check, and make its tables."""
+    folder = config.RESULTS_DIR / str(year)
+    other = folder / "burn_candidates" / "measures.csv"
+    if not other.exists():
+        raise SystemExit(f"Run `chispa candidates --year {year}` first.")
+    scars.check_access(project())
+    targets = burn.read(folder / "burn_check" / "targets.csv")
+    path = folder / "burn_curve" / "days.csv"
+    curve.measure(targets, path)
+    rows = burn.read(path)
+    tables = {"burn_curve": curve.table(targets, rows)}
+    tables["burn_curve_check"] = curve.check_table(targets, rows, burn.read(other))
+    write_tables(tables, year, config.RESULTS_DIR)
+    write_summary(config.RESULTS_DIR)
+    print(f"{year}: {len(targets)} boxes. See results/SUMMARY.md, table burn_curve.")
 
 
 def run_images(year: int, project: Callable[[], str], look: int) -> None:

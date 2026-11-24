@@ -59,6 +59,7 @@ def main(arguments: list[str] | None = None) -> None:
     evaluation.add_argument("--test-run", action="store_true", help="Permit the test year.")
     names = {"burn": "burn check", "images": "image check", "visibility": "visibility table"}
     names["candidates"] = "table of the candidates for the burned ground"
+    names["curve"] = "burn curve of the boxes of the burn check"
     for name, text in (
         names
         | {
@@ -70,6 +71,9 @@ def main(arguments: list[str] | None = None) -> None:
         check = commands.add_parser(name, help=f"Make the {text} of one fused year.")
         check.add_argument("--year", type=int, required=True)
         check.add_argument("--test-run", action="store_true", help="Permit the test year.")
+        if name == "curve":
+            each = "Measure each event of the year in the biome, not the boxes of the burn check."
+            check.add_argument("--events", action="store_true", help=each)
         if name == "images":
             look = "1: the first look. 2: the same events again and boxes with no fire."
             check.add_argument("--look", type=int, choices=(1, 2), default=1, help=look)
@@ -92,6 +96,9 @@ def main(arguments: list[str] | None = None) -> None:
         run_fuse(chosen.year)
     elif chosen.command == "evaluate":
         run_evaluate(chosen.year)
+    elif chosen.command == "curve":
+        run = checks.run_event_curves if chosen.events else checks.run_curve
+        run(chosen.year, lambda: read_setting("EE_PROJECT"))
     elif chosen.command == "candidates":
         checks.run_candidates(chosen.year, lambda: read_setting("EE_PROJECT"))
     elif chosen.command == "burn":
@@ -117,6 +124,7 @@ def permit_year(chosen: argparse.Namespace) -> None:
         "evaluate",
         "burn",
         "candidates",
+        "curve",
         "images",
         "visibility",
         "growth",
