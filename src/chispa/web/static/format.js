@@ -21,16 +21,51 @@ export function pct(share, digits = 0) {
   return share === null || share === undefined ? "–" : `${(share * 100).toFixed(digits)}%`;
 }
 
-/* "2024-09-10T18:00:00+00:00" -> "2024-09-10 18:00". All times on the page are UTC. */
-export function utc(text, withDate = true) {
-  if (!text) return "–";
-  const d = new Date(text);
-  const iso = d.toISOString();
-  return withDate ? `${iso.slice(0, 10)} ${iso.slice(11, 16)}` : iso.slice(11, 16);
+/* The parts of a time in a zone. `zone` is the zone of the page: an IANA name, or null for UTC. */
+function parts(time, zone) {
+  const options = { timeZone: zone ?? "UTC", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" };
+  return Object.fromEntries(new Intl.DateTimeFormat("en-GB", options).formatToParts(new Date(time)).map((x) => [x.type, x.value]));
 }
 
-export function day(text) {
-  return text ? new Date(text).toISOString().slice(5, 10) : "–";
+/* A time in the zone of the page: "2024-09-10 14:00", or "14:00" with no date. */
+export function stamp(time, zone, withDate = true) {
+  if (time === null || time === undefined || time === "") return "–";
+  const p = parts(time, zone);
+  return withDate ? `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}` : `${p.hour}:${p.minute}`;
+}
+
+/* The month and the day of a time in the zone of the page: "09-10". A UTC day ("2024-09-10") needs the zone null. */
+export function day(time, zone) {
+  if (!time) return "–";
+  const p = parts(time, zone);
+  return `${p.month}-${p.day}`;
+}
+
+/* How far the clock of the zone is from UTC at a time, in milliseconds: −4 h for Pantanal time, 0 for UTC. */
+export function zoneShift(time, zone) {
+  if (!zone) return 0;
+  const p = parts(time, zone), minute = Math.floor(new Date(time).getTime() / 60_000) * 60_000;
+  return Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour), Number(p.minute)) - minute;
+}
+
+/* The name of the zone of the page: "UTC", or "Pantanal, UTC−4" at a time. Short: "UTC" or "Pantanal". */
+export function zoneLabel(zone, time) {
+  return zone ? `Pantanal, ${offset(time, zone)}` : "UTC";
+}
+
+export function zoneTag(zone) {
+  return zone ? "Pantanal" : "UTC";
+}
+
+/* The hours before the as-of time, as two times: "from 24 Nov 16:32 to 25 Nov 16:32 Pantanal". */
+export function period(asOf, hours, zone) {
+  const from = new Date(new Date(asOf).getTime() - hours * 3_600_000);
+  return `from ${when(from, zone)} to ${when(asOf, zone)} ${zoneTag(zone)}`;
+}
+
+/* How long before the as-of time: "1.1 h ago" when live, "1.1 h earlier" in a replay (before the moment of the replay). */
+export function ago(time, asOf, live) {
+  return `${dur(hoursBetween(time, asOf))} ${live ? "ago" : "earlier"}`;
 }
 
 /* Hours as a short duration: 0.25 -> "15 min", 5.5 -> "5.5 h", 50 -> "2 d 2 h", 721 -> "30 d". */
@@ -124,9 +159,8 @@ export const GOES_NOTE = {
 /* The answer of a run of GOES scans (`goes_view.runs_after_last_detection`). */
 export const ANSWER = { fire: "fire", possible_fire: "possible fire", no_fire: "examined, no fire", not_seen: "could not see" };
 
-/* A time in UTC ("08-20 17:25") or in a time zone ("20 Aug 13:25"). */
+/* A short time in the zone of the page: "20 Aug 13:25". `zone` null is UTC. */
 export function when(text, zone) {
-  if (!zone) return `${day(text)} ${utc(text, false)}`;
-  const t = zoned(text, zone);
+  const t = zoned(text, zone ?? "UTC");
   return `${t.date.split(" ").slice(1).join(" ")} ${t.time}`;
 }

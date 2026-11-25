@@ -1672,12 +1672,16 @@ The agent must:
    computer, each second. A pass with a failure does not make the data newer. `live_status` gives the time from which
    the data is late; the page compares it with its clock. Before the live logs: "archive". In the live period with
    no such pass: "no pass". The lag is not the delay of a source (`PLAN.md`, live operation).
-8. Pantanal time is the time of the zone in `config.py`, with its offset on the page. Data, tools and results stay in UTC.
+8. The clock sets one time zone for the page: Pantanal time (the zone in `config.py`) or UTC. Each time on the page is in
+   that zone, with its name. The detections of each day stay UTC days. Data, tools and results stay in UTC.
 9. A time to CHISPA that includes a stop of the poller (`poller_stop_h`) has a mark with the most that the stop added.
    The last clear look is the newest GOES scan after the last detection with "examined, no fire".
    After the last detection, the timeline has one row for each run of GOES scans with one answer. Folded, it keeps each
    run of fire or possible fire and the newest runs.
    The page does not say that a fire is out.
+10. At an as-of time before the first alert of the selected event, CHISPA had no detection of it: the page says "No alert yet".
+   It gives the time of the first detection and of the first alert from a record of the event at a later time, and it says
+   that CHISPA did not know these times at the as-of time. The event lane of the history band starts at the first detection.
 
 ## 13. Assumptions and decisions
 
