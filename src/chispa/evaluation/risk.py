@@ -246,17 +246,7 @@ def risk_tables(store_path: Path, raw_dir: Path) -> dict[int, Tables]:
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
     baselines, tables = confidence.load(path), {}
     for year, part in parts.items():
-        models = fit_models(
-            {
-                moment: [
-                    row
-                    for other in parts
-                    if other != year
-                    for row in new_or_none(parts[other]["rows"][moment])
-                ]
-                for moment in MOMENTS
-            }
-        )
+        models = fit_models(_training(parts, [other for other in parts if other != year]))
         kept = {moment: new_or_none(part["rows"][moment]) for moment in MOMENTS}
         tables[year] = {
             "risk": result_table(kept, models, baselines),
@@ -265,4 +255,16 @@ def risk_tables(store_path: Path, raw_dir: Path) -> dict[int, Tables]:
             "risk_alerts": part["alerts"],
             "risk_weights": weight_table(models),
         }
+        # The split in time sequence: the weights come only from the years before the year.
+        if earlier := [other for other in parts if other < year]:
+            models = fit_models(_training(parts, earlier))
+            tables[year]["risk_earlier"] = result_table(kept, models, baselines)
+            tables[year]["risk_calibration_earlier"] = calibration_table(kept, models)
     return tables
+
+
+def _training(parts: dict[int, dict], years: list[int]) -> dict[str, list]:
+    return {
+        moment: [row for year in years for row in new_or_none(parts[year]["rows"][moment])]
+        for moment in MOMENTS
+    }

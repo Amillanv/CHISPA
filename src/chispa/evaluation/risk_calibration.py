@@ -34,7 +34,9 @@ def calibration_table(kept: dict[str, list], models: dict) -> list[dict]:
             constant = float(((model["base_rate"] - large) ** 2).mean())
             first = _row(chance, large) | {
                 "brier": round(brier, 5),
-                "brier_skill": round(1 - brier / constant, 4),
+                # With no large alert in the training years and in the year, the constant has
+                # no error: the skill has no value.
+                "brier_skill": round(1 - brier / constant, 4) if constant else None,
                 "above_lower_limit": None if lower is None else int((chance > lower).sum()),
             }
             parts = np.array_split(np.argsort(chance, kind="stable"), TENTHS)
