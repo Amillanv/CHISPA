@@ -1,24 +1,24 @@
 /* The overview cards on the left: the situation at the as-of time, what each sensor family gave,
    and the measured track record of the alerts. Each card shows tool answers. It adds no fact. */
-import { esc, num, pct, utc, dur, hoursBetween, FAMILY, FAMILY_ORDER, FAMILY_NOTE } from "./format.js";
+import { esc, num, pct, stamp, zoneTag, period, ago, FAMILY, FAMILY_ORDER, FAMILY_NOTE } from "./format.js";
 
 const LEVELS = ["HIGH", "MEDIUM", "LOW"];
 const COLOUR = { HIGH: "#e5542b", MEDIUM: "#ed903d", LOW: "#f5c16c" };
 
-export function situation(root, { events, day, asOf, sinceHours }) {
+export function situation(root, { events, day, asOf, sinceHours, zone, live }) {
   const count = Object.fromEntries(LEVELS.map((l) => [l, events.filter((e) => e.level === l).length]));
   const newest = day ? Object.values(day.newest_observed_at).sort().at(-1) : null;
   const bar = events.length
     ? LEVELS.map((l) => (count[l] ? `<span data-level="${l}" style="flex:${count[l]}"></span>` : "")).join("")
     : "";
   root.innerHTML = `
-    <div class="card-head"><span class="label">Situation</span><span class="meta">${sinceHours} h to ${utc(asOf, false)}</span></div>
+    <div class="card-head"><span class="label">Situation</span><span class="meta">last ${sinceHours} hours</span></div>
     <div class="figure">${num(events.length)}<small>${events.length === 1 ? "event" : "events"}</small></div>
-    <div class="lede">with a new detection in the ${sinceHours} h before the as-of time</div>
+    <div class="lede">with a new detection ${period(asOf, sinceHours, zone)}</div>
     <div class="levelbar${events.length ? "" : " empty"}">${bar}</div>
     <div class="legend">${LEVELS.map((l) => `<span data-level="${l}"><span class="swatch"></span>${l}<b>${count[l]}</b></span>`).join("")}</div>
     ${day ? spark(day.steps) : ""}
-    <div class="kv"><span>Newest detection</span><b>${newest ? `${utc(newest, false)} · ${dur(hoursBetween(newest, asOf))} before` : "none in 24 h"}</b></div>`;
+    <div class="kv"><span>Newest detection</span><b>${newest ? `${stamp(newest, zone, false)} · ${ago(newest, asOf, live)}` : "none in 24 h"}</b></div>`;
 }
 
 /* The events of each hour by level, as small stacked bars. */
@@ -38,7 +38,7 @@ function spark(steps) {
   return `<svg class="spark" viewBox="0 0 100 34" preserveAspectRatio="none" aria-label="Events of each hour">${bars}<line x1="0" x2="100" y1="32.5" y2="32.5" stroke="rgba(255,255,255,0.15)" stroke-width="0.4"/></svg>`;
 }
 
-export function sensors(root, { day, asOf }) {
+export function sensors(root, { day, asOf, zone, live }) {
   if (!day) { root.innerHTML = `<div class="card-head"><span class="label">Sensors</span></div><div class="note">Loading.</div>`; return; }
   const lanes = FAMILY_ORDER.map((family) => {
     const counts = day.steps.map((s) => s.detections[family] ?? 0);
@@ -46,13 +46,13 @@ export function sensors(root, { day, asOf }) {
     const cells = counts.map((c) => `<i style="opacity:${c ? (0.25 + 0.75 * Math.log1p(c) / Math.log1p(most)).toFixed(2) : 0.06}"></i>`).join("");
     const newest = day.newest_observed_at[family];
     const total = counts.reduce((a, b) => a + b, 0);
-    const when = newest ? `${utc(newest, false)} <small>${dur(hoursBetween(newest, asOf))} before</small>` : `– <small>none in 24 h</small>`;
+    const when = newest ? `${stamp(newest, zone, false)} <small>${ago(newest, asOf, live)}</small>` : `– <small>none in 24 h</small>`;
     return `<div class="lane" style="--fam:var(--${family})">
       <span class="name">${FAMILY[family]} <small>${FAMILY_NOTE[family]}</small></span><span class="when">${when}</span>
       <span class="cells" title="${num(total)} detections in 24 h">${cells}</span></div>`;
   }).join("");
   root.innerHTML = `
-    <div class="card-head"><span class="label">Sensors</span><span class="meta">each hour, 24 h · newest, UTC</span></div>
+    <div class="card-head"><span class="label">Sensors</span><span class="meta">each hour · newest, ${zoneTag(zone)}</span></div>
     <div class="lanes">${lanes}</div>
     <p class="note">No detection is not "no fire". Cloud, smoke and the time of a pass limit what a sensor sees.</p>`;
 }
@@ -90,7 +90,7 @@ function wire(root, onYear, onLimits) {
 }
 
 /* The limits of the page, and the limits of the results of one year from SUMMARY.md. */
-export function limits(root, summary, liveStart) {
+export function limits(root, summary, liveStart, zone) {
   // A bullet of SUMMARY.md can go on in indented lines. Join them to their bullet.
   const bullets = [];
   for (const line of (summary?.limits ?? "").split("\n")) {
@@ -104,7 +104,7 @@ export function limits(root, summary, liveStart) {
       <li>An event is a group of detections. One event is not always one fire: large fires can join into one event.</li>
       <li>The confidence rank is a rank, not a probability. The severity is a heuristic of priorities, not a forecast.</li>
       <li>Measured growth gives past steps between VIIRS passes. It is not a forecast. The speed has no reference.</li>
-      <li>Before ${liveStart.slice(0, 10)} the time when CHISPA had a detection is an estimate. After it, the poller measures it.</li>
+      <li>Before ${stamp(liveStart, zone)} ${zoneTag(zone)} the time when CHISPA had a detection is an estimate. After it, the poller measures it.</li>
       <li>No detection is not "no fire". A sensor does not see through thick cloud.</li>
     </ul>
     <h3>The results, ${esc(summary?.year ?? "")}</h3><ul>${bullets.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>`;

@@ -1,7 +1,7 @@
 /* The right column: the list of events at the as-of time, and the record of one event.
    The record follows the questions of triage: where and how sure, is it moving, how did it get here,
    what do the sensors see now, what is near it. Each value is a field of the tool answer. */
-import { esc, num, pct, utc, day, dur, coord, km, compass, FAMILY, FAMILY_ORDER, INPUT, PART, GOES_GROUP, GOES_NOTE, when } from "./format.js";
+import { esc, num, pct, stamp, zoneTag, dur, coord, km, compass, FAMILY, FAMILY_ORDER, INPUT, PART, GOES_GROUP, GOES_NOTE, when, period } from "./format.js";
 import { matrix } from "./matrix.js";
 import { vitals, timeline } from "./timeline.js";
 
@@ -12,7 +12,7 @@ const SORTS = {
   size: (a, b) => b.detections - a.detections,
 };
 
-export function list(root, { events, sort, filter, selectedId, asOf, sinceHours, on }) {
+export function list(root, { events, sort, filter, selectedId, asOf, sinceHours, zone, on }) {
   const count = (l) => events.filter((e) => e.level === l).length;
   const shown = events.filter((e) => filter.has(e.level)).sort(SORTS[sort]);
   const chips = ["HIGH", "MEDIUM", "LOW"].map((l) => `<button type="button" class="chip" data-filter="${l}" data-level="${l}" aria-pressed="${filter.has(l)}"><span class="swatch"></span>${l}<b>${count(l)}</b></button>`).join("");
@@ -21,7 +21,7 @@ export function list(root, { events, sort, filter, selectedId, asOf, sinceHours,
   root.innerHTML = `
     <div class="list-head">
       <div class="top"><h2>Events <span class="num">${num(events.length)}</span></h2><div class="seg" title="Sequence">${sorts}</div></div>
-      <div class="lede">With a new detection in the ${sinceHours} h to ${utc(asOf)} UTC</div>
+      <div class="lede">With a new detection ${period(asOf, sinceHours, zone)}</div>
       <div class="filters">${chips}</div>
     </div>
     <div class="rows">${rows || empty(events.length)}</div>`;
@@ -63,11 +63,13 @@ function daysSpark(timeline) {
   return `<svg width="56" height="20" viewBox="0 0 56 20" aria-label="Detections of each day">${bars}</svg>`;
 }
 
-export function dossier(root, { record, error, trackRecord, settings, open, zone, all, on }) {
+/* `zone` is the zone of the page: the IANA name of Pantanal time, or null for UTC. */
+export function dossier(root, { record, error, notYet, asOf, trackRecord, settings, open, zone, all, on }) {
+  if (notYet) { root.innerHTML = `${top(null, on)}${waiting(notYet, asOf, zone)}`; wireTop(root, on); root.querySelector("[data-first]").addEventListener("click", () => on.first(notYet.alert)); return; }
   if (error) { root.innerHTML = `${top(null, on)}<div class="loading">${esc(error)}</div>`; wireTop(root, on); return; }
   if (!record) { root.innerHTML = `${top(null, on)}<div class="loading">Reading the event record.</div>`; wireTop(root, on); return; }
   const r = record;
-  const tz = zone === "local" ? settings.time_zone : null;
+  const tz = zone;
   // A redraw of the same event (a refresh, a tile, the time zone, more passes) keeps the scroll position.
   const old = root.querySelector(".dz-scroll");
   const page = old?.dataset.event === String(r.event_id) ? old.scrollTop : null;
@@ -77,22 +79,35 @@ export function dossier(root, { record, error, trackRecord, settings, open, zone
         <span class="dz-level"><i></i>${r.level}</span>
         <div class="dz-where">${coord(r.lat, r.lon)}</div>
         <div class="dz-brief">${brief(r)}</div>
-        <div class="seg dz-zone" title="The zone of each time of this event">${zoneButtons(zone)}</div>
         ${vitals(r, tz)}
         ${r.notes.map((n) => `<div class="flag">${esc(n)}</div>`).join("")}
       </div>
       ${triage(r, trackRecord, settings, open)}
-      ${growth(r, settings)}
+      ${growth(r, settings, tz)}
       ${timeline(r, tz, all, settings.live_start)}
       ${sensorsNow(r, tz)}
       ${place(r)}
-      ${detections(r)}
+      ${detections(r, tz)}
     </div>`;
   wireTop(root, on);
   if (page !== null) root.querySelector(".dz-scroll").scrollTop = page;
   root.querySelectorAll("[data-tile]").forEach((b) => b.addEventListener("click", () => on.tile(b.dataset.tile)));
-  root.querySelectorAll("[data-zone]").forEach((b) => b.addEventListener("click", () => on.zone(b.dataset.zone)));
   root.querySelectorAll("[data-passes]").forEach((b) => b.addEventListener("click", on.passes));
+}
+
+/* The as-of time is before the first alert of the event: CHISPA had no detection of it, thus no alert.
+   The two times come from a record of the event at a later time. CHISPA did not know them at the as-of time. */
+function waiting(notYet, asOf, zone) {
+  const at = (time) => `${when(time, zone)} ${zoneTag(zone)}`;
+  const seen = new Date(notYet.observed) <= new Date(asOf)
+    ? `A satellite saw it at ${at(notYet.observed)}, before this moment. CHISPA had that detection at ${at(notYet.alert)}, and its first alert went out then.`
+    : `A satellite first saw it at ${at(notYet.observed)}, after this moment. CHISPA had that detection at ${at(notYet.alert)}, and its first alert went out then.`;
+  return `<div class="dz-scroll"><div class="block not-yet">
+    <div class="label"><span>No alert yet</span></div>
+    <p>At ${at(asOf)}, CHISPA had no detection of this event, so it had no alert.</p>
+    <p>${seen}</p>
+    <button type="button" class="ghost" data-first>Go to the first alert, ${at(notYet.alert)}</button>
+    <p class="note">These two times come from a later look at the event. At the as-of time CHISPA did not know them.</p></div></div>`;
 }
 
 function top(r, on) {
@@ -164,7 +179,7 @@ function explain(open, r, settings) {
   return "";
 }
 
-function growth(r, settings) {
+function growth(r, settings, zone) {
   const steps = r.growth_steps, newest = r.growth, floor = settings.growth_floor_m;
   const moved = steps.filter((s) => s.direction_deg !== null);
   const last = moved.at(-1);
@@ -175,11 +190,11 @@ function growth(r, settings) {
     const speed = newest.speed_m_h === null ? `– <span class="muted">step under ${settings.growth_speed_min_h} h</span>` : `${num(newest.speed_m_h)} m/h`;
     read = `<div class="big">${km(newest.advance_m)} <span class="muted">${compass(newest.direction_deg)}</span></div>
       <dl><dt>Direction</dt><dd>${newest.direction_deg}°</dd><dt>New pixels</dt><dd>${newest.new_pixels}</dd>
-      <dt>Step</dt><dd>${dur(newest.hours_from_the_pass_before)}</dd><dt>Speed</dt><dd>${speed}</dd><dt>Pass</dt><dd>${short(newest.at)}</dd></dl>`;
+      <dt>Step</dt><dd>${dur(newest.hours_from_the_pass_before)}</dd><dt>Speed</dt><dd>${speed}</dd><dt>Pass</dt><dd>${when(newest.at, zone)}</dd></dl>`;
   } else {
     read = `<div class="big quiet">No measured advance</div>
-      <dl><dt>Newest step</dt><dd>${short(newest.at)}</dd><dt>From the pass before</dt><dd>${dur(newest.hours_from_the_pass_before)}</dd>
-      <dt>Last advance</dt><dd>${last ? `${km(last.advance_m)} ${compass(last.direction_deg)}` : "none"}</dd>${last ? `<dt>At</dt><dd>${short(last.at)}</dd>` : ""}</dl>`;
+      <dl><dt>Newest step</dt><dd>${when(newest.at, zone)}</dd><dt>From the pass before</dt><dd>${dur(newest.hours_from_the_pass_before)}</dd>
+      <dt>Last advance</dt><dd>${last ? `${km(last.advance_m)} ${compass(last.direction_deg)}` : "none"}</dd>${last ? `<dt>At</dt><dd>${when(last.at, zone)}</dd>` : ""}</dl>`;
   }
   return `<div class="block"><div class="label"><span>Measured growth</span><span>${moved.length} of ${steps.length} steps past ${num(floor)} m</span></div>
     <div class="growth">${matrix(steps, floor)}<div class="read">${read}</div></div>
@@ -188,14 +203,6 @@ function growth(r, settings) {
     that the fire did not move. A ray is a past step, not a forecast. The speed has no reference.</p></div>`;
 }
 
-function zoneButtons(zone) {
-  return [["local", "Pantanal"], ["utc", "UTC"]].map(([key, name]) => `<button type="button" data-zone="${key}" aria-pressed="${zone === key}">${name}</button>`).join("");
-}
-
-/* "2024-09-10T05:01:00+00:00" -> "09-10 05:01". */
-function short(text) {
-  return `${day(text)} ${utc(text, false)}`;
-}
 
 /* What the sensors see now. GOES: its newest scan, in one line. The scans after the last detection are in the timeline. */
 function sensorsNow(r, zone) {
@@ -224,8 +231,8 @@ function place(r) {
     </dl></div>`;
 }
 
-function detections(r) {
-  const rows = r.newest_detections.map((d) => `<tr><td>${utc(d.observed_at)}</td><td>${FAMILY[d.sensor_family]} ${esc(d.platform)}</td><td>${esc(d.source)}</td><td>${d.frp_mw === null ? "–" : num(d.frp_mw, 1)}</td></tr>`).join("");
+function detections(r, zone) {
+  const rows = r.newest_detections.map((d) => `<tr><td>${stamp(d.observed_at, zone)}</td><td>${FAMILY[d.sensor_family]} ${esc(d.platform)}</td><td>${esc(d.source)}</td><td>${d.frp_mw === null ? "–" : num(d.frp_mw, 1)}</td></tr>`).join("");
   return `<div class="block"><details class="raw"><summary class="label">Newest detections <span>${r.newest_detections.length} of ${num(r.detections)}</span></summary>
-    <table class="table"><thead><tr><th>Observed, UTC</th><th>Sensor</th><th>Source</th><th>FRP, MW</th></tr></thead><tbody>${rows}</tbody></table></details></div>`;
+    <table class="table"><thead><tr><th>Observed, ${zoneTag(zone)}</th><th>Sensor</th><th>Source</th><th>FRP, MW</th></tr></thead><tbody>${rows}</tbody></table></details></div>`;
 }
