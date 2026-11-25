@@ -1,10 +1,13 @@
 """Tests of the growth risk: the new fires, the size of an alert, the measures and the years."""
 
 import json
+import shutil
+from datetime import UTC, datetime
+from pathlib import Path
 
 import numpy as np
 
-from chispa.evaluation import risk
+from chispa.evaluation import risk_inputs, risk_run
 from chispa.evaluation.risk import (
     all_alerts_table,
     average_precision,
@@ -19,6 +22,8 @@ from chispa.evaluation.risk import (
     weight_table,
 )
 from chispa.evaluation.risk_calibration import calibration_table
+
+SAMPLES = Path(__file__).parent / "samples"
 
 
 def test_alert_that_saw_a_fire_first_is_the_alert_of_its_first_detection():
@@ -186,10 +191,26 @@ def test_tables_of_a_year_come_from_models_of_the_other_years(tmp_path, monkeypa
     parts[2003] = {"rows": {"0": other, "24": other}}
     for part in parts.values():
         part |= {"area_ha": np.zeros(1), "alerts": []}
-    monkeypatch.setattr(risk, "year_parts", lambda year, store, raw: parts[year])
-    tables = risk.risk_tables(tmp_path / "store", tmp_path)
+    monkeypatch.setattr(risk_run, "year_parts", lambda year, store, raw: parts[year])
+    # The second set of inputs has `detections_log`: for these rows it is x with the other sign.
+    monkeypatch.setattr(
+        risk_run, "INPUT_SETS", {"inputs now": (), "with more": ("detections_log",)}
+    )
+    tables = risk_run.risk_tables(tmp_path / "store", tmp_path)
     assert set(tables) == {2001, 2002, 2003}
     names = {"risk", "risk_all_alerts", "risk_calibration", "risk_alerts", "risk_weights"}
+    names |= {"risk_inputs"}
+    sets = {(row["inputs"], row["moment_h"]): row for row in tables[2003]["risk_inputs"]}
+    assert set(sets) == {
+        ("inputs now", "0"),
+        ("inputs now", "24"),
+        ("with more", "0"),
+        ("with more", "24"),
+    }
+    # The table of 2003 has the level from the earlier years. The first year has no earlier year.
+    assert sets[("inputs now", "0")]["observed_to_expected_earlier"] is not None
+    assert tables[2001]["risk_inputs"][0]["observed_to_expected_earlier"] is None
+    assert tables[2001]["risk_inputs"][0]["alerts"] == 20
     assert set(tables[2001]) == names
     assert set(tables[2003]) == names | {"risk_earlier", "risk_calibration_earlier"}
     # With the earlier years only, 2002 has the weights of 2001: the same form, thus correct.
@@ -245,3 +266,35 @@ def test_calibration_group_with_no_alert_has_no_mean(monkeypatch):
     assert len(empty) == 7
     assert all(row["probability_mean"] is None for row in empty)
     assert all(row["observed_to_expected"] is None for row in empty)
+
+
+def test_dryness_of_an_alert_is_the_median_of_its_detections_with_a_value():
+    # Three detections: 9 days and 0 mm, 3 days and 2 mm with no fire risk, and one with no row.
+    dryness = np.array([[9.0, 0.0, 0.8], [3.0, 2.0, np.nan], [np.nan, np.nan, np.nan]])
+    found = risk_inputs.dryness_inputs(dryness, np.array([0, 1, 2]))
+    assert round(found["dry_days_log"], 4) == round(float(np.log(1 + 6.0)), 4)
+    assert round(found["rain_mm_log"], 4) == round(float(np.log(1 + 1.0)), 4)
+    assert (found["fire_risk"], found["no_dryness"], found["no_fire_risk"]) == (0.8, 0.0, 0.0)
+    nothing = risk_inputs.dryness_inputs(dryness, np.array([2]))
+    assert nothing == dict.fromkeys(("dry_days_log", "rain_mm_log", "fire_risk"), 0.0) | {
+        "no_dryness": 1.0,
+        "no_fire_risk": 1.0,
+    }
+    assert set(found) == set(risk_inputs.DRYNESS)
+
+
+def test_detection_gets_the_dryness_of_its_row_in_the_archive_file(tmp_path):
+    (tmp_path / "inpe").mkdir()
+    shutil.copy(SAMPLES / "inpe_anual_sample.csv", tmp_path / "inpe" / "focos_mensal_br_201901.csv")
+    # The second row of the sample: NPP-375 at 2019-01-01 17:36:00, 2 days with no rain, 1.2 mm.
+    seconds = int(datetime(2019, 1, 1, 17, 36, tzinfo=UTC).timestamp())
+    detections = {
+        "source": np.array(["inpe", "firms", "inpe"]),
+        "observed": np.array([seconds, seconds, seconds + 60]),
+        "lat": np.array([-18.95416, -18.95416, -18.95416]),
+        "lon": np.array([-57.27932, -57.27932, -57.27932]),
+    }
+    found = risk_inputs.dryness_of(detections, tmp_path, 2019)
+    assert found[0].tolist() == [2.0, 1.2, 0.1]
+    # A FIRMS detection has no row in an INPE file, and a different time finds no row.
+    assert np.isnan(found[1]).all() and np.isnan(found[2]).all()
