@@ -62,12 +62,16 @@ def test_report_counts_the_passes_the_items_that_no_pass_read_and_the_new_rows(t
     # One hour has 12 passes of the timer. 3 of the 4 passes after 09:30 are complete.
     # The times of 10 minutes from 09:30 to 10:00: GOES has 09:40 and 09:50, INPE has 09:50.
     assert watch.report_text(tmp_path, at("10:30"), False) == (
-        "CHISPA 25 Nov 10:30 UTC: OK. 1 h: 3 of 12 passes, 1 with a failure. "
-        "Not read: GOES 2, INPE 3. New rows: FIRMS 3, GOES 6, INPE 4."
+        "Good morning. CHISPA is running, but it had problems. "
+        "In the last 1 hour it checked the sources 3 of 12 times, and 1 check had a failure. "
+        "It missed 2 GOES scans and 3 INPE files. New detections: FIRMS 3, GOES 6, INPE 4."
     )
     # Half a second later, the time of 09:30 is before the start of the hour: one time less.
     later = watch.report_text(tmp_path, at("10:30") + timedelta(seconds=0.5), False)
-    assert "Not read: GOES 1, INPE 2." in later
+    assert "It missed 1 GOES scan and 2 INPE files." in later
+    # A poller that is late now has that as its first sentence.
+    late = watch.report_text(tmp_path, at("10:30"), True)
+    assert late.startswith("Good morning. CHISPA has a problem now: the checks of the sources")
 
 
 def test_alarm_goes_out_one_time_when_the_poller_is_late_and_one_time_when_it_is_back(tmp_path):
@@ -78,8 +82,8 @@ def test_alarm_goes_out_one_time_when_the_poller_is_late_and_one_time_when_it_is
     assert watch.due(tmp_path, at("10:20")) == [
         (
             "late",
-            "CHISPA ALARM 25 Nov 10:20 UTC: the poller is late. "
-            "Newest good pass: 25 Nov 10:00 UTC. No pass ended.",
+            "CHISPA alarm: no good check of the sources for 15 minutes. "
+            "The last good check was at Wed 10:00 AM UTC. No check ended.",
         )
     ]
     assert watch.run(tmp_path, at("10:20"), sends()) == [("late", True)]
@@ -90,8 +94,8 @@ def test_alarm_goes_out_one_time_when_the_poller_is_late_and_one_time_when_it_is
     assert watch.due(tmp_path, at("10:32")) == [
         (
             "back",
-            "CHISPA 25 Nov 10:32 UTC: the poller is good again. "
-            "The alarm went out at 25 Nov 10:20 UTC.",
+            "CHISPA is well again. The checks of the sources work as of Wed 10:32 AM UTC. "
+            "The alarm went out at Wed 10:20 AM UTC.",
         )
     ]
     assert watch.run(tmp_path, at("10:32"), sends()) == [("back", True)]
@@ -111,7 +115,9 @@ def test_alarm_names_the_source_that_failed(tmp_path):
     )
     ((kind, text),) = watch.due(tmp_path, at("10:21"))
     assert kind == "late"
-    assert text.endswith("Newest good pass: 25 Nov 10:00 UTC. Failed in the newest pass: INPE.")
+    assert text.endswith(
+        "The last good check was at Wed 10:00 AM UTC. INPE failed in the newest check."
+    )
 
 
 def test_report_goes_out_one_time_on_each_local_day_from_its_hour(tmp_path, monkeypatch):
@@ -142,7 +148,7 @@ def test_log_of_the_texts_has_each_text_with_its_result(tmp_path):
         "failed",
         "a note",
     )
-    assert row["text"].startswith("CHISPA ALARM 25 Nov 10:20 UTC")
+    assert row["text"].startswith("CHISPA alarm: no good check of the sources")
 
 
 def test_text_goes_to_textbelt_and_the_note_has_no_key_and_no_number(monkeypatch):
@@ -169,3 +175,24 @@ def test_text_goes_to_textbelt_and_the_note_has_no_key_and_no_number(monkeypatch
 
     monkeypatch.setattr("chispa.watch.requests.post", fail)
     assert watch.send_text("a text", "5551234567", "abc") == (False, "ConnectionError")
+
+
+def test_report_of_a_time_with_no_problem_says_so_with_the_local_hour_of_the_owner(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr("chispa.config.WATCH_TIME_ZONE", "America/New_York")
+    lines = []
+    for minute in range(35, 95, 5):  # the 12 checks of one hour, from 19:35 to 20:30
+        time = f"{19 + minute // 60}:{minute % 60:02d}:00+00:00"
+        lines += [f"{time},firms,MODIS_NRT,ok,100", f"{time},pass,end,ok,100"]
+    for scan in ("19:40", "19:50", "20:00"):  # each scan and each file that is old enough
+        name = f"focos_10min_20261125_{scan.replace(':', '')}.csv"
+        lines += [f"20:30:00+00:00,goes,2026-11-25T{scan}:00+00:00,ok,1"]
+        lines += [f"20:30:00+00:00,inpe,{name},ok,2"]
+    write_polls(tmp_path, lines)
+    # 20:31 UTC is 15:31 in New York.
+    assert watch.report_text(tmp_path, at("20:31"), False) == (
+        "Good afternoon. CHISPA is well. "
+        "In the last 1 hour it checked the sources 12 of 12 times, with no failure. "
+        "It missed no scan and no file. New detections: FIRMS 1,200, GOES 3, INPE 6."
+    )
