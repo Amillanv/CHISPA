@@ -6,8 +6,6 @@ It asks only for a new fire: the alert that saw a mapped fire first. A later ale
 fire is on a known fire. `docs/method.md` section 11.21 gives the rules.
 """
 
-from pathlib import Path
-
 import numpy as np
 
 from chispa import confidence, config
@@ -17,13 +15,9 @@ from chispa.evaluation.confidence import (
     names_of,
     separation,
     top_tenth,
-    year_rows,
 )
 from chispa.evaluation.match import Fields, Pairs
 from chispa.evaluation.report import share
-from chispa.evaluation.risk_calibration import calibration_table
-
-Tables = dict[str, list[dict]]
 
 
 def seen_first(detections: Fields, pairs: Pairs, fires: Fields) -> dict[int, int]:
@@ -73,11 +67,14 @@ def key(moment: str, limit_ha: float) -> str:
     return f"{moment}h_{limit_ha:g}ha"
 
 
-def fit_models(kept: dict[str, list]) -> dict[str, dict]:
-    """Return one model for each moment and each limit, from the rows of the training years."""
+def fit_models(kept: dict[str, list], extra: tuple[str, ...] = ()) -> dict[str, dict]:
+    """Return one model for each moment and each limit, from the rows of the training years.
+
+    The inputs are those of the confidence at the moment, and the `extra` inputs after them.
+    """
     models = {}
     for moment in MOMENTS:
-        names = names_of(moment)
+        names = names_of(moment) + extra
         table, _ = as_table(kept[moment], names)
         size = np.array([row["size_ha"] for row in kept[moment]])
         for limit in config.RISK_LIMITS_HA:
@@ -225,46 +222,3 @@ def weight_table(models: dict[str, dict]) -> list[dict]:
         for input_name, weight in sorted(pairs, key=lambda pair: -abs(pair[1])):
             table.append({"model": name, "input": input_name, "weight": round(weight, 4)})
     return table
-
-
-def year_parts(year: int, store_path: Path, raw_dir: Path) -> dict:
-    """Return the rows of one year with their sizes, the areas of its fires and its groups."""
-    rows, (detections, pairs, fires) = year_rows(year, store_path, raw_dir)
-    first = seen_first(detections, pairs, fires)
-    sized = {moment: sized_rows(rows[moment], first, fires["area_ha"]) for moment in MOMENTS}
-    return {"rows": sized, "area_ha": fires["area_ha"], "alerts": group_table(sized, fires)}
-
-
-def risk_tables(store_path: Path, raw_dir: Path) -> dict[int, Tables]:
-    """Return the tables of the growth risk for each year with mapped fires.
-
-    The numbers of a year come from models that each other year trained: a cross-validation by
-    year. One run makes the rows of each year and each table: no file keeps a part of it, thus
-    all tables have the same code, the same store and the same configuration.
-    """
-    parts = {year: year_parts(year, store_path, raw_dir) for year in config.YEAR_ROLES}
-    path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
-    baselines, tables = confidence.load(path), {}
-    for year, part in parts.items():
-        models = fit_models(_training(parts, [other for other in parts if other != year]))
-        kept = {moment: new_or_none(part["rows"][moment]) for moment in MOMENTS}
-        tables[year] = {
-            "risk": result_table(kept, models, baselines),
-            "risk_all_alerts": all_alerts_table(part["rows"], part["area_ha"], models, baselines),
-            "risk_calibration": calibration_table(kept, models),
-            "risk_alerts": part["alerts"],
-            "risk_weights": weight_table(models),
-        }
-        # The split in time sequence: the weights come only from the years before the year.
-        if earlier := [other for other in parts if other < year]:
-            models = fit_models(_training(parts, earlier))
-            tables[year]["risk_earlier"] = result_table(kept, models, baselines)
-            tables[year]["risk_calibration_earlier"] = calibration_table(kept, models)
-    return tables
-
-
-def _training(parts: dict[int, dict], years: list[int]) -> dict[str, list]:
-    return {
-        moment: [row for year in years for row in new_or_none(parts[year]["rows"][moment])]
-        for moment in MOMENTS
-    }

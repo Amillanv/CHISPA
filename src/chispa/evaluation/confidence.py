@@ -75,7 +75,7 @@ def moment_rows(detections: Fields, merges: list, links: tuple, layers: severity
         position = (detections["lat"][first], detections["lon"][first])
         near = near_count(counts, place, detections["available"][first], *position)
         row = _alert_row(detections, chosen, layers, near)
-        row["alert"] = alert
+        row["alert"], row["positions"] = alert, chosen
         row["fires"] = fires_of.get(int(detections["event"][first]), frozenset())
         spans = [link_fire[first_link[d] : first_link[d + 1]] for d in chosen.tolist()]
         row["own_fires"] = frozenset(np.concatenate(spans).tolist())

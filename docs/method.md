@@ -453,6 +453,7 @@ The tables are:
 - `risk`, `risk_all_alerts`, `risk_calibration`, `risk_alerts` and `risk_weights`: the growth risk at two moments, against
   its baselines, with all alerts in the sequence, and its values against what came (section 11.21).
   `risk_earlier` and `risk_calibration_earlier` have the same form, with the weights of the earlier years only.
+  `risk_inputs` compares sets of inputs (section 11.22).
 
 Purity and completeness count matches with counted fires. A detection that matches two fires counts two times.
 
@@ -1431,8 +1432,9 @@ If the AUC with the size at the moment is smaller than that of a baseline in mor
 a part of the result comes from fires that an event reached later, and we say so.
 If hypothesis 3 is false, the growth risk finds the alerts with a fire, as the confidence does. It does not put the sizes
 in a sequence, and we say so.
-A limit with less than 30 large alerts in the test year has no answer: too few.
-Claude proposed 30. It waits for the answer of the owner, before the run of 2026.
+A limit with less than 30 large alerts in the test year has no answer: too few. The numbers are published with that mark.
+Claude proposed 30, and the owner agreed on 2026-11-25. A different minimum must come before the run of 2026.
+If it comes after that run, the result must say so.
 
 The probability. Each model gives a value from 0 to 1. A percentage in an alert is correct only if the value is
 calibrated: of the alerts with a value near 0.1, approximately 1 in 10 became large.
@@ -1457,7 +1459,8 @@ A percentage can go into an alert if these three conditions are true for a model
 We expect that condition 3 is false. The base rate of a year changes: for 100 hectares at 30 minutes it is from 1.5
 percent (86 of 5630 alerts in 2023) to 6.0 percent (362 of 6074 in 2019), and no input has the rate of its year.
 The confidence had the same problem (section 11.15).
-Claude proposed the limits of the three conditions. They wait for the answer of the owner.
+Claude proposed the limits of the three conditions, and the owner agreed to them on 2026-11-25. They stay as they are.
+From that day the level uses the split in time sequence (table `risk_calibration_earlier`): the years are 2020 to 2025.
 If a condition is false, an alert gets a rank or a class with its track record, and not a percentage.
 The final answer is the test of 2026. The field of the event record is not built.
 
@@ -1592,6 +1595,70 @@ In each list below, the seven numbers are for 2019 to 2025. A sum is for the sev
   the fires that gave the weights. Large alerts are few: 29 at 30 minutes for 1000 hectares in 2023, for 22 inputs.
   The detections before the live logs have an estimate of `available_at`. The confidence baseline has the weights of
   2023: its numbers of 2023 are for a year that it saw.
+
+### 11.22 The inputs of the growth risk
+
+The growth risk of section 11.21 has the inputs of the confidence. This section gives the rule for a change of its
+inputs, and each group of inputs that we examined. The owner agreed to the rule on 2026-11-25.
+`evaluation/risk_inputs.py` makes the new inputs. The table `risk_inputs` of each year compares the sets of inputs.
+
+The rule. We add or remove inputs in groups, not one at a time: a group has one reason. For each of the four models
+(two limits, two moments), a group passes if these three conditions are true:
+
+1. The mean AUC of the seven years is larger with the group, with the cross-validation by year.
+2. The AUC is larger with the group in 5 or more of the 7 years.
+3. The level is not worse, with the split in time sequence: for the six years together, observed to expected is not
+   farther from 1, and not more years are out of the range from 0.5 to 2.
+
+A group stays if it passes for 3 or 4 of the 4 models. Claude set this number. We write the hypothesis of a group
+before its run. A group that does not pass goes, and we say so.
+
+- The numbers of the seven years choose the inputs. Thus each choice makes those numbers a little too good.
+  The test of 2026 has no part in a choice.
+- To remove a group, the rule is the same, with the words "with" and "without" in the other sequence.
+
+The table `risk_inputs` has, for each set of inputs, each moment and each limit of a year: the alerts, the large alerts,
+the AUC, the average precision and the large alerts in the top tenth, with the cross-validation by year. With the split
+in time sequence it has the expected large alerts, observed to expected and the Brier skill score.
+
+The group "dryness" (2026-11-25). The share of large alerts changes with the year, and no input has the state of the
+season. INPE adds three fields to each row of its archive files (`docs/sources.md` section 8.3): the days with no rain,
+the rain in millimetres and the fire risk of INPE, from 0 to 1.
+
+1. The dryness of an alert is the median of each field over the INPE detections of the alert at the moment.
+2. The inputs are the days with no rain and the rain, each as a logarithm, and the fire risk.
+3. An alert with no INPE detection that has a value gets 0 for each input, and the input "no dryness" is 1.
+   An alert with no value of the fire risk gets 0 for it, and the input "no fire risk" is 1.
+
+- Limits: a live file of INPE does not have these fields. INPE adds them later. Thus this run examines the information,
+  not an input that an alert can have now. A live input needs the daily grid of INPE or weather data: not built.
+  We do not know if the rain and the fire risk of a row use the hours after the detection. `UNVERIFIED`.
+  An alert with no INPE detection has no value.
+
+The hypothesis of the group "dryness", written on 2026-11-25 before its first run: the group passes the rule.
+We also look at the level of 2022 and of 2023 with the split in time sequence: observed to expected nearer to 1
+says that the dryness has a part of the rate of a year.
+If the hypothesis is false, the inputs stay as they are, and a live source for these fields has no reason from this run.
+
+The result of the group "dryness" (table `risk_inputs` of 2019 to 2025, 2026-11-25). The command ran one time.
+The hypothesis is false: the group passes for 0 of the 4 models. In each list, the four numbers are for 30 minutes
+with 100 and with 1000 hectares, then for 24 hours with 100 and with 1000 hectares.
+
+- The mean AUC of the seven years with the inputs of now: 0.8037, 0.8434, 0.8771 and 0.8991.
+  With the group: 0.8021, 0.8406, 0.8755 and 0.8955. Each is a little smaller.
+- The AUC is larger with the group in 3, 1, 2 and 2 of the 7 years.
+- The large alerts in the top tenth with the inputs of now: 526 of 1286, 187 of 388, 642 of 1059 and 203 of 311.
+  With the group: 512, 186, 634 and 200.
+- The level with the split in time sequence, for the six years together. Observed to expected with the inputs of now:
+  0.672, 0.747, 0.745 and 0.824. With the group: 0.641, 0.714, 0.74 and 0.83 (924 large alerts for 1441.9 expected,
+  291 for 407.5, 773 for 1044.3 and 238 for 286.6).
+- 2022 and 2023 stay wrong with the group. Observed to expected of 2022: 0.2395, 0.2985, 0.3936 and 0.5927.
+  Of 2023: 0.256, 0.2842, 0.2872 and 0.3451.
+- Thus these three fields of INPE, at the place of an alert, add nothing to the inputs that the model has, and they do
+  not have the rate of a year. The inputs stay as they are. The set stays in the table as a result, and no model uses it.
+- This says nothing about a different measure of the season: the water, the years after the last fire, or a dryness
+  of all the region. The model has the day of the year as an input: the calendar can hold what these fields say.
+
 
 ## 12. Agent and MCP rules
 

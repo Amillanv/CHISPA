@@ -23,6 +23,8 @@ from chispa.models import Detection
 FOLDER = "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/mensal/Brasil/"
 # INPE keeps the monthly files of the newest years only. An older year is one annual file.
 ANNUAL_FOLDER = FOLDER.replace("mensal/Brasil/", "anual/Brasil_todos_sats/")
+# The fields of the dryness in a row of an archive file: days with no rain, rain and fire risk.
+DRYNESS_FIELDS = ("numero_dias_sem_chuva", "precipitacao", "risco_fogo")
 # One file for each 10 minutes, for all of South America. The server keeps some days of files.
 LIVE_FOLDER = "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/10min/"
 
@@ -127,6 +129,40 @@ def parse_file(path: Path) -> tuple[list[Detection], int, Counter]:
             except (ValueError, KeyError, TypeError):
                 rejected += 1
     return detections, rejected, unused
+
+
+def year_files(raw_dir: Path, year: int) -> list[Path]:
+    """Return the archive files of one year: its annual file, or its monthly files."""
+    names = (f"focos_br_todos-sats_{year}.zip", f"focos_mensal_br_{year}??.*")
+    found = [path for name in names for path in sorted((raw_dir / "inpe").glob(name))]
+    return [path for path in found if path.suffix in (".csv", ".zip")]
+
+
+def dryness_rows(path: Path):
+    """Give the time, the position and the dryness of each row of an archive file in the box.
+
+    The dryness is the days with no rain, the rain in millimetres and the fire risk of INPE.
+    INPE adds these fields to a row after the detection: a file of 10 minutes does not have
+    them. An absent value is None. A row with a bad time, position or value is not given.
+    """
+    with _open_text(path) as file:
+        rows = csv.DictReader(file)
+        if not set(DRYNESS_FIELDS) <= set(rows.fieldnames or ()):
+            raise RuntimeError(f"{path.name} has no dryness fields. Give an archive file of INPE.")
+        for row in rows:
+            try:
+                lat, lon = _position(row)
+                if _in_box(lat, lon):
+                    time = datetime.fromisoformat(row.get("data_hora_gmt") or row["data_pas"])
+                    values = [_dryness(row[name]) for name in DRYNESS_FIELDS]
+                    yield time.replace(tzinfo=UTC), lat, lon, *values
+            except (ValueError, TypeError):
+                continue
+
+
+def _dryness(text: str) -> float | None:
+    value = float(text) if text.strip() else None
+    return None if value is None or value < 0 else value  # INPE writes -999 for no value.
 
 
 def _open_text(path: Path) -> io.TextIOBase:

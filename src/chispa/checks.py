@@ -15,7 +15,7 @@ from chispa.evaluation.confidence_curve import curve_tables
 from chispa.evaluation.events import events_with_a_match
 from chispa.evaluation.growth import step_rows
 from chispa.evaluation.report import write_summary, write_tables
-from chispa.evaluation.risk import risk_tables
+from chispa.evaluation.risk_run import risk_tables
 from chispa.evaluation.run import prepare
 from chispa.evaluation.severity import severity_tables
 from chispa.evaluation.visibility import month_table, visibility

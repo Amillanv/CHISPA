@@ -134,6 +134,17 @@ Checked 2026-11-25 with live requests, for the years before 2023:
   Thus 2019, 2020 and 2021 have GOES detections only from INPE, and 2022 has the rows of FIRMS from 9 August.
 - The annual file of 2019 also has the satellite NOAA-15: 222 rows in the box. We do not use it.
 
+Checked 2026-11-25 with the raw files, for the dryness fields of a row:
+
+- A monthly file and an annual file have the fields `numero_dias_sem_chuva`, `precipitacao` and `risco_fogo`.
+  A live file of 10 minutes has only `lat`, `lon`, `satelite` and `data`: INPE adds the three fields later.
+- In the Pantanal box, 828 365 of the 829 990 rows of 2020 have the days with no rain and the rain, and 802 427 have a
+  fire risk. Each of the 157 960 rows of September 2024 has the first two, and 154 671 have a fire risk.
+- The days with no rain go from 0 to 120. The rain is 0 for 3 of 4 rows or more. The fire risk goes from 0 to 1, and it
+  is 1 for half of the rows or more. An absent fire risk has the mark -999.
+- In the annual file of 2022, 4411 of the 80 418 rows of the box have no value for the days with no rain.
+- `UNVERIFIED`: the unit of the rain (we read millimetres), and if the rain and the fire risk use the hours after a detection.
+
 Terms, from a check of the INPE pages on 2026-11-20:
 
 - INPE calls the files "open data for public use", free of charge, for any user.
