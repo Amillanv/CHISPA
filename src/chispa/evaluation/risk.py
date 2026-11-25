@@ -6,8 +6,6 @@ It asks only for a new fire: the alert that saw a mapped fire first. A later ale
 fire is on a known fire. `docs/method.md` section 11.21 gives the rules.
 """
 
-import json
-import sqlite3
 from pathlib import Path
 
 import numpy as np
@@ -22,10 +20,10 @@ from chispa.evaluation.confidence import (
     year_rows,
 )
 from chispa.evaluation.match import Fields, Pairs
-from chispa.evaluation.report import config_hash, share
+from chispa.evaluation.report import share
+from chispa.evaluation.risk_calibration import calibration_table
 
-KEPT = ("inputs", "size_ha", "advance_m", "alert", "matched")  # What the file of a year keeps.
-TENTHS = 10  # The groups of the calibration table. A fifth is too wide for a rare outcome.
+Tables = dict[str, list[dict]]
 
 
 def seen_first(detections: Fields, pairs: Pairs, fires: Fields) -> dict[int, int]:
@@ -43,20 +41,31 @@ def seen_first(detections: Fields, pairs: Pairs, fires: Fields) -> dict[int, int
 
 
 def sized_rows(rows: list[dict], first: dict[int, int], area_ha: np.ndarray) -> list[dict]:
-    """Return the rows that the growth risk can score, each with the size of its alert.
+    """Return each row with the size of its alert, and a mark for an alert on a known fire.
 
-    The size of an alert is the area of the largest fire that it saw first: a new fire.
-    An alert that saw no fire first has the size 0: no mapped fire. An alert is left out if
-    its detections at the moment match a fire that a different alert saw first: a known fire.
+    `size_ha` is the area of the largest fire that the alert saw first: a new fire. With no
+    such fire it is 0: no mapped fire. `seen_ha` uses only the fires that the detections of the
+    alert match at the moment. `known` says that those detections match a fire that a different
+    alert saw first: the models do not learn from that alert, and the main tables leave it out.
     """
     largest: dict[int, float] = {}
     for fire, alert in first.items():
         largest[alert] = max(largest.get(alert, 0.0), float(area_ha[fire]))
-    return [
-        {**row, "size_ha": largest.get(row["alert"], 0.0)}
-        for row in rows
-        if all(first[fire] == row["alert"] for fire in row["own_fires"])
-    ]
+    sized = []
+    for row in rows:
+        own = [fire for fire in row["own_fires"] if first[fire] == row["alert"]]
+        sizes = {
+            "size_ha": largest.get(row["alert"], 0.0),
+            "seen_ha": max((float(area_ha[fire]) for fire in own), default=0.0),
+            "known": len(own) < len(row["own_fires"]),
+        }
+        sized.append(row | sizes)
+    return sized
+
+
+def new_or_none(rows: list[dict]) -> list[dict]:
+    """Return the rows of the alerts that are not on a known fire."""
+    return [row for row in rows if not row["known"]]
 
 
 def key(moment: str, limit_ha: float) -> str:
@@ -92,11 +101,12 @@ def average_precision(values: np.ndarray, large: np.ndarray) -> float | None:
     return round(float((precision * gained).sum() / hits.sum()), 4)
 
 
-def measures(values: np.ndarray, size: np.ndarray, limit_ha: float) -> dict:
+def measures(values: np.ndarray, size: np.ndarray, seen: np.ndarray, limit_ha: float) -> dict:
     """Return how well one value finds the alerts that became large: a fire of the limit or more.
 
-    `auc_new_fires` uses only the alerts with a new fire: there a value must put the sizes
-    in a sequence, not only find the alerts with a fire.
+    `auc_new_fire_alerts` uses only the alerts with a new fire: there a value must put the sizes
+    in a sequence, not only find the alerts with a fire. `auc_at_moment` has a label from the
+    fires that an alert matches at the moment, and not from a fire that its event reached later.
     """
     large, new_fire, top = size >= limit_ha, size > 0, top_tenth(values)
     return {
@@ -109,86 +119,79 @@ def measures(values: np.ndarray, size: np.ndarray, limit_ha: float) -> dict:
         "top_tenth_large": int(large[top].sum()),
         "precision_top_tenth": share(large[top].sum(), len(top)),
         "recall_top_tenth": share(large[top].sum(), large.sum()),
-        "new_fires": int(new_fire.sum()),
-        "auc_new_fires": separation(values[new_fire], large[new_fire]),
-        "largest_fires": int((size >= config.RISK_LARGEST_HA).sum()),
-        "top_tenth_largest_fires": int((size[top] >= config.RISK_LARGEST_HA).sum()),
+        "new_fire_alerts": int(new_fire.sum()),
+        "auc_new_fire_alerts": separation(values[new_fire], large[new_fire]),
+        "large_at_moment": int((seen >= limit_ha).sum()),
+        "auc_at_moment": separation(values, seen >= limit_ha),
+        "largest_alerts": int((size >= config.RISK_LARGEST_HA).sum()),
+        "top_tenth_largest_alerts": int((size[top] >= config.RISK_LARGEST_HA).sum()),
     }
+
+
+def values_of(rows: list[dict], model: dict, baseline: dict, with_advance: bool) -> dict:
+    """Return each value that the tables compare, for the rows of one moment and one limit."""
+    values = {
+        "growth_risk": confidence.probability(model, as_table(rows, tuple(model["inputs"]))[0]),
+        "confidence": confidence.probability(
+            baseline, as_table(rows, tuple(baseline["inputs"]))[0]
+        ),
+        "detections": np.array([row["inputs"]["detections_log"] for row in rows]),
+    }
+    if with_advance:
+        # An alert with no measured advance gets the lowest place: the persistence rule
+        # says that a fire with no growth in the last pass does not grow.
+        values["persistence"] = np.array([row["advance_m"] or 0.0 for row in rows])
+    return values
 
 
 def result_table(kept: dict[str, list], models: dict, confidence_models: dict) -> list[dict]:
     """Return the measures of the growth risk and of each baseline, for each moment and limit."""
     table = []
     for moment in MOMENTS:
-        rows, baseline = kept[moment], confidence_models[moment]
+        rows, last = kept[moment], moment == MOMENTS[-1]
         size = np.array([row["size_ha"] for row in rows])
-        compared = {
-            "confidence": confidence.probability(baseline, _inputs(rows, baseline)),
-            "detections": np.array([row["inputs"]["detections_log"] for row in rows]),
-        }
-        if moment == MOMENTS[-1]:
-            # An alert with no measured advance gets the lowest place: the persistence rule
-            # says that a fire with no growth in the last pass does not grow.
-            compared["persistence"] = np.array([row["advance_m"] or 0.0 for row in rows])
+        seen = np.array([row["seen_ha"] for row in rows])
         for limit in config.RISK_LIMITS_HA:
-            model = models[key(moment, limit)]
-            risk = {"growth_risk": confidence.probability(model, _inputs(rows, model))}
-            for name, values in (risk | compared).items():
+            compared = values_of(rows, models[key(moment, limit)], confidence_models[moment], last)
+            for name, values in compared.items():
                 row = {"moment_h": moment, "limit_ha": limit, "value": name}
-                table.append(row | measures(values, size, limit))
+                table.append(row | measures(values, size, seen, limit))
     return table
 
 
-def _inputs(rows: list[dict], model: dict) -> np.ndarray:
-    return as_table(rows, tuple(model["inputs"]))[0]
+def all_alerts_table(sized: dict[str, list], area_ha: np.ndarray, models: dict, others: dict):
+    """Return what the top tenth of all alerts reaches, with no group left out.
 
-
-def calibration_table(kept: dict[str, list], models: dict) -> list[dict]:
-    """Return, for each model, the values of the growth risk against what came.
-
-    The first row of a model is for all alerts, with the Brier score and its skill against one
-    constant: the base rate of the training years. Then one row for each tenth of the alerts,
-    in the sequence of the value. `above_lower_limit` counts the alerts with a larger value
-    than for the lower limit: their two values give no probability for the class between.
+    A brigade gets each alert: only the map of the year says which alerts are on a known fire.
+    A fire is reached if the detections of an alert of the top tenth match it at the moment.
+    `large` is the number of large alerts of the main table, and `top_tenth_large` is how many
+    of them are in this top tenth. `others` has the models of the confidence.
     """
     table = []
     for moment in MOMENTS:
-        rows, lower = kept[moment], None
-        size = np.array([row["size_ha"] for row in rows])
+        rows, last = sized[moment], moment == MOMENTS[-1]
+        known = np.array([row["known"] for row in rows])
+        size = np.array([0.0 if row["known"] else row["size_ha"] for row in rows])
         for limit in config.RISK_LIMITS_HA:
-            model = models[key(moment, limit)]
-            chance, large = confidence.probability(model, _inputs(rows, model)), size >= limit
-            brier = float(((chance - large) ** 2).mean())
-            constant = float(((model["base_rate"] - large) ** 2).mean())
-            first = _calibration_row(chance, large) | {
-                "brier": round(brier, 5),
-                "brier_skill": round(1 - brier / constant, 4),
-                "above_lower_limit": None if lower is None else int((chance > lower).sum()),
-            }
-            parts = np.array_split(np.argsort(chance, kind="stable"), TENTHS)
-            groups = [("all", first)] + [
-                (str(number), _calibration_row(chance[part], large[part]))
-                for number, part in enumerate(parts, 1)
-            ]
-            table += [
-                {"moment_h": moment, "limit_ha": limit, "group": name} | row for name, row in groups
-            ]
-            lower = chance
+            reached = [{f for f in row["own_fires"] if area_ha[f] >= limit} for row in rows]
+            compared = values_of(rows, models[key(moment, limit)], others[moment], last)
+            for name, values in compared.items():
+                top = top_tenth(values)
+                counts = {
+                    "alerts": len(rows),
+                    "known_fire_alerts": int(known.sum()),
+                    "top_tenth": len(top),
+                    "top_tenth_known_fire_alerts": int(known[top].sum()),
+                    "large_fires": len(set().union(*reached)),
+                    "top_tenth_large_fires": len(set().union(*(reached[i] for i in top))),
+                    "large": int((size >= limit).sum()),
+                    "top_tenth_large": int((size[top] >= limit).sum()),
+                }
+                table.append({"moment_h": moment, "limit_ha": limit, "value": name} | counts)
     return table
 
 
-def _calibration_row(chance: np.ndarray, large: np.ndarray) -> dict:
-    return {
-        "alerts": len(large),
-        "probability_mean": round(float(chance.mean()), 4),
-        "large": int(large.sum()),
-        "large_share": share(large.sum(), len(large)),
-        "expected_large": round(float(chance.sum()), 1),
-        "observed_to_expected": share(large.sum(), chance.sum()),
-    }
-
-
-def group_table(rows: dict[str, list], kept: dict[str, list], fires: Fields) -> list[dict]:
+def group_table(sized: dict[str, list], fires: Fields) -> list[dict]:
     """Return, for each moment, the alerts of each group, and the new fires by fire size class.
 
     `fires` is the number of counted fires of the class in the year. A fire is not a new fire
@@ -197,10 +200,10 @@ def group_table(rows: dict[str, list], kept: dict[str, list], fires: Fields) -> 
     table = []
     limits = (*config.EVAL_SIZE_CLASSES_HA, np.inf)
     for moment in MOMENTS:
-        size = np.array([row["size_ha"] for row in kept[moment]])
+        size = np.array([row["size_ha"] for row in new_or_none(sized[moment])])
         groups = [
-            ("all alerts", len(rows[moment]), None),
-            ("known fire: left out", len(rows[moment]) - len(size), None),
+            ("all alerts", len(sized[moment]), None),
+            ("known fire: left out", len(sized[moment]) - len(size), None),
             ("no mapped fire", int((size == 0).sum()), None),
         ]
         for low, high in zip(limits[:-1], limits[1:], strict=True):
@@ -224,50 +227,42 @@ def weight_table(models: dict[str, dict]) -> list[dict]:
     return table
 
 
-def saved_rows(year: int, store_path: Path, raw_dir: Path) -> dict:
-    """Return the rows of one year that the growth risk can score, and its table of groups.
-
-    The rows of a year are slow to make, and each run needs the rows of each year. A file in
-    the data folder keeps them, with a mark of the configuration and of the fusion of the year.
-    """
-    first_id = year * 10_000_000
-    count = "SELECT COUNT(*) FROM memberships WHERE event_id >= ? AND event_id < ?"
-    span = (first_id, first_id + 10_000_000)
-    mark = f"{config_hash()}-{sqlite3.connect(store_path).execute(count, span).fetchone()[0]}"
-    path = store_path.parent / "risk" / f"{year}.json"
-    if path.exists() and (found := json.loads(path.read_text()))["mark"] == mark:
-        return found
+def year_parts(year: int, store_path: Path, raw_dir: Path) -> dict:
+    """Return the rows of one year with their sizes, the areas of its fires and its groups."""
     rows, (detections, pairs, fires) = year_rows(year, store_path, raw_dir)
     first = seen_first(detections, pairs, fires)
-    kept = {moment: sized_rows(rows[moment], first, fires["area_ha"]) for moment in MOMENTS}
-    found = {
-        "mark": mark,
-        "kept": {m: [{name: row[name] for name in KEPT} for row in kept[m]] for m in MOMENTS},
-        "alerts": group_table(rows, kept, fires),
-    }
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(found))
-    return found
+    sized = {moment: sized_rows(rows[moment], first, fires["area_ha"]) for moment in MOMENTS}
+    return {"rows": sized, "area_ha": fires["area_ha"], "alerts": group_table(sized, fires)}
 
 
-def risk_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, list[dict]]:
-    """Return the tables of the growth risk for one year, from models that did not see that year.
+def risk_tables(store_path: Path, raw_dir: Path) -> dict[int, Tables]:
+    """Return the tables of the growth risk for each year with mapped fires.
 
-    The models get their weights from each other year with mapped fires: a cross-validation
-    by year. The baseline of the confidence is its saved model, with no change.
+    The numbers of a year come from models that each other year trained: a cross-validation by
+    year. One run makes the rows of each year and each table: no file keeps a part of it, thus
+    all tables have the same code, the same store and the same configuration.
     """
-    if year not in config.YEAR_ROLES:
-        raise RuntimeError(f"{year} has no mapped fires in the store. The growth risk needs them.")
-    saved = {other: saved_rows(other, store_path, raw_dir) for other in config.YEAR_ROLES}
-    training = {
-        moment: [row for other in saved if other != year for row in saved[other]["kept"][moment]]
-        for moment in MOMENTS
-    }
-    models = fit_models(training)
+    parts = {year: year_parts(year, store_path, raw_dir) for year in config.YEAR_ROLES}
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
-    return {
-        "risk": result_table(saved[year]["kept"], models, confidence.load(path)),
-        "risk_calibration": calibration_table(saved[year]["kept"], models),
-        "risk_alerts": saved[year]["alerts"],
-        "risk_weights": weight_table(models),
-    }
+    baselines, tables = confidence.load(path), {}
+    for year, part in parts.items():
+        models = fit_models(
+            {
+                moment: [
+                    row
+                    for other in parts
+                    if other != year
+                    for row in new_or_none(parts[other]["rows"][moment])
+                ]
+                for moment in MOMENTS
+            }
+        )
+        kept = {moment: new_or_none(part["rows"][moment]) for moment in MOMENTS}
+        tables[year] = {
+            "risk": result_table(kept, models, baselines),
+            "risk_all_alerts": all_alerts_table(part["rows"], part["area_ha"], models, baselines),
+            "risk_calibration": calibration_table(kept, models),
+            "risk_alerts": part["alerts"],
+            "risk_weights": weight_table(models),
+        }
+    return tables

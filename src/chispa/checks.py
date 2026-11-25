@@ -39,8 +39,6 @@ def run_table(name: str, year: int) -> None:
             tables |= curve_tables(*arguments, curve.last_answers(curves))
         if not tables:
             raise SystemExit(f"Run `chispa curve --year {year} --events` first.")
-    elif name == "risk":
-        tables = risk_tables(*arguments)
     elif name == "growth":
         tables = {"growth_steps": step_rows(*arguments)}
     else:
@@ -51,6 +49,20 @@ def run_table(name: str, year: int) -> None:
     write_tables(tables, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
     print(f"{year}: see results/SUMMARY.md, tables {', '.join(tables)}.")
+
+
+def run_risk() -> None:
+    """Make the growth risk tables of each year with mapped fires, in one run.
+
+    The numbers of a year come from models of the other years. Thus one run makes all years:
+    each table then has the same rows, the same code and the same configuration.
+    """
+    tables = risk_tables(config.STORE_PATH, config.RAW_DIR)
+    for year, of_year in tables.items():
+        write_tables(of_year, year, config.RESULTS_DIR)
+    write_summary(config.RESULTS_DIR)
+    names = ", ".join(next(iter(tables.values())))
+    print(f"{min(tables)} to {max(tables)}: see results/SUMMARY.md, tables {names}.")
 
 
 def run_burn(year: int, project: Callable[[], str]) -> None:
