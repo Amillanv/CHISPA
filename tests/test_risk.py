@@ -193,9 +193,8 @@ def test_tables_of_a_year_come_from_models_of_the_other_years(tmp_path, monkeypa
         part |= {"area_ha": np.zeros(1), "alerts": []}
     monkeypatch.setattr(risk_run, "year_parts", lambda year, store, raw: parts[year])
     # The second set of inputs has `detections_log`: for these rows it is x with the other sign.
-    monkeypatch.setattr(
-        risk_run, "INPUT_SETS", {"inputs now": (), "with more": ("detections_log",)}
-    )
+    sets = {"inputs now": ((), ()), "with more": (("detections_log",), ())}
+    monkeypatch.setattr(risk_run, "INPUT_SETS", sets)
     tables = risk_run.risk_tables(tmp_path / "store", tmp_path)
     assert set(tables) == {2001, 2002, 2003}
     names = {"risk", "risk_all_alerts", "risk_calibration", "risk_alerts", "risk_weights"}
@@ -298,3 +297,36 @@ def test_detection_gets_the_dryness_of_its_row_in_the_archive_file(tmp_path):
     assert found[0].tolist() == [2.0, 1.2, 0.1]
     # A FIRMS detection has no row in an INPE file, and a different time finds no row.
     assert np.isnan(found[1]).all() and np.isnan(found[2]).all()
+
+
+def test_models_can_have_more_inputs_and_fewer_inputs(monkeypatch):
+    monkeypatch.setattr("chispa.config.RISK_LIMITS_HA", (100.0,))
+    monkeypatch.setattr("chispa.evaluation.risk.names_of", lambda moment: ("x", "detections_log"))
+    rows = [alert(float(n % 2), 2000.0 * (n % 2)) for n in range(20)]
+    kept = {"0": rows, "24": rows}
+    assert fit_models(kept)["0h_100ha"]["inputs"] == ["x", "detections_log"]
+    assert fit_models(kept, remove=("x",))["0h_100ha"]["inputs"] == ["detections_log"]
+    changed = fit_models(kept, add=("x",), remove=("x", "detections_log"))
+    assert changed["24h_100ha"]["inputs"] == ["x"]
+
+
+def test_first_hours_count_the_scans_the_passes_and_the_time_that_the_sensors_saw():
+    hour = 3600.0
+    # At longitude -60 the solar time is 4 hours before UTC. Four detections:
+    # GOES at 20:00 and 20:05 local (one scan from two sources) and at 21:00, VIIRS at 14:00.
+    detections = {
+        "observed": np.array([24 * hour, 24 * hour + 300, 25 * hour, 18 * hour]),
+        "lon": np.array([-60.0, -60.0, -60.0, -60.0]),
+        "family": np.array(["abi", "abi", "abi", "viirs"]),
+        "platform": np.array(["GOES16", "GOES16", "GOES16", "NOAA20"]),
+    }
+    found = risk_inputs.first_hours_inputs(detections, np.arange(4))
+    # The first detection is at 14:00 at the place: the angle of 14 of 24 hours.
+    assert round(found["hour_sin"], 4) == round(float(np.sin(2 * np.pi * 14 / 24)), 4)
+    assert round(found["abi_scans_log"], 4) == round(float(np.log(1 + 2)), 4)
+    assert round(found["abi_night_scans_log"], 4) == round(float(np.log(1 + 2)), 4)
+    assert round(found["polar_passes_log"], 4) == round(float(np.log(1 + 1)), 4)
+    assert round(found["span_h_log"], 4) == round(float(np.log(1 + 7)), 4)
+    only_goes = risk_inputs.first_hours_inputs(detections, np.array([0]))
+    assert (only_goes["polar_passes_log"], only_goes["span_h_log"]) == (0.0, 0.0)
+    assert set(found) == set(risk_inputs.FIRST_HOURS)

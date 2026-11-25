@@ -1660,6 +1660,66 @@ with 100 and with 1000 hectares, then for 24 hours with 100 and with 1000 hectar
   of all the region. The model has the day of the year as an input: the calendar can hold what these fields say.
 
 
+The group "first hours" (2026-11-25). The model has the number of detections, the largest fire power, and day or night.
+It does not have how long, and at which hours, the sensors saw the fire. Each input uses the detections that the alert
+has at the moment:
+
+1. The hour of the first detection at the place, as the two inputs of a circle.
+2. The GOES scans: the number of scans of 10 minutes with a GOES detection, as a logarithm.
+3. The GOES scans at night: the same, for the scans from 18:00 to 06:00 at the place.
+4. The passes of the polar-orbit satellites: their number, as a logarithm (the pass rule of section 10.3).
+5. The time from the first detection to the last detection, in hours, as a logarithm.
+
+- A scan with a row from FIRMS and a row from INPE counts one time.
+- Limits: INPE and FIRMS find GOES pixels with different methods, and the years before August 2022 have only INPE.
+  Thus the number of scans can change with the sources of a year. The fire power of GOES has no input here:
+  the years before August 2022 have it for few GOES rows.
+
+The hypothesis of the group "first hours", written on 2026-11-25 before its first run: the group passes the rule.
+We expect a larger gain at 24 hours, where an alert has many scans, than at 30 minutes.
+
+The inputs to remove (2026-11-25). The rule is the same in the other sequence: an input stays only if the model with it
+passes the rule against the model without it.
+
+1. "No fire power value". Its weight is large at 30 minutes, and a detection of INPE frequently has no fire power.
+   Thus it can be a mark of the source of a detection, not of the fire.
+2. The people and the two distances to protected land. They are also the exposure of the severity (section 11.14):
+   a triage value with the growth risk and the exposure counts them two times.
+
+The hypotheses, written on 2026-11-25 before the first run. For "no fire power value": the input does not pass, thus it
+goes. For the people and the land: the inputs pass. Then the owner decides if the hazard keeps facts of the exposure.
+
+The calendar and the dryness (2026-11-25). The owner asked: does the calendar hold what the dryness says?
+Two sets answer: the model with no calendar (the two inputs of the day of the year), and the model with the dryness in
+the place of the calendar. We wrote this before the run: the dryness holds a part of what the calendar says if the mean
+AUC with the dryness in the place of the calendar is larger than that of the model with no calendar.
+It is a question, and not a group: no input changes from it.
+
+The result of the group "first hours", of the inputs to remove and of the question on the calendar (table `risk_inputs`
+of 2019 to 2025, 2026-11-25). The command ran one time, with the seven sets. In each list, the four numbers are for
+30 minutes with 100 and with 1000 hectares, then for 24 hours with 100 and with 1000 hectares.
+The mean AUC with the inputs of now is 0.8037, 0.8434, 0.8771 and 0.8991.
+
+- First hours. The mean AUC with the group is 0.8074, 0.8483, 0.8833 and 0.9036. It is larger in 7, 7, 7 and 6 of the
+  7 years. The large alerts in the top tenth are 535 of 1286, 192 of 388, 654 of 1059 and 209 of 311. Now they are 526,
+  187, 642 and 203. The level, observed to expected for the six years together, is 0.672, 0.747, 0.745 and 0.824 now, and
+  0.652, 0.659, 0.771 and 0.823 with the group. Thus condition 3 is false for three models, and the group passes for
+  1 of the 4 models. The hypothesis is false: by the rule the group goes.
+- "No fire power value". Without it the mean AUC is 0.7908, 0.8396, 0.8759 and 0.9. The input passes for 3 of the
+  4 models: it stays. The hypothesis is false.
+- The people and the land. Without them the mean AUC is 0.7688, 0.8147, 0.8543 and 0.8828: smaller in each of the
+  7 years, for each model. The level without them is 0.675, 0.752, 0.752 and 0.842: nearer to 1 than now, by 0.003 to
+  0.018. Thus condition 3 is false for each model, and by the rule these inputs go. The hypothesis is false.
+- Condition 3 has no margin. In these cases it decides against the AUC with a difference of the level of 0.001 to
+  0.018. That is less than the chance in a count: for 291 large alerts the count moves by approximately 6 percent.
+  We changed no input of the models from this run. The owner decides if condition 3 gets a margin. That is a change
+  of the rule after its first results, and each later result must say so.
+- The calendar. Without it the mean AUC is 0.7812, 0.7915, 0.8738 and 0.8878. It passes for 3 of the 4 models: it stays.
+  With the dryness in the place of the calendar the mean AUC is 0.7896, 0.802, 0.8738 and 0.8852.
+  Thus the dryness gives back a small part of the calendar at 30 minutes: 0.0084 of 0.0225, and 0.0105 of 0.0519.
+  At 24 hours it gives back nothing. The calendar holds much more than the dryness.
+- No set corrects the level. With each set, observed to expected of 2022 and of 2023 stays from 0.21 to 0.59.
+
 ## 12. Agent and MCP rules
 
 ### 12.1 Tools
