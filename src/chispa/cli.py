@@ -80,6 +80,7 @@ def main(arguments: list[str] | None = None) -> None:
         if name == "images":
             look = "1: the first look. 2: the same events again and boxes with no fire."
             check.add_argument("--look", type=int, choices=(1, 2), default=1, help=look)
+    commands.add_parser("risk", help="Make the growth risk tables of each year with fires.")
     poll = commands.add_parser("poll", help="Do one pass of the live poller: record the new rows.")
     since = "Read back the GOES scans and the INPE files to this UTC time, to fill a hole: "
     since += "2026-11-20T00:00:00+00:00. It does not change the FIRMS request."
@@ -116,6 +117,8 @@ def main(arguments: list[str] | None = None) -> None:
         checks.run_burn(chosen.year, lambda: read_setting("EE_PROJECT"))
     elif chosen.command in ("visibility", "growth", "severity", "confidence"):
         checks.run_table(chosen.command, chosen.year)
+    elif chosen.command == "risk":
+        checks.run_risk()
     elif chosen.command == "images":
         checks.run_images(chosen.year, lambda: read_setting("EE_PROJECT"), chosen.look)
     elif chosen.command == "poll":

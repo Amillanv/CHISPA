@@ -59,6 +59,14 @@ Checked 2026-11-23 with live requests, for the data of 2026 before the live logs
 - INPE has the monthly files of 2026 to November. The file of a month in progress changes each day: we get the months to October.
   INPE also has a file for each day (`focos/csv/diario/`). We do not read it. Thus 1 to 19 November 2026 has no INPE detection.
 
+Checked 2026-11-25 with the download of 2019 to 2022 (`chispa fetch firms --year`):
+
+- The archive products `VIIRS_SNPP_SP`, `VIIRS_NOAA20_SP` and `MODIS_SP` have rows for each of the four years.
+  The Pantanal box has 457 691 rows of the three in 2019, 666 289 in 2020, 427 416 in 2021 and 111 616 in 2022.
+- `VIIRS_NOAA21_SP` has no row in these years, and a request gives a file with only the header line.
+- `GOES_NRT` has no row before 2022-08-09. A request for a day before it also gives only the header line.
+  From 2022-08-09 to the end of 2022 it has 193 061 rows in the box, with each value of the `satellite` field.
+
 ### 8.2 GOES fire product
 
 Checked 2026-11-19 with live requests and one raw file.
@@ -114,6 +122,17 @@ Checked 2026-11-19 with live requests.
 - The store has 1 135 655 INPE detections for the Pantanal box in 2023 and 2024.
 - Some rows have positions with only two decimal places.
 - An INPE hotspot and a FIRMS hotspot from the same satellite pass are one observation, not two.
+
+Checked 2026-11-25 with live requests, for the years before 2023:
+
+- The folder `mensal/Brasil/` has the months from January 2023. An older year is one file in the folder
+  `anual/Brasil_todos_sats/`: `focos_br_todos-sats_{year}.zip`, 66 to 81 MB for each year from 2019 to 2022.
+- An annual file has other field names: `latitude`, `longitude` and `data_pas`, with spaces around the two positions.
+- `data_pas` is a UTC time: the NOAA-20 rows of 2019 in the Pantanal box are at 03 to 06 hours and at 16 to 18 hours.
+- Each annual file has GOES-16 rows from the method of INPE: 50 958, 249 940, 144 257 and 27 317 rows in the Pantanal
+  box in 2019, 2020, 2021 and 2022. FIRMS has no GOES row before 2022-08-09 (section 8.2).
+  Thus 2019, 2020 and 2021 have GOES detections only from INPE, and 2022 has the rows of FIRMS from 9 August.
+- The annual file of 2019 also has the satellite NOAA-15: 222 rows in the box. We do not use it.
 
 Terms, from a check of the INPE pages on 2026-11-20:
 
@@ -433,6 +452,9 @@ Checked 2026-11-23 with live requests to Earth Engine:
   is a collection of 94 images, one for each month from January 2019 to October 2026. The band is `FireMonth`.
   The properties say collection 2 and source IPAM. The first image has pixels of 30 m. The asset changed last on 2026-11-09.
 - Thus a map of the burned ground of a month exists some weeks after that month, also for 2026.
+- Checked 2026-11-24 with a live request, for November 2023 in the Pantanal box: a burned pixel has the value 1, and each
+  other pixel has no value. An image has the properties `year`, `month`, `collection`, `source` and `version`.
+  Thus the map gives a mask of a month. It gives no day, no fire identifier, no area and no size class.
 - A first look outside the repository, in the boxes of the 63 chips of 2024 with a clear answer of the person:
   the asset had 1 hectare or more for 22 of the 30 chips that the person called burned, and for 9 of the 33 others.
   For the 44 unmatched HIGH events it had 1 hectare or more for 13.
@@ -463,3 +485,43 @@ Checked 2026-11-24 on the page of the service, and with one text. `chispa watch`
 - One text of 141 characters to a number in the United States got the answer `success`, with a quota of 1698 after it. The answer says that the service took the text. It does not say that the telephone got it.
 - The compliance page of the service, read 2026-11-25: the service adds "Reply STOP to unsubscribe" to the first text to a new number, and to no later text. It also adds the sender name to that first text if the text does not have it. The page gives no setting that removes these words. Not checked with a second text.
 - The key and the telephone number are only in `.env`. The log of the texts (`live/texts/`) has the text and the result, and no number.
+
+### 8.20 Candidate sources and public work for the growth risk
+
+Read 2026-11-24 by research agents, on the pages of each owner. `UNVERIFIED`: no second read confirmed these facts.
+No command reads these sources. Each fact stays `UNVERIFIED` until a check before the first use of its source (section 8.7).
+
+Candidate inputs:
+
+- Open-Meteo, archive API: ECMWF IFS at 9 km from 2017, and ERA5-Land at 0.1 degrees. Hourly wind speed, wind direction and
+  gusts at 10 m, relative humidity, vapour pressure deficit, rain and soil moisture. It gives no fire index.
+- Open-Meteo, Previous Runs API: the forecast as a model gave it 1 to 7 days before, for most models from January 2024.
+  Only this is a weather input that existed at the time of an alert, for the hours after that time.
+- MapBiomas Fogo, collection 5: the asset folder `projects/mapbiomas-public/assets/brazil/fire/collection5/` has
+  `mapbiomas_fire_collection5_time_after_fire_v1` (years after the last fire) and `..._fire_frequency_v1`, 1985 to 2025.
+- Surface water: MapBiomas has an annual asset (`.../brazil/water/collection5/mapbiomas_brazil_collection5_water_annual_v4`).
+  A monthly asset was not found. `JRC/GSW1_4/MonthlyHistory` in Earth Engine ends in December 2021.
+- Paraguay River level at Ladário: the ANA service `telemetriaws1.ana.gov.br/ServiceANA.asmx`, station 66825000, daily values.
+- INPE fire risk: daily grids of 1 km from 2001, at `dataserver-coids.inpe.br/queimadas/queimadas/riscofogo_meteorologia/`.
+  Its formula uses rain, humidity, temperature and the vegetation class. It does not use wind. The forecast grids have no archive.
+- Formulas with public equations: the Canadian fire weather index (Van Wagner and Pickett 1985), the Monte Alegre formula
+  with wind (Nunes, Soares and Batista 2006), and the Hot-Dry-Windy index (Srock et al. 2018, DOI 10.3390/atmos9070279).
+
+Other burned-area and fire-event data:
+
+- ALARMES (LASA-UFRJ): a burn date for each pixel of 375 m, 2012 to 2025, CC BY 4.0, at `zenodo.org/records/18414791`.
+  It comes from VIIRS: it is not independent of our detections. This changes the line on ALARMES in section 8.18.
+- Andela et al., VIIRS fire events of the Amazon box (10 N to 25 S, 85 W to 30 W), 2018 to 2025, DOI 10.5281/zenodo.20006623.
+- The FEDS data that NASA makes each day for new fires covers North America only.
+
+Public work, as a comparison:
+
+- Coffield et al. 2019 (DOI 10.1071/WF19023): 1168 fires in Alaska, three size classes at ignition, 50.4 percent correct
+  against 33 by chance. Its dryness input was the mean of the 5 days after the ignition. Wind was not better than chance.
+- USGS large fire probability: the probability that a new fire becomes larger than 500 acres (202 hectares).
+- Balch et al. 2024 (DOI 10.1126/science.adk5737): the largest growth of one day explains the final size (R2 0.97, log-log).
+- Next-day fire masks: Huot et al. 2022 (arXiv 2112.02447) and Gerard et al. 2023 give a precision measure of 28.4 percent
+  against 11.5 for persistence, and of 0.372 against 0.193. The fires are in the United States.
+- Barros-Rosa et al. 2026 (DOI 10.1111/gcb.71089): for the monthly burned area of the Pantanal, the main inputs were the
+  rain of the month before, a dryness index and the surface water.
+- The search found no fuel model map of the Pantanal, and no model for the size of one fire in the Pantanal.

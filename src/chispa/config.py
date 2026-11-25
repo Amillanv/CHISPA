@@ -19,7 +19,13 @@ TEST_YEAR = 2024
 PART_TEST_YEAR = 2025
 
 # The years that have mapped fires in the store, with the role of each in the results.
+# The years before the development year came in on 2026-11-25, for the growth risk. FIRMS has no
+# GOES row before 2022-08-09: those years have GOES detections only from INPE.
 YEAR_ROLES = {
+    2019: "year before the development year",
+    2020: "year before the development year",
+    2021: "year before the development year",
+    2022: "year before the development year",
     DEVELOPMENT_YEAR: "development year",
     TEST_YEAR: "test year of the merge",
     PART_TEST_YEAR: "test year of the later parts",
@@ -376,6 +382,14 @@ CONFIDENCE_PENALTY = 0.001
 # is in degrees (approximately 11 km).
 CONFIDENCE_NEAR_DAYS = 7
 CONFIDENCE_NEAR_CELL_DEG = 0.1
+
+# --- Growth risk ---
+
+# An alert is at a limit if its fire ends with this many hectares or more. The limits are limits
+# of the fire size classes. The owner agreed to them on 2026-11-24.
+RISK_LIMITS_HA = (100.0, 1000.0)
+# Too few fires are this large for a model: 9 in the development year. They get a count only.
+RISK_LARGEST_HA = 10000.0
 
 # === The values above this line can change a result. The configuration hash covers them. ===
 # The values below this line change no number in a result table.
