@@ -1,0 +1,9 @@
+latitude,longitude,data_pas,satelite,pais,estado,municipio,bioma,numero_dias_sem_chuva,precipitacao,risco_fogo,id_area_industrial,frp
+   -7.647960 ,  -36.953730 ,2019-01-01 16:00:00,NPP-375,Brasil,PARAÍBA,SUMÉ,Caatinga, 7 ,0,1, 0 ,13.2
+  -18.954160 ,  -57.279320 ,2019-01-01 17:36:00,NPP-375,Brasil,MATO GROSSO DO SUL,CORUMBÁ,Pantanal, 2 ,1.2,0.1, 0 ,6.6
+  -15.755000 ,  -54.601000 ,2019-01-01 17:20:00,AQUA_M-T,Brasil,MATO GROSSO,POXORÉU,Cerrado, 0 ,14.4,0, 0 ,5
+  -16.466110 ,  -57.279750 ,2019-01-03 17:44:23,NOAA-20,Brasil,MATO GROSSO,CÁCERES,Pantanal, 2 ,0,0.5, 0 ,
+  -20.670000 ,  -57.940000 ,2019-02-01 22:03:16,GOES-16,Brasil,MATO GROSSO DO SUL,CORUMBÁ,Pantanal, 12 ,0.1,-999, 0 ,
+  -19.929840 ,  -55.291275 ,2019-01-03 22:47:29,NOAA-15,Brasil,MATO GROSSO DO SUL,CORGUINHO,Cerrado, 0 ,0,0.2, 0 ,
+  -19.054800 ,  -57.261101 ,2019-01-15 01:48:49,METOP-B,Brasil,MATO GROSSO DO SUL,CORUMBÁ,Pantanal, 12 ,0.1,0.4, 0 ,
+  -19.350000 ,  -57.890000 ,2019-09-11 08:18:36,MSG-03,Brasil,MATO GROSSO DO SUL,CORUMBÁ,Pantanal, 15 ,0,1, 0 ,
