@@ -461,4 +461,5 @@ Checked 2026-11-24 on the page of the service, and with one text. `chispa watch`
 - The answer is JSON. It has `success`, and then `quotaRemaining` or `error`.
 - The key `textbelt` gives 1 free text each day. A paid key has a quota of texts. The page does not give the prices. `UNVERIFIED`: the price of one text.
 - One text of 141 characters to a number in the United States got the answer `success`, with a quota of 1698 after it. The answer says that the service took the text. It does not say that the telephone got it.
+- The compliance page of the service, read 2026-11-25: the service adds "Reply STOP to unsubscribe" to the first text to a new number, and to no later text. It also adds the sender name to that first text if the text does not have it. The page gives no setting that removes these words. Not checked with a second text.
 - The key and the telephone number are only in `.env`. The log of the texts (`live/texts/`) has the text and the result, and no number.
