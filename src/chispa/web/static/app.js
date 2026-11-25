@@ -6,13 +6,13 @@ import { History } from "./history.js";
 import * as panels from "./panels.js";
 import { list, dossier } from "./events.js";
 import { esc, dur, coord, num } from "./format.js";
-import { drawClock, tick } from "./clock.js";
+import { drawClock, tick, zoneOf } from "./clock.js";
 
 const $ = (id) => document.getElementById(id);
 const state = {
   settings: null, live: true, anchor: null, asOf: null, windowIndex: 1,
-  events: [], day: null, activity: null, past: null, pass: undefined, years: {}, year: null, ladderZone: "local", allPasses: false,
-  selectedId: null, record: null, recordError: null, open: null, view: "list",
+  events: [], day: null, activity: null, past: null, pass: undefined, years: {}, year: null, zone: "local", allPasses: false,
+  selectedId: null, record: null, recordError: null, known: null, notYet: null, open: null, view: "list",
   sort: "level", filter: new Set(["HIGH", "MEDIUM", "LOW"]),
 };
 const tickets = { moment: 0, window: 0, record: 0 };
@@ -126,7 +126,9 @@ function changeWindow(n) {
 function pastParams() {
   const w = state.settings.windows[state.windowIndex];
   const hours = w.hours - (new Date(state.anchor) - new Date(state.asOf)) / 3_600_000;
-  return hours > 0 && Math.abs(hours - w.hours) > 1e-6 ? { as_of: state.asOf, hours, step_hours: w.step_hours } : null;
+  // The tool takes whole steps. An as-of time off the steps of the window gets no such answer.
+  const whole = Math.abs(hours / w.step_hours - Math.round(hours / w.step_hours)) < 1e-6;
+  return whole && hours > 0 && Math.abs(hours - w.hours) > 1e-6 ? { as_of: state.asOf, hours, step_hours: w.step_hours } : null;
 }
 
 /* The window and its steps to the as-of time, together: the band draws the two answers of one position. */
@@ -183,17 +185,19 @@ async function loadPass(ticket) {
 async function loadRecord(move) {
   const ticket = ++tickets.record;
   state.recordError = null;
+  state.notYet = null;
   try {
     const record = await get(`/api/event/${state.selectedId}`, { as_of: state.asOf });
     if (ticket !== tickets.record) return;
-    state.record = record;
+    state.record = state.known = record;
     state.selectedId = record.event_id;
     map.select(record, move);
     map.setDetections(record.newest_detections);
   } catch (error) {
     if (ticket !== tickets.record) return;
     state.record = null;
-    state.recordError = error.message;
+    state.notYet = notYet();
+    state.recordError = state.notYet ? null : error.message;
     map.select(null);
   }
   writeUrl();
@@ -209,8 +213,18 @@ async function loadYears() {
   drawRight();
 }
 
+/* The as-of time is before the first alert of the selected event: CHISPA had no detection of it yet.
+   A record of the same event at a later time gives when a satellite first saw it and when its first alert came. */
+function notYet() {
+  const known = state.known;
+  if (!known || known.event_id !== state.selectedId || !known.level_changes.length) return null;
+  const first = known.level_changes[0].at;
+  return new Date(state.asOf) < new Date(first) ? { observed: known.first_observed_at, alert: first } : null;
+}
+
 function select(id, move) {
   if (id === null || id === undefined) return;
+  if (id !== state.known?.event_id) state.known = null;
   state.selectedId = id;
   state.view = "dossier";
   state.record = null;
@@ -233,8 +247,8 @@ function back() {
 }
 
 function drawLeft() {
-  panels.situation($("situation"), { events: state.events, day: state.day, asOf: state.asOf, sinceHours: state.settings.since_hours });
-  panels.sensors($("sensors"), { day: state.day, asOf: state.asOf });
+  panels.situation($("situation"), { events: state.events, day: state.day, asOf: state.asOf, sinceHours: state.settings.since_hours, zone: zoneOf(state), live: state.live });
+  panels.sensors($("sensors"), { day: state.day, asOf: state.asOf, zone: zoneOf(state), live: state.live });
 }
 
 function drawRecordCard() {
@@ -247,19 +261,20 @@ function drawRecordCard() {
 function drawRight() {
   if (state.view === "dossier") {
     dossier($("right"), {
-      record: state.record, error: state.recordError, trackRecord: state.years[state.settings.test_year], settings: state.settings, open: state.open,
-      zone: state.ladderZone, all: state.allPasses,
+      record: state.record, error: state.recordError, notYet: state.notYet, asOf: state.asOf, trackRecord: state.years[state.settings.test_year],
+      settings: state.settings, open: state.open, zone: zoneOf(state), all: state.allPasses,
       on: {
         back, zoom: () => state.record && map.select(state.record, true),
         tile: (name) => { state.open = state.open === name ? null : name; drawRight(); },
-        zone: (zone) => { state.ladderZone = zone; drawRight(); },
         passes: () => { state.allPasses = true; drawRight(); },
+        first: replay, // a replay of the moment of the first alert: the window ends there
       },
     });
     return;
   }
   list($("right"), {
     events: state.events, sort: state.sort, filter: state.filter, selectedId: state.selectedId, asOf: state.asOf, sinceHours: state.settings.since_hours,
+    zone: zoneOf(state),
     on: {
       select: (id) => select(id, true), hover: (id) => map.hover(id),
       sort: (sort) => { state.sort = sort; drawRight(); },
@@ -272,6 +287,7 @@ function drawHistory() {
   band.set({
     activity: state.activity, past: state.past, asOf: state.asOf, end: state.anchor, limits: panLimits(),
     windows: state.settings.windows, windowIndex: state.windowIndex, record: state.view === "dossier" ? state.record : null,
+    zone: zoneOf(state),
   });
 }
 
@@ -289,14 +305,25 @@ function hoverFromMap(id, mouse) {
   tip.hidden = false;
 }
 
+/* The time zone of the page, from the clock. Each part that shows a time draws again. */
+function setZone(zone) {
+  state.zone = zone;
+  drawClock(state);
+  drawLeft();
+  drawRight();
+  drawHistory();
+  writeUrl();
+}
+
 function openLimits() {
-  panels.limits($("limits-body"), state.years[state.year], state.settings.live_start);
+  panels.limits($("limits-body"), state.years[state.year], state.settings.live_start, zoneOf(state));
   $("limits").showModal();
 }
 
 function wireBar() {
   $("mode").addEventListener("click", () => { if (!state.live) goLive(); });
   $("replays").addEventListener("change", (e) => { if (e.target.value) replay(e.target.value); });
+  $("zone").addEventListener("click", (e) => { const b = e.target.closest("[data-zone]"); if (b) setZone(b.dataset.zone); });
   $("limits-open").addEventListener("click", openLimits);
   $("limits-close").addEventListener("click", () => $("limits").close());
   $("drawer-toggle").addEventListener("click", () => $("left").classList.toggle("open"));
@@ -318,6 +345,7 @@ function readUrl() {
   if (asOf && params.get("end")) state.anchor = params.get("end");
   const event = Number(params.get("event"));
   if (event) { state.selectedId = event; state.view = "dossier"; fly = true; }
+  if (params.get("zone") === "utc") state.zone = "utc";
   const windowIndex = Number(params.get("window"));
   if (windowIndex >= 0 && windowIndex < state.settings.windows.length && params.has("window")) state.windowIndex = windowIndex;
 }
@@ -328,6 +356,7 @@ function writeUrl() {
   if (!state.live && state.anchor !== state.asOf) params.set("end", state.anchor);
   if (state.selectedId) params.set("event", state.selectedId);
   if (state.windowIndex !== 1) params.set("window", state.windowIndex);
+  if (state.zone !== "local") params.set("zone", state.zone);
   window.history.replaceState(null, "", params.size ? `?${params}` : location.pathname);
 }
 

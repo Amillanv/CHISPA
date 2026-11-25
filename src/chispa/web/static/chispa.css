@@ -91,6 +91,7 @@ button { cursor: pointer; }
 .reading .label { font-size: 8.5px; }
 .reading .mono { font-size: 12.5px; color: var(--fg-1); white-space: nowrap; }
 .reading .mono .d { color: var(--fg-3); margin-right: 6px; }
+.reading.zone .seg button { padding: 2px 7px; font-size: 10.5px; }
 /* The lag counter: the time from the newest pass of the poller. Amber when the poller is late. */
 .lag { min-width: 104px; }
 .lag .mono { display: flex; align-items: center; gap: 7px; }
@@ -189,7 +190,8 @@ button { cursor: pointer; }
 .dz-local dd { margin: 0; }
 .dz-local .muted { font-family: var(--ui); margin-right: 4px; }
 .dz-head { position: relative; }
-.dz-zone { position: absolute; top: 14px; right: 16px; }
+.not-yet p { margin: 0 0 10px; color: var(--fg-2); line-height: 1.5; }
+.not-yet button { margin: 4px 0 12px; }
 .vitals { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; margin-top: 14px; background: var(--hair); border: 1px solid var(--hair); }
 .vitals > div { background: #0d0d0d; padding: 10px 10px 11px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .vitals .label { font-size: 9px; }
@@ -316,6 +318,10 @@ details.raw[open] summary::after { content: "−"; }
 .h-plot text.now { fill: var(--blue-text); font-size: 10px; }
 .h-plot .hit { fill: transparent; cursor: crosshair; }
 .h-head .h-range { font-size: 10.5px; color: var(--fg-3); white-space: nowrap; }
+/* A narrow band shortens its description first: the buttons, the window and the legend stay on one line. */
+.h-head .seg button, .h-head .legend span { white-space: nowrap; }
+.h-head .note { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h-head .legend { flex: none; }
 /* While the answer for a moved window comes, a click cannot choose a step, and the as-of label waits. */
 .h-plot svg.moving .hits { pointer-events: none; }
 .h-plot svg.moving text.asof { visibility: hidden; }

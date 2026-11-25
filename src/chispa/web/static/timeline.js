@@ -1,14 +1,11 @@
 /* The history of one event: the headline numbers and the timeline of its passes.
    A row is one pass: when a satellite saw it, how long it took to reach CHISPA, and the alert it made.
    Each value is a field of the event record. This file formats the values. It adds no fact. */
-import { esc, num, dur, hoursBetween, utc, day, offset, when, FAMILY, GOES_GROUP, ANSWER } from "./format.js";
+import { esc, num, dur, hoursBetween, day, when, zoneLabel, zoneTag, FAMILY, GOES_GROUP, ANSWER } from "./format.js";
 
 const FOLDED = 10; // the newest passes that the folded timeline shows, with each pass that made an alert
 const RUNS_FOLDED = 4; // the newest runs of GOES scans that the folded timeline shows, with each run of fire
 
-export function zoneName(r, zone) {
-  return zone ? `Pantanal, ${offset(r.first_observed_at, zone)}` : "UTC";
-}
 
 /* The four numbers of triage time: age, the delay of the first alert, the last detection and the last clear look. */
 export function vitals(r, zone) {
@@ -69,13 +66,13 @@ export function timeline(r, zone, all, liveStart) {
   });
   parts.push(...runs(r, zone, all));
   const head = `<div class="pass head"><span>Observed</span><span>Sensor</span><span>To CHISPA</span><span>MW</span><span>Alert</span></div>`;
-  return `<div class="block"><div class="label"><span>Timeline</span><span>${rows.length} of ${num(r.pass_count)} passes · ${zoneName(r, zone)}</span></div>
+  return `<div class="block"><div class="label"><span>Timeline</span><span>${rows.length} of ${num(r.pass_count)} passes · ${zoneLabel(zone, r.first_observed_at)}</span></div>
     <div class="passes">${head}${parts.join("")}</div>
     ${absorbed(r, zone)}
     ${days(r)}
     <p class="note">The rows are in the sequence of observation. A pass is one GOES scan with a detection, or one pass of
     another satellite. MW is its largest fire power. "To CHISPA" is the time from the observation
-    to the moment that CHISPA had the pass, and thus made its alert. From ${day(liveStart)} it is measured by the poller.
+    to the moment that CHISPA had the pass, and thus made its alert. From ${when(liveStart, zone)} ${zoneTag(zone)} it is measured by the poller.
     Before, it is an estimate. A time in yellow includes a stop of the poller: up to the time of the stop is our delay.
     The time when a source published a pass is not in the record. After the last detection, a GOES row is a run of
     saved scans with one answer for the place of the last detection. "Could not see" is cloud, no decision or glint.</p></div>`;
@@ -103,7 +100,7 @@ function runRow(run, clear, zone) {
     ? ` (${groups.length === 1 ? GOES_GROUP[groups[0][0]] : groups.map(([g, n]) => `${num(n)} ${GOES_GROUP[g] ?? esc(g)}`).join(" · ")})` : "";
   const span = run.scans === 1 ? "" : `${num(run.scans)} scans to ${when(run.to, zone)}: `;
   const look = run.to === clear ? " · last clear look" : "";
-  const title = `GOES scans from ${utc(run.from)} UTC to ${utc(run.to)} UTC at the place of the last detection. `
+  const title = `GOES scans from ${when(run.from, zone)} to ${when(run.to, zone)} ${zoneTag(zone)} at the place of the last detection. `
     + `"Examined, no fire" is for each pixel of that place. It does not say that the fire is out: GOES can miss a small fire.`;
   return `<div class="pass run ${run.answer}" title="${title}">
     <span class="t">${when(run.from, zone)}</span>
@@ -115,9 +112,10 @@ function row(p, zone) {
   const hours = hoursBetween(p.observed_at, p.available_at);
   const width = Math.min(100, (Math.log1p(hours * 60) / Math.log1p(24 * 60)) * 100);
   const stop = p.poller_stop_h ? ` For ${dur(p.poller_stop_h)} of this time the poller did not read the source. The source can have published at any time in that stop.` : "";
-  const alerts = p.alerts.length ? ` Alerts: ${p.alerts.map((a) => `${a.level} at ${utc(a.at)} UTC`).join(", ")}.` : "";
-  const title = `${p.detections} ${p.detections === 1 ? "detection" : "detections"}. Observed ${utc(p.observed_at)} UTC. `
-    + `CHISPA had it ${utc(p.available_at)} UTC${p.estimated ? ": an estimate" : ""}.${stop}${alerts} The largest fire power: `
+  const at = (time) => `${when(time, zone)} ${zoneTag(zone)}`;
+  const alerts = p.alerts.length ? ` Alerts: ${p.alerts.map((a) => `${a.level} at ${at(a.at)}`).join(", ")}.` : "";
+  const title = `${p.detections} ${p.detections === 1 ? "detection" : "detections"}. Observed ${at(p.observed_at)}. `
+    + `CHISPA had it ${at(p.available_at)}${p.estimated ? ": an estimate" : ""}.${stop}${alerts} The largest fire power: `
     + `${p.max_frp_mw === null ? "not given" : `${num(p.max_frp_mw, 1)} MW`}.`;
   const levels = p.alerts.map((a) => `<span data-level="${a.level}">${a.level}</span>`).join(`<i>→</i>`);
   return `<div class="pass${p.alerts.length ? " raised" : ""}" title="${title}">
@@ -138,5 +136,5 @@ function absorbed(r, zone) {
 function days(r) {
   const list = r.timeline.slice(-30), most = Math.max(1, ...list.map((d) => d.detections));
   const bars = list.map((d) => `<span style="height:${(8 + 92 * Math.log1p(d.detections) / Math.log1p(most)).toFixed(0)}%" title="${d.day}: ${num(d.detections)} detections, ${d.sensor_families.map((f) => FAMILY[f]).join(", ")}"></span>`).join("");
-  return `<div class="days">${bars}</div><div class="days-axis"><span>${day(list[0].day)}</span><span>detections of each day, UTC${r.timeline.length > 30 ? ", last 30" : ""}</span><span>${day(list.at(-1).day)}</span></div>`;
+  return `<div class="days">${bars}</div><div class="days-axis"><span>${day(list[0].day, null)}</span><span>detections of each UTC day${r.timeline.length > 30 ? ", last 30" : ""}</span><span>${day(list.at(-1).day, null)}</span></div>`;
 }

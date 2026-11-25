@@ -2,7 +2,7 @@
    of each sensor family, and the selected event: its days, its level changes and its growth steps.
    A click on a step moves the as-of time to the end of that step. The arrow keys move it one step at a time (`scrub`).
    A sideways swipe or a wheel moves the window in detents of one step (`pan`): the dates slide, the as-of time stays. */
-import { esc, num, utc, day, FAMILY, FAMILY_ORDER } from "./format.js";
+import { esc, num, stamp, day, zoneShift, zoneTag, FAMILY, FAMILY_ORDER } from "./format.js";
 
 const LEVELS = [["HIGH", "#e5542b"], ["MEDIUM", "#ed903d"], ["LOW", "#f5c16c"]];
 const FAMILY_COLOUR = { viirs: "#d9e7ea", abi: "#4fa3b8", modis: "#a59f8f", avhrr: "#6e736f" };
@@ -28,7 +28,7 @@ export class History {
     this.plot.addEventListener("wheel", (e) => this.wheel(e), { passive: false });
   }
 
-  /* state: { activity, past, asOf, end, limits, windows, windowIndex, record }. `activity` is the answer for the
+  /* state: { activity, past, asOf, end, limits, windows, windowIndex, record, zone }. `zone` is the zone of the page. `activity` is the answer for the
      window that ends at `end`. `past` ends at the as-of time, with the events of the as-of time: the steps to the
      as-of time come from it. `end` can differ from the end of `activity` while the answer for a moved window comes.
      `limits` is the number of steps that the window can move: { forward, back }. */
@@ -42,14 +42,13 @@ export class History {
     const { windows, windowIndex } = this.state;
     const buttons = windows.map((w, n) => `<button type="button" data-window="${n}" aria-pressed="${n === windowIndex}">${w.hours >= 48 ? `${w.hours / 24} d` : `${w.hours} h`}</button>`).join("");
     const legend = LEVELS.map(([name]) => `<span data-level="${name}"><span class="swatch"></span>${name}</span>`).join("");
-    this.head.innerHTML = `<span class="label">History</span><div class="seg">${buttons}</div><span class="h-range mono" title="The window, UTC. A swipe moves it."></span>
-      <span class="note">Events with a new detection in each step, Pantanal box</span><div class="legend">${legend}</div>`;
+    this.head.innerHTML = `<span class="label">History</span><div class="seg">${buttons}</div><span class="h-range mono" title="The window. A swipe moves it."></span>`;
     this.head.querySelectorAll("[data-window]").forEach((b) => b.addEventListener("click", () => this.handlers.window(Number(b.dataset.window))));
   }
 
   draw() {
     if (!this.state?.activity) { this.plot.innerHTML = ""; return; }
-    const { activity, past, asOf, record } = this.state;
+    const { activity, past, asOf, record, zone } = this.state;
     const W = this.plot.clientWidth, H = this.plot.clientHeight;
     if (W < 50 || H < 50) return;
     const aligned = past && past.steps[0]?.start === activity.steps[0].start;
@@ -86,14 +85,14 @@ export class History {
       still.push(lane.still);
       moving.push(lane.moving);
     }
-    moving.push(this.axis(start, end, x, H, activity.hours));
+    moving.push(this.axis({ start, end, x, H, hours: activity.hours }, zone));
     const t = new Date(asOf).getTime();
     if (t <= end) {
       const now = Math.max(x(asOf), G);
       if (now < W - RIGHT - 0.5) moving.push(`<rect x="${now}" y="${TOP - 6}" width="${W - RIGHT - now}" height="${H - AXIS - TOP + 6}" fill="rgba(5,5,5,0.62)"/>`);
       if (t >= start) moving.push(`<line x1="${now}" x2="${now}" y1="${TOP - 8}" y2="${H - AXIS}" stroke="#087cff" stroke-width="1.2"/>`);
     }
-    still.push(this.asOfLabel(asOf, start, end, x, W));
+    still.push(this.asOfLabel(asOf, { start, end, x, W }, zone));
     const hits = steps.map((s, n) => `<rect class="hit" data-n="${n}" x="${G + n * step}" y="0" width="${step}" height="${H - AXIS}"/>`).join("");
     const scrub = `<g class="scrub" visibility="hidden" pointer-events="none"><rect y="${TOP - 6}" height="${H - AXIS - TOP + 6}" fill="rgba(8,124,255,0.10)"/>
       <line y1="${TOP - 8}" y2="${H - AXIS}" stroke="#087cff" stroke-width="1.2" stroke-dasharray="3 2"/><text class="now" y="${TOP - 10}" text-anchor="end"></text></g>`;
@@ -107,11 +106,11 @@ export class History {
   }
 
   /* The as-of time over the band. Out of the window, an arrow at the edge says on which side it is. */
-  asOfLabel(asOf, start, end, x, W) {
-    const t = new Date(asOf).getTime();
-    if (t > end) return `<text class="now asof" x="${W - RIGHT}" y="${TOP - 10}" text-anchor="end">as-of ${utc(asOf)} →</text>`;
-    if (t < start) return `<text class="now asof" x="${G}" y="${TOP - 10}">← as-of ${utc(asOf)}</text>`;
-    return `<text class="now asof" x="${x(asOf) - 4}" y="${TOP - 10}" text-anchor="end">${utc(asOf)}</text>`;
+  asOfLabel(asOf, { start, end, x, W }, zone) {
+    const t = new Date(asOf).getTime(), text = stamp(asOf, zone);
+    if (t > end) return `<text class="now asof" x="${W - RIGHT}" y="${TOP - 10}" text-anchor="end">as-of ${text} →</text>`;
+    if (t < start) return `<text class="now asof" x="${G}" y="${TOP - 10}">← as-of ${text}</text>`;
+    return `<text class="now asof" x="${x(asOf) - 4}" y="${TOP - 10}" text-anchor="end">${text}</text>`;
   }
 
   lanes(steps, families, top, step) {
@@ -130,15 +129,17 @@ export class History {
     return { still: still.join(""), moving: moving.join("") };
   }
 
-  /* The selected event: its detections of each day, its level changes and its VIIRS growth steps. */
+  /* The selected event: its detections of each UTC day, from its first to its last detection, its level changes
+     and its VIIRS growth steps. */
   eventLane(record, x, top, start, end) {
     const inside = (t) => { const v = new Date(t).getTime(); return v >= start && v <= end; };
     const most = Math.max(1, ...record.timeline.map((d) => d.detections));
     const still = `<text class="lane-name" x="4" y="${top + 12}" style="fill:#4f9dff">EVENT</text><rect x="${G}" y="${top}" width="${x(end) - G}" height="${EVENT_LANE}" fill="rgba(8,124,255,0.05)"/>`;
     const parts = [];
+    const first = new Date(record.first_observed_at).getTime(), last = new Date(record.last_observed_at).getTime();
     for (const d of record.timeline) {
       const midnight = new Date(`${d.day}T00:00:00Z`).getTime();
-      const from = Math.max(midnight, start), to = Math.min(midnight + 86_400_000, end);
+      const from = Math.max(midnight, start, first), to = Math.min(midnight + 86_400_000, end, last);
       if (to <= from) continue;
       const h = 3 + (EVENT_LANE - 4) * (Math.log1p(d.detections) / Math.log1p(most));
       parts.push(`<rect x="${x(from)}" y="${top + EVENT_LANE - h}" width="${Math.max(1, x(to) - x(from) - 1)}" height="${h}" fill="#087cff" fill-opacity="0.35"/>`);
@@ -155,13 +156,14 @@ export class History {
     return { still, moving: parts.join("") };
   }
 
-  axis(start, end, x, H, hours) {
-    const every = hours <= 72 ? 12 : hours <= 168 ? 24 : 120;
-    const parts = [];
-    const first = Math.ceil(start / 3_600_000 / every) * every * 3_600_000;
-    for (let t = first; t <= end; t += every * 3_600_000) {
-      const iso = new Date(t).toISOString();
-      const text = iso.slice(11, 13) === "00" ? day(iso) : iso.slice(11, 16);
+  /* The ticks are at whole hours of the clock of the zone: a day starts at its midnight. */
+  axis({ start, end, x, H, hours }, zone) {
+    const every = (hours <= 72 ? 12 : hours <= 168 ? 24 : 120) * 3_600_000;
+    const parts = [], shift = zoneShift(start, zone);
+    const first = Math.ceil((start + shift) / every) * every - shift;
+    for (let t = first; t <= end; t += every) {
+      const time = stamp(t, zone, false);
+      const text = time === "00:00" ? day(t, zone) : time;
       parts.push(`<line x1="${x(t)}" x2="${x(t)}" y1="${H - AXIS}" y2="${H - AXIS + 3}" stroke="rgba(255,255,255,0.25)"/><text x="${x(t) + 3}" y="${H - 4}">${text}</text>`);
     }
     return parts.join("");
@@ -175,10 +177,11 @@ export class History {
         column.setAttribute("x", hit.getAttribute("x"));
         column.setAttribute("width", step);
         const fams = FAMILY_ORDER.filter((f) => s.detections[f]).map((f) => `${FAMILY[f]} ${num(s.detections[f])}`).join(" · ") || "no detection";
-        tip.innerHTML = `<div class="mono">${utc(s.start)} – ${utc(s.end, false)}</div>
+        const zone = this.state.zone;
+        tip.innerHTML = `<div class="mono">${stamp(s.start, zone)} – ${stamp(s.end, zone, false)} ${zoneTag(zone)}</div>
           <div>${LEVELS.map(([n]) => `<span data-level="${n}"><span class="swatch"></span>${n} <b>${s.events[n]}</b></span>`).join("&nbsp;&nbsp;")}</div>
           <div class="muted">${esc(fams)}</div>${new Date(s.end) > new Date(this.state.asOf) ? `<div class="muted">After the as-of time: events of the end of the window.</div>` : ""}
-          <div class="muted">Click: as-of time ${utc(s.end, false)}</div>`;
+          <div class="muted">Click: as-of time ${stamp(s.end, zone, false)}</div>`;
         tip.hidden = false;
       });
       hit.addEventListener("mousemove", (e) => { tip.style.left = `${Math.min(e.clientX + 14, innerWidth - 270)}px`; tip.style.top = `${e.clientY - 90}px`; });
@@ -232,7 +235,8 @@ export class History {
     svg.querySelector(".slide").setAttribute("transform", `translate(${(-offset * g.step).toFixed(1)},0)`);
     svg.classList.toggle("moving", Math.abs(offset) > 1e-6);
     const range = this.head.querySelector(".h-range");
-    if (range) range.textContent = `${utc(g.start + offset * g.stepMs)} → ${utc(g.end + offset * g.stepMs)}`;
+    const zone = this.state.zone;
+    if (range) range.textContent = `${stamp(g.start + offset * g.stepMs, zone)} → ${stamp(g.end + offset * g.stepMs, zone)} ${zoneTag(zone)}`;
   }
 
   /* Move the shown step at once. When the band stops, the dashboard loads the end of that step as the as-of time. */
@@ -263,7 +267,7 @@ export class History {
     group.querySelectorAll("line").forEach((line) => { line.setAttribute("x1", end); line.setAttribute("x2", end); });
     const label = group.querySelector("text");
     label.setAttribute("x", Math.max(G + 90, end - 4));
-    label.textContent = `${utc(steps[n].end)} · ${num(LEVELS.reduce((sum, [name]) => sum + steps[n].events[name], 0))} events`;
+    label.textContent = `${stamp(steps[n].end, this.state.zone)} · ${num(LEVELS.reduce((sum, [name]) => sum + steps[n].events[name], 0))} events`;
     group.setAttribute("visibility", "visible");
     this.plot.querySelector("text.asof")?.setAttribute("visibility", "hidden"); // its line stays: the as-of time now
     document.getElementById("tip").hidden = true;
