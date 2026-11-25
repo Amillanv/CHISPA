@@ -61,7 +61,7 @@ def run_risk() -> None:
     for year, of_year in tables.items():
         write_tables(of_year, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
-    names = ", ".join(next(iter(tables.values())))
+    names = ", ".join(tables[max(tables)])  # The first year has no table of the earlier years.
     print(f"{min(tables)} to {max(tables)}: see results/SUMMARY.md, tables {names}.")
 
 

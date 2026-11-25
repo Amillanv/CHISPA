@@ -489,7 +489,7 @@ Checked 2026-11-24 on the page of the service, and with one text. `chispa watch`
 ### 8.20 Candidate sources and public work for the growth risk
 
 Read 2026-11-24 by research agents, on the pages of each owner. `UNVERIFIED`: no second read confirmed these facts.
-No command reads these sources. Do a check of a source before its first use (`docs/method.md` section 11.21).
+No command reads these sources. Each fact stays `UNVERIFIED` until a check before the first use of its source (section 8.7).
 
 Candidate inputs:
 
@@ -512,7 +512,7 @@ Other burned-area and fire-event data:
 - ALARMES (LASA-UFRJ): a burn date for each pixel of 375 m, 2012 to 2025, CC BY 4.0, at `zenodo.org/records/18414791`.
   It comes from VIIRS: it is not independent of our detections. This changes the line on ALARMES in section 8.18.
 - Andela et al., VIIRS fire events of the Amazon box (10 N to 25 S, 85 W to 30 W), 2018 to 2025, DOI 10.5281/zenodo.20006623.
-- The near-real-time FEDS data of NASA covers North America only.
+- The FEDS data that NASA makes each day for new fires covers North America only.
 
 Public work, as a comparison:
 

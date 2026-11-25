@@ -190,7 +190,11 @@ def test_tables_of_a_year_come_from_models_of_the_other_years(tmp_path, monkeypa
     tables = risk.risk_tables(tmp_path / "store", tmp_path)
     assert set(tables) == {2001, 2002, 2003}
     names = {"risk", "risk_all_alerts", "risk_calibration", "risk_alerts", "risk_weights"}
-    assert set(tables[2003]) == names
+    assert set(tables[2001]) == names
+    assert set(tables[2003]) == names | {"risk_earlier", "risk_calibration_earlier"}
+    # With the earlier years only, 2002 has the weights of 2001: the same form, thus correct.
+    assert tables[2002]["risk_earlier"][0]["auc"] == 1.0
+    assert tables[2003]["risk_earlier"][0]["auc"] == 0.0
     # The models of 2003 learned only the two usual years: they are wrong for 2003.
     assert tables[2003]["risk"][0]["auc"] == 0.0
     # The models of 2001 learned from 2002 and 2003, which disagree: the weight is near zero.
@@ -216,6 +220,16 @@ def test_calibration_gives_the_brier_skill_and_the_observed_against_the_expected
     assert found[(1000.0, "all")]["observed_to_expected"] == 0.5
     assert found[(1000.0, "all")]["above_lower_limit"] == 0
     assert (found[(100.0, "2")]["alerts"], found[(100.0, "2")]["large"]) == (2, 2)
+
+
+def test_brier_skill_has_no_value_when_the_constant_has_no_error(monkeypatch):
+    monkeypatch.setattr("chispa.config.RISK_LIMITS_HA", (100.0,))
+    # No large alert in the training years (base rate 0) and none in the year.
+    model = MODEL | {"base_rate": 0.0}
+    rows = [alert(0, 0.0), alert(1, 0.0)]
+    models = {key("0", 100.0): model, key("24", 100.0): model}
+    first = calibration_table({"0": rows, "24": rows}, models)[0]
+    assert (first["group"], first["brier_skill"], first["large"]) == ("all", None, 0)
 
 
 def test_calibration_group_with_no_alert_has_no_mean(monkeypatch):

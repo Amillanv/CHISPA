@@ -452,6 +452,7 @@ The tables are:
 - `confidence` and `confidence_weights`: the probability of a match at two moments, against the level (section 11.15).
 - `risk`, `risk_all_alerts`, `risk_calibration`, `risk_alerts` and `risk_weights`: the growth risk at two moments, against
   its baselines, with all alerts in the sequence, and its values against what came (section 11.21).
+  `risk_earlier` and `risk_calibration_earlier` have the same form, with the weights of the earlier years only.
 
 Purity and completeness count matches with counted fires. A detection that matches two fires counts two times.
 
@@ -1396,8 +1397,16 @@ The years:
 - The owner asked on 2026-11-25 for a run on each year, with the data from 2019. Thus the numbers of a year come from
   models that each other year with mapped fires trained: a cross-validation by year (leave one year out).
   Claude proposed this form, and the owner agreed on 2026-11-25.
-- A different form is a split in time sequence: the weights come only from the years before a year. It is nearer to the
-  live use. It gives no number for the first year, and few training years for the next years. Not built.
+- A different form is a split in time sequence: the weights of a year come only from the years before it. It is nearer
+  to the live use: the model for 2026 will have only the years before 2026. It gives no number for 2019, and few
+  training years for the next years. The tables `risk_earlier` and `risk_calibration_earlier` have this form, from 2020.
+- The owner asked on 2026-11-25: is the split in time sequence better, and does it help the calibration?
+  We wrote what we expect before the first run of these two tables. The mean AUC of 2020 to 2025 is not larger than
+  with the cross-validation by year: a year has fewer training years. Observed to expected of 2023 stays below 0.5:
+  each year before 2023 has a larger share of large alerts than 2023.
+  The owner decided on 2026-11-25, after this comparison. The split in time sequence is the measure of the level: the
+  calibration of a value. The cross-validation by year is the measure for the choice of the inputs, by the AUC: it has
+  seven years, each with six training years. The tables of the two forms stay.
 - The unit of the split is a year, not an alert. The alerts of one season are not independent: they have the same
   weather and the same fires. A random split of the alerts gives numbers that are too good.
 - These numbers will choose the inputs. Thus they are validation numbers, not a test.
@@ -1452,6 +1461,30 @@ Claude proposed the limits of the three conditions. They wait for the answer of 
 If a condition is false, an alert gets a rank or a class with its track record, and not a percentage.
 The final answer is the test of 2026. The field of the event record is not built.
 
+What the split in time sequence shows (tables `risk_earlier` and `risk_calibration_earlier` of 2020 to 2025, 2026-11-25).
+The command ran one time, and the two things that we expected are true. In each list of six numbers, the numbers are
+for 2020 to 2025. 2025 has the same numbers in the two forms: each other year is an earlier year.
+
+- The mean AUC of the six years, with the other years and with the earlier years: 0.8107 and 0.793 for 30 minutes and
+  100 hectares, 0.8616 and 0.8457 for 30 minutes and 1000 hectares, 0.8798 and 0.877 for 24 hours and 100 hectares, and
+  0.9173 and 0.9116 for 24 hours and 1000 hectares. The earlier years give a larger AUC in 0, 2, 2 and 2 of the 6 years.
+- With the earlier years, the AUC of the growth risk is larger than that of the confidence and that of the number of
+  detections in each of the 6 years for three models, and in 5 of the 6 years for 24 hours and 1000 hectares.
+- The large alerts in the top tenth, for the six years together, with the other years and with the earlier years:
+  387 and 355 of 924, 151 and 139 of 291, 479 and 462 of 773, and 168 and 157 of 238.
+- Observed to expected with the earlier years. 30 minutes and 100 hectares: 0.9461, 0.8847, 0.2761, 0.2614, 1.4152 and
+  1.0186. 30 minutes and 1000 hectares: 1.0487, 0.9884, 0.3339, 0.2901, 1.7789 and 0.7175. 24 hours and 100 hectares:
+  1.1654, 0.9274, 0.4014, 0.2875, 1.1353 and 0.8593. 24 hours and 1000 hectares: 1.1723, 0.9995, 0.5299, 0.3424, 1.4439 and 0.566.
+- Thus, with the earlier years, the level is wrong in 2022 and in 2023, not only in 2023. The models for 2022 have the
+  weights of 2019 to 2021: three years with many large fires.
+- For the six years together, observed to expected with the earlier years is 0.672, 0.747, 0.745 and 0.824: 924 large
+  alerts for 1375.3 expected, 291 for 389.6, 773 for 1038.2 and 238 for 288.8. With the other years it is 0.884, 0.926, 0.939 and 0.98.
+- The Brier skill score with the earlier years is less than 0 in 2022 and in 2023 for the two models at 30 minutes
+  (-0.6312 and -0.0966 for 100 hectares, -0.0896 and -0.0063 for 1000 hectares), and in 2023 for 24 hours and 100 hectares (-0.1211).
+- Thus the split in time sequence is not better. The sequence of the alerts is almost as good, and the level is worse.
+  It is the form of the live use, and of the test on 2026. The cross-validation by year hid a part of the problem of
+  the level: a model there also has the years after a year.
+
 What the calibration shows (table `risk_calibration` of 2019 to 2025, 2026-11-25). The command ran one time.
 In each list, the seven numbers are for 2019 to 2025. The hypothesis of the probability is false for each model.
 
@@ -1476,8 +1509,9 @@ In each list, the seven numbers are for 2019 to 2025. The hypothesis of the prob
 - Thus the values have the correct level and the correct form for the seven years together. They do not have the
   correct level in one year: in 2023 the models gave three times the large alerts that came, and in 2024 too few.
   No input has the rate of its year. An alert gets no percentage.
-- What an alert can say: the class of its value with the track record of that class. For the top tenth at 30 minutes
-  and 1000 hectares: "187 of 3085 such alerts became large in 2019 to 2025, and from 3 to 9 of 100 in one year".
+- What an alert can say: the class of its value with the track record of that class. That track record must come from
+  all alerts, with a limit of the value from the training years: a brigade cannot leave out the alerts on a known fire.
+  The numbers of this list are for the alerts with no known fire. The track record for an alert is not built.
 
 What the years show (tables `risk`, `risk_alerts` and `risk_weights` of 2019 to 2025, 2026-11-25).
 The store has seven years with mapped fires, thus each year has models from the six other years.
@@ -1489,23 +1523,25 @@ In each list below, the seven numbers are for 2019 to 2025. A sum is for the sev
 - 30 minutes, 100 hectares. Large alerts: 1286 of 30 879 (4.2 percent).
   AUC of the growth risk: 0.7619, 0.7185, 0.8174, 0.8616, 0.7755, 0.8017 and 0.8895. The mean is 0.8037.
   The mean AUC of the confidence is 0.6975, and that of the number of detections 0.6293.
-  The top tenth of the growth risk has 526 of the 1286 large alerts (recall 40.9 percent), and 526 of its 3085 alerts
-  became large (precision 17.1 percent). The top tenth of the confidence has 318 (24.7 and 10.3 percent).
+  The top tenth has 3085 alerts. For the growth risk, 526 of them became large: a recall of 526 of 1286 (40.9 percent),
+  and a precision of 526 of 3085 (17.1 percent). For the confidence: 318 of 1286 (24.7 percent) and 318 of 3085 (10.3 percent).
 - 30 minutes, 1000 hectares. Large alerts: 388 of 30 879 (1.3 percent).
   AUC of the growth risk: 0.7344, 0.7781, 0.8809, 0.9012, 0.8418, 0.8215 and 0.9459. The mean is 0.8434.
   The mean AUC of the confidence is 0.7157, and that of the number of detections 0.6306.
-  The top tenth of the growth risk has 187 of the 388 large alerts (recall 48.2 percent, precision 6.1 percent).
-  The top tenth of the confidence has 105 (27.1 and 3.4 percent).
+  The top tenth has 3085 alerts. For the growth risk, 187 of them became large: a recall of 187 of 388 (48.2 percent),
+  and a precision of 187 of 3085 (6.1 percent). For the confidence: 105 of 388 (27.1 percent) and 105 of 3085 (3.4 percent).
 - 24 hours, 100 hectares. Large alerts: 1059 of 28 772 (3.7 percent).
   AUC of the growth risk: 0.8611, 0.8459, 0.8573, 0.9012, 0.8982, 0.8571 and 0.9191. The mean is 0.8771.
   The mean AUC of the confidence is 0.8287, that of the number of detections 0.817, and that of the persistence rule 0.5697.
-  The top tenth of the growth risk has 642 of the 1059 large alerts (recall 60.6 percent, precision 22.3 percent).
-  That of the confidence has 488 (46.1 and 17.0 percent), and that of the number of detections 574 (54.2 and 20.0 percent).
+  The top tenth has 2875 alerts. For the growth risk, 642 of them became large: a recall of 642 of 1059 (60.6 percent),
+  and a precision of 642 of 2875 (22.3 percent). For the confidence: 488 of 1059 (46.1 percent) and 488 of 2875 (17.0
+  percent). For the number of detections: 574 of 1059 (54.2 percent) and 574 of 2875 (20.0 percent).
 - 24 hours, 1000 hectares. Large alerts: 311 of 28 772 (1.1 percent).
   AUC of the growth risk: 0.7901, 0.8806, 0.9081, 0.9552, 0.8976, 0.8752 and 0.9869. The mean is 0.8991.
   The mean AUC of the confidence is 0.8662, that of the number of detections 0.8436, and that of the persistence rule 0.5839.
-  The top tenth of the growth risk has 203 of the 311 large alerts (recall 65.3 percent, precision 7.1 percent).
-  That of the confidence has 178 (57.2 and 6.2 percent), and that of the number of detections 180 (57.9 and 6.3 percent).
+  The top tenth has 2875 alerts. For the growth risk, 203 of them became large: a recall of 203 of 311 (65.3 percent),
+  and a precision of 203 of 2875 (7.1 percent). For the confidence: 178 of 311 (57.2 percent) and 178 of 2875 (6.2
+  percent). For the number of detections: 180 of 311 (57.9 percent) and 180 of 2875 (6.3 percent).
 - For each of the four models and in each of the seven years, the AUC and the average precision of the growth risk are
   larger than those of each baseline. The gain is large at 30 minutes and small at 24 hours.
 - The alerts with a new fire only. The mean AUC of the growth risk is 0.6274 and 0.681 at 30 minutes, for 100 and for 1000 hectares,
@@ -1545,7 +1581,11 @@ In each list below, the seven numbers are for 2019 to 2025. A sum is for the sev
   Hypothesis 4 is false.
 - 2022, 2023 and 2025 have less than 30 large alerts for 1000 hectares: 29, 29 and 15 at 30 minutes.
 
-- Limits: the label has the errors of the map (section 11.5). The burn day of a fire is uncertain by some days. Thus an
+- Limits: the label is the final size of a fire. It does not say how much of that size the fire had at the alert:
+  we have no area at the time of an alert (section 11.12). Thus the value is for a fire that ends large. It is not a
+  test of the growth after the alert, and it is not a growth forecast (section 7.4, rule 6).
+  The top tenth is the tenth of the alerts of all the year. A brigade decides with the alerts of one day.
+  The label has the errors of the map (section 11.5). The burn day of a fire is uncertain by some days. Thus an
   alert that started a fire can have no match at its time, and a later alert then saw that fire first.
   A fire with only a month gets the alert that saw it first from the detections of two months. The match has the reach
   of a pixel: a GOES detection matches each counted fire near it. The fires of 2026 will come from a different map than
