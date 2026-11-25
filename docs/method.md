@@ -1464,6 +1464,10 @@ From that day the level uses the split in time sequence (table `risk_calibration
 If a condition is false, an alert gets a rank or a class with its track record, and not a percentage.
 The final answer is the test of 2026. The field of the event record is not built.
 
+The results below, to the end of this section, are for the first model: it had the inputs of the confidence.
+Their tables are in the commit `b23ae63` of 2026-11-25. The models of now have more inputs (section 11.22), and the
+tables in `results/` are for the models of now.
+
 What the split in time sequence shows (tables `risk_earlier` and `risk_calibration_earlier` of 2020 to 2025, 2026-11-25).
 The command ran one time, and the two things that we expected are true. In each list of six numbers, the numbers are
 for 2020 to 2025. 2025 has the same numbers in the two forms: each other year is an earlier year.
@@ -1608,7 +1612,8 @@ The rule. We add or remove inputs in groups, not one at a time: a group has one 
 1. The mean AUC of the seven years is larger with the group, with the cross-validation by year.
 2. The AUC is larger with the group in 5 or more of the 7 years.
 3. The level is not worse, with the split in time sequence: for the six years together, observed to expected is not
-   farther from 1, and not more years are out of the range from 0.5 to 2.
+   farther from 1 by more than a margin of 0.05, and not more years are out of the range from 0.5 to 2.
+   The margin came on 2026-11-25, after the first results of the rule (see below).
 
 A group stays if it passes for 3 or 4 of the 4 models. Claude set this number. We write the hypothesis of a group
 before its run. A group that does not pass goes, and we say so.
@@ -1719,6 +1724,109 @@ The mean AUC with the inputs of now is 0.8037, 0.8434, 0.8771 and 0.8991.
   Thus the dryness gives back a small part of the calendar at 30 minutes: 0.0084 of 0.0225, and 0.0105 of 0.0519.
   At 24 hours it gives back nothing. The calendar holds much more than the dryness.
 - No set corrects the level. With each set, observed to expected of 2022 and of 2023 stays from 0.21 to 0.59.
+
+The decision of the owner (2026-11-25), after these results. Condition 3 gets a margin of 0.05
+(`config.RISK_RULE_LEVEL_MARGIN`). It is a change of the rule after its first results, and we say so here.
+With the margin, the group "first hours" passes for 3 of the 4 models, and the people and the land pass for 4 of the
+4 models. Thus the models have the inputs of the group "first hours" from this day, and the people and the land stay.
+
+- The rule is code from this day. The table `risk_input_rule` gives each condition for each set and each model.
+  It is for all years together, thus it is with the tables of the newest year.
+- The tables of the two runs before this decision are in the commit `b23ae63` of 2026-11-25. Their sets were changes
+  of the inputs of the confidence. From this day, a set is a change of the inputs of now.
+
+The group "weather before" (2026-11-25). ERA5-Land gives the weather of each day on a grid of approximately 11 km
+(`docs/sources.md` section 8.21). The place of an alert is the mean position of its detections at the moment.
+A day is a UTC day. Each input uses only the days before the day of the moment:
+
+1. The rain of the 7, the 30 and the 90 days before, each as a logarithm.
+2. The days from the last day with 1 mm of rain or more, as a logarithm, to a maximum of 90.
+3. The mean of the largest wind speed of each of the 3 days before, and the same for the dryness of the air.
+
+- Limits: a record of the weather comes some days after its day. A live alert needs a different source for the newest
+  days. The grid is coarse: the wind at a fire is local.
+
+The group "weather after": the largest wind speed and the largest dryness of the air of the day of the moment and of
+the 2 days after it, and the rain of those 3 days. An alert cannot have these inputs: the days are in its future.
+The group is a ceiling: it shows what a correct forecast of the weather can give. No model gets it.
+
+The hypotheses of the weather, written on 2026-11-25 before the first run with these inputs:
+
+1. The group "weather before" passes the rule.
+2. With the group "weather after" also, the mean AUC is larger than with the group "weather before" only, for each of
+   the four models. If this is false for a model, a weather forecast has no reason for that model.
+
+We also look at the level of 2022 and of 2023 with the split in time sequence.
+
+The result of the weather (2026-11-25). The command ran one time with the two weather sets.
+
+- Hypothesis 1 is true: the group "weather before" passed for 3 of the 4 models.
+- Hypothesis 2 is false: with the group "weather after" also, the mean AUC was larger for the two models at 30 minutes
+  and smaller for the two models at 24 hours. A weather forecast has no reason from this run.
+- The models of that run had the calendar and the fire power, and its tables are not kept.
+  The result with the models of now, at the end of this section, has the numbers.
+
+The weather that an alert can have (2026-11-25). A day is in the ERA5-Land product approximately 6 days after it
+(`docs/sources.md` section 8.21). Thus at the day of a moment, the newest complete day of the product is 7 days before.
+The group "weather late" has the six inputs of the group "weather before", with the days to 7 days before the day
+of the moment in the place of the days to 1 day before. The hypothesis, written on 2026-11-25 before its first run:
+the group "weather before" does not pass the rule against the group "weather late". Then the late inputs are as good,
+and the models get them: an alert can have them from this source. If the hypothesis is false, the newest days are
+necessary, and a live alert needs a quicker source for them.
+
+The result of the late weather, and the calendar (2026-11-25).
+
+- The hypothesis of the group "weather late" is true: the group "weather before" passed against it for 2 of the
+  4 models. Thus the models have the six inputs of the group "weather late": an alert can have them from this source.
+- With the weather in the models, the calendar passed for 1 of the 4 models. By the rule the calendar goes:
+  the models do not have the two inputs of the day of the year. The rain of the days before an alert holds what the
+  calendar was a sign of.
+- The tables of these two runs are not kept. The result with the models of now has the numbers.
+
+The fire power and its mark (2026-11-25). The input "no fire power value" is the mark of an absent fire power, and it
+is not a group alone. The group is the fire power and its mark. The hypothesis, written before its first run:
+the group passes the rule against the models without the two inputs. If it is false, the two inputs go.
+
+The result of the fire power and its mark (2026-11-25): the hypothesis is false. The group passed for 0 of the
+4 models: with it the AUC is a little larger, and the level is much farther from 1. By the rule the two inputs go.
+The result with the models of now has the numbers.
+
+The result with the models of now (tables `risk`, `risk_inputs` and `risk_input_rule`, 2026-11-25). The models have the
+inputs of the confidence without the calendar and without the fire power and its mark, the six inputs of the group
+"first hours" and the six inputs of the group "weather late". In each list, the four numbers are for 30 minutes with
+100 and with 1000 hectares, then for 24 hours with 100 and with 1000 hectares.
+
+- The mean AUC of the seven years: 0.801, 0.8443, 0.8833 and 0.9068. For the confidence: 0.6975, 0.7157, 0.8287 and
+  0.8662. For the number of detections: 0.6293, 0.6306, 0.817 and 0.8436. The AUC of the growth risk is larger than
+  that of each baseline in each of the 7 years, for each model.
+- The mean AUC for the alerts with a new fire only: 0.6333, 0.6866, 0.73 and 0.7598.
+- The large alerts in the top tenth: 507 of 1286, 183 of 388, 651 of 1059 and 208 of 311.
+  The top tenth has 3085 alerts at 30 minutes and 2875 at 24 hours.
+- All alerts, with no group left out. The different fires of the limit or more that the top tenth reaches:
+  1273 of 2588, 438 of 660, 1929 of 2642 and 586 of 659. For the number of detections: 1267, 439, 1954 and 589.
+  Thus a brigade that puts all its alerts in the sequence of the growth risk reaches as many large fires as with the
+  number of detections. The gain is for a fire with no alert before it (section 11.21).
+- The level with the split in time sequence, for the six years together: 0.703, 0.754, 0.821 and 0.843.
+  Observed to expected of 2022: 0.5395, 0.7013, 0.6309 and 0.8049. Of 2023: 0.274, 0.3022, 0.3589 and 0.3977.
+  Thus 2022 is in the range from 0.5 to 2 now, and 2023 is not.
+- The three conditions of a percentage (section 11.21), with the split in time sequence. The Brier skill score is more
+  than 0 in each year for the two models at 24 hours, and less than 0 in 2020 and in 2023 for the two models at
+  30 minutes. The six years together are in the range from 0.8 to 1.25 for the two models at 24 hours.
+  2023 is out of its range for each model. Thus no model has the three conditions, and an alert gets no percentage.
+- Each group against the models of now (table `risk_input_rule`). The first hours pass for 4 of the 4 models.
+  The weather passes for 3: without it the mean AUC is 0.7775, 0.7954, 0.8788 and 0.8921.
+  The people and the land pass for 4: without them the mean AUC is 0.758, 0.8033, 0.8593 and 0.887.
+- The groups that are not in the models. The weather before, in the place of the late weather: 1 of the 4 models.
+  The weather after, a ceiling: 2 of the 4 models, with a mean AUC of 0.8048, 0.8484, 0.883 and 0.9056.
+  The calendar: 1. The dryness fields of INPE: 0.
+- The fire power and its mark: 0 of the 4 models. With them the mean AUC is 0.809, 0.8486, 0.8846 and 0.9075, and the
+  level is 0.6158, 0.6115, 0.7431 and 0.7587, with 2022 out of its range for three models.
+  A possible cause, not examined: the years before August 2022 have a fire power for few GOES rows, because their
+  GOES rows are from INPE (`docs/sources.md` section 8.3). Then the two inputs do not say the same thing in each year.
+- The weights of the weather, for the model of 2025 at 30 minutes and 1000 hectares. The rain of the 30 days has the
+  largest weather weight (-0.3166: more rain, a smaller fire), then the rain of the 90 days (-0.1938), the rain of the
+  7 days (-0.1834) and the wind (0.1749: more wind, a larger fire). The wind of these inputs is 7 to 9 days old:
+  it is a sign of the weather of the season, not the wind at the fire.
 
 ## 12. Agent and MCP rules
 

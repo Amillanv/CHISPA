@@ -5,6 +5,7 @@ then has the same rows, the same code and the same configuration, and no file ke
 `docs/method.md` sections 11.21 and 11.22 give the rules.
 """
 
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import numpy as np
@@ -29,10 +30,12 @@ from chispa.evaluation.risk_inputs import (
     dryness_inputs,
     dryness_of,
     first_hours_inputs,
+    weather_inputs,
 )
+from chispa.evaluation.risk_rule import NOW, rule_table
+from chispa.sources import weather
 
 Tables = dict[str, list[dict]]
-ADOPTED = "inputs now"  # The set of inputs of the models of each table but `risk_inputs`.
 COMPARED = ("alerts", "large", "auc", "average_precision", "top_tenth_large")
 
 
@@ -41,11 +44,19 @@ def year_parts(year: int, store_path: Path, raw_dir: Path) -> dict:
     fires and its groups."""
     rows, (detections, pairs, fires) = year_rows(year, store_path, raw_dir)
     dryness = dryness_of(detections, raw_dir, year)
+    # The weather inputs need more than 90 days before an alert and some days after its moment.
+    start, grid = date(year - 1, 9, 1), weather.weather_grid()
+    days = weather.read_days(raw_dir, start, date(year + 1, 1, 10))
     for moment in MOMENTS:
         for row in rows[moment]:
             positions = row.pop("positions")
             row["inputs"] |= dryness_inputs(dryness, positions)
             row["inputs"] |= first_hours_inputs(detections, positions)
+            place = detections["lat"][positions].mean(), detections["lon"][positions].mean()
+            cell = tuple(int(index) for index in grid.rows_cols(*place))
+            today = (datetime.fromtimestamp(row["at"], UTC).date() - start).days
+            series = {name: layers[:, cell[0], cell[1]] for name, layers in days.items()}
+            row["inputs"] |= weather_inputs(series, today)
     first = seen_first(detections, pairs, fires)
     sized = {moment: sized_rows(rows[moment], first, fires["area_ha"]) for moment in MOMENTS}
     return {"rows": sized, "area_ha": fires["area_ha"], "alerts": group_table(sized, fires)}
@@ -60,7 +71,7 @@ def risk_tables(store_path: Path, raw_dir: Path) -> dict[int, Tables]:
     """
     parts = {year: year_parts(year, store_path, raw_dir) for year in config.YEAR_ROLES}
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
-    baselines, tables, change = confidence.load(path), {}, INPUT_SETS[ADOPTED]
+    baselines, tables, change = confidence.load(path), {}, INPUT_SETS[NOW]
     for year, part in parts.items():
         others, earlier = [o for o in parts if o != year], [o for o in parts if o < year]
         kept = {moment: new_or_none(part["rows"][moment]) for moment in MOMENTS}
@@ -77,6 +88,10 @@ def risk_tables(store_path: Path, raw_dir: Path) -> dict[int, Tables]:
             models = fit_models(_training(parts, earlier), *change)
             tables[year]["risk_earlier"] = result_table(kept, models, baselines)
             tables[year]["risk_calibration_earlier"] = calibration_table(kept, models)
+    # The rule for a group of inputs is for all years together: its table is with the newest year.
+    removes = {name for name in INPUT_SETS if name.startswith("without ")}
+    by_year = {year: found["risk_inputs"] for year, found in tables.items()}
+    tables[max(tables)]["risk_input_rule"] = rule_table(by_year, removes)
     return tables
 
 
