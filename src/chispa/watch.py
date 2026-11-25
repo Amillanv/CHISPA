@@ -54,11 +54,11 @@ def due(raw_dir: Path, now: datetime) -> list[tuple[str, str]]:
     alarm = _newest(raw_dir, ("late", "back"))
     texts = []
     if late and (alarm is None or alarm["kind"] == "back"):
-        texts.append(("late", _late_text(status, now)))
+        texts.append(("late", _late_text(status)))
     if not late and alarm is not None and alarm["kind"] == "late":
-        since = datetime.fromisoformat(alarm["sent_at"])
-        good = f"CHISPA {now:%d %b %H:%M} UTC: the poller is good again."
-        texts.append(("back", f"{good} The alarm went out at {since:%d %b %H:%M} UTC."))
+        good = f"CHISPA is well again. The checks of the sources work as of {_when(now)}."
+        since = _when(datetime.fromisoformat(alarm["sent_at"]))
+        texts.append(("back", f"{good} The alarm went out at {since}."))
     zone = ZoneInfo(config.WATCH_TIME_ZONE)
     report = _newest(raw_dir, ("report",))
     day = report and datetime.fromisoformat(report["sent_at"]).astimezone(zone).date()
@@ -73,7 +73,8 @@ def report_text(raw_dir: Path, now: datetime, late: bool) -> str:
 
     It has the complete passes of the passes that the timer starts in that time, the passes
     with a failure, the GOES scans and the INPE files that no pass read, and the new rows of
-    each source. The server has no store: the text has no event.
+    each source. The server has no store: the text has no event. The text is for a person:
+    it has full sentences, and a pass of the poller is a "check" in it.
     """
     start = now - config.WATCH_REPORT_SPAN
     rows = _poll_rows(raw_dir, start, now)
@@ -88,13 +89,21 @@ def report_text(raw_dir: Path, now: datetime, late: bool) -> str:
     new = {
         name: sum(int(row["new_rows"]) for row in rows if row["source"] == name) for name in SOURCES
     }
+    state = "CHISPA is running, but it had problems."
+    if late:
+        state = "CHISPA has a problem now: the checks of the sources are late."
+    elif complete == expected and failed == 0 and not any(absent.values()):
+        state = "CHISPA is well."
     hours = config.WATCH_REPORT_SPAN / timedelta(hours=1)
-    return (
-        f"CHISPA {now:%d %b %H:%M} UTC: {'LATE' if late else 'OK'}. "
-        f"{hours:g} h: {complete} of {expected} passes, {failed} with a failure. "
-        f"Not read: GOES {absent['goes']}, INPE {absent['inpe']}. "
-        f"New rows: {', '.join(f'{SOURCES[name]} {count}' for name, count in new.items())}."
-    )
+    span = f"{hours:g} hour" + ("" if hours == 1 else "s")
+    checks = f"In the last {span} it checked the sources {complete} of {expected} times"
+    checks += f", and {_count(failed, 'check')} had a failure." if failed else ", with no failure."
+    missed = "It missed no scan and no file."
+    if any(absent.values()):
+        scans, files = _count(absent["goes"], "GOES scan"), _count(absent["inpe"], "INPE file")
+        missed = f"It missed {scans} and {files}."
+    found = ", ".join(f"{SOURCES[name]} {count:,}" for name, count in new.items())
+    return f"{_greeting(now)}. {state} {checks} {missed} New detections: {found}."
 
 
 def send_text(text: str, phone: str, key: str) -> tuple[bool, str]:
@@ -114,14 +123,32 @@ def send_text(text: str, phone: str, key: str) -> tuple[bool, str]:
     return False, str(found.get("error")).replace(key, "[key]").replace(phone, "[number]")
 
 
-def _late_text(status: dict, now: datetime) -> str:
+def _late_text(status: dict) -> str:
+    minutes = config.LIVE_POLL_LATE / timedelta(minutes=1)
+    alarm = f"CHISPA alarm: no good check of the sources for {minutes:g} minutes."
     good = status["complete_pass_at"]
-    since = f"{datetime.fromisoformat(good):%d %b %H:%M} UTC" if good else "none"
+    last = "It has no good check."
+    if good:
+        last = f"The last good check was at {_when(datetime.fromisoformat(good))}."
     sources = status["sources"] or {}
     failed = [SOURCES.get(name, name) for name, found in sources.items() if found["failed"]]
-    cause = f"Failed in the newest pass: {', '.join(failed)}." if failed else "No pass ended."
-    alarm = f"CHISPA ALARM {now:%d %b %H:%M} UTC: the poller is late."
-    return f"{alarm} Newest good pass: {since}. {cause}"
+    cause = f"{' and '.join(failed)} failed in the newest check." if failed else "No check ended."
+    return f"{alarm} {last} {cause}"
+
+
+def _when(time: datetime) -> str:
+    """Return a time as the owner reads it: the day and the hour in the time zone of the owner."""
+    return f"{time.astimezone(ZoneInfo(config.WATCH_TIME_ZONE)):%a %-I:%M %p %Z}"
+
+
+def _greeting(now: datetime) -> str:
+    hour = now.astimezone(ZoneInfo(config.WATCH_TIME_ZONE)).hour
+    return "Good morning" if hour < 12 else "Good afternoon" if hour < 18 else "Good evening"
+
+
+def _count(number: int, name: str) -> str:
+    """Return a number with its name: "1 GOES scan", "3 GOES scans"."""
+    return f"{number:,} {name}" + ("" if number == 1 else "s")
 
 
 def _newest(raw_dir: Path, kinds: tuple[str, ...]) -> dict | None:
