@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from chispa.evaluation import risk_inputs, risk_run
 from chispa.evaluation.risk import (
@@ -22,8 +23,16 @@ from chispa.evaluation.risk import (
     weight_table,
 )
 from chispa.evaluation.risk_calibration import calibration_table
+from chispa.evaluation.risk_rule import rule_table
 
 SAMPLES = Path(__file__).parent / "samples"
+
+
+@pytest.fixture(autouse=True)
+def no_adopted_inputs(monkeypatch):
+    """Each test gives its own inputs: the models then have no adopted input."""
+    monkeypatch.setattr("chispa.evaluation.risk.ADOPTED", ())
+    monkeypatch.setattr("chispa.evaluation.risk.REMOVED", ())
 
 
 def test_alert_that_saw_a_fire_first_is_the_alert_of_its_first_detection():
@@ -211,7 +220,10 @@ def test_tables_of_a_year_come_from_models_of_the_other_years(tmp_path, monkeypa
     assert tables[2001]["risk_inputs"][0]["observed_to_expected_earlier"] is None
     assert tables[2001]["risk_inputs"][0]["alerts"] == 20
     assert set(tables[2001]) == names
-    assert set(tables[2003]) == names | {"risk_earlier", "risk_calibration_earlier"}
+    assert set(tables[2002]) == names | {"risk_earlier", "risk_calibration_earlier"}
+    # The table of the rule is for all years together: it is with the newest year.
+    assert set(tables[2003]) == set(tables[2002]) | {"risk_input_rule"}
+    assert {row["inputs"] for row in tables[2003]["risk_input_rule"]} == {"with more"}
     # With the earlier years only, 2002 has the weights of 2001: the same form, thus correct.
     assert tables[2002]["risk_earlier"][0]["auc"] == 1.0
     assert tables[2003]["risk_earlier"][0]["auc"] == 0.0
@@ -330,3 +342,86 @@ def test_first_hours_count_the_scans_the_passes_and_the_time_that_the_sensors_sa
     only_goes = risk_inputs.first_hours_inputs(detections, np.array([0]))
     assert (only_goes["polar_passes_log"], only_goes["span_h_log"]) == (0.0, 0.0)
     assert set(found) == set(risk_inputs.FIRST_HOURS)
+
+
+def set_row(name: str, auc: float, large: int, expected: float | None) -> dict:
+    ratio = None if expected is None else large / expected
+    row = {"inputs": name, "moment_h": "0", "limit_ha": 100.0, "auc": auc, "large": large}
+    return row | {"expected_large_earlier": expected, "observed_to_expected_earlier": ratio}
+
+
+def test_rule_asks_for_a_larger_auc_in_most_years_and_a_level_that_is_not_worse(monkeypatch):
+    monkeypatch.setattr("chispa.config.RISK_RULE_MIN_YEARS", 2)
+    monkeypatch.setattr("chispa.config.RISK_RULE_LEVEL_MARGIN", 0.05)
+    monkeypatch.setattr("chispa.config.RISK_RULE_MIN_MODELS", 1)
+    monkeypatch.setattr("chispa.config.RISK_LEVEL_YEAR", (0.5, 2.0))
+    # Three years. The first year has no earlier year: it has no level.
+    # "with more" has a larger AUC in each year, and its level is 20 of 34: farther from 1
+    # than 20 of 32, by less than the margin. "with less" has a larger AUC in one year only.
+    by_year = {
+        2001: [set_row("inputs now", 0.70, 5, None), set_row("with more", 0.72, 5, None)],
+        2002: [set_row("inputs now", 0.70, 10, 16.0), set_row("with more", 0.71, 10, 17.0)],
+        2003: [set_row("inputs now", 0.80, 10, 16.0), set_row("with more", 0.82, 10, 17.0)],
+    }
+    by_year[2001].append(set_row("with less", 0.75, 5, None))
+    by_year[2002].append(set_row("with less", 0.60, 10, 16.0))
+    by_year[2003].append(set_row("with less", 0.70, 10, 16.0))
+    table = {row["inputs"]: row for row in rule_table(by_year, removes={"with less"})}
+    more = table["with more"]
+    assert (more["tested"], more["years_larger"], more["years"]) == ("with more", 3, 3)
+    assert (more["level"], more["level_other"]) == (round(20 / 34, 4), 0.625)
+    assert (more["passes"], more["models_passed"], more["stays"]) == (True, 1, True)
+    # A set that removes inputs: the inputs of now are tested, and they pass in 2 of 3 years.
+    less = table["with less"]
+    assert (less["tested"], less["years_larger"], less["passes"]) == ("inputs now", 2, True)
+    # With a margin of zero the larger set does not pass: 20 of 34 is farther from 1.
+    monkeypatch.setattr("chispa.config.RISK_RULE_LEVEL_MARGIN", 0.0)
+    assert rule_table(by_year, removes=set())[0]["passes"] is False
+
+
+def test_weather_inputs_use_the_days_before_and_the_days_from_the_day_of_the_moment(monkeypatch):
+    monkeypatch.setattr("chispa.config.RISK_RAIN_DAYS", (2, 4))
+    monkeypatch.setattr("chispa.config.RISK_RAIN_DAY_MM", 1.0)
+    monkeypatch.setattr("chispa.config.RISK_WEATHER_DAYS", 2)
+    monkeypatch.setattr("chispa.config.RISK_WEATHER_LATE_DAYS", 0)
+    monkeypatch.setattr(risk_inputs, "RAIN", ("rain_2d_log", "rain_4d_log"))
+    # Six days. The day of the moment is day 4. The last day with rain before it is day 1.
+    series = {
+        "rain_mm": np.array([0.0, 5.0, 0.2, 0.0, 9.0, 1.0]),
+        "wind_kmh": np.array([10.0, 12.0, 20.0, 30.0, 8.0, 40.0]),
+        "vpd_kpa": np.array([1.0, 1.0, 2.0, 4.0, 0.5, 3.0]),
+    }
+    found = risk_inputs.weather_inputs(series, 4)
+    assert round(found["rain_2d_log"], 4) == round(float(np.log(1 + 0.2)), 4)
+    assert round(found["rain_4d_log"], 4) == round(float(np.log(1 + 5.2)), 4)
+    # Day 1 had rain, and the days 2 and 3 had less than 1 mm: 2 days with no rain.
+    assert round(found["no_rain_days_log"], 4) == round(float(np.log(1 + 2)), 4)
+    assert (found["wind_before_kmh"], found["vpd_before_kpa"]) == (25.0, 3.0)
+    assert (found["wind_after_kmh"], found["vpd_after_kpa"]) == (40.0, 3.0)
+    assert round(found["rain_after_log"], 4) == round(float(np.log(1 + 10.0)), 4)
+    # With no delay of the product, the late inputs are equal to the inputs before.
+    assert found["rain_4d_log_late"] == found["rain_4d_log"]
+    # A series that starts too late for the day of the moment is an error, not a wrong value.
+    with pytest.raises(ValueError, match="starts too late"):
+        risk_inputs.weather_inputs(series, 3)
+    # With no day of rain in the days before, the value is the longest time that we examine.
+    series["rain_mm"] = np.zeros(6)
+    dry = risk_inputs.weather_inputs(series, 4)["no_rain_days_log"]
+    assert round(dry, 4) == round(float(np.log(1 + 4)), 4)
+
+
+def test_late_weather_inputs_stop_some_days_before_the_usual_end(monkeypatch):
+    monkeypatch.setattr("chispa.config.RISK_RAIN_DAYS", (2,))
+    monkeypatch.setattr("chispa.config.RISK_WEATHER_DAYS", 1)
+    monkeypatch.setattr("chispa.config.RISK_WEATHER_LATE_DAYS", 3)
+    monkeypatch.setattr(risk_inputs, "RAIN", ("rain_2d_log",))
+    # Ten days. The day of the moment is day 8: the late inputs are those of day 5.
+    series = {
+        "rain_mm": np.array([0.0, 0.0, 0.0, 4.0, 2.0, 0.0, 0.0, 1.0, 0.0, 0.0]),
+        "wind_kmh": np.arange(10.0),
+        "vpd_kpa": np.ones(10),
+    }
+    found = risk_inputs.weather_inputs(series, 8)
+    assert round(found["rain_2d_log"], 4) == round(float(np.log(1 + 1.0)), 4)
+    assert round(found["rain_2d_log_late"], 4) == round(float(np.log(1 + 6.0)), 4)
+    assert (found["wind_before_kmh"], found["wind_before_kmh_late"]) == (7.0, 4.0)

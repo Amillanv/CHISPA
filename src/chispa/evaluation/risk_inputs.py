@@ -18,17 +18,33 @@ DRYNESS = ("dry_days_log", "rain_mm_log", "fire_risk", "no_dryness", "no_fire_ri
 HOURS = ("hour_sin", "hour_cos", "abi_scans_log", "abi_night_scans_log", "polar_passes_log")
 FIRST_HOURS = (*HOURS, "span_h_log")
 CALENDAR = ("season_sin", "season_cos")
+RAIN = tuple(f"rain_{days}d_log" for days in config.RISK_RAIN_DAYS)
+WEATHER_BEFORE = (*RAIN, "no_rain_days_log", "wind_before_kmh", "vpd_before_kpa")
+WEATHER_AFTER = ("wind_after_kmh", "vpd_after_kpa", "rain_after_log")
+WEATHER_LATE = tuple(f"{name}_late" for name in WEATHER_BEFORE)
 EXPOSURE = ("people_log", "protected_km_log", "indigenous_km_log")
 # The sets of inputs that the table `risk_inputs` compares. A set has a name, the inputs that
-# it adds to the inputs of the confidence, and the inputs of the confidence that it removes.
+# it adds to the inputs of now, and the inputs of now that it removes.
+# The inputs that the models have and the confidence does not have: the groups that passed the
+# rule on 2026-11-25. The weather is the late weather: an alert can have it at its time.
+# Each set below is a change of the inputs of now. For a set with a name that starts with
+# "without", the inputs of now are tested against the set. For each other set, the set is tested.
+ADOPTED = FIRST_HOURS + WEATHER_LATE
+POWER = ("power_log", "no_power")
+# The inputs of the confidence that the models do not have: they did not pass the rule on
+# 2026-11-25. The weather in the models replaced the calendar. The fire power and its mark made
+# the level worse: the years before August 2022 have a fire power for few GOES rows.
+REMOVED = CALENDAR + POWER
 INPUT_SETS = {
     "inputs now": ((), ()),
+    "without first hours": ((), FIRST_HOURS),
+    "without weather": ((), WEATHER_LATE),
+    "weather before for weather late": (WEATHER_BEFORE, WEATHER_LATE),
+    "with weather after": (WEATHER_AFTER, ()),
+    "with calendar": (CALENDAR, ()),
+    "with fire power": (POWER, ()),
     "with dryness": (DRYNESS, ()),
-    "with first hours": (FIRST_HOURS, ()),
-    "without no fire power": ((), ("no_power",)),
     "without people and land": ((), EXPOSURE),
-    "without calendar": ((), CALENDAR),
-    "dryness for calendar": (DRYNESS, CALENDAR),
 }
 
 
@@ -90,4 +106,44 @@ def first_hours_inputs(detections: Fields, positions: np.ndarray) -> dict[str, f
         "abi_night_scans_log": float(np.log1p(len(np.unique(observed[abi & night] // scan_s)))),
         "polar_passes_log": float(np.log1p(passes)),
         "span_h_log": float(np.log1p((observed.max() - observed.min()) / 3600)),
+    }
+
+
+def weather_inputs(series: dict[str, np.ndarray], today: int) -> dict[str, float]:
+    """Return the weather inputs of one alert.
+
+    `series` has each measure of each day at the place of the alert, and `today` is the position
+    of the day of the moment. The inputs "before" use only the days before that day.
+    The inputs "late" are the same, with the days that the product has at the time of an alert.
+    The inputs "after" use the day of the moment and the days after it: an alert cannot have them.
+    """
+    late_day = today - config.RISK_WEATHER_LATE_DAYS
+    if late_day < max(config.RISK_RAIN_DAYS):
+        raise ValueError("The weather series starts too late for this alert. Read more days.")
+    after = slice(today, today + config.RISK_WEATHER_DAYS)
+    late = {f"{name}_late": value for name, value in _before(series, late_day).items()}
+    return (
+        _before(series, today)
+        | late
+        | {
+            "wind_after_kmh": float(series["wind_kmh"][after].max()),
+            "vpd_after_kpa": float(series["vpd_kpa"][after].max()),
+            "rain_after_log": float(np.log1p(series["rain_mm"][after].sum())),
+        }
+    )
+
+
+def _before(series: dict[str, np.ndarray], today: int) -> dict[str, float]:
+    rain, longest = series["rain_mm"], max(config.RISK_RAIN_DAYS)
+    wet = np.flatnonzero(rain[today - longest : today] >= config.RISK_RAIN_DAY_MM)
+    before = slice(today - config.RISK_WEATHER_DAYS, today)
+    found = {
+        name: float(np.log1p(rain[today - days : today].sum()))
+        for name, days in zip(RAIN, config.RISK_RAIN_DAYS, strict=True)
+    }
+    return found | {
+        # The days from the last day with rain: 0 if the day before the moment had rain.
+        "no_rain_days_log": float(np.log1p(longest - 1 - wet[-1] if len(wet) else longest)),
+        "wind_before_kmh": float(series["wind_kmh"][before].mean()),
+        "vpd_before_kpa": float(series["vpd_kpa"][before].mean()),
     }

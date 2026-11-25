@@ -166,6 +166,17 @@ Checked 2026-11-19 with live requests.
 - The AOD grid has cells of approximately 0.4 degrees (44 km). Checked 2026-11-21: five points on one latitude gave three different series.
 - One request accepts a list of positions.
 
+Checked 2026-11-25 with a live request and on the pages `open-meteo.com/en/terms` and `open-meteo.com/en/pricing`:
+
+- The archive API (`archive-api.open-meteo.com/v1/archive`) gives, for each day and with the model `era5`: the sum of
+  rain in mm, the largest wind speed and the largest gust in km/h, the wind direction, the largest temperature, the
+  smallest relative humidity and the largest vapour pressure deficit in kPa. An answer is for a cell of 0.25 degrees.
+- The free API is for non-commercial use: less than 10 000 calls each day, 5000 each hour and 600 each minute.
+  A request for more than 2 weeks, or for more than 10 variables, counts as more than one call for each position.
+- Thus the Pantanal box at 0.25 degrees (609 positions) for 2018 to 2025 is approximately 115 000 calls: 12 days.
+  We do not use it for the recorded years (section 8.21). It stays a candidate for a forecast for a live alert.
+- The weather data has the licence CC BY 4.0.
+
 ### 8.5 MapBiomas Fogo
 
 Checked 2026-11-19 against the MapBiomas pages, the method document for Collection 5.1 and Alencar et al. 2022.
@@ -536,3 +547,23 @@ Public work, as a comparison:
 - Barros-Rosa et al. 2026 (DOI 10.1111/gcb.71089): for the monthly burned area of the Pantanal, the main inputs were the
   rain of the month before, a dryness index and the surface water.
 - The search found no fuel model map of the Pantanal, and no model for the size of one fire in the Pantanal.
+
+### 8.21 ERA5-Land weather
+
+Checked 2026-11-25 with live requests to Earth Engine. `chispa fetch weather --year` reads it (`sources/weather.py`).
+`docs/method.md` section 11.22 gives its use.
+
+- Asset: `ECMWF/ERA5_LAND/HOURLY`. One image for each hour, 69 bands, cells of 0.1 degrees (11 132 m).
+  On 2026-11-25 its newest image was 2026-11-19 20:00 UTC: a day is in the product approximately 6 days after it.
+- We read the bands `u_component_of_wind_10m`, `v_component_of_wind_10m`, `temperature_2m`, `dewpoint_temperature_2m`
+  and `total_precipitation_hourly`. The wind is in metres for each second, the temperatures in kelvin and the rain in metres.
+- We save four measures of each UTC day: the largest wind speed in km/h, the largest vapour pressure deficit in kPa
+  (from the temperature and the dew point, with the Tetens formula), the largest temperature and the sum of rain in mm.
+- The grid of the Pantanal box has 51 columns and 71 rows, with a cell centre at each tenth of a degree.
+  One day of the box is one request of less than 1 second. No cell of the box is without a value.
+- A comparison at one cell (18.0 S, 57.0 W) for 1 to 4 September 2020. ERA5-Land: largest wind 14.93, 12.74, 13.99
+  and 9.09 km/h, and largest vapour pressure deficit 3.78, 3.26, 3.49 and 5.17 kPa. Open-Meteo, with ERA5 at 0.25
+  degrees: 16.9, 15.1, 16.4 and 8.4 km/h, and 3.06, 2.83, 3.3 and 4.92 kPa. The two have the same sequence of the days,
+  and not the same values: they are two models.
+- The asset `ECMWF/ERA5_LAND/DAILY_AGGR` has the mean of each wind component of a day, not the largest wind speed.
+- `UNVERIFIED`: the terms of the product (Copernicus). Do a check before we publish a copy of the files.

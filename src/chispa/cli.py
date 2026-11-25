@@ -27,11 +27,13 @@ from chispa.sources import (
     protected,
     scars,
     settlements,
+    weather,
 )
 from chispa.store import clear_stale, open_store, read_detections, replace_fusion, stale_years
 from chispa.web import server
 
 YEAR_SOURCES = ("firms", "goes", "goes_mask", "inpe", "passes", "scars", "burnday", "landcover")
+YEAR_SOURCES += ("weather",)
 FIXED_SOURCES = ("border", "protected", "settlements")
 NOT_BUILT = {
     "mcp": "Start the MCP server.",
@@ -63,14 +65,9 @@ def main(arguments: list[str] | None = None) -> None:
     names["curve"] = "burn curve of the boxes of the burn check"
     names["pixels"] = "table of the burned pixels of the rule against the map"
     names["advance"] = "table of the advance of VIIRS against the new burned ground"
-    for name, text in (
-        names
-        | {
-            "growth": "growth table",
-            "severity": "severity tables",
-            "confidence": "confidence tables",
-        }
-    ).items():
+    names |= {"growth": "growth table", "severity": "severity tables"}
+    names["confidence"] = "confidence tables"
+    for name, text in names.items():
         check = commands.add_parser(name, help=f"Make the {text} of one fused year.")
         check.add_argument("--year", type=int, required=True)
         check.add_argument("--test-run", action="store_true", help="Permit the test year.")
@@ -209,6 +206,8 @@ def run_fetch(source: str, year: int | None, push: bool) -> None:
         files = scars.download_year(year, project, config.RAW_DIR, pantanal_grid())
     elif source == "burnday":
         files = burnday.download_year(year, read_setting("EE_PROJECT"), config.RAW_DIR)
+    elif source == "weather":
+        files = weather.download_year(year, read_setting("EE_PROJECT"), config.RAW_DIR)
     elif source == "border":
         files = [border.download(config.RAW_DIR)]
     elif year == config.GOES_GAP_START.year:

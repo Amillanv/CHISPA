@@ -383,6 +383,11 @@ CONFIDENCE_PENALTY = 0.001
 CONFIDENCE_NEAR_DAYS = 7
 CONFIDENCE_NEAR_CELL_DEG = 0.1
 
+# --- Weather ---
+
+# The side of a cell of the ERA5-Land weather grid, in degrees (approximately 11 km).
+WEATHER_PIXEL_DEG = 0.1
+
 # --- Growth risk ---
 
 # An alert is at a limit if its fire ends with this many hectares or more. The limits are limits
@@ -390,6 +395,25 @@ CONFIDENCE_NEAR_CELL_DEG = 0.1
 RISK_LIMITS_HA = (100.0, 1000.0)
 # Too few fires are this large for a model: 9 in the development year. They get a count only.
 RISK_LARGEST_HA = 10000.0
+# The level of a year is in range if the large alerts that came, divided by the expected large
+# alerts, are from the first value to the second (condition 3 of a percentage).
+RISK_LEVEL_YEAR = (0.5, 2.0)
+# The rule for a group of inputs. The AUC must be larger in this many years or more. The level
+# of all years together must not be farther from 1 by more than the margin: the owner set the
+# margin on 2026-11-25, after the first results of the rule. A group stays if it passes for
+# this many models or more.
+RISK_RULE_MIN_YEARS = 5
+RISK_RULE_LEVEL_MARGIN = 0.05
+RISK_RULE_MIN_MODELS = 3
+# The weather inputs of an alert. The sums of rain are for these numbers of days before the day
+# of the moment. A day with this much rain or more, in mm, is a day with rain. The wind and the
+# dryness of the air are for this number of days before the day, and from the day.
+RISK_RAIN_DAYS = (7, 30, 90)
+RISK_RAIN_DAY_MM = 1.0
+RISK_WEATHER_DAYS = 3
+# A day is in the weather product approximately 6 days after it. Thus the inputs that an alert
+# can have at its time stop this many days before the usual end.
+RISK_WEATHER_LATE_DAYS = 6
 
 # === The values above this line can change a result. The configuration hash covers them. ===
 # The values below this line change no number in a result table.
