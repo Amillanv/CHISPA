@@ -52,7 +52,7 @@ All the work follows eight stages. Each stage gives one part of the alert, and e
 
 ## Status
 
-- `chispa build` gets the raw files from a public bucket and makes a SQLite store. The bucket has the raw files of 2023 to 2025 for the detections and the mapped fires: 4.1 million detections for 2023 and 2024. The files of 2026 are not in the bucket: `chispa fetch` gets them. `chispa fuse` groups the detections of one year into events with a confidence level. `chispa evaluate` compares them with the mapped fires.
+- `chispa build` gets the raw files from a public bucket and makes a SQLite store. The bucket has the raw files of 2019 to 2025 for the detections and the mapped fires: 7.65 million detections. FIRMS has no GOES row before 2022-08-09: the years before it have GOES detections only from INPE. The files of 2026 are not in the bucket: `chispa fetch` gets them. `chispa fuse` groups the detections of one year into events with a confidence level. `chispa evaluate` compares them with the mapped fires.
 - `chispa poll` does one pass of the live poller: it records each new detection with the time of the pass. It needs a FIRMS key. `chispa update` puts the live logs into the store and makes the events of the year again.
 - `tools.py` answers questions about the alerts and the results at a given time. [docs/method.md](docs/method.md) section 12.1 lists the tools, and section 7.3 gives the event record.
 - `chispa serve` starts the dashboard on this computer. It shows the events at an as-of time, live or as a replay. It only calls the tools. Section 12.6 of the method gives its rules. The map needs a MapTiler key in `.env` (`MAPTILER_KEY`).
@@ -63,7 +63,7 @@ All the work follows eight stages. Each stage gives one part of the alert, and e
 - `severity.py` gives an event one number from 0 to 100, with its facts: fire power, extent, advance, land cover, people and protected land. The number is a heuristic: it shows priorities, and it is not a forecast of the burned area. `chispa severity` makes the tables that examine it. The event record gives the number of one event.
 - [docs/method.md](docs/method.md) section 13 gives each assumption, its reason and its pitfall.
 - `confidence.py` gives an event a value for a match with a mapped fire, near the first alert and 24 hours later. `chispa confidence` makes the tables that examine it. The event record gives the value as a rank.
-- `chispa risk` asks, at the same two moments, if the fire of an alert becomes large: 100 or 1000 hectares or more. It is the model of the confidence with a different label, and it is not in the event record. Each year from 2019 to 2025 gets its numbers from models that the six other years trained. For 1000 hectares at 30 minutes, the mean AUC of the seven years is 0.8434, against 0.7157 for the confidence. The tenth of the alerts with the largest values has 187 of the 388 large alerts (recall 48.2 percent), and 187 of its 3085 alerts became large (precision 6.1 percent). For the confidence it is 105 of 388. At 24 hours the gain is small: a mean AUC of 0.8991 against 0.8662. These are validation numbers: the test year is 2026. The years before August 2022 have no GOES row from FIRMS ([docs/method.md](docs/method.md) section 11.21).
+- `chispa risk` asks, at the same two moments, if the fire of an alert becomes large: 100 or 1000 hectares or more. It is the model of the confidence with a different label, and it is not in the event record. Each year from 2019 to 2025 gets its numbers from models that the six other years trained. For 1000 hectares at 30 minutes, the mean AUC of the seven years is 0.8434, against 0.7157 for the confidence. The tenth of the alerts with the largest values has 187 of the 388 large alerts (recall 48.2 percent), and 187 of its 3085 alerts became large (precision 6.1 percent). For the confidence it is 105 of 388. At 24 hours the gain is small: a mean AUC of 0.8991 against 0.8662. Its values have the correct level for the seven years together, and not for one year: in 2023 they were three times too high. Thus an alert gets no percentage. These are validation numbers: the test year is 2026. The years before August 2022 have no GOES row from FIRMS ([docs/method.md](docs/method.md) section 11.21).
 - Not built: the parts that the stage table marks, the live delay report, the MCP server and the agent.
 
 ## Limits you must know
@@ -123,8 +123,8 @@ venv/bin/chispa fuse --year 2023
 venv/bin/chispa evaluate --year 2023
 ```
 
-The command `build` downloads each raw file that is absent from `data/raw/`. The first run gets approximately 2.4 GB. With `--offline` it uses only the local raw files.
-Then it makes `data/chispa.sqlite`. This needs approximately 5.5 GB of memory and 3 minutes.
+The command `build` downloads each raw file that is absent from `data/raw/`. The first run gets approximately 2.9 GB. With `--offline` it uses only the local raw files.
+Then it makes `data/chispa.sqlite`. This needs approximately 9.3 GB of memory and 7 minutes.
 
 ## For maintainers: get new raw files
 

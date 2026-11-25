@@ -25,6 +25,7 @@ from chispa.evaluation.match import Fields, Pairs
 from chispa.evaluation.report import config_hash, share
 
 KEPT = ("inputs", "size_ha", "advance_m", "alert", "matched")  # What the file of a year keeps.
+TENTHS = 10  # The groups of the calibration table. A fifth is too wide for a rare outcome.
 
 
 def seen_first(detections: Fields, pairs: Pairs, fires: Fields) -> dict[int, int]:
@@ -142,6 +143,51 @@ def _inputs(rows: list[dict], model: dict) -> np.ndarray:
     return as_table(rows, tuple(model["inputs"]))[0]
 
 
+def calibration_table(kept: dict[str, list], models: dict) -> list[dict]:
+    """Return, for each model, the values of the growth risk against what came.
+
+    The first row of a model is for all alerts, with the Brier score and its skill against one
+    constant: the base rate of the training years. Then one row for each tenth of the alerts,
+    in the sequence of the value. `above_lower_limit` counts the alerts with a larger value
+    than for the lower limit: their two values give no probability for the class between.
+    """
+    table = []
+    for moment in MOMENTS:
+        rows, lower = kept[moment], None
+        size = np.array([row["size_ha"] for row in rows])
+        for limit in config.RISK_LIMITS_HA:
+            model = models[key(moment, limit)]
+            chance, large = confidence.probability(model, _inputs(rows, model)), size >= limit
+            brier = float(((chance - large) ** 2).mean())
+            constant = float(((model["base_rate"] - large) ** 2).mean())
+            first = _calibration_row(chance, large) | {
+                "brier": round(brier, 5),
+                "brier_skill": round(1 - brier / constant, 4),
+                "above_lower_limit": None if lower is None else int((chance > lower).sum()),
+            }
+            parts = np.array_split(np.argsort(chance, kind="stable"), TENTHS)
+            groups = [("all", first)] + [
+                (str(number), _calibration_row(chance[part], large[part]))
+                for number, part in enumerate(parts, 1)
+            ]
+            table += [
+                {"moment_h": moment, "limit_ha": limit, "group": name} | row for name, row in groups
+            ]
+            lower = chance
+    return table
+
+
+def _calibration_row(chance: np.ndarray, large: np.ndarray) -> dict:
+    return {
+        "alerts": len(large),
+        "probability_mean": round(float(chance.mean()), 4),
+        "large": int(large.sum()),
+        "large_share": share(large.sum(), len(large)),
+        "expected_large": round(float(chance.sum()), 1),
+        "observed_to_expected": share(large.sum(), chance.sum()),
+    }
+
+
 def group_table(rows: dict[str, list], kept: dict[str, list], fires: Fields) -> list[dict]:
     """Return, for each moment, the alerts of each group, and the new fires by fire size class.
 
@@ -221,6 +267,7 @@ def risk_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, list[di
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
     return {
         "risk": result_table(saved[year]["kept"], models, confidence.load(path)),
+        "risk_calibration": calibration_table(saved[year]["kept"], models),
         "risk_alerts": saved[year]["alerts"],
         "risk_weights": weight_table(models),
     }
