@@ -28,6 +28,9 @@ Use each term only with this meaning.
 | Isolated fire | A counted fire that shares no detection with a different counted fire. |
 | Match | A detection matches a fire if it agrees with the fire in space and time (section 11.4). |
 | Unmatched alert | An alert with no detection that matches a fire. |
+| Alert with a new fire | An alert that had the first detection that matches a counted fire (section 11.21). |
+| Alert on a known fire | An alert whose detections match a counted fire that a different alert saw first (section 11.21). |
+| Large alert | An alert whose fire ends with a limit of hectares or more. It is the label of the growth risk (section 11.21). |
 | Unmatched share | The detections that match no fire, divided by all detections of a configuration. |
 | Fire recall | The counted fires with a minimum of one match, divided by all counted fires. |
 | Relative delay | The first match of a configuration minus the first match from all sources, for one fire. |
@@ -163,6 +166,8 @@ These rules are for each part that we add to a stage, with a trained model or wi
 
 1. Write the hypothesis of the part before its result. Give the baseline: the rule that the part must be better than.
 2. Train on 2023. Tune on 2024, which we know now. Do the test one time on 2025.
+   The growth risk has a different form, which the owner agreed to on 2026-11-25: a cross-validation by year
+   on 2019 to 2025, and a test on 2026 (section 11.21).
 3. The burn scar map can be the label for training. It is never an input at the time of an alert.
 4. The label has the errors of the map (section 11.5). Say this adjacent to each result.
 5. A person must be able to explain the output. Give the inputs that had the largest effect.
@@ -445,7 +450,8 @@ The tables are:
 - `growth_steps`: the advance and the speed of the steps of the events, by the time between passes (section 11.13).
 - `severity_inputs`, `severity` and `severity_rank`: the severity of the events against the mapped area (section 11.14).
 - `confidence` and `confidence_weights`: the probability of a match at two moments, against the level (section 11.15).
-- `risk`, `risk_alerts` and `risk_weights`: the growth risk at two moments, against its baselines (section 11.21).
+- `risk`, `risk_calibration`, `risk_alerts` and `risk_weights`: the growth risk at two moments, against its baselines,
+  and its values against what came (section 11.21).
 
 Purity and completeness count matches with counted fires. A detection that matches two fires counts two times.
 
@@ -1373,8 +1379,10 @@ the average precision, and the precision and the recall of the top tenth. It has
 The years:
 
 - The owner asked on 2026-11-25 for a run on each year, with the data from 2019. Thus the numbers of a year come from
-  models that each other year with mapped fires trained: a cross-validation by year.
-  Claude proposed this form. It waits for the answer of the owner.
+  models that each other year with mapped fires trained: a cross-validation by year (leave one year out).
+  Claude proposed this form, and the owner agreed on 2026-11-25.
+- A different form is a split in time sequence: the weights come only from the years before a year. It is nearer to the
+  live use. It gives no number for the first year, and few training years for the next years. Not built.
 - The unit of the split is a year, not an alert. The alerts of one season are not independent: they have the same
   weather and the same fires. A random split of the alerts gives numbers that are too good.
 - These numbers will choose the inputs. Thus they are validation numbers, not a test.
@@ -1394,8 +1402,55 @@ in a sequence, and we say so.
 A limit with less than 30 large alerts in the test year has no answer: too few.
 Claude proposed 30. It waits for the answer of the owner, before the run of 2026.
 
-The value is not a probability until a calibration test on 2026 says so, with the rule of hypothesis 3 of section 11.15.
-An alert will get a rank. That field of the event record is not built.
+The probability. Each model gives a value from 0 to 1. A percentage in an alert is correct only if the value is
+calibrated: of the alerts with a value near 0.1, approximately 1 in 10 became large.
+The table `risk_calibration` examines this for the growth risk, with the cross-validation by year:
+
+- Brier score: the mean square of the value minus the label (1 for large, 0 for not large). 0 is the best.
+- Brier skill score: 1 minus the Brier score divided by that of one constant, the base rate of the training years.
+  More than 0 is better than that constant.
+- Expected large alerts: the sum of the values. Observed to expected: the large alerts divided by the expected large
+  alerts. 1 is a correct level, and more than 1 says that the values are too low.
+- The same numbers for each tenth of the alerts, in the sequence of the value.
+- For the limit of 1000 hectares: the alerts with a larger value than for 100 hectares. For such an alert the two values
+  give no probability for the class from 100 to 1000 hectares.
+
+The hypothesis of the probability, written on 2026-11-25 before the first run of this table.
+A percentage can go into an alert if these three conditions are true for a model:
+
+1. The Brier skill score is more than 0 in each year.
+2. For the seven years together, observed to expected is from 0.8 to 1.25.
+3. In each year, observed to expected is from 0.5 to 2.
+
+We expect that condition 3 is false. The base rate of a year changes: for 100 hectares at 30 minutes it is from 1.5 to
+6.0 percent, and no input has the rate of its year. The confidence had the same problem (section 11.15).
+Claude proposed the limits of the three conditions. They wait for the answer of the owner.
+If a condition is false, an alert gets a rank or a class with its track record, and not a percentage.
+The final answer is the test of 2026. The field of the event record is not built.
+
+What the calibration shows (table `risk_calibration` of 2019 to 2025, 2026-11-25). The command ran one time.
+In each list, the seven numbers are for 2019 to 2025. The hypothesis of the probability is false for each model.
+
+- Condition 1, the Brier skill score. 30 minutes, 100 hectares: 0.0873, 0.0579, 0.1188, 0.1432, -0.0533, 0.0468 and
+  0.1686: false in 2023. 30 minutes, 1000 hectares: 0.0278, 0.0215, 0.0728, 0.0902, 0.0074, 0.0181 and 0.1267: true,
+  and small. 24 hours, 100 hectares: 0.2082, 0.2235, 0.2184, 0.3001, 0.0019, 0.2186 and 0.3518: true.
+  24 hours, 1000 hectares: 0.0781, 0.1416, 0.1938, 0.27, 0.0578, 0.2219 and 0.3062: true.
+- Condition 2, the seven years together: true for each model. Observed to expected is 0.959 (1286 large alerts for
+  1341.6 expected), 0.953 (388 for 407.2), 0.977 (1059 for 1083.6) and 0.969 (311 for 321.0).
+- Condition 3, each year: false in 2023 for each model. Observed to expected, 30 minutes and 100 hectares: 1.221, 1.202,
+  1.0618, 0.8028, 0.2845, 1.3446 and 1.0186. 30 minutes and 1000 hectares: 1.0456, 1.2015, 1.1159, 0.8738, 0.3051, 1.7539
+  and 0.7175. 24 hours and 100 hectares: 1.0998, 1.4166, 1.2507, 0.7989, 0.3368, 1.1267 and 0.8593.
+  24 hours and 1000 hectares: 0.9338, 1.3459, 1.2143, 0.9071, 0.3945, 1.4848 and 0.566.
+- The tenth of the alerts with the largest values, for the seven years together. The models said 17.45, 5.63, 22.74 and
+  7.31 percent, and 17.05, 6.06, 22.33 and 7.06 percent became large. The other tenths agree in the same way.
+- The same tenth in each year, 30 minutes and 1000 hectares: 5.9, 5.9, 8.6, 6.7, 3.0, 7.6 and 7.0 percent became large.
+- 2 of 30 879 alerts at 30 minutes have a larger value for 1000 hectares than for 100 hectares, and no alert at 24 hours.
+  Thus the two values of an alert give three classes: less than 100 hectares, 100 to 1000, and 1000 or more.
+- Thus the values have the correct level and the correct form for the seven years together. They do not have the
+  correct level in one year: in 2023 the models gave three times the large alerts that came, and in 2024 too few.
+  No input has the rate of its year. An alert gets no percentage.
+- What an alert can say: the class of its value with the track record of that class. For the top tenth at 30 minutes
+  and 1000 hectares: "187 of 3085 such alerts became large in 2019 to 2025, and from 3 to 9 of 100 in one year".
 
 What the years show (tables `risk`, `risk_alerts` and `risk_weights` of 2019 to 2025, 2026-11-25).
 The store has seven years with mapped fires, thus each year has models from the six other years.

@@ -7,6 +7,7 @@ import numpy as np
 from chispa.evaluation import risk
 from chispa.evaluation.risk import (
     average_precision,
+    calibration_table,
     fit_models,
     group_table,
     key,
@@ -147,3 +148,24 @@ def test_tables_of_a_year_come_from_models_of_the_other_years(tmp_path, monkeypa
     # many rows as 2003. The model of 2003 learned only the usual years: it is wrong for 2003.
     assert by_year[2003] == 0.0
     assert by_year[2002] in (0.5, 1.0, 0.0)
+
+
+def test_calibration_gives_the_brier_skill_and_the_observed_against_the_expected(monkeypatch):
+    monkeypatch.setattr("chispa.config.RISK_LIMITS_HA", (100.0, 1000.0))
+    monkeypatch.setattr("chispa.evaluation.risk.TENTHS", 2)
+    # A model with no weight gives each alert its start value: 0 is a probability of 0.5.
+    model = {"inputs": ["x"], "mean": [0.0], "spread": [1.0], "start": 0.0, "weights": [0.0]}
+    model |= {"base_rate": 0.5}
+    rows = [alert(0, 0.0), alert(1, 0.0), alert(2, 150.0), alert(3, 2000.0)]
+    models = {key(moment, limit): model for moment in ("0", "24") for limit in (100.0, 1000.0)}
+    table = calibration_table({"0": rows, "24": rows}, models)
+    found = {(row["limit_ha"], row["group"]): row for row in table if row["moment_h"] == "0"}
+    first = found[(100.0, "all")]
+    # 4 alerts with a probability of 0.5: 2 expected, and 2 became 100 hectares or more.
+    assert (first["expected_large"], first["large"], first["observed_to_expected"]) == (2.0, 2, 1.0)
+    # Each error is 0.5: the Brier score is 0.25, the same as that of the constant 0.5.
+    assert (first["brier"], first["brier_skill"], first["above_lower_limit"]) == (0.25, 0.0, None)
+    # For 1000 hectares 1 of 4 became large: the values are too high by a factor of 2.
+    assert found[(1000.0, "all")]["observed_to_expected"] == 0.5
+    assert found[(1000.0, "all")]["above_lower_limit"] == 0
+    assert (found[(100.0, "2")]["alerts"], found[(100.0, "2")]["large"]) == (2, 2)
