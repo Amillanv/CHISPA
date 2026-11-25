@@ -70,11 +70,12 @@ def moment_rows(detections: Fields, merges: list, links: tuple, layers: severity
     limits = {"0": config.PASS_GAP.total_seconds(), "24": config.SEVERITY_EVAL_HOURS * 3600}
     counts, place = activity(detections)
     rows = {moment: [] for moment in MOMENTS}
-    for moment, _, own, chosen in at_moments(detections, merges, limits):
+    for moment, alert, own, chosen in at_moments(detections, merges, limits):
         first = own[detections["available"][own].argmin()]
         position = (detections["lat"][first], detections["lon"][first])
         near = near_count(counts, place, detections["available"][first], *position)
         row = _alert_row(detections, chosen, layers, near)
+        row["alert"] = alert
         row["fires"] = fires_of.get(int(detections["event"][first]), frozenset())
         spans = [link_fire[first_link[d] : first_link[d + 1]] for d in chosen.tolist()]
         row["own_fires"] = frozenset(np.concatenate(spans).tolist())
@@ -98,7 +99,7 @@ def _alert_row(detections: Fields, chosen: np.ndarray, layers: severity.Layers, 
     }
     newest = chosen[detections["available"][chosen] == detections["available"][chosen].max()]
     level = max(LEVELS.index(name) for name in detections["level"][newest])
-    return {"inputs": confidence.inputs(found, seen), "level": level}
+    return {"inputs": confidence.inputs(found, seen), "level": level, "advance_m": advance_m}
 
 
 def names_of(moment: str) -> tuple[str, ...]:
@@ -231,16 +232,21 @@ def detection_fires(
     return first, fire
 
 
+def year_rows(year: int, store_path: Path, raw_dir: Path) -> tuple[dict[str, list], tuple]:
+    """Return the rows of each moment for one fused year, and its detections, matches and fires."""
+    detections, pairs, fires, _ = prepare(year, store_path, raw_dir)
+    layers = severity.load_layers(raw_dir, severity.cover_year(year))
+    merges = load_merges(sqlite3.connect(store_path), year)
+    links = (event_fires(detections, pairs, fires), detection_fires(detections, pairs, fires))
+    return moment_rows(detections, merges, links, layers), (detections, pairs, fires)
+
+
 def confidence_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, list[dict]]:
     """Return the tables of the confidence for one fused year.
 
     The development year makes the model and saves it. Each other year reads that model.
     """
-    detections, pairs, fires, _ = prepare(year, store_path, raw_dir)
-    layers = severity.load_layers(raw_dir, severity.cover_year(year))
-    merges = load_merges(sqlite3.connect(store_path), year)
-    links = (event_fires(detections, pairs, fires), detection_fires(detections, pairs, fires))
-    rows = moment_rows(detections, merges, links, layers)
+    rows, _ = year_rows(year, store_path, raw_dir)
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
     if year == config.DEVELOPMENT_YEAR:
         models = {}
