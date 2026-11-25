@@ -24,7 +24,12 @@ from chispa.evaluation.risk import (
     weight_table,
 )
 from chispa.evaluation.risk_calibration import calibration_table
-from chispa.evaluation.risk_inputs import INPUT_SETS, dryness_inputs, dryness_of
+from chispa.evaluation.risk_inputs import (
+    INPUT_SETS,
+    dryness_inputs,
+    dryness_of,
+    first_hours_inputs,
+)
 
 Tables = dict[str, list[dict]]
 ADOPTED = "inputs now"  # The set of inputs of the models of each table but `risk_inputs`.
@@ -38,7 +43,9 @@ def year_parts(year: int, store_path: Path, raw_dir: Path) -> dict:
     dryness = dryness_of(detections, raw_dir, year)
     for moment in MOMENTS:
         for row in rows[moment]:
-            row["inputs"] |= dryness_inputs(dryness, row.pop("positions"))
+            positions = row.pop("positions")
+            row["inputs"] |= dryness_inputs(dryness, positions)
+            row["inputs"] |= first_hours_inputs(detections, positions)
     first = seen_first(detections, pairs, fires)
     sized = {moment: sized_rows(rows[moment], first, fires["area_ha"]) for moment in MOMENTS}
     return {"rows": sized, "area_ha": fires["area_ha"], "alerts": group_table(sized, fires)}
@@ -53,11 +60,11 @@ def risk_tables(store_path: Path, raw_dir: Path) -> dict[int, Tables]:
     """
     parts = {year: year_parts(year, store_path, raw_dir) for year in config.YEAR_ROLES}
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
-    baselines, tables, extra = confidence.load(path), {}, INPUT_SETS[ADOPTED]
+    baselines, tables, change = confidence.load(path), {}, INPUT_SETS[ADOPTED]
     for year, part in parts.items():
         others, earlier = [o for o in parts if o != year], [o for o in parts if o < year]
         kept = {moment: new_or_none(part["rows"][moment]) for moment in MOMENTS}
-        models = fit_models(_training(parts, others), extra)
+        models = fit_models(_training(parts, others), *change)
         tables[year] = {
             "risk": result_table(kept, models, baselines),
             "risk_all_alerts": all_alerts_table(part["rows"], part["area_ha"], models, baselines),
@@ -67,7 +74,7 @@ def risk_tables(store_path: Path, raw_dir: Path) -> dict[int, Tables]:
             "risk_inputs": input_table(parts, year, kept),
         }
         if earlier:
-            models = fit_models(_training(parts, earlier), extra)
+            models = fit_models(_training(parts, earlier), *change)
             tables[year]["risk_earlier"] = result_table(kept, models, baselines)
             tables[year]["risk_calibration_earlier"] = calibration_table(kept, models)
     return tables
@@ -81,10 +88,12 @@ def input_table(parts: dict[int, dict], year: int, kept: dict[str, list]) -> lis
     """
     others, earlier = [o for o in parts if o != year], [o for o in parts if o < year]
     table = []
-    for name, extra in INPUT_SETS.items():
-        models = fit_models(_training(parts, others), extra)
+    for name, change in INPUT_SETS.items():
+        models = fit_models(_training(parts, others), *change)
         level = (
-            calibration_table(kept, fit_models(_training(parts, earlier), extra)) if earlier else []
+            calibration_table(kept, fit_models(_training(parts, earlier), *change))
+            if earlier
+            else []
         )
         level = {(row["moment_h"], row["limit_ha"]): row for row in level if row["group"] == "all"}
         for moment in MOMENTS:
