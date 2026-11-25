@@ -21,6 +21,8 @@ from chispa.arrival import live_available
 from chispa.models import Detection
 
 FOLDER = "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/mensal/Brasil/"
+# INPE keeps the monthly files of the newest years only. An older year is one annual file.
+ANNUAL_FOLDER = FOLDER.replace("mensal/Brasil/", "anual/Brasil_todos_sats/")
 # One file for each 10 minutes, for all of South America. The server keeps some days of files.
 LIVE_FOLDER = "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/10min/"
 
@@ -55,6 +57,8 @@ def download_year(year: int, raw_dir: Path) -> list[Path]:
     listing = requests.get(FOLDER, timeout=60)
     listing.raise_for_status()
     names = sorted(set(re.findall(rf"focos_mensal_br_{year}\d\d\.(?:csv|zip)", listing.text)))
+    if not names:
+        return [_download(f"focos_br_todos-sats_{year}.zip", raw_dir, ANNUAL_FOLDER)]
     months = config.LIVE_START.month - 1 if year == config.LIVE_START.year else 12
     names = names[:months]
     if len(names) != months:
@@ -62,14 +66,14 @@ def download_year(year: int, raw_dir: Path) -> list[Path]:
     return [_download(name, raw_dir) for name in names]
 
 
-def _download(name: str, raw_dir: Path) -> Path:
+def _download(name: str, raw_dir: Path, folder: str = FOLDER) -> Path:
     path = raw_dir / "inpe" / name
     if path.exists():
         return path
     path.parent.mkdir(parents=True, exist_ok=True)
     part = path.with_suffix(".part")
     # The server is slow. We write to a temporary name, thus a stopped download is not kept.
-    with requests.get(FOLDER + name, stream=True, timeout=(30, 300)) as answer:
+    with requests.get(folder + name, stream=True, timeout=(30, 300)) as answer:
         answer.raise_for_status()
         with part.open("wb") as file:
             for chunk in answer.iter_content(chunk_size=1 << 20):
@@ -114,7 +118,7 @@ def parse_file(path: Path) -> tuple[list[Detection], int, Counter]:
     with _open_text(path) as file:
         for row in csv.DictReader(file):
             try:
-                if not _in_box(float(row["lat"]), float(row["lon"])):
+                if not _in_box(*_position(row)):
                     continue
                 if row["satelite"] not in SATELLITES:
                     unused[row["satelite"]] += 1
@@ -132,6 +136,13 @@ def _open_text(path: Path) -> io.TextIOBase:
     return io.TextIOWrapper(archive.open(archive.namelist()[0]), newline="", encoding="utf-8")
 
 
+def _position(row: dict) -> tuple[float, float]:
+    """Return lat, lon of a row. An annual file has the full words as its field names."""
+    if "lat" in row:
+        return float(row["lat"]), float(row["lon"])
+    return float(row["latitude"]), float(row["longitude"])
+
+
 def _in_box(lat: float, lon: float) -> bool:
     west, south, east, north = config.PANTANAL_BOX
     return south <= lat <= north and west <= lon <= east
@@ -140,10 +151,10 @@ def _in_box(lat: float, lon: float) -> bool:
 def parse_row(row: dict) -> Detection:
     """Make one detection from one CSV row. A bad row raises an error."""
     sensor_family, platform = SATELLITES[row["satelite"]]
-    # A monthly file has the field `data_hora_gmt`. A file of 10 minutes has the field `data`.
-    observed_at = datetime.fromisoformat(row.get("data_hora_gmt") or row["data"]).replace(
-        tzinfo=UTC
-    )
+    # A monthly file has the field `data_hora_gmt`, an annual file `data_pas`, and a file of
+    # 10 minutes `data`. Each is a UTC time.
+    time = row.get("data_hora_gmt") or row.get("data_pas") or row["data"]
+    observed_at, (lat, lon) = datetime.fromisoformat(time).replace(tzinfo=UTC), _position(row)
     # A live row has the time when we first saw it. A recorded row has only an estimate.
     available_at, estimated = observed_at + config.AVAILABLE_DELAY[sensor_family], True
     if row.get("first_seen_at"):
@@ -157,8 +168,8 @@ def parse_row(row: dict) -> Detection:
         platform=platform,
         observed_at=observed_at,
         available_at=available_at,
-        lat=float(row["lat"]),
-        lon=float(row["lon"]),
+        lat=lat,
+        lon=lon,
         footprint_m=config.INPE_FOOTPRINT_M[sensor_family],
         frp_mw=float(row["frp"]) if row.get("frp") else None,  # Some rows have no value.
         source_confidence="nominal",  # INPE gives no confidence value.

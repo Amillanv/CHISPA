@@ -15,6 +15,7 @@ from chispa.evaluation.confidence_curve import curve_tables
 from chispa.evaluation.events import events_with_a_match
 from chispa.evaluation.growth import step_rows
 from chispa.evaluation.report import write_summary, write_tables
+from chispa.evaluation.risk import risk_tables
 from chispa.evaluation.run import prepare
 from chispa.evaluation.severity import severity_tables
 from chispa.evaluation.visibility import month_table, visibility
@@ -38,6 +39,8 @@ def run_table(name: str, year: int) -> None:
             tables |= curve_tables(*arguments, curve.last_answers(curves))
         if not tables:
             raise SystemExit(f"Run `chispa curve --year {year} --events` first.")
+    elif name == "risk":
+        tables = risk_tables(*arguments)
     elif name == "growth":
         tables = {"growth_steps": step_rows(*arguments)}
     else:

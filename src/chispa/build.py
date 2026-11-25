@@ -75,7 +75,8 @@ def read_raw(raw_dir: Path):
         yield "firms", detections, rejected
     for path in sorted((raw_dir / "goes").glob("*.csv")):
         yield "noaa", goes.parse_file(path, "GOES16"), 0
-    for path in sorted((raw_dir / "inpe").glob("focos_mensal_br_*")):
+    # The annual file of an older year, then the monthly files of the newer years.
+    for path in sorted((raw_dir / "inpe").glob("focos_*")):
         if path.suffix in (".csv", ".zip"):
             detections, rejected, _ = inpe.parse_file(path)
             yield "inpe", detections, rejected

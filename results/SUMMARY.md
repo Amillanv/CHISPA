@@ -2,6 +2,578 @@
 
 Code makes this file. Do not edit it by hand.
 
+## 2019 (year before the development year)
+
+### 2019 risk
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fires | auc_new_fires | largest_fires | top_tenth_largest_fires |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 100.0 | growth_risk | 6074 | 362 | 0.0596 | 0.7619 | 0.2182 | 607 | 139 | 0.229 | 0.384 | 1047 | 0.6175 | 12 | 6 |
+| 0 | 100.0 | confidence | 6074 | 362 | 0.0596 | 0.6596 | 0.15 | 607 | 92 | 0.1516 | 0.2541 | 1047 | 0.5562 | 12 | 4 |
+| 0 | 100.0 | detections | 6074 | 362 | 0.0596 | 0.657 | 0.1487 | 607 | 103 | 0.1697 | 0.2845 | 1047 | 0.5408 | 12 | 5 |
+| 0 | 1000.0 | growth_risk | 6074 | 97 | 0.016 | 0.7344 | 0.0814 | 607 | 36 | 0.0593 | 0.3711 | 1047 | 0.5947 | 12 | 6 |
+| 0 | 1000.0 | confidence | 6074 | 97 | 0.016 | 0.6573 | 0.0379 | 607 | 25 | 0.0412 | 0.2577 | 1047 | 0.5418 | 12 | 4 |
+| 0 | 1000.0 | detections | 6074 | 97 | 0.016 | 0.6011 | 0.0362 | 607 | 19 | 0.0313 | 0.1959 | 1047 | 0.4758 | 12 | 5 |
+| 24 | 100.0 | growth_risk | 5687 | 286 | 0.0503 | 0.8611 | 0.3865 | 568 | 163 | 0.287 | 0.5699 | 896 | 0.6992 | 9 | 5 |
+| 24 | 100.0 | confidence | 5687 | 286 | 0.0503 | 0.7969 | 0.2414 | 568 | 122 | 0.2148 | 0.4266 | 896 | 0.6527 | 9 | 3 |
+| 24 | 100.0 | detections | 5687 | 286 | 0.0503 | 0.8229 | 0.3735 | 568 | 155 | 0.2729 | 0.542 | 896 | 0.6822 | 9 | 4 |
+| 24 | 100.0 | persistence | 5687 | 286 | 0.0503 | 0.5899 | 0.0908 | 568 | 88 | 0.1549 | 0.3077 | 896 | 0.5595 | 9 | 3 |
+| 24 | 1000.0 | growth_risk | 5687 | 73 | 0.0128 | 0.7901 | 0.1729 | 568 | 35 | 0.0616 | 0.4795 | 896 | 0.6059 | 9 | 4 |
+| 24 | 1000.0 | confidence | 5687 | 73 | 0.0128 | 0.7634 | 0.0819 | 568 | 32 | 0.0563 | 0.4384 | 896 | 0.5969 | 9 | 3 |
+| 24 | 1000.0 | detections | 5687 | 73 | 0.0128 | 0.7428 | 0.1157 | 568 | 35 | 0.0616 | 0.4795 | 896 | 0.5755 | 9 | 4 |
+| 24 | 1000.0 | persistence | 5687 | 73 | 0.0128 | 0.5678 | 0.0259 | 568 | 23 | 0.0405 | 0.3151 | 896 | 0.5249 | 9 | 3 |
+
+### 2019 risk_alerts
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | group | alerts | fires |
+|---|---|---|---|
+| 0 | all alerts | 9245 |  |
+| 0 | known fire: left out | 3171 |  |
+| 0 | no mapped fire | 5027 |  |
+| 0 | new fire, 10 to 100 hectares | 685 | 3676 |
+| 0 | new fire, 100 to 1000 hectares | 265 | 576 |
+| 0 | new fire, 1000 to 10000 hectares | 85 | 147 |
+| 0 | new fire, 10000 to inf hectares | 12 | 27 |
+| 24 | all alerts | 8643 |  |
+| 24 | known fire: left out | 2956 |  |
+| 24 | no mapped fire | 4791 |  |
+| 24 | new fire, 10 to 100 hectares | 610 | 3676 |
+| 24 | new fire, 100 to 1000 hectares | 213 | 576 |
+| 24 | new fire, 1000 to 10000 hectares | 64 | 147 |
+| 24 | new fire, 10000 to inf hectares | 9 | 27 |
+
+### 2019 risk_weights
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| model | input | weight |
+|---|---|---|
+| 0h_100ha | no_power | 0.6504 |
+| 0h_100ha | season_cos | -0.5267 |
+| 0h_100ha | power_log | 0.4932 |
+| 0h_100ha | indigenous_km_log | -0.3687 |
+| 0h_100ha | on_pasture | -0.3521 |
+| 0h_100ha | detections_log | 0.3334 |
+| 0h_100ha | has_avhrr | -0.2958 |
+| 0h_100ha | night | 0.2879 |
+| 0h_100ha | season_sin | -0.2782 |
+| 0h_100ha | near_log | -0.233 |
+| 0h_100ha | protected_km_log | -0.1834 |
+| 0h_100ha | on_wetland | 0.1788 |
+| 0h_100ha | people_log | -0.1713 |
+| 0h_100ha | on_grassland | 0.1317 |
+| 0h_100ha | on_farming | -0.1068 |
+| 0h_100ha | has_high | 0.0741 |
+| 0h_100ha | has_viirs | 0.0538 |
+| 0h_100ha | has_abi | 0.0515 |
+| 0h_100ha | has_modis | 0.0414 |
+| 0h_100ha | families | 0.0089 |
+| 0h_100ha | on_savanna | 0.0079 |
+| 0h_100ha | on_forest | 0.0049 |
+| 0h_1000ha | season_cos | -0.6554 |
+| 0h_1000ha | season_sin | -0.4489 |
+| 0h_1000ha | no_power | 0.3582 |
+| 0h_1000ha | detections_log | 0.3317 |
+| 0h_1000ha | on_pasture | -0.3062 |
+| 0h_1000ha | night | 0.3034 |
+| 0h_1000ha | near_log | -0.2888 |
+| 0h_1000ha | power_log | 0.2828 |
+| 0h_1000ha | indigenous_km_log | -0.2728 |
+| 0h_1000ha | protected_km_log | -0.2629 |
+| 0h_1000ha | people_log | -0.2584 |
+| 0h_1000ha | has_avhrr | -0.2205 |
+| 0h_1000ha | has_abi | 0.1783 |
+| 0h_1000ha | on_wetland | 0.1783 |
+| 0h_1000ha | on_grassland | 0.1298 |
+| 0h_1000ha | has_high | 0.1086 |
+| 0h_1000ha | has_viirs | -0.0631 |
+| 0h_1000ha | on_farming | -0.0571 |
+| 0h_1000ha | has_modis | -0.0256 |
+| 0h_1000ha | families | 0.0113 |
+| 0h_1000ha | on_forest | -0.0101 |
+| 0h_1000ha | on_savanna | 0.0015 |
+| 24h_100ha | detections_log | 0.5658 |
+| 24h_100ha | on_pasture | -0.4193 |
+| 24h_100ha | indigenous_km_log | -0.3751 |
+| 24h_100ha | power_log | 0.3262 |
+| 24h_100ha | season_cos | -0.298 |
+| 24h_100ha | no_power | 0.2533 |
+| 24h_100ha | on_wetland | 0.2497 |
+| 24h_100ha | season_sin | -0.2312 |
+| 24h_100ha | protected_km_log | -0.1987 |
+| 24h_100ha | on_grassland | 0.1954 |
+| 24h_100ha | near_log | -0.1941 |
+| 24h_100ha | has_high | 0.1524 |
+| 24h_100ha | families | 0.1198 |
+| 24h_100ha | has_viirs | 0.1079 |
+| 24h_100ha | on_farming | -0.1001 |
+| 24h_100ha | night | 0.0939 |
+| 24h_100ha | people_log | -0.093 |
+| 24h_100ha | has_advance | 0.0848 |
+| 24h_100ha | has_avhrr | 0.0727 |
+| 24h_100ha | has_modis | 0.0288 |
+| 24h_100ha | on_savanna | 0.0237 |
+| 24h_100ha | has_abi | -0.021 |
+| 24h_100ha | on_forest | -0.0187 |
+| 24h_100ha | extent_km_log | 0.0067 |
+| 24h_1000ha | detections_log | 0.4806 |
+| 24h_1000ha | season_cos | -0.4664 |
+| 24h_1000ha | on_pasture | -0.3642 |
+| 24h_1000ha | season_sin | -0.3507 |
+| 24h_1000ha | power_log | 0.3367 |
+| 24h_1000ha | protected_km_log | -0.2743 |
+| 24h_1000ha | indigenous_km_log | -0.2484 |
+| 24h_1000ha | on_wetland | 0.2161 |
+| 24h_1000ha | has_high | 0.1965 |
+| 24h_1000ha | near_log | -0.1812 |
+| 24h_1000ha | people_log | -0.1789 |
+| 24h_1000ha | on_grassland | 0.1651 |
+| 24h_1000ha | night | 0.1362 |
+| 24h_1000ha | extent_km_log | 0.127 |
+| 24h_1000ha | has_viirs | 0.1151 |
+| 24h_1000ha | has_avhrr | 0.0989 |
+| 24h_1000ha | has_modis | -0.083 |
+| 24h_1000ha | families | 0.0738 |
+| 24h_1000ha | has_advance | 0.0709 |
+| 24h_1000ha | on_farming | -0.0451 |
+| 24h_1000ha | on_savanna | 0.0421 |
+| 24h_1000ha | no_power | 0.04 |
+| 24h_1000ha | has_abi | -0.0139 |
+| 24h_1000ha | on_forest | -0.0001 |
+
+## 2020 (year before the development year)
+
+### 2020 risk
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fires | auc_new_fires | largest_fires | top_tenth_largest_fires |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 100.0 | growth_risk | 6800 | 342 | 0.0503 | 0.7185 | 0.1718 | 680 | 117 | 0.1721 | 0.3421 | 946 | 0.6043 | 16 | 8 |
+| 0 | 100.0 | confidence | 6800 | 342 | 0.0503 | 0.6022 | 0.0751 | 680 | 53 | 0.0779 | 0.155 | 946 | 0.5203 | 16 | 3 |
+| 0 | 100.0 | detections | 6800 | 342 | 0.0503 | 0.6248 | 0.0888 | 680 | 84 | 0.1235 | 0.2456 | 946 | 0.5202 | 16 | 3 |
+| 0 | 1000.0 | growth_risk | 6800 | 94 | 0.0138 | 0.7781 | 0.0633 | 680 | 40 | 0.0588 | 0.4255 | 946 | 0.6678 | 16 | 9 |
+| 0 | 1000.0 | confidence | 6800 | 94 | 0.0138 | 0.629 | 0.0358 | 680 | 14 | 0.0206 | 0.1489 | 946 | 0.5469 | 16 | 3 |
+| 0 | 1000.0 | detections | 6800 | 94 | 0.0138 | 0.6369 | 0.0231 | 680 | 18 | 0.0265 | 0.1915 | 946 | 0.5217 | 16 | 3 |
+| 24 | 100.0 | growth_risk | 6271 | 277 | 0.0442 | 0.8459 | 0.4311 | 627 | 168 | 0.2679 | 0.6065 | 823 | 0.7144 | 14 | 11 |
+| 24 | 100.0 | confidence | 6271 | 277 | 0.0442 | 0.7714 | 0.1658 | 627 | 104 | 0.1659 | 0.3755 | 823 | 0.6446 | 14 | 8 |
+| 24 | 100.0 | detections | 6271 | 277 | 0.0442 | 0.8255 | 0.3447 | 627 | 155 | 0.2472 | 0.5596 | 823 | 0.7007 | 14 | 10 |
+| 24 | 100.0 | persistence | 6271 | 277 | 0.0442 | 0.5784 | 0.0795 | 627 | 76 | 0.1212 | 0.2744 | 823 | 0.5498 | 14 | 4 |
+| 24 | 1000.0 | growth_risk | 6271 | 74 | 0.0118 | 0.8806 | 0.297 | 627 | 51 | 0.0813 | 0.6892 | 823 | 0.7469 | 14 | 11 |
+| 24 | 1000.0 | confidence | 6271 | 74 | 0.0118 | 0.8281 | 0.0812 | 627 | 39 | 0.0622 | 0.527 | 823 | 0.6981 | 14 | 8 |
+| 24 | 1000.0 | detections | 6271 | 74 | 0.0118 | 0.8761 | 0.2539 | 627 | 46 | 0.0734 | 0.6216 | 823 | 0.7251 | 14 | 10 |
+| 24 | 1000.0 | persistence | 6271 | 74 | 0.0118 | 0.6219 | 0.0397 | 627 | 23 | 0.0367 | 0.3108 | 823 | 0.5888 | 14 | 4 |
+
+### 2020 risk_alerts
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | group | alerts | fires |
+|---|---|---|---|
+| 0 | all alerts | 13575 |  |
+| 0 | known fire: left out | 6775 |  |
+| 0 | no mapped fire | 5854 |  |
+| 0 | new fire, 10 to 100 hectares | 604 | 6511 |
+| 0 | new fire, 100 to 1000 hectares | 248 | 797 |
+| 0 | new fire, 1000 to 10000 hectares | 78 | 152 |
+| 0 | new fire, 10000 to inf hectares | 16 | 23 |
+| 24 | all alerts | 12042 |  |
+| 24 | known fire: left out | 5771 |  |
+| 24 | no mapped fire | 5448 |  |
+| 24 | new fire, 10 to 100 hectares | 546 | 6511 |
+| 24 | new fire, 100 to 1000 hectares | 203 | 797 |
+| 24 | new fire, 1000 to 10000 hectares | 60 | 152 |
+| 24 | new fire, 10000 to inf hectares | 14 | 23 |
+
+### 2020 risk_weights
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| model | input | weight |
+|---|---|---|
+| 0h_100ha | no_power | 0.7098 |
+| 0h_100ha | power_log | 0.5625 |
+| 0h_100ha | season_cos | -0.4335 |
+| 0h_100ha | season_sin | -0.43 |
+| 0h_100ha | detections_log | 0.3866 |
+| 0h_100ha | indigenous_km_log | -0.3734 |
+| 0h_100ha | has_avhrr | -0.3642 |
+| 0h_100ha | on_pasture | -0.3499 |
+| 0h_100ha | night | 0.3459 |
+| 0h_100ha | protected_km_log | -0.2072 |
+| 0h_100ha | people_log | -0.198 |
+| 0h_100ha | on_wetland | 0.173 |
+| 0h_100ha | near_log | -0.1711 |
+| 0h_100ha | has_high | 0.1115 |
+| 0h_100ha | on_farming | -0.0998 |
+| 0h_100ha | has_modis | 0.0631 |
+| 0h_100ha | has_viirs | 0.0626 |
+| 0h_100ha | families | -0.0594 |
+| 0h_100ha | on_savanna | -0.0405 |
+| 0h_100ha | has_abi | 0.0218 |
+| 0h_100ha | on_forest | -0.0184 |
+| 0h_100ha | on_grassland | 0.0067 |
+| 0h_1000ha | season_sin | -0.5547 |
+| 0h_1000ha | season_cos | -0.4828 |
+| 0h_1000ha | no_power | 0.4311 |
+| 0h_1000ha | night | 0.3545 |
+| 0h_1000ha | power_log | 0.3494 |
+| 0h_1000ha | detections_log | 0.348 |
+| 0h_1000ha | indigenous_km_log | -0.3157 |
+| 0h_1000ha | people_log | -0.2744 |
+| 0h_1000ha | protected_km_log | -0.2639 |
+| 0h_1000ha | on_pasture | -0.2629 |
+| 0h_1000ha | near_log | -0.2497 |
+| 0h_1000ha | has_avhrr | -0.2344 |
+| 0h_1000ha | on_wetland | 0.164 |
+| 0h_1000ha | has_abi | 0.1139 |
+| 0h_1000ha | has_high | 0.1039 |
+| 0h_1000ha | families | -0.0706 |
+| 0h_1000ha | on_savanna | -0.0676 |
+| 0h_1000ha | has_viirs | -0.0637 |
+| 0h_1000ha | on_farming | -0.0583 |
+| 0h_1000ha | has_modis | 0.0365 |
+| 0h_1000ha | on_grassland | 0.0348 |
+| 0h_1000ha | on_forest | -0.0258 |
+| 24h_100ha | detections_log | 0.6511 |
+| 24h_100ha | on_pasture | -0.3904 |
+| 24h_100ha | season_sin | -0.3744 |
+| 24h_100ha | indigenous_km_log | -0.3653 |
+| 24h_100ha | on_wetland | 0.2977 |
+| 24h_100ha | no_power | 0.2864 |
+| 24h_100ha | power_log | 0.2754 |
+| 24h_100ha | season_cos | -0.2122 |
+| 24h_100ha | protected_km_log | -0.209 |
+| 24h_100ha | near_log | -0.1812 |
+| 24h_100ha | has_high | 0.1653 |
+| 24h_100ha | people_log | -0.134 |
+| 24h_100ha | has_viirs | 0.1274 |
+| 24h_100ha | families | 0.1097 |
+| 24h_100ha | on_grassland | 0.1029 |
+| 24h_100ha | night | 0.0951 |
+| 24h_100ha | has_advance | 0.0915 |
+| 24h_100ha | on_farming | -0.0845 |
+| 24h_100ha | on_forest | -0.0692 |
+| 24h_100ha | has_avhrr | 0.0384 |
+| 24h_100ha | extent_km_log | -0.0241 |
+| 24h_100ha | has_modis | -0.0224 |
+| 24h_100ha | has_abi | 0.0092 |
+| 24h_100ha | on_savanna | -0.0049 |
+| 24h_1000ha | detections_log | 0.485 |
+| 24h_1000ha | season_sin | -0.441 |
+| 24h_1000ha | power_log | 0.3353 |
+| 24h_1000ha | on_pasture | -0.3295 |
+| 24h_1000ha | indigenous_km_log | -0.3051 |
+| 24h_1000ha | no_power | 0.2721 |
+| 24h_1000ha | protected_km_log | -0.2646 |
+| 24h_1000ha | season_cos | -0.2635 |
+| 24h_1000ha | on_wetland | 0.2519 |
+| 24h_1000ha | near_log | -0.2066 |
+| 24h_1000ha | people_log | -0.1876 |
+| 24h_1000ha | has_high | 0.1606 |
+| 24h_1000ha | night | 0.1515 |
+| 24h_1000ha | has_viirs | 0.1238 |
+| 24h_1000ha | on_grassland | 0.1172 |
+| 24h_1000ha | extent_km_log | 0.0869 |
+| 24h_1000ha | families | 0.082 |
+| 24h_1000ha | has_avhrr | 0.0691 |
+| 24h_1000ha | on_farming | -0.0421 |
+| 24h_1000ha | has_abi | -0.0316 |
+| 24h_1000ha | on_forest | -0.0304 |
+| 24h_1000ha | has_modis | -0.0293 |
+| 24h_1000ha | has_advance | 0.017 |
+| 24h_1000ha | on_savanna | -0.0072 |
+
+## 2021 (year before the development year)
+
+### 2021 risk
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fires | auc_new_fires | largest_fires | top_tenth_largest_fires |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 100.0 | growth_risk | 3617 | 167 | 0.0462 | 0.8174 | 0.2681 | 361 | 82 | 0.2271 | 0.491 | 440 | 0.6497 | 17 | 10 |
+| 0 | 100.0 | confidence | 3617 | 167 | 0.0462 | 0.6178 | 0.0831 | 361 | 36 | 0.0997 | 0.2156 | 440 | 0.4889 | 17 | 5 |
+| 0 | 100.0 | detections | 3617 | 167 | 0.0462 | 0.6417 | 0.1122 | 361 | 47 | 0.1302 | 0.2814 | 440 | 0.5732 | 17 | 5 |
+| 0 | 1000.0 | growth_risk | 3617 | 50 | 0.0138 | 0.8809 | 0.1866 | 361 | 31 | 0.0859 | 0.62 | 440 | 0.7265 | 17 | 11 |
+| 0 | 1000.0 | confidence | 3617 | 50 | 0.0138 | 0.6621 | 0.0243 | 361 | 10 | 0.0277 | 0.2 | 440 | 0.5334 | 17 | 5 |
+| 0 | 1000.0 | detections | 3617 | 50 | 0.0138 | 0.6445 | 0.0615 | 361 | 16 | 0.0443 | 0.32 | 440 | 0.5703 | 17 | 5 |
+| 24 | 100.0 | growth_risk | 3464 | 141 | 0.0407 | 0.8573 | 0.4046 | 346 | 84 | 0.2428 | 0.5957 | 392 | 0.6952 | 14 | 9 |
+| 24 | 100.0 | confidence | 3464 | 141 | 0.0407 | 0.7906 | 0.2044 | 346 | 63 | 0.1821 | 0.4468 | 392 | 0.6343 | 14 | 9 |
+| 24 | 100.0 | detections | 3464 | 141 | 0.0407 | 0.8092 | 0.307 | 346 | 75 | 0.2168 | 0.5319 | 392 | 0.7105 | 14 | 9 |
+| 24 | 100.0 | persistence | 3464 | 141 | 0.0407 | 0.5799 | 0.072 | 346 | 42 | 0.1214 | 0.2979 | 392 | 0.564 | 14 | 1 |
+| 24 | 1000.0 | growth_risk | 3464 | 41 | 0.0118 | 0.9081 | 0.3488 | 346 | 30 | 0.0867 | 0.7317 | 392 | 0.7581 | 14 | 11 |
+| 24 | 1000.0 | confidence | 3464 | 41 | 0.0118 | 0.8699 | 0.1306 | 346 | 26 | 0.0751 | 0.6341 | 392 | 0.7307 | 14 | 9 |
+| 24 | 1000.0 | detections | 3464 | 41 | 0.0118 | 0.8219 | 0.2665 | 346 | 27 | 0.078 | 0.6585 | 392 | 0.7184 | 14 | 9 |
+| 24 | 1000.0 | persistence | 3464 | 41 | 0.0118 | 0.5793 | 0.0335 | 346 | 9 | 0.026 | 0.2195 | 392 | 0.5469 | 14 | 1 |
+
+### 2021 risk_alerts
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | group | alerts | fires |
+|---|---|---|---|
+| 0 | all alerts | 5586 |  |
+| 0 | known fire: left out | 1969 |  |
+| 0 | no mapped fire | 3177 |  |
+| 0 | new fire, 10 to 100 hectares | 273 | 2977 |
+| 0 | new fire, 100 to 1000 hectares | 117 | 335 |
+| 0 | new fire, 1000 to 10000 hectares | 33 | 66 |
+| 0 | new fire, 10000 to inf hectares | 17 | 27 |
+| 24 | all alerts | 5197 |  |
+| 24 | known fire: left out | 1733 |  |
+| 24 | no mapped fire | 3072 |  |
+| 24 | new fire, 10 to 100 hectares | 251 | 2977 |
+| 24 | new fire, 100 to 1000 hectares | 100 | 335 |
+| 24 | new fire, 1000 to 10000 hectares | 27 | 66 |
+| 24 | new fire, 10000 to inf hectares | 14 | 27 |
+
+### 2021 risk_weights
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| model | input | weight |
+|---|---|---|
+| 0h_100ha | no_power | 0.7022 |
+| 0h_100ha | power_log | 0.5507 |
+| 0h_100ha | season_cos | -0.4264 |
+| 0h_100ha | detections_log | 0.3567 |
+| 0h_100ha | indigenous_km_log | -0.3441 |
+| 0h_100ha | on_pasture | -0.326 |
+| 0h_100ha | has_avhrr | -0.3154 |
+| 0h_100ha | night | 0.3131 |
+| 0h_100ha | season_sin | -0.2928 |
+| 0h_100ha | on_wetland | 0.217 |
+| 0h_100ha | protected_km_log | -0.1769 |
+| 0h_100ha | near_log | -0.1459 |
+| 0h_100ha | people_log | -0.1401 |
+| 0h_100ha | has_high | 0.1135 |
+| 0h_100ha | on_farming | -0.1016 |
+| 0h_100ha | has_viirs | 0.0715 |
+| 0h_100ha | has_modis | 0.0567 |
+| 0h_100ha | on_grassland | 0.0392 |
+| 0h_100ha | families | -0.0316 |
+| 0h_100ha | has_abi | 0.0196 |
+| 0h_100ha | on_savanna | -0.002 |
+| 0h_100ha | on_forest | -0.0014 |
+| 0h_1000ha | season_cos | -0.5089 |
+| 0h_1000ha | season_sin | -0.4256 |
+| 0h_1000ha | no_power | 0.4068 |
+| 0h_1000ha | power_log | 0.3572 |
+| 0h_1000ha | night | 0.3247 |
+| 0h_1000ha | detections_log | 0.3079 |
+| 0h_1000ha | indigenous_km_log | -0.2876 |
+| 0h_1000ha | people_log | -0.2294 |
+| 0h_1000ha | protected_km_log | -0.2284 |
+| 0h_1000ha | near_log | -0.2279 |
+| 0h_1000ha | on_pasture | -0.2277 |
+| 0h_1000ha | on_wetland | 0.2013 |
+| 0h_1000ha | has_avhrr | -0.1825 |
+| 0h_1000ha | has_high | 0.1214 |
+| 0h_1000ha | has_abi | 0.119 |
+| 0h_1000ha | has_viirs | -0.0597 |
+| 0h_1000ha | on_farming | -0.0578 |
+| 0h_1000ha | families | -0.0568 |
+| 0h_1000ha | on_savanna | -0.0246 |
+| 0h_1000ha | on_grassland | 0.0232 |
+| 0h_1000ha | on_forest | -0.0114 |
+| 0h_1000ha | has_modis | 0.0094 |
+| 24h_100ha | detections_log | 0.5924 |
+| 24h_100ha | on_pasture | -0.4343 |
+| 24h_100ha | indigenous_km_log | -0.3466 |
+| 24h_100ha | power_log | 0.3292 |
+| 24h_100ha | on_wetland | 0.3101 |
+| 24h_100ha | no_power | 0.2575 |
+| 24h_100ha | season_sin | -0.2388 |
+| 24h_100ha | season_cos | -0.2116 |
+| 24h_100ha | protected_km_log | -0.1989 |
+| 24h_100ha | has_high | 0.1808 |
+| 24h_100ha | has_viirs | 0.1425 |
+| 24h_100ha | families | 0.1297 |
+| 24h_100ha | near_log | -0.123 |
+| 24h_100ha | night | 0.1111 |
+| 24h_100ha | has_avhrr | 0.107 |
+| 24h_100ha | has_advance | 0.1033 |
+| 24h_100ha | on_farming | -0.0946 |
+| 24h_100ha | on_grassland | 0.0848 |
+| 24h_100ha | on_forest | -0.0653 |
+| 24h_100ha | people_log | -0.0569 |
+| 24h_100ha | has_modis | -0.0374 |
+| 24h_100ha | extent_km_log | -0.0099 |
+| 24h_100ha | has_abi | -0.0074 |
+| 24h_100ha | on_savanna | -0.0032 |
+| 24h_1000ha | detections_log | 0.4641 |
+| 24h_1000ha | on_pasture | -0.3393 |
+| 24h_1000ha | season_cos | -0.3309 |
+| 24h_1000ha | power_log | 0.3266 |
+| 24h_1000ha | season_sin | -0.3186 |
+| 24h_1000ha | indigenous_km_log | -0.2484 |
+| 24h_1000ha | protected_km_log | -0.2452 |
+| 24h_1000ha | on_wetland | 0.237 |
+| 24h_1000ha | no_power | 0.1713 |
+| 24h_1000ha | has_high | 0.1603 |
+| 24h_1000ha | people_log | -0.1553 |
+| 24h_1000ha | near_log | -0.1529 |
+| 24h_1000ha | night | 0.1499 |
+| 24h_1000ha | extent_km_log | 0.1357 |
+| 24h_1000ha | has_avhrr | 0.1349 |
+| 24h_1000ha | has_viirs | 0.1212 |
+| 24h_1000ha | has_modis | -0.0961 |
+| 24h_1000ha | families | 0.0848 |
+| 24h_1000ha | has_advance | 0.0778 |
+| 24h_1000ha | on_grassland | 0.0763 |
+| 24h_1000ha | on_farming | -0.0439 |
+| 24h_1000ha | on_savanna | 0.0349 |
+| 24h_1000ha | on_forest | -0.0122 |
+| 24h_1000ha | has_abi | -0.0115 |
+
+## 2022 (year before the development year)
+
+### 2022 risk
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fires | auc_new_fires | largest_fires | top_tenth_largest_fires |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 100.0 | growth_risk | 2980 | 85 | 0.0285 | 0.8616 | 0.2888 | 298 | 46 | 0.1544 | 0.5412 | 246 | 0.6704 | 2 | 2 |
+| 0 | 100.0 | confidence | 2980 | 85 | 0.0285 | 0.7383 | 0.1262 | 298 | 38 | 0.1275 | 0.4471 | 246 | 0.627 | 2 | 2 |
+| 0 | 100.0 | detections | 2980 | 85 | 0.0285 | 0.6037 | 0.0521 | 298 | 17 | 0.057 | 0.2 | 246 | 0.5243 | 2 | 0 |
+| 0 | 1000.0 | growth_risk | 2980 | 29 | 0.0097 | 0.9012 | 0.2382 | 298 | 20 | 0.0671 | 0.6897 | 246 | 0.7562 | 2 | 2 |
+| 0 | 1000.0 | confidence | 2980 | 29 | 0.0097 | 0.7609 | 0.0865 | 298 | 16 | 0.0537 | 0.5517 | 246 | 0.6552 | 2 | 2 |
+| 0 | 1000.0 | detections | 2980 | 29 | 0.0097 | 0.6702 | 0.0282 | 298 | 5 | 0.0168 | 0.1724 | 246 | 0.5826 | 2 | 0 |
+| 24 | 100.0 | growth_risk | 2920 | 77 | 0.0264 | 0.9012 | 0.4926 | 292 | 56 | 0.1918 | 0.7273 | 232 | 0.7715 | 2 | 2 |
+| 24 | 100.0 | confidence | 2920 | 77 | 0.0264 | 0.8568 | 0.3321 | 292 | 46 | 0.1575 | 0.5974 | 232 | 0.7359 | 2 | 2 |
+| 24 | 100.0 | detections | 2920 | 77 | 0.0264 | 0.8117 | 0.293 | 292 | 44 | 0.1507 | 0.5714 | 232 | 0.7377 | 2 | 1 |
+| 24 | 100.0 | persistence | 2920 | 77 | 0.0264 | 0.5772 | 0.0564 | 292 | 21 | 0.0719 | 0.2727 | 232 | 0.5581 | 2 | 1 |
+| 24 | 1000.0 | growth_risk | 2920 | 25 | 0.0086 | 0.9552 | 0.5093 | 292 | 23 | 0.0788 | 0.92 | 232 | 0.8603 | 2 | 2 |
+| 24 | 1000.0 | confidence | 2920 | 25 | 0.0086 | 0.9393 | 0.3915 | 292 | 21 | 0.0719 | 0.84 | 232 | 0.8373 | 2 | 2 |
+| 24 | 1000.0 | detections | 2920 | 25 | 0.0086 | 0.894 | 0.27 | 292 | 17 | 0.0582 | 0.68 | 232 | 0.7964 | 2 | 1 |
+| 24 | 1000.0 | persistence | 2920 | 25 | 0.0086 | 0.6255 | 0.0652 | 292 | 8 | 0.0274 | 0.32 | 232 | 0.6002 | 2 | 1 |
+
+### 2022 risk_alerts
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | group | alerts | fires |
+|---|---|---|---|
+| 0 | all alerts | 3377 |  |
+| 0 | known fire: left out | 397 |  |
+| 0 | no mapped fire | 2734 |  |
+| 0 | new fire, 10 to 100 hectares | 161 | 902 |
+| 0 | new fire, 100 to 1000 hectares | 56 | 120 |
+| 0 | new fire, 1000 to 10000 hectares | 27 | 32 |
+| 0 | new fire, 10000 to inf hectares | 2 | 3 |
+| 24 | all alerts | 3279 |  |
+| 24 | known fire: left out | 359 |  |
+| 24 | no mapped fire | 2688 |  |
+| 24 | new fire, 10 to 100 hectares | 155 | 902 |
+| 24 | new fire, 100 to 1000 hectares | 52 | 120 |
+| 24 | new fire, 1000 to 10000 hectares | 23 | 32 |
+| 24 | new fire, 10000 to inf hectares | 2 | 3 |
+
+### 2022 risk_weights
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| model | input | weight |
+|---|---|---|
+| 0h_100ha | no_power | 0.6762 |
+| 0h_100ha | power_log | 0.4745 |
+| 0h_100ha | season_cos | -0.4326 |
+| 0h_100ha | detections_log | 0.3816 |
+| 0h_100ha | indigenous_km_log | -0.3258 |
+| 0h_100ha | has_avhrr | -0.3184 |
+| 0h_100ha | on_pasture | -0.3173 |
+| 0h_100ha | season_sin | -0.3117 |
+| 0h_100ha | night | 0.3079 |
+| 0h_100ha | on_wetland | 0.1969 |
+| 0h_100ha | near_log | -0.1853 |
+| 0h_100ha | protected_km_log | -0.1808 |
+| 0h_100ha | people_log | -0.1473 |
+| 0h_100ha | has_high | 0.1151 |
+| 0h_100ha | on_farming | -0.0972 |
+| 0h_100ha | has_modis | 0.0561 |
+| 0h_100ha | has_viirs | 0.0519 |
+| 0h_100ha | has_abi | 0.0479 |
+| 0h_100ha | families | -0.0344 |
+| 0h_100ha | on_grassland | 0.0333 |
+| 0h_100ha | on_savanna | -0.0113 |
+| 0h_100ha | on_forest | 0.01 |
+| 0h_1000ha | season_cos | -0.5084 |
+| 0h_1000ha | season_sin | -0.4731 |
+| 0h_1000ha | no_power | 0.3603 |
+| 0h_1000ha | night | 0.3476 |
+| 0h_1000ha | detections_log | 0.3309 |
+| 0h_1000ha | power_log | 0.2773 |
+| 0h_1000ha | near_log | -0.2687 |
+| 0h_1000ha | on_pasture | -0.2639 |
+| 0h_1000ha | indigenous_km_log | -0.2572 |
+| 0h_1000ha | protected_km_log | -0.2422 |
+| 0h_1000ha | people_log | -0.22 |
+| 0h_1000ha | has_avhrr | -0.1996 |
+| 0h_1000ha | on_wetland | 0.1885 |
+| 0h_1000ha | has_abi | 0.1474 |
+| 0h_1000ha | has_high | 0.1146 |
+| 0h_1000ha | has_viirs | -0.0746 |
+| 0h_1000ha | on_farming | -0.0569 |
+| 0h_1000ha | families | -0.0422 |
+| 0h_1000ha | on_savanna | -0.031 |
+| 0h_1000ha | on_grassland | 0.0309 |
+| 0h_1000ha | has_modis | 0.0181 |
+| 0h_1000ha | on_forest | 0.0016 |
+| 24h_100ha | detections_log | 0.6157 |
+| 24h_100ha | on_pasture | -0.404 |
+| 24h_100ha | indigenous_km_log | -0.3266 |
+| 24h_100ha | power_log | 0.2923 |
+| 24h_100ha | no_power | 0.2869 |
+| 24h_100ha | on_wetland | 0.2827 |
+| 24h_100ha | season_sin | -0.2652 |
+| 24h_100ha | season_cos | -0.2072 |
+| 24h_100ha | protected_km_log | -0.1828 |
+| 24h_100ha | has_high | 0.1747 |
+| 24h_100ha | near_log | -0.1646 |
+| 24h_100ha | has_viirs | 0.1476 |
+| 24h_100ha | families | 0.1381 |
+| 24h_100ha | night | 0.1084 |
+| 24h_100ha | has_advance | 0.1046 |
+| 24h_100ha | on_grassland | 0.0957 |
+| 24h_100ha | on_farming | -0.0904 |
+| 24h_100ha | people_log | -0.0708 |
+| 24h_100ha | has_avhrr | 0.0636 |
+| 24h_100ha | has_modis | -0.0527 |
+| 24h_100ha | on_forest | -0.0434 |
+| 24h_100ha | has_abi | 0.0326 |
+| 24h_100ha | extent_km_log | -0.0197 |
+| 24h_100ha | on_savanna | -0.0074 |
+| 24h_1000ha | detections_log | 0.5042 |
+| 24h_1000ha | season_sin | -0.356 |
+| 24h_1000ha | on_pasture | -0.3545 |
+| 24h_1000ha | season_cos | -0.3195 |
+| 24h_1000ha | power_log | 0.2988 |
+| 24h_1000ha | indigenous_km_log | -0.245 |
+| 24h_1000ha | protected_km_log | -0.2337 |
+| 24h_1000ha | on_wetland | 0.2151 |
+| 24h_1000ha | near_log | -0.1815 |
+| 24h_1000ha | night | 0.1697 |
+| 24h_1000ha | no_power | 0.1638 |
+| 24h_1000ha | has_high | 0.1483 |
+| 24h_1000ha | people_log | -0.136 |
+| 24h_1000ha | has_avhrr | 0.1232 |
+| 24h_1000ha | has_viirs | 0.1204 |
+| 24h_1000ha | has_modis | -0.1175 |
+| 24h_1000ha | on_grassland | 0.1041 |
+| 24h_1000ha | families | 0.0889 |
+| 24h_1000ha | extent_km_log | 0.0873 |
+| 24h_1000ha | has_advance | 0.0597 |
+| 24h_1000ha | on_farming | -0.0446 |
+| 24h_1000ha | has_abi | 0.0157 |
+| 24h_1000ha | on_savanna | 0.0108 |
+| 24h_1000ha | on_forest | -0.0107 |
+
 ## 2023 (development year)
 
 ### 2023 advance_check
@@ -467,6 +1039,147 @@ Configuration `a84ef20c2e1b`, run on 2026-11-23.
 | viirs | 10000 to inf | 9 | 9 | 0 | 0 | 0 | 0 |  |  |
 | viirs | all | 786 | 652 | 134 | 4454 | 110 | 76 | 4.06 | 56.65 |
 
+### 2023 risk
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fires | auc_new_fires | largest_fires | top_tenth_largest_fires |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 100.0 | growth_risk | 5630 | 86 | 0.0153 | 0.7755 | 0.1287 | 563 | 40 | 0.071 | 0.4651 | 245 | 0.5712 | 7 | 5 |
+| 0 | 100.0 | confidence | 5630 | 86 | 0.0153 | 0.6988 | 0.0417 | 563 | 29 | 0.0515 | 0.3372 | 245 | 0.5526 | 7 | 2 |
+| 0 | 100.0 | detections | 5630 | 86 | 0.0153 | 0.6153 | 0.028 | 563 | 20 | 0.0355 | 0.2326 | 245 | 0.5102 | 7 | 3 |
+| 0 | 1000.0 | growth_risk | 5630 | 29 | 0.0052 | 0.8418 | 0.0999 | 563 | 17 | 0.0302 | 0.5862 | 245 | 0.6335 | 7 | 5 |
+| 0 | 1000.0 | confidence | 5630 | 29 | 0.0052 | 0.6985 | 0.0206 | 563 | 11 | 0.0195 | 0.3793 | 245 | 0.5501 | 7 | 2 |
+| 0 | 1000.0 | detections | 5630 | 29 | 0.0052 | 0.549 | 0.0094 | 563 | 7 | 0.0124 | 0.2414 | 245 | 0.4484 | 7 | 3 |
+| 24 | 100.0 | growth_risk | 4982 | 76 | 0.0153 | 0.8982 | 0.3197 | 498 | 52 | 0.1044 | 0.6842 | 217 | 0.6953 | 6 | 5 |
+| 24 | 100.0 | confidence | 4982 | 76 | 0.0153 | 0.8712 | 0.2274 | 498 | 48 | 0.0964 | 0.6316 | 217 | 0.6753 | 6 | 3 |
+| 24 | 100.0 | detections | 4982 | 76 | 0.0153 | 0.8379 | 0.2617 | 498 | 44 | 0.0884 | 0.5789 | 217 | 0.6652 | 6 | 3 |
+| 24 | 100.0 | persistence | 4982 | 76 | 0.0153 | 0.5645 | 0.0545 | 498 | 15 | 0.0301 | 0.1974 | 217 | 0.5142 | 6 | 0 |
+| 24 | 1000.0 | growth_risk | 4982 | 26 | 0.0052 | 0.8976 | 0.2299 | 498 | 17 | 0.0341 | 0.6538 | 217 | 0.6694 | 6 | 5 |
+| 24 | 1000.0 | confidence | 4982 | 26 | 0.0052 | 0.8792 | 0.2105 | 498 | 17 | 0.0341 | 0.6538 | 217 | 0.6895 | 6 | 3 |
+| 24 | 1000.0 | detections | 4982 | 26 | 0.0052 | 0.7879 | 0.2112 | 498 | 15 | 0.0301 | 0.5769 | 217 | 0.6215 | 6 | 3 |
+| 24 | 1000.0 | persistence | 4982 | 26 | 0.0052 | 0.5687 | 0.0731 | 498 | 4 | 0.008 | 0.1538 | 217 | 0.5181 | 6 | 0 |
+
+### 2023 risk_alerts
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | group | alerts | fires |
+|---|---|---|---|
+| 0 | all alerts | 6873 |  |
+| 0 | known fire: left out | 1243 |  |
+| 0 | no mapped fire | 5385 |  |
+| 0 | new fire, 10 to 100 hectares | 159 | 794 |
+| 0 | new fire, 100 to 1000 hectares | 57 | 122 |
+| 0 | new fire, 1000 to 10000 hectares | 22 | 44 |
+| 0 | new fire, 10000 to inf hectares | 7 | 9 |
+| 24 | all alerts | 6037 |  |
+| 24 | known fire: left out | 1055 |  |
+| 24 | no mapped fire | 4765 |  |
+| 24 | new fire, 10 to 100 hectares | 141 | 794 |
+| 24 | new fire, 100 to 1000 hectares | 50 | 122 |
+| 24 | new fire, 1000 to 10000 hectares | 20 | 44 |
+| 24 | new fire, 10000 to inf hectares | 6 | 9 |
+
+### 2023 risk_weights
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| model | input | weight |
+|---|---|---|
+| 0h_100ha | no_power | 0.6422 |
+| 0h_100ha | power_log | 0.5051 |
+| 0h_100ha | season_cos | -0.4226 |
+| 0h_100ha | detections_log | 0.3765 |
+| 0h_100ha | on_pasture | -0.3594 |
+| 0h_100ha | night | 0.3347 |
+| 0h_100ha | season_sin | -0.3307 |
+| 0h_100ha | indigenous_km_log | -0.3283 |
+| 0h_100ha | has_avhrr | -0.3098 |
+| 0h_100ha | on_wetland | 0.2075 |
+| 0h_100ha | protected_km_log | -0.1707 |
+| 0h_100ha | people_log | -0.1557 |
+| 0h_100ha | has_abi | 0.1406 |
+| 0h_100ha | near_log | -0.1286 |
+| 0h_100ha | has_high | 0.1025 |
+| 0h_100ha | on_farming | -0.0972 |
+| 0h_100ha | on_grassland | 0.0961 |
+| 0h_100ha | families | -0.0387 |
+| 0h_100ha | on_savanna | 0.0198 |
+| 0h_100ha | has_modis | 0.0191 |
+| 0h_100ha | on_forest | 0.0129 |
+| 0h_100ha | has_viirs | -0.0017 |
+| 0h_1000ha | season_cos | -0.5201 |
+| 0h_1000ha | season_sin | -0.4846 |
+| 0h_1000ha | night | 0.3453 |
+| 0h_1000ha | detections_log | 0.3417 |
+| 0h_1000ha | no_power | 0.3375 |
+| 0h_1000ha | power_log | 0.3049 |
+| 0h_1000ha | on_pasture | -0.2881 |
+| 0h_1000ha | indigenous_km_log | -0.2712 |
+| 0h_1000ha | protected_km_log | -0.2371 |
+| 0h_1000ha | people_log | -0.237 |
+| 0h_1000ha | near_log | -0.2194 |
+| 0h_1000ha | has_abi | 0.2157 |
+| 0h_1000ha | has_avhrr | -0.1958 |
+| 0h_1000ha | on_wetland | 0.1875 |
+| 0h_1000ha | has_viirs | -0.113 |
+| 0h_1000ha | has_high | 0.1123 |
+| 0h_1000ha | on_grassland | 0.0955 |
+| 0h_1000ha | families | -0.0732 |
+| 0h_1000ha | on_farming | -0.0553 |
+| 0h_1000ha | on_forest | 0.0143 |
+| 0h_1000ha | has_modis | -0.0137 |
+| 0h_1000ha | on_savanna | 0.0074 |
+| 24h_100ha | detections_log | 0.5993 |
+| 24h_100ha | on_pasture | -0.4776 |
+| 24h_100ha | indigenous_km_log | -0.3429 |
+| 24h_100ha | power_log | 0.3 |
+| 24h_100ha | on_wetland | 0.2947 |
+| 24h_100ha | season_sin | -0.2711 |
+| 24h_100ha | season_cos | -0.2277 |
+| 24h_100ha | no_power | 0.1918 |
+| 24h_100ha | protected_km_log | -0.1758 |
+| 24h_100ha | has_high | 0.1678 |
+| 24h_100ha | on_grassland | 0.152 |
+| 24h_100ha | night | 0.1213 |
+| 24h_100ha | near_log | -0.1073 |
+| 24h_100ha | has_abi | 0.1011 |
+| 24h_100ha | has_advance | 0.0925 |
+| 24h_100ha | on_farming | -0.0899 |
+| 24h_100ha | families | 0.089 |
+| 24h_100ha | people_log | -0.0735 |
+| 24h_100ha | extent_km_log | 0.0714 |
+| 24h_100ha | has_avhrr | 0.061 |
+| 24h_100ha | has_modis | -0.0405 |
+| 24h_100ha | on_forest | -0.0393 |
+| 24h_100ha | on_savanna | 0.034 |
+| 24h_100ha | has_viirs | 0.0199 |
+| 24h_1000ha | detections_log | 0.4516 |
+| 24h_1000ha | on_pasture | -0.3981 |
+| 24h_1000ha | season_sin | -0.3522 |
+| 24h_1000ha | season_cos | -0.3429 |
+| 24h_1000ha | power_log | 0.2969 |
+| 24h_1000ha | indigenous_km_log | -0.2651 |
+| 24h_1000ha | protected_km_log | -0.2412 |
+| 24h_1000ha | on_wetland | 0.2181 |
+| 24h_1000ha | extent_km_log | 0.1991 |
+| 24h_1000ha | night | 0.1664 |
+| 24h_1000ha | has_high | 0.1633 |
+| 24h_1000ha | people_log | -0.1619 |
+| 24h_1000ha | on_grassland | 0.1509 |
+| 24h_1000ha | near_log | -0.1455 |
+| 24h_1000ha | has_modis | -0.1205 |
+| 24h_1000ha | no_power | 0.1136 |
+| 24h_1000ha | has_avhrr | 0.1132 |
+| 24h_1000ha | families | 0.0674 |
+| 24h_1000ha | has_abi | 0.0667 |
+| 24h_1000ha | has_viirs | 0.0623 |
+| 24h_1000ha | has_advance | 0.0488 |
+| 24h_1000ha | on_savanna | 0.0451 |
+| 24h_1000ha | on_farming | -0.0423 |
+| 24h_1000ha | on_forest | 0.011 |
+
 ### 2023 severity
 
 Configuration `ff28cb069294`, run on 2026-11-23.
@@ -855,6 +1568,147 @@ Configuration `a84ef20c2e1b`, run on 2026-11-23.
 | viirs | 10000 to inf | 25 | 25 | 0 | 0 | 0 | 0 |  |  |
 | viirs | all | 2864 | 1564 | 1300 | 74698 | 101 | 51 | 4.97 | 26.88 |
 
+### 2024 risk
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fires | auc_new_fires | largest_fires | top_tenth_largest_fires |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 100.0 | growth_risk | 4209 | 187 | 0.0444 | 0.8017 | 0.1545 | 420 | 71 | 0.169 | 0.3797 | 417 | 0.6286 | 15 | 8 |
+| 0 | 100.0 | confidence | 4209 | 187 | 0.0444 | 0.7043 | 0.0907 | 420 | 44 | 0.1048 | 0.2353 | 417 | 0.5337 | 15 | 3 |
+| 0 | 100.0 | detections | 4209 | 187 | 0.0444 | 0.6152 | 0.0647 | 420 | 37 | 0.0881 | 0.1979 | 417 | 0.5767 | 15 | 0 |
+| 0 | 1000.0 | growth_risk | 4209 | 74 | 0.0176 | 0.8215 | 0.081 | 420 | 32 | 0.0762 | 0.4324 | 417 | 0.6418 | 15 | 7 |
+| 0 | 1000.0 | confidence | 4209 | 74 | 0.0176 | 0.6972 | 0.0369 | 420 | 19 | 0.0452 | 0.2568 | 417 | 0.5207 | 15 | 3 |
+| 0 | 1000.0 | detections | 4209 | 74 | 0.0176 | 0.6724 | 0.032 | 420 | 17 | 0.0405 | 0.2297 | 417 | 0.619 | 15 | 0 |
+| 24 | 100.0 | growth_risk | 3908 | 151 | 0.0386 | 0.8571 | 0.3911 | 390 | 80 | 0.2051 | 0.5298 | 355 | 0.7032 | 12 | 6 |
+| 24 | 100.0 | confidence | 3908 | 151 | 0.0386 | 0.8005 | 0.2257 | 390 | 67 | 0.1718 | 0.4437 | 355 | 0.6491 | 12 | 6 |
+| 24 | 100.0 | detections | 3908 | 151 | 0.0386 | 0.7591 | 0.3035 | 390 | 66 | 0.1692 | 0.4371 | 355 | 0.6803 | 12 | 5 |
+| 24 | 100.0 | persistence | 3908 | 151 | 0.0386 | 0.5265 | 0.0577 | 390 | 40 | 0.1026 | 0.2649 | 355 | 0.521 | 12 | 3 |
+| 24 | 1000.0 | growth_risk | 3908 | 61 | 0.0156 | 0.8752 | 0.3698 | 390 | 36 | 0.0923 | 0.5902 | 355 | 0.706 | 12 | 6 |
+| 24 | 1000.0 | confidence | 3908 | 61 | 0.0156 | 0.8046 | 0.1597 | 390 | 33 | 0.0846 | 0.541 | 355 | 0.6466 | 12 | 6 |
+| 24 | 1000.0 | detections | 3908 | 61 | 0.0156 | 0.8225 | 0.2885 | 390 | 31 | 0.0795 | 0.5082 | 355 | 0.7094 | 12 | 5 |
+| 24 | 1000.0 | persistence | 3908 | 61 | 0.0156 | 0.5422 | 0.0411 | 390 | 16 | 0.041 | 0.2623 | 355 | 0.5338 | 12 | 3 |
+
+### 2024 risk_alerts
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | group | alerts | fires |
+|---|---|---|---|
+| 0 | all alerts | 7085 |  |
+| 0 | known fire: left out | 2876 |  |
+| 0 | no mapped fire | 3792 |  |
+| 0 | new fire, 10 to 100 hectares | 230 | 3657 |
+| 0 | new fire, 100 to 1000 hectares | 113 | 462 |
+| 0 | new fire, 1000 to 10000 hectares | 59 | 102 |
+| 0 | new fire, 10000 to inf hectares | 15 | 25 |
+| 24 | all alerts | 6473 |  |
+| 24 | known fire: left out | 2565 |  |
+| 24 | no mapped fire | 3553 |  |
+| 24 | new fire, 10 to 100 hectares | 204 | 3657 |
+| 24 | new fire, 100 to 1000 hectares | 90 | 462 |
+| 24 | new fire, 1000 to 10000 hectares | 49 | 102 |
+| 24 | new fire, 10000 to inf hectares | 12 | 25 |
+
+### 2024 risk_weights
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| model | input | weight |
+|---|---|---|
+| 0h_100ha | no_power | 0.7182 |
+| 0h_100ha | season_cos | -0.4237 |
+| 0h_100ha | detections_log | 0.4014 |
+| 0h_100ha | power_log | 0.4 |
+| 0h_100ha | on_pasture | -0.3606 |
+| 0h_100ha | indigenous_km_log | -0.3567 |
+| 0h_100ha | has_avhrr | -0.3253 |
+| 0h_100ha | night | 0.3246 |
+| 0h_100ha | season_sin | -0.3036 |
+| 0h_100ha | on_wetland | 0.1959 |
+| 0h_100ha | people_log | -0.1732 |
+| 0h_100ha | protected_km_log | -0.1496 |
+| 0h_100ha | near_log | -0.1268 |
+| 0h_100ha | has_high | 0.1204 |
+| 0h_100ha | on_farming | -0.0953 |
+| 0h_100ha | has_modis | 0.0867 |
+| 0h_100ha | has_viirs | 0.0594 |
+| 0h_100ha | on_grassland | 0.0532 |
+| 0h_100ha | on_savanna | -0.0379 |
+| 0h_100ha | families | -0.0375 |
+| 0h_100ha | on_forest | -0.0328 |
+| 0h_100ha | has_abi | 0.0195 |
+| 0h_1000ha | season_sin | -0.5252 |
+| 0h_1000ha | season_cos | -0.5026 |
+| 0h_1000ha | no_power | 0.3787 |
+| 0h_1000ha | detections_log | 0.3327 |
+| 0h_1000ha | indigenous_km_log | -0.3221 |
+| 0h_1000ha | night | 0.3212 |
+| 0h_1000ha | people_log | -0.2962 |
+| 0h_1000ha | on_pasture | -0.2782 |
+| 0h_1000ha | near_log | -0.2165 |
+| 0h_1000ha | has_avhrr | -0.204 |
+| 0h_1000ha | protected_km_log | -0.2014 |
+| 0h_1000ha | on_wetland | 0.1975 |
+| 0h_1000ha | power_log | 0.173 |
+| 0h_1000ha | has_high | 0.1531 |
+| 0h_1000ha | has_abi | 0.1519 |
+| 0h_1000ha | has_viirs | -0.0766 |
+| 0h_1000ha | on_farming | -0.0515 |
+| 0h_1000ha | on_grassland | 0.0512 |
+| 0h_1000ha | on_savanna | -0.0486 |
+| 0h_1000ha | on_forest | -0.0325 |
+| 0h_1000ha | has_modis | 0.0296 |
+| 0h_1000ha | families | -0.026 |
+| 24h_100ha | detections_log | 0.6601 |
+| 24h_100ha | on_pasture | -0.4531 |
+| 24h_100ha | indigenous_km_log | -0.351 |
+| 24h_100ha | no_power | 0.3159 |
+| 24h_100ha | on_wetland | 0.2686 |
+| 24h_100ha | season_cos | -0.2281 |
+| 24h_100ha | season_sin | -0.2272 |
+| 24h_100ha | power_log | 0.2153 |
+| 24h_100ha | has_high | 0.1846 |
+| 24h_100ha | protected_km_log | -0.1559 |
+| 24h_100ha | has_viirs | 0.1516 |
+| 24h_100ha | families | 0.1429 |
+| 24h_100ha | night | 0.1261 |
+| 24h_100ha | has_advance | 0.1128 |
+| 24h_100ha | near_log | -0.1072 |
+| 24h_100ha | on_grassland | 0.1016 |
+| 24h_100ha | on_forest | -0.097 |
+| 24h_100ha | on_farming | -0.089 |
+| 24h_100ha | people_log | -0.0785 |
+| 24h_100ha | has_avhrr | 0.0486 |
+| 24h_100ha | has_abi | 0.0283 |
+| 24h_100ha | extent_km_log | -0.0276 |
+| 24h_100ha | on_savanna | -0.0249 |
+| 24h_100ha | has_modis | -0.0249 |
+| 24h_1000ha | detections_log | 0.4824 |
+| 24h_1000ha | season_sin | -0.4209 |
+| 24h_1000ha | on_pasture | -0.3878 |
+| 24h_1000ha | season_cos | -0.3362 |
+| 24h_1000ha | indigenous_km_log | -0.2829 |
+| 24h_1000ha | power_log | 0.2404 |
+| 24h_1000ha | on_wetland | 0.2296 |
+| 24h_1000ha | has_high | 0.2015 |
+| 24h_1000ha | people_log | -0.1975 |
+| 24h_1000ha | protected_km_log | -0.19 |
+| 24h_1000ha | no_power | 0.1731 |
+| 24h_1000ha | near_log | -0.1519 |
+| 24h_1000ha | night | 0.1492 |
+| 24h_1000ha | extent_km_log | 0.1127 |
+| 24h_1000ha | has_viirs | 0.0979 |
+| 24h_1000ha | families | 0.092 |
+| 24h_1000ha | has_avhrr | 0.0839 |
+| 24h_1000ha | has_advance | 0.0812 |
+| 24h_1000ha | has_modis | -0.0802 |
+| 24h_1000ha | on_grassland | 0.0772 |
+| 24h_1000ha | has_abi | 0.0418 |
+| 24h_1000ha | on_farming | -0.04 |
+| 24h_1000ha | on_forest | -0.0281 |
+| 24h_1000ha | on_savanna | -0.0038 |
+
 ### 2024 severity
 
 Configuration `ff28cb069294`, run on 2026-11-23.
@@ -1219,6 +2073,147 @@ Configuration `a84ef20c2e1b`, run on 2026-11-23.
 | viirs | 1000 to 10000 | 13 | 13 | 0 | 0 | 2 | 2 | 29.35 | 34.66 |
 | viirs | 10000 to inf | 2 | 2 | 0 | 0 | 0 | 0 |  |  |
 | viirs | all | 306 | 248 | 58 | 3664 | 77 | 48 | 3.88 | 40.57 |
+
+### 2025 risk
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fires | auc_new_fires | largest_fires | top_tenth_largest_fires |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 100.0 | growth_risk | 1569 | 57 | 0.0363 | 0.8895 | 0.3425 | 156 | 31 | 0.1987 | 0.5439 | 155 | 0.65 | 2 | 0 |
+| 0 | 100.0 | confidence | 1569 | 57 | 0.0363 | 0.8616 | 0.2311 | 156 | 26 | 0.1667 | 0.4561 | 155 | 0.6439 | 2 | 1 |
+| 0 | 100.0 | detections | 1569 | 57 | 0.0363 | 0.6472 | 0.1499 | 156 | 18 | 0.1154 | 0.3158 | 155 | 0.5662 | 2 | 0 |
+| 0 | 1000.0 | growth_risk | 1569 | 15 | 0.0096 | 0.9459 | 0.2909 | 156 | 11 | 0.0705 | 0.7333 | 155 | 0.7462 | 2 | 1 |
+| 0 | 1000.0 | confidence | 1569 | 15 | 0.0096 | 0.905 | 0.1648 | 156 | 10 | 0.0641 | 0.6667 | 155 | 0.7105 | 2 | 1 |
+| 0 | 1000.0 | detections | 1569 | 15 | 0.0096 | 0.6402 | 0.1634 | 156 | 6 | 0.0385 | 0.4 | 155 | 0.5655 | 2 | 0 |
+| 24 | 100.0 | growth_risk | 1540 | 51 | 0.0331 | 0.9191 | 0.536 | 154 | 39 | 0.2532 | 0.7647 | 143 | 0.7579 | 1 | 1 |
+| 24 | 100.0 | confidence | 1540 | 51 | 0.0331 | 0.9137 | 0.4282 | 154 | 38 | 0.2468 | 0.7451 | 143 | 0.7393 | 1 | 1 |
+| 24 | 100.0 | detections | 1540 | 51 | 0.0331 | 0.8524 | 0.4277 | 154 | 35 | 0.2273 | 0.6863 | 143 | 0.7401 | 1 | 1 |
+| 24 | 100.0 | persistence | 1540 | 51 | 0.0331 | 0.5716 | 0.0857 | 154 | 10 | 0.0649 | 0.1961 | 143 | 0.5343 | 1 | 0 |
+| 24 | 1000.0 | growth_risk | 1540 | 11 | 0.0071 | 0.9869 | 0.4763 | 154 | 11 | 0.0714 | 1.0 | 143 | 0.905 | 1 | 1 |
+| 24 | 1000.0 | confidence | 1540 | 11 | 0.0071 | 0.9788 | 0.3864 | 154 | 10 | 0.0649 | 0.9091 | 143 | 0.8926 | 1 | 1 |
+| 24 | 1000.0 | detections | 1540 | 11 | 0.0071 | 0.9601 | 0.4404 | 154 | 9 | 0.0584 | 0.8182 | 143 | 0.844 | 1 | 1 |
+| 24 | 1000.0 | persistence | 1540 | 11 | 0.0071 | 0.5819 | 0.0204 | 154 | 2 | 0.013 | 0.1818 | 143 | 0.5351 | 1 | 0 |
+
+### 2025 risk_alerts
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| moment_h | group | alerts | fires |
+|---|---|---|---|
+| 0 | all alerts | 1755 |  |
+| 0 | known fire: left out | 186 |  |
+| 0 | no mapped fire | 1414 |  |
+| 0 | new fire, 10 to 100 hectares | 98 | 501 |
+| 0 | new fire, 100 to 1000 hectares | 42 | 73 |
+| 0 | new fire, 1000 to 10000 hectares | 13 | 13 |
+| 0 | new fire, 10000 to inf hectares | 2 | 2 |
+| 24 | all alerts | 1729 |  |
+| 24 | known fire: left out | 189 |  |
+| 24 | no mapped fire | 1397 |  |
+| 24 | new fire, 10 to 100 hectares | 92 | 501 |
+| 24 | new fire, 100 to 1000 hectares | 40 | 73 |
+| 24 | new fire, 1000 to 10000 hectares | 10 | 13 |
+| 24 | new fire, 10000 to inf hectares | 1 | 2 |
+
+### 2025 risk_weights
+
+Configuration `5451e29e05bc`, run on 2026-11-25.
+
+| model | input | weight |
+|---|---|---|
+| 0h_100ha | no_power | 0.6878 |
+| 0h_100ha | power_log | 0.4463 |
+| 0h_100ha | season_cos | -0.4375 |
+| 0h_100ha | detections_log | 0.3748 |
+| 0h_100ha | on_pasture | -0.3462 |
+| 0h_100ha | indigenous_km_log | -0.3414 |
+| 0h_100ha | has_avhrr | -0.3289 |
+| 0h_100ha | night | 0.3037 |
+| 0h_100ha | season_sin | -0.301 |
+| 0h_100ha | on_wetland | 0.202 |
+| 0h_100ha | protected_km_log | -0.1683 |
+| 0h_100ha | near_log | -0.1609 |
+| 0h_100ha | people_log | -0.1579 |
+| 0h_100ha | has_high | 0.1117 |
+| 0h_100ha | on_farming | -0.0994 |
+| 0h_100ha | has_viirs | 0.0632 |
+| 0h_100ha | has_modis | 0.0617 |
+| 0h_100ha | on_grassland | 0.0424 |
+| 0h_100ha | has_abi | 0.0372 |
+| 0h_100ha | families | -0.0309 |
+| 0h_100ha | on_savanna | -0.0133 |
+| 0h_100ha | on_forest | 0.003 |
+| 0h_1000ha | season_cos | -0.5381 |
+| 0h_1000ha | season_sin | -0.4646 |
+| 0h_1000ha | no_power | 0.375 |
+| 0h_1000ha | detections_log | 0.3381 |
+| 0h_1000ha | night | 0.3255 |
+| 0h_1000ha | indigenous_km_log | -0.2961 |
+| 0h_1000ha | power_log | 0.2676 |
+| 0h_1000ha | on_pasture | -0.2674 |
+| 0h_1000ha | near_log | -0.2559 |
+| 0h_1000ha | people_log | -0.2317 |
+| 0h_1000ha | protected_km_log | -0.2151 |
+| 0h_1000ha | has_avhrr | -0.2095 |
+| 0h_1000ha | on_wetland | 0.1875 |
+| 0h_1000ha | has_abi | 0.1508 |
+| 0h_1000ha | has_high | 0.1022 |
+| 0h_1000ha | has_viirs | -0.0804 |
+| 0h_1000ha | on_farming | -0.0582 |
+| 0h_1000ha | families | -0.0519 |
+| 0h_1000ha | on_savanna | -0.0498 |
+| 0h_1000ha | on_grassland | 0.0427 |
+| 0h_1000ha | has_modis | 0.0243 |
+| 0h_1000ha | on_forest | -0.0039 |
+| 24h_100ha | detections_log | 0.6192 |
+| 24h_100ha | on_pasture | -0.4353 |
+| 24h_100ha | indigenous_km_log | -0.3485 |
+| 24h_100ha | on_wetland | 0.2869 |
+| 24h_100ha | no_power | 0.2627 |
+| 24h_100ha | season_sin | -0.2559 |
+| 24h_100ha | power_log | 0.2365 |
+| 24h_100ha | season_cos | -0.2317 |
+| 24h_100ha | protected_km_log | -0.1854 |
+| 24h_100ha | has_high | 0.174 |
+| 24h_100ha | near_log | -0.1442 |
+| 24h_100ha | families | 0.1391 |
+| 24h_100ha | has_viirs | 0.1287 |
+| 24h_100ha | night | 0.1022 |
+| 24h_100ha | on_grassland | 0.1016 |
+| 24h_100ha | has_advance | 0.0984 |
+| 24h_100ha | on_farming | -0.0925 |
+| 24h_100ha | people_log | -0.0734 |
+| 24h_100ha | on_forest | -0.0617 |
+| 24h_100ha | has_avhrr | 0.0608 |
+| 24h_100ha | has_abi | 0.0343 |
+| 24h_100ha | has_modis | -0.0254 |
+| 24h_100ha | extent_km_log | -0.0086 |
+| 24h_100ha | on_savanna | 0.0035 |
+| 24h_1000ha | detections_log | 0.4933 |
+| 24h_1000ha | season_sin | -0.3647 |
+| 24h_1000ha | on_pasture | -0.3592 |
+| 24h_1000ha | season_cos | -0.3544 |
+| 24h_1000ha | indigenous_km_log | -0.2825 |
+| 24h_1000ha | power_log | 0.2781 |
+| 24h_1000ha | protected_km_log | -0.2262 |
+| 24h_1000ha | on_wetland | 0.2252 |
+| 24h_1000ha | near_log | -0.1816 |
+| 24h_1000ha | people_log | -0.1546 |
+| 24h_1000ha | has_high | 0.1545 |
+| 24h_1000ha | no_power | 0.1545 |
+| 24h_1000ha | night | 0.1445 |
+| 24h_1000ha | has_avhrr | 0.1085 |
+| 24h_1000ha | on_grassland | 0.1076 |
+| 24h_1000ha | has_viirs | 0.1074 |
+| 24h_1000ha | extent_km_log | 0.1001 |
+| 24h_1000ha | has_modis | -0.0989 |
+| 24h_1000ha | families | 0.0976 |
+| 24h_1000ha | has_advance | 0.0616 |
+| 24h_1000ha | on_farming | -0.0452 |
+| 24h_1000ha | has_abi | 0.0351 |
+| 24h_1000ha | on_forest | -0.0126 |
+| 24h_1000ha | on_savanna | 0.0119 |
 
 ### 2025 severity
 

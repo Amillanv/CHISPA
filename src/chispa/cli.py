@@ -69,6 +69,7 @@ def main(arguments: list[str] | None = None) -> None:
             "growth": "growth table",
             "severity": "severity tables",
             "confidence": "confidence tables",
+            "risk": "growth risk tables",
         }
     ).items():
         check = commands.add_parser(name, help=f"Make the {text} of one fused year.")
@@ -114,7 +115,7 @@ def main(arguments: list[str] | None = None) -> None:
         checks.run_candidates(chosen.year, lambda: read_setting("EE_PROJECT"))
     elif chosen.command == "burn":
         checks.run_burn(chosen.year, lambda: read_setting("EE_PROJECT"))
-    elif chosen.command in ("visibility", "growth", "severity", "confidence"):
+    elif chosen.command in ("visibility", "growth", "severity", "confidence", "risk"):
         checks.run_table(chosen.command, chosen.year)
     elif chosen.command == "images":
         checks.run_images(chosen.year, lambda: read_setting("EE_PROJECT"), chosen.look)
@@ -153,6 +154,7 @@ def permit_year(chosen: argparse.Namespace) -> None:
         "growth",
         "severity",
         "confidence",
+        "risk",
     )
     test_years = (config.TEST_YEAR, config.PART_TEST_YEAR)
     if is_result and chosen.year in test_years and not chosen.test_run:
