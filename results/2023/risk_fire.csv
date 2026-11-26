@@ -1,5 +1,5 @@
-inputs,moment_h,limit_ha,alerts,large,auc,average_precision,top_tenth_large,config,run_date
-inputs now,0,100.0,245,86,0.5958,0.458,14,8d8d69857248,2026-11-26
-inputs now,0,1000.0,245,29,0.7138,0.2489,5,8d8d69857248,2026-11-26
-inputs now,24,100.0,217,76,0.7187,0.5835,17,8d8d69857248,2026-11-26
-inputs now,24,1000.0,217,26,0.7275,0.2984,8,8d8d69857248,2026-11-26
+inputs,moment_h,limit_ha,alerts,large,auc,average_precision,top_tenth_large
+inputs now,0,100.0,245,86,0.5958,0.458,14
+inputs now,0,1000.0,245,29,0.7138,0.2489,5
+inputs now,24,100.0,217,76,0.7187,0.5835,17
+inputs now,24,1000.0,217,26,0.7275,0.2984,8

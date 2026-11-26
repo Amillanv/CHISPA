@@ -1,15 +1,15 @@
-moment_h,group,alerts,fires,config,run_date
-0,all alerts,5586,,8d8d69857248,2026-11-26
-0,known fire: left out,1969,,8d8d69857248,2026-11-26
-0,no mapped fire,3177,,8d8d69857248,2026-11-26
-0,"new fire, 10 to 100 hectares",273,2977,8d8d69857248,2026-11-26
-0,"new fire, 100 to 1000 hectares",117,335,8d8d69857248,2026-11-26
-0,"new fire, 1000 to 10000 hectares",33,66,8d8d69857248,2026-11-26
-0,"new fire, 10000 to inf hectares",17,27,8d8d69857248,2026-11-26
-24,all alerts,5197,,8d8d69857248,2026-11-26
-24,known fire: left out,1733,,8d8d69857248,2026-11-26
-24,no mapped fire,3072,,8d8d69857248,2026-11-26
-24,"new fire, 10 to 100 hectares",251,2977,8d8d69857248,2026-11-26
-24,"new fire, 100 to 1000 hectares",100,335,8d8d69857248,2026-11-26
-24,"new fire, 1000 to 10000 hectares",27,66,8d8d69857248,2026-11-26
-24,"new fire, 10000 to inf hectares",14,27,8d8d69857248,2026-11-26
+moment_h,group,alerts,fires
+0,all alerts,5586,
+0,known fire: left out,1969,
+0,no mapped fire,3177,
+0,"new fire, 10 to 100 hectares",273,2977
+0,"new fire, 100 to 1000 hectares",117,335
+0,"new fire, 1000 to 10000 hectares",33,66
+0,"new fire, 10000 to inf hectares",17,27
+24,all alerts,5197,
+24,known fire: left out,1733,
+24,no mapped fire,3072,
+24,"new fire, 10 to 100 hectares",251,2977
+24,"new fire, 100 to 1000 hectares",100,335
+24,"new fire, 1000 to 10000 hectares",27,66
+24,"new fire, 10000 to inf hectares",14,27

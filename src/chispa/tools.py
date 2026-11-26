@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from chispa import config, polls, record, region
+from chispa.evaluation.report import read_stamps
 from chispa.store import to_text
 
 NEAR = """
@@ -116,12 +117,13 @@ def evaluation_summary(year: int) -> dict:
         with (folder / f"{name}.csv").open(newline="") as file:
             tables[name] = list(csv.DictReader(file))
     summary = (config.RESULTS_DIR / "SUMMARY.md").read_text()
+    stamp = read_stamps(folder)["configurations"]
     return {
         "year": year,
         "role": config.YEAR_ROLES[year],
         "sources": "satellites only",
-        "configuration": tables["configurations"][0]["config"],
-        "run_date": tables["configurations"][0]["run_date"],
+        "configuration": stamp["config"],
+        "run_date": stamp["run_date"],
         "limits": summary[summary.index("Limits of these results:") :].strip(),
         **tables,
     }

@@ -195,7 +195,8 @@ def burned_layers(shares: list[np.ndarray]) -> dict[str, np.ndarray]:
     `shares` has the burned share of each cell for each of the years before the year of the
     alerts: the oldest year first, and the year before the alerts last. A cell burned in a year
     if the share is the minimum of `config.py` or more. A cell with no burn in those years gets
-    one year more than their number.
+    one year more than their number. The share near a cell, for more than one year, uses the
+    largest share of one year for each cell: the shares of the years do not give their union.
     """
     burned = np.stack(shares) >= config.RISK_BURNED_CELL_SHARE
     # From the newest year to the oldest, the first year with a burn: 1 is the year before.

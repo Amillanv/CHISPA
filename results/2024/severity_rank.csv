@@ -1,5 +1,5 @@
-measure,alerts,rank_correlation,alerts_matched,match_separation,rank_correlation_matched,config,run_date
-severity,6473,0.2838,2945,0.6678,0.0487,ff28cb069294,2026-11-23
-detections,6473,0.3155,2945,0.6742,0.1279,ff28cb069294,2026-11-23
-max_frp_mw,6312,0.1324,2910,0.5945,-0.0782,ff28cb069294,2026-11-23
-extent_km,6473,0.2393,2945,0.6359,0.0516,ff28cb069294,2026-11-23
+measure,alerts,rank_correlation,alerts_matched,match_separation,rank_correlation_matched
+severity,6473,0.2838,2945,0.6678,0.0487
+detections,6473,0.3155,2945,0.6742,0.1279
+max_frp_mw,6312,0.1324,2910,0.5945,-0.0782
+extent_km,6473,0.2393,2945,0.6359,0.0516

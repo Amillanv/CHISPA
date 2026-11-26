@@ -34,7 +34,7 @@ from chispa.evaluation.risk_inputs import (
 )
 from chispa.evaluation.risk_recalibration import recalibration_tables
 from chispa.evaluation.risk_rule import NOW, rule_table
-from chispa.evaluation.risk_test import monitor_part
+from chispa.evaluation.risk_test import monitor_part, replay_table
 from chispa.sources import river
 
 Tables = dict[str, list[dict]]
@@ -121,8 +121,9 @@ def tables_of_test_year(parts: dict[int, dict], of_earlier: dict[int, dict], par
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
     kept = {moment: new_or_none(part["rows"][moment]) for moment in MOMENTS}
     tables = {"risk": result_table(kept, models, confidence.load(path))}
-    found = recalibration_tables(parts | {year: part}, of_earlier | {year: models}, year)
-    return tables | found[year]
+    with_test, all_models = parts | {year: part}, of_earlier | {year: models}
+    found = recalibration_tables(with_test, all_models, year)
+    return tables | found[year] | {"risk_replay": replay_table(with_test, all_models, year)}
 
 
 def fire_tables(parts: dict[int, dict]) -> dict[int, Tables]:

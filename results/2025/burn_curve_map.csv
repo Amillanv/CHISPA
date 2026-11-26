@@ -1,4 +1,4 @@
-group,events,burned,matched,burned_and_match,burned_no_match,match_no_burn,no_burn_no_match,same_share,config,run_date
-LOW events,929,179,251,93,86,158,592,0.7374,e06a03177d61,2026-11-24
-MEDIUM events,347,118,128,65,53,63,166,0.6657,e06a03177d61,2026-11-24
-HIGH events,370,229,202,182,47,20,121,0.8189,e06a03177d61,2026-11-24
+group,events,burned,matched,burned_and_match,burned_no_match,match_no_burn,no_burn_no_match,same_share
+LOW events,929,179,251,93,86,158,592,0.7374
+MEDIUM events,347,118,128,65,53,63,166,0.6657
+HIGH events,370,229,202,182,47,20,121,0.8189

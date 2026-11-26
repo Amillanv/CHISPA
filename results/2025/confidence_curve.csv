@@ -1,5 +1,5 @@
-moment_h,measure,alerts,alerts_burned,burn_separation,top_tenth,top_tenth_burned,alerts_matched,match_separation,config,run_date
-0,probability,1670,551,0.7722,167,142,341,0.8339,e06a03177d61,2026-11-24
-0,level,1670,551,0.6161,167,55,341,0.6097,e06a03177d61,2026-11-24
-24,probability,1648,529,0.7919,164,140,321,0.8366,e06a03177d61,2026-11-24
-24,level,1648,529,0.6929,164,72,321,0.6862,e06a03177d61,2026-11-24
+moment_h,measure,alerts,alerts_burned,burn_separation,top_tenth,top_tenth_burned,alerts_matched,match_separation
+0,probability,1670,551,0.7722,167,142,341,0.8339
+0,level,1670,551,0.6161,167,55,341,0.6097
+24,probability,1648,529,0.7919,164,140,321,0.8366
+24,level,1648,529,0.6929,164,72,321,0.6862
