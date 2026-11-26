@@ -215,9 +215,9 @@ def test_tables_of_a_year_come_from_models_of_the_other_years(tmp_path, monkeypa
         ("with more", "0"),
         ("with more", "24"),
     }
-    # The table of 2003 has the level from the earlier years. The first year has no earlier year.
-    assert sets[("inputs now", "0")]["observed_to_expected_earlier"] is not None
-    assert tables[2001]["risk_inputs"][0]["observed_to_expected_earlier"] is None
+    # The table of 2003 has the level after the recalibration: 2003 is the one scored year.
+    assert sets[("inputs now", "0")]["recalibrated_observed_to_expected"] is not None
+    assert tables[2001]["risk_inputs"][0]["recalibrated_observed_to_expected"] is None
     assert tables[2001]["risk_inputs"][0]["alerts"] == 20
     assert set(tables[2001]) == names
     earlier = {"risk_earlier", "risk_calibration_earlier", "risk_level_sources"}
@@ -350,7 +350,8 @@ def test_first_hours_count_the_scans_the_passes_and_the_time_that_the_sensors_sa
 def set_row(name: str, auc: float, large: int, expected: float | None) -> dict:
     ratio = None if expected is None else large / expected
     row = {"inputs": name, "moment_h": "0", "limit_ha": 100.0, "auc": auc, "large": large}
-    return row | {"expected_large_earlier": expected, "observed_to_expected_earlier": ratio}
+    level = {"large": large, "expected_large": expected, "observed_to_expected": ratio}
+    return row | {f"recalibrated_{name}": value for name, value in level.items()}
 
 
 def test_rule_asks_for_a_larger_auc_in_most_years_and_a_level_that_is_not_worse(monkeypatch):
@@ -358,7 +359,7 @@ def test_rule_asks_for_a_larger_auc_in_most_years_and_a_level_that_is_not_worse(
     monkeypatch.setattr("chispa.config.RISK_RULE_LEVEL_MARGIN", 0.05)
     monkeypatch.setattr("chispa.config.RISK_RULE_MIN_MODELS", 1)
     monkeypatch.setattr("chispa.config.RISK_LEVEL_YEAR", (0.5, 2.0))
-    # Three years. The first year has no earlier year: it has no level.
+    # Three years. The first year is not a scored year: it has no level.
     # "with more" has a larger AUC in each year, and its level is 20 of 34: farther from 1
     # than 20 of 32, by less than the margin. "with less" has a larger AUC in one year only.
     by_year = {
@@ -507,8 +508,7 @@ def test_tables_for_a_new_fire_use_only_the_alerts_with_a_new_fire(monkeypatch):
         1.0,
     )
     # The model of 2001 expects the ten large alerts of 2002, and it is better than the base rate.
-    assert 0.9 < first["observed_to_expected_earlier"] < 1.1
-    assert first["brier_skill_earlier"] > 0.5
-    assert tables[2001]["risk_fire"][0]["observed_to_expected_earlier"] is None
     all_alerts = tables[2002]["risk_fire_calibration"][0]
     assert (all_alerts["group"], all_alerts["alerts"], all_alerts["large"]) == ("all", 20, 10)
+    assert 0.9 < all_alerts["observed_to_expected"] < 1.1
+    assert all_alerts["brier_skill"] > 0.5
