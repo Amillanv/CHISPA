@@ -33,24 +33,34 @@ function kind(p) {
   return `<span class="kind">measured</span>`;
 }
 
-/* The newest GOES scan after the last detection that examined the place and found no fire (`goes_view`). */
+/* The last clear look (`goes_view.last_clear_look`): the newest GOES scan after the last detection with an answer,
+   whatever it saw. If GOES gave no answer, it is the last detection. */
 function clearLook(r, zone) {
-  const g = r.goes_view;
-  const total = g?.scans_after_last_detection ?? 0;
-  const clear = g?.after_last_detection.no_fire ?? 0;
+  const look = r.goes_view?.last_clear_look;
   let value = "–", note = "no saved GOES scan for this time";
-  if (g && g.newest_no_fire_at) {
-    value = `${dur(hoursBetween(g.newest_no_fire_at, r.as_of))} ago`;
-    note = `GOES: examined, no fire, ${when(g.newest_no_fire_at, zone)}. ${num(clear)} of ${num(total)} scans since last seen`;
-  } else if (g && !total) {
-    value = "not yet";
-    note = "no GOES scan after the last detection yet";
-  } else if (g) {
-    value = "none";
-    note = `none of ${num(total)} GOES ${total === 1 ? "scan" : "scans"} since last seen said "examined, no fire"`;
+  if (look) {
+    value = `${dur(hoursBetween(look.at, r.as_of))} ago`;
+    const what = look.kind === "goes_scan" ? `GOES: ${ANSWER[look.answer]}` : "fire: the last detection";
+    note = `${what}, ${when(look.at, zone)}. ${since(look)}`;
   }
-  return `<div title="The newest GOES scan after the last detection in which GOES examined the place and found no fire. It does not say that the fire is out: GOES can miss a small fire.">
+  const title = "The newest time after the last detection when GOES saw the place and gave an answer: fire, possible fire "
+    + "or no fire. \"Examined, no fire\" is for each pixel of the place. Cloud, no decision and glint are not an answer. "
+    + "If GOES gave no answer, the last clear look is the last detection. It does not say that the fire is out: GOES can miss a small fire.";
+  return `<div title="${esc(title)}">
     <span class="label">Last clear look</span><span class="v">${value}</span><span class="c">${note}</span></div>`;
+}
+
+/* The saved GOES scans after the last clear look. None of them gave an answer. */
+function since(look) {
+  const n = look.scans_after;
+  if (!n) return look.kind === "goes_scan" ? "It is the newest saved scan." : "No GOES scan since then yet.";
+  return `Since then: ${num(n)} GOES ${n === 1 ? "scan" : "scans"}, ${groupsText(look.groups_after, ", ")}.`;
+}
+
+/* The groups of some GOES scans: the name alone for one group, else the number of scans in each group. */
+function groupsText(groups, join) {
+  const list = Object.entries(groups);
+  return list.length === 1 ? GOES_GROUP[list[0][0]] : list.map(([g, n]) => `${num(n)} ${GOES_GROUP[g] ?? esc(g)}`).join(join);
 }
 
 export function timeline(r, zone, all, liveStart) {
@@ -89,20 +99,18 @@ function runs(r, zone, all) {
     if (!all && !fire(run) && n < list.length - RUNS_FOLDED) { hidden += 1; return; }
     if (hidden) rows.push(`<button type="button" class="more" data-passes>${hidden} more GOES ${hidden === 1 ? "row" : "rows"}</button>`);
     hidden = 0;
-    rows.push(runRow(run, r.goes_view.newest_no_fire_at, zone));
+    rows.push(runRow(run, r.goes_view.last_clear_look.at, zone));
   });
   return rows;
 }
 
 function runRow(run, clear, zone) {
-  const groups = Object.entries(run.groups);
-  const detail = run.answer === "not_seen"
-    ? ` (${groups.length === 1 ? GOES_GROUP[groups[0][0]] : groups.map(([g, n]) => `${num(n)} ${GOES_GROUP[g] ?? esc(g)}`).join(" · ")})` : "";
+  const detail = run.answer === "not_seen" ? ` (${groupsText(run.groups, " · ")})` : "";
   const span = run.scans === 1 ? "" : `${num(run.scans)} scans to ${when(run.to, zone)}: `;
   const look = run.to === clear ? " · last clear look" : "";
   const title = `GOES scans from ${when(run.from, zone)} to ${when(run.to, zone)} ${zoneTag(zone)} at the place of the last detection. `
     + `"Examined, no fire" is for each pixel of that place. It does not say that the fire is out: GOES can miss a small fire.`;
-  return `<div class="pass run ${run.answer}" title="${title}">
+  return `<div class="pass run ${run.answer}" title="${esc(title)}">
     <span class="t">${when(run.from, zone)}</span>
     <span class="s"><i style="background:var(--abi)"></i>GOES</span>
     <span class="x">${span}${ANSWER[run.answer]}${detail}${look}</span></div>`;
