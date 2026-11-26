@@ -150,10 +150,14 @@ The event is the event as it was at that time (`issued.py`), not the event of th
   `no_background` says that GOES could not compute a background value for a pixel (`docs/sources.md` 8.12). It made no decision.
   `goes_view` gives the group of the place in the newest scan of the as-of day or the day before. If these days have no
   such scan, it is None. `scans_after_last_detection` is the number of saved scans after the newest detection, and
-  `after_last_detection` counts them in each group. `newest_no_fire_at` is the newest of them with `no_fire`: the last clear look.
+  `after_last_detection` counts them in each group.
   `runs_after_last_detection` gives the same scans in time sequence. The scans of one answer in a row are one run:
   fire, possible fire, no fire, or "not_seen" (cloud, no background, blocked, water, not processed). A run gives its first
   and last scan, its number of scans and the number in each group.
+  `last_clear_look` is the newest scan after the newest detection with an answer, whatever the answer. A scan with fire at one
+  pixel and cloud at a different pixel saw fire. If no scan has an answer, the last clear look is the newest detection:
+  a detection is a look that saw fire. `kind` is `goes_scan` or `last_detection`. `scans_after` and `groups_after` give
+  the saved scans after the last clear look. None of them has an answer.
   The recorded masks have one scan of each hour, the live masks each scan.
   It is the place of the newest pass only. It does not say that a fire is out: GOES can miss a small fire.
 - The level and the confidence rank put the events in a sequence by their evidence for a match with a mapped fire.
@@ -1838,7 +1842,7 @@ The agent must:
 8. The clock sets one time zone for the page: Pantanal time (the zone in `config.py`) or UTC. Each time on the page is in
    that zone, with its name. The detections of each day stay UTC days. Data, tools and results stay in UTC.
 9. A time to CHISPA that includes a stop of the poller (`poller_stop_h`) has a mark with the most that the stop added.
-   The last clear look is the newest GOES scan after the last detection with "examined, no fire".
+   The last clear look gives the newest look at the place of the last detection and what it saw (section 7.3).
    After the last detection, the timeline has one row for each run of GOES scans with one answer. Folded, it keeps each
    run of fire or possible fire and the newest runs.
    The page does not say that a fire is out.

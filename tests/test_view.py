@@ -65,8 +65,8 @@ def test_goes_view_needs_each_pixel_of_the_newest_detections_for_a_clear_look(tm
     )
     positions = np.array([-17.5, -17.5, -17.5]), np.array([-57.5, -57.501, -57.48])
     found = view.goes_view(*positions, T0, T0 + timedelta(hours=5), tmp_path)
-    # The fire at the third pixel is not this place. A cloud or a possible fire at one pixel is
-    # not a clear look: the last clear look is the scan of 4 hours.
+    # The fire at the third pixel is not this place. A cloud at one pixel makes the scan of 2 hours
+    # "cloud": "no_fire" needs each pixel. The last clear look is the scan of 4 hours.
     assert found == {
         "pixels": 2,
         "scan_at": (T0 + timedelta(hours=4)).isoformat(),
@@ -74,7 +74,13 @@ def test_goes_view_needs_each_pixel_of_the_newest_detections_for_a_clear_look(tm
         "scans_after_last_detection": 4,
         "after_last_detection": {"no_fire": 2, "cloud": 1, "possible_fire": 1},
         "runs_after_last_detection": found["runs_after_last_detection"],
-        "newest_no_fire_at": (T0 + timedelta(hours=4)).isoformat(),
+        "last_clear_look": {
+            "at": (T0 + timedelta(hours=4)).isoformat(),
+            "answer": "no_fire",
+            "kind": "goes_scan",
+            "scans_after": 0,
+            "groups_after": {},
+        },
     }
     answers = [(run["answer"], run["scans"]) for run in found["runs_after_last_detection"]]
     assert answers == [("no_fire", 1), ("not_seen", 1), ("possible_fire", 1), ("no_fire", 1)]
@@ -107,6 +113,37 @@ def test_runs_give_the_scans_in_time_with_one_row_for_each_answer(tmp_path):
         {"from": at[5], "to": at[5], "answer": "no_fire", "scans": 1, "groups": {"no_fire": 1}},
         {"from": at[6], "to": at[6], "answer": "not_seen", "scans": 1, "groups": {"cloud": 1}},
     ]
+
+
+def test_the_last_clear_look_is_the_newest_scan_with_an_answer_whatever_it_saw(tmp_path):
+    # Two pixels. After the detection: no fire; possible fire at one pixel and cloud at the other;
+    # then two scans of cloud. GOES saw the possible fire: that scan is the last clear look.
+    mask = [[[100, 100]], [[13, 200]], [[200, 200]], [[100, 200]]]
+    save(tmp_path / "live" / "goes_mask", [-17.5] * 2, [-57.5, -57.48], hours(1, 2, 3, 4), mask)
+    positions = np.array([-17.5, -17.5]), np.array([-57.5, -57.48])
+    found = view.goes_view(*positions, T0, T0 + timedelta(hours=5), tmp_path)
+    assert found["last_clear_look"] == {
+        "at": (T0 + timedelta(hours=2)).isoformat(),
+        "answer": "possible_fire",
+        "kind": "goes_scan",
+        "scans_after": 2,
+        "groups_after": {"cloud": 2},
+    }
+
+
+def test_with_no_answer_after_the_detection_the_last_clear_look_is_the_detection(tmp_path):
+    # One pixel. After the detection: cloud, then no background. GOES gave no answer.
+    save(tmp_path / "live" / "goes_mask", [-17.5], [-57.5], hours(1, 2), [[[200]], [[170]]])
+    found = view.goes_view(
+        np.array([-17.5]), np.array([-57.5]), T0, T0 + timedelta(hours=3), tmp_path
+    )
+    assert found["last_clear_look"] == {
+        "at": T0.isoformat(),
+        "answer": "fire",
+        "kind": "last_detection",
+        "scans_after": 2,
+        "groups_after": {"cloud": 1, "no_background": 1},
+    }
 
 
 def test_a_position_goes_to_the_pixel_with_the_nearest_centre_in_kilometres(tmp_path):

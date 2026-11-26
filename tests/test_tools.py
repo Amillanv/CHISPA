@@ -102,11 +102,15 @@ def test_event_record_reads_a_live_mask_only_after_the_poller_got_it(store, tmp_
     # At 6 hours and 5 minutes the poller did not have the scan of 6 hours.
     # The scan of 5 hours is the newest detection itself: it is not after it.
     early = view_at(hours=6, minutes=5)
-    assert (early["group"], early["after_last_detection"], early["newest_no_fire_at"]) == (
-        "no_fire",
-        {},
-        None,
-    )
+    assert (early["group"], early["after_last_detection"]) == ("no_fire", {})
+    # With no scan after the detection, the last clear look is the detection.
+    assert early["last_clear_look"] == {
+        "at": "2024-08-15T10:00:00+00:00",
+        "answer": "fire",
+        "kind": "last_detection",
+        "scans_after": 0,
+        "groups_after": {},
+    }
     assert view_at(hours=6, minutes=12) == {
         "scan_at": "2024-08-15T11:00:00+00:00",
         "group": "cloud",
@@ -122,12 +126,18 @@ def test_event_record_reads_a_live_mask_only_after_the_poller_got_it(store, tmp_
                 "groups": {"cloud": 1},
             }
         ],
-        "newest_no_fire_at": None,
+        "last_clear_look": {
+            "at": "2024-08-15T10:00:00+00:00",
+            "answer": "fire",
+            "kind": "last_detection",
+            "scans_after": 1,
+            "groups_after": {"cloud": 1},
+        },
     }
     # The scan of 7 hours examined the place and found no fire: the last clear look.
     late = view_at(hours=7, minutes=12)
     assert late["after_last_detection"] == {"cloud": 1, "no_fire": 1}
-    assert late["newest_no_fire_at"] == "2024-08-15T12:00:00+00:00"
+    assert late["last_clear_look"]["at"] == "2024-08-15T12:00:00+00:00"
     # The day after, with no scan of that day, the record gives the last scan of the day before.
     assert view_at(days=1, hours=1)["group"] == "no_fire"
     # Two days after, the newest saved scan is older than the day before: it is not a view of now.
