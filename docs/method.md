@@ -386,7 +386,8 @@ The time condition has two forms:
 From 2026-11-26 the match also has the year: a detection matches only a fire of the map of the year of its
 observation. Before that day, a detection of 31 December that became available in the next year matched a fire by its
 month and its day only. The owner decided the change on 2026-11-23, for the first run on 2026 (section 11.25).
-The tables of `chispa evaluate` in `results/` are from before the change: we did not make them again.
+The tables of `chispa evaluate` in `results/` are from before the change, and we did not make them again.
+`chispa evaluate` at the commit `681ae02` makes them: the command of now uses the new rule.
 
 One fire can match many detections. One detection can match many fires.
 Only detections in the biome border count. Only fires in the biome border exist in the store.
@@ -1471,7 +1472,7 @@ With the models of now the mean AUC is 0.8237, 0.8594, 0.902 and 0.9192.
 | People and protected land | 4 of 4 | without: 0.8095, 0.8438, 0.8948 and 0.9116 | yes |
 | Ground that burned before | 3 of 4 | without: 0.801, 0.8443, 0.8833 and 0.9068 | yes, from 2026-11-26 |
 | Weather to 1 day before, in the place of 7 days | 3 of 4 | with: 0.8267, 0.8613, 0.9023 and 0.9173 | no: an alert cannot have it |
-| Weather of the 3 days after an alert | 2 of 4 | with: 0.8263, 0.8631, 0.9018 and 0.9186 | no: a ceiling |
+| Weather of the 3 days after an alert | 2 of 4 | with: 0.8263, 0.8631, 0.9018 and 0.9186 | no: an alert cannot have it |
 | Calendar: the day of the year | 0 of 4 | with: 0.8238, 0.8615, 0.9018 and 0.9187 | no |
 | Fire power and its mark | 0 of 4 | with: 0.8307, 0.8623, 0.903 and 0.9194 | no |
 | Dryness fields of INPE | 0 of 4 | with: 0.8199, 0.8578, 0.9006 and 0.9176 | no |
@@ -1479,7 +1480,9 @@ With the models of now the mean AUC is 0.8237, 0.8594, 0.902 and 0.9192.
 
 - The weather to 1 day before passes the rule with the models of now, by a small amount. ERA5-Land does not have
   those days at the time of an alert: a quicker source is necessary before the models can have them. Not built.
-- The weather after an alert has no error here. It does not pass: a weather forecast has no reason from this result.
+- The weather after an alert is the rain, the largest wind speed and the largest dryness of the air of 3 days, from
+  the record of the weather: a forecast of those three values with no error. It does not pass. This is a result for
+  those daily values on a grid of 11 km only. It says nothing about a forecast with the wind direction or with hours.
 - The fire power: no GOES row of INPE has a fire power in 2019 to 2021, and each GOES row has one from 2023
   (`docs/sources.md` section 8.3). Thus the input does not say the same thing in each year, and the level is
   0.86 to 0.94 with it.
@@ -1501,7 +1504,7 @@ The hypotheses of the groups, each written before its run:
 | 2026-11-25 | The ground that burned before passes | False with the level before the recalibration (0 of 4) |
 | 2026-11-25 | Its part "last burn" passes, and its part "burn frequency" does not | False (0 of 4), and true (2 of 4) |
 | 2026-11-25 | The river level does not pass | True |
-| 2026-11-26 | With the level after the recalibration, the ground that burned before passes | True: 3 of 4. Not blind: a check outside the repository came first |
+| 2026-11-26 | With the level after the recalibration, the ground that burned before passes | True: 3 of 4. Not a hypothesis in the sense of section 7.4: a check outside the repository came first |
 | 2026-11-26 | With that rule, the three groups in the models pass, and no other set passes | True for the three groups. False for the two parts of the ground that burned before: they pass |
 
 Where the level changes with the year (tables `risk_alerts` and `risk_level_sources`, 2026-11-26):
@@ -1510,10 +1513,12 @@ Where the level changes with the year (tables `risk_alerts` and `risk_level_sour
   each year: from 34.6 percent (362 of 1047 in 2019) to 44.8 percent (187 of 417 in 2024).
 - The share of the alerts that have a new fire is not the same: 1047 of 6074 in 2019 (17.2 percent), and 245 of 5630
   in 2023 (4.4 percent). Thus the level of a year is wrong in the question "does this alert have a mapped fire".
-- 2023 has two causes of almost equal size. The first is a source: INPE has many more GOES rows from October 2023
-  to February 2024 than in each other month (`docs/sources.md` section 8.3). 2765 alerts of 2023 have only such
-  rows at 30 minutes: 14 became large for 100 hectares, and the models of the earlier years expected 167.7.
-- The second cause is the size of the fire season. For each other alert of 2023, 72 became large for 174.3 expected.
+- 2023 has two causes. The first is a source. From October 2023 to February 2024, INPE has 0.47 to 1.22 GOES rows
+  for each GOES row of FIRMS. In each other month of the comparison it has 0.03 to 0.46 (`docs/sources.md` section
+  8.3). 2765 alerts of 2023 have only GOES rows of INPE at 30 minutes. For 100 hectares the models of the earlier
+  years expected 167.7 large alerts from them, and 14 came: 153.7 too many.
+- The second cause is the size of the fire season. For each other alert of 2023 the models expected 174.3, and 72
+  came: 102.3 too many. Thus the source gives approximately 6 of 10 parts of the excess, and the season 4.
 - We do not know what those GOES rows of INPE are. They are unmatched alerts, not false alarms (section 11.5).
 
 ### 11.23 The alerts with a new fire only
@@ -1525,9 +1530,10 @@ form on 2026-11-25, and said after its result that one model has little value fo
 - The models have the form and the inputs of the growth risk. They get their weights from the alerts with a new
   fire only, and the tables measure them on those alerts: `risk_fire` (cross-validation by year) and
   `risk_fire_calibration` (split in time sequence, 2020 to 2025, with no recalibration).
-- The value is a conditional probability: it is correct only for an alert that has a fire of 10 hectares or more.
-- The hypothesis of 2026-11-25 was not blind: the three conditions are true at 24 hours for 100 hectares, and
-  condition 1 is false for the three other models. It was true for the models of that day.
+- The value is a conditional probability. Its condition is: the alert is the first alert on a mapped fire of
+  10 hectares or more. A later alert on that fire has no part in the models or in the tables.
+- This part has no hypothesis in the sense of section 7.4: a check outside the repository gave its result before we
+  wrote what we expected. Thus it is an exploratory result, and the years of its numbers cannot test it.
 - With the models of now (2026-11-26), the three conditions are true for the two models at 24 hours. For 100
   hectares: 773 large alerts for 784.6 expected, 0.711 to 1.2977 in each year, and a mean AUC of 0.7513.
   For 1000 hectares: 238 for 261.0, 0.5271 to 1.1055, and 0.7719. At 30 minutes the Brier skill score is less
@@ -1560,16 +1566,20 @@ recalibration, for all alerts and for each tenth, with the factor and the alerts
 and `risk_percentage` with the newest year: the three conditions of each model, as code.
 
 - Limits: the outcome of an alert is its label of the annual map, as if a map gave it 60 days after the alert.
+  That label is the final size. A fire can burn, or join a different fire, after those 60 days: then the factor
+  has an outcome that no person had at that time. We did not measure how frequently this occurs.
   A live alert needs the Monitor map for this. The models of a year start on 1 January with the map of the year
   before it. The 60 days, the 365 days and the 10 came from a check outside the repository, which gave the same
   result for 12 settings (30 to 120 days, and 5 to 20). The recalibration, the scored years and the rank for the
   alerts with only GOES rows of INPE came after results: the numbers are validation numbers.
 
-The hypotheses. On 2026-11-25, not blind: the three conditions are true for 100 hectares at 30 minutes and for the
-two models at 24 hours, and condition 1 is false for 1000 hectares at 30 minutes. Blind: at 24 hours the class from
-100 to 1000 hectares is in the range of one year, and less than 1 of 100 alerts has a wrong sequence.
-On 2026-11-26, blind: the three conditions are true for 10 hectares at the two moments, and the class from 10 to
-100 hectares is in the range of one year. Each was true for the models of its day, and each is true for the models of now.
+What we wrote before each first run. Two statements of 2026-11-25 came after a check outside the repository: the
+three conditions are true for 100 hectares at 30 minutes and for the two models at 24 hours, and condition 1 is false
+for 1000 hectares at 30 minutes. They are not hypotheses in the sense of section 7.4: only the test of section 11.25
+can confirm them. Three hypotheses had no check before them. On 2026-11-25: at 24 hours the class from 100 to 1000
+hectares is in the range of one year, and less than 1 of 100 alerts has a wrong sequence. On 2026-11-26: the three
+conditions are true for 10 hectares at the two moments, and the class from 10 to 100 hectares is in the range of one
+year. Each statement was true for the models of its day, and each is true for the models of now.
 
 The result for the scored years, 2021 to 2025 (tables `risk_percentage` and `risk_recalibrated`, 2026-11-26):
 
@@ -1660,8 +1670,14 @@ The decisions of the owner after the first run (2026-11-26). An alert gives the 
 and this is a change after a result. For 1000 hectares an alert gives a rank at 30 minutes, and at 24 hours the
 percentage with the mark "not tested". The field of the event record is parked.
 
-- Limits: the fires of the test come from a different map than the fires that gave the weights. A fire that burned
-  after October 2026 has the size that it had in October. The test is a part of one year, with 38 to 108 large
+- Limits: the fires of the test come from a different map than the fires that gave the weights. A method document
+  of an earlier collection of the Monitor map says that it maps only the ground near an INPE hotspot
+  (`docs/sources.md` section 8.18). We did not verify the rule of the collection that we read. With that rule, a burn
+  with no INPE hotspot near it is not in the reference, and the reference is not independent of one of our sources.
+  `PLAN.md` has a comparison of the two maps on the alerts of 2025. The factor of a test alert uses the outcomes of
+  older alerts from the map to October 2026, and not from the map as it was at the time of the alert. The Monitor
+  map has one image for each month: a replay with only the months that existed at each alert is not built.
+  A fire that burned after October 2026 has the size that it had in October. The test is a part of one year, with 38 to 108 large
   alerts for a model with an answer: we did not measure how much its numbers change by chance. The detections of 2026
   before 2026-11-20 have an estimate of `available_at`. The alerts of September to December 2026 are not read: they
   give a clean test when the Monitor map has them. The annual map of 2026 then gives a test of the full year.

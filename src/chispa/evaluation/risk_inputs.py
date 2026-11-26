@@ -95,14 +95,16 @@ def dryness_inputs(dryness: np.ndarray, positions: np.ndarray) -> dict[str, floa
 def first_hours_inputs(detections: Fields, positions: np.ndarray) -> dict[str, float]:
     """Return how long, and at which hours, the sensors saw an alert up to the moment.
 
-    The hour is the solar hour at the place. A GOES scan with a row from two sources counts one
-    time: the scans are counted by their start time. Night is from 18:00 to 06:00, as the
-    input `night` of the confidence.
+    The hour is the solar hour at the place. The GOES scans are counted by their start time:
+    they say for how many periods of 10 minutes GOES saw the fire. Thus a period with a row
+    from two sources, or from two GOES platforms, counts one time. Night is that of the input
+    `night` of the confidence (`config.NIGHT_HOURS`).
     """
     observed = detections["observed"][positions].astype(float)
     hour = (observed / 3600 + detections["lon"][positions] / 15) % 24
     abi = detections["family"][positions] == "abi"
-    night = (hour < 6) | (hour >= 18)
+    dusk, dawn = config.NIGHT_HOURS
+    night = (hour >= dusk) | (hour < dawn)
     scan_s = config.GOES_SCAN.total_seconds()
     platform, passes = detections["platform"][positions][~abi], 0
     if len(platform):
