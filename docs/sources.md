@@ -243,8 +243,8 @@ Independence from hotspots:
 - The authors used hotspots and MODIS burned area to select which Landsat scenes to sample for training.
 - A hotspot filter removes some scars, but only in Amazon forest. It does not apply to the Pantanal.
 - Thus the ground truth for the Pantanal is almost independent of our detections. Say "almost", and give the reason.
-- The product "Monitor do Fogo" is not independent of hotspots, also in the Pantanal: section 8.18 has the check.
-  Do not use it as the ground truth for the fires that no source detected.
+- Do not use the product "Monitor do Fogo" as the ground truth for the fires that no source detected.
+  Almost none of its burned pixels in the Pantanal is far from a hotspot: section 8.18 has the check.
 
 Checked 2026-11-25 with live requests to Earth Engine, for the ground that burned before an alert
 (`docs/method.md` section 11.22):
@@ -552,7 +552,8 @@ Checked 2026-11-26 with live requests, for the fires of a year with no annual ma
 Checked 2026-11-26, for the day that a month comes and for the hotspot rule of the map:
 
 - Earth Engine gives the time of the last change of each image. The 13 images of October 2025 to October 2026 each
-  changed 9 to 15 days after the end of their month, and not after that. The images of January 2019 to September
+  changed 9 to 15 days after the end of their month, and not after that. That time is not always the first day of
+  an image: an image can have an older version that we do not have. The images of January 2019 to September
   2025 changed from 2025-10-06 to 2025-11-06: the first day of those months in the asset is not known.
   `chispa fetch monitor` saves the times of a year in the file `published.json` of its folder.
 - The Monitor page gives one method document: "Método Monitor Fogo, Coleção 1", a copy of 2026-08-25. Its section
@@ -562,8 +563,9 @@ Checked 2026-11-26, for the day that a month comes and for the hotspot rule of t
   5.5 km from each detection in our store of those two months. For 2026 it is 86 of 1 396 391. In the annual map of
   2025, 164 633 of 1 434 261 burned pixels are that far (11.5 percent). In a month of 2025, 78 to 94 percent of the
   biome is that far. A check outside the repository, on blocks of 10 pixels, with the detections of INPE and of FIRMS.
-- Thus the map shows no burn with no hotspot near it, also in the Pantanal. It cannot be the reference for the
-  fires that no source detected. The ground of an alert is in the mapped area: an alert is a hotspot.
+- `UNVERIFIED`: the rule that made the asset of collection 2. The counts are a measure of distance with our
+  detections. They are not the rule of the owner of the map. We use the map as dependent on hotspots: it is not
+  the reference for the fires that no source detected. The ground of an alert is near a hotspot: the alert.
 
 Read 2026-11-23 by a research agent, on the pages of each owner. `UNVERIFIED`: no second read confirmed these facts.
 
@@ -647,8 +649,9 @@ Checked 2026-11-25 with live requests to Earth Engine. `chispa fetch weather --y
   One day of the box is one request of less than 1 second. No cell of the box is without a value.
 - A comparison at one cell (18.0 S, 57.0 W) for 1 to 4 September 2020. ERA5-Land: largest wind 14.93, 12.74, 13.99
   and 9.09 km/h, and largest vapour pressure deficit 3.78, 3.26, 3.49 and 5.17 kPa. Open-Meteo, with ERA5 at 0.25
-  degrees: 16.9, 15.1, 16.4 and 8.4 km/h, and 3.06, 2.83, 3.3 and 4.92 kPa. The two have the same sequence of the days,
-  and not the same values: they are two models.
+  degrees: 16.9, 15.1, 16.4 and 8.4 km/h, and 3.06, 2.83, 3.3 and 4.92 kPa. The wind has the same sequence of the
+  days in the two. The dryness of the air does not: day 1 is above day 3 in ERA5-Land, and below it in Open-Meteo.
+  They are two models.
 - The asset `ECMWF/ERA5_LAND/DAILY_AGGR` has the mean of each wind component of a day, not the largest wind speed.
 - `UNVERIFIED`: the terms of the product (Copernicus). Do a check before we publish a copy of the files.
 

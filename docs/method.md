@@ -1444,7 +1444,8 @@ sequence. Each choice makes the validation numbers a little too good: the test o
 The owner changed condition 3 two times after results, and we say so: the margin on 2026-11-25, and the level
 after the recalibration in the place of the level before it on 2026-11-26.
 
-The inputs of the models. Each uses only what an alert has at the moment:
+The inputs of the models. Each uses what an alert has at the moment, with one exception. The ground that burned
+reads the map of the year before. An alert of the first months of a year does not have that map (the limits below).
 
 - The inputs of the confidence (section 11.15), without the calendar and without the fire power and its mark.
 - The first hours, six inputs: the hour of the first detection as the two inputs of a circle, the number of GOES
@@ -1527,8 +1528,11 @@ Where the level changes with the year (tables `risk_alerts` and `risk_level_sour
   8.3). 2765 alerts of 2023 have only GOES rows of INPE at 30 minutes. For 100 hectares the models of the earlier
   years expected 167.7 large alerts from them, and 14 came: 153.7 too many.
 - The second cause is the size of the fire season. For each other alert of 2023 the models expected 174.3, and 72
-  came: 102.3 too many. Thus the source gives approximately 6 of 10 parts of the excess, and the season 4.
-- We do not know what those GOES rows of INPE are. They are unmatched alerts, not false alarms (section 11.5).
+  came: 102.3 too many. Thus the alerts with only GOES rows of INPE have approximately 6 of 10 parts of the
+  excess, and the other alerts 4. These are totals of two groups of alerts, not of two causes: the season is in
+  the two groups.
+- We do not know what those GOES rows of INPE are. 14 of the 2765 alerts became large for 100 hectares: those
+  have a mapped fire. An alert of the group with no mapped fire is an unmatched alert, not a false alarm (section 11.5).
 
 ### 11.23 The alerts with a new fire only
 
@@ -1583,7 +1587,11 @@ and `risk_percentage` with the newest year: the three conditions of each model, 
   time. The scored years have no replay: the first day of a Monitor month before October 2025 is not known.
   The models of a year start on 1 January with the map of the year before it, which comes in April to July.
   A check outside the repository gave the alerts before 1 July the weights of the years to 2 years before.
-  The same five models have the three conditions for 2022 to 2025 (`PLAN.md`). The 60 days, the 365 days and the 10 came from a check outside the repository, which gave the same
+  The same five models have the three conditions for 2022 to 2025 (`PLAN.md`).
+  The group of an alert comes from the map of the year: new fire, no mapped fire or known fire. A live alert does
+  not have that map. Thus no rule says at the time of an alert that it is on a known fire. The percentage has
+  no check for such an alert. Not built.
+  The 60 days, the 365 days and the 10 came from a check outside the repository, which gave the same
   result for 12 settings (30 to 120 days, and 5 to 20). The recalibration, the scored years and the rank for the
   alerts with only GOES rows of INPE came after results: the numbers are validation numbers.
 
@@ -1677,12 +1685,17 @@ known fire and without the 7 and the 2 alerts with a rank only.
   answer was 1.1921, 1.2333, 1.1111 and 1.1048, and the Brier skill score 0.213, 0.1475, 0.3804 and 0.4404.
   The median factor was 0.7826 to 0.8372. The values with no recalibration also hold in this test.
 - The classes between two limits: 1.2984 and 1.4519 at 30 minutes, and 1.2329 and 1.1875 at 24 hours.
-- Hypothesis 1 is true for 100 hectares: at 30 minutes the AUC of the growth risk is 0.8807, that of the confidence
-  0.8326 and that of the number of detections 0.714. The top tenth has 23 of the 45 large alerts, against 18 and 15.
-- Hypothesis 2 is true for 100 hectares: at 24 hours the AUC of the growth risk is 0.9338, against 0.9095, 0.9144
-  and 0.61 for the confidence, the number of detections and the persistence rule.
-- Hypothesis 3 is true at 30 minutes (0.6633, against 0.564 and 0.6133) and false at 24 hours: 0.7917, against
-  0.8085 for the number of detections. At 24 hours the growth risk does not put the sizes in a better sequence.
+- The hypotheses, for 100 hectares. The first run is their test (the tables of the commit `5ccd4f9`). The numbers
+  of the second run are a second analysis of the same alerts: an exploratory result.
+- Hypothesis 1 is true in the test. At 30 minutes the AUC of the growth risk was 0.8519, that of the confidence
+  0.8326 and that of the number of detections 0.714. In the second run it is 0.8807, and the top tenth has 23 of
+  the 45 large alerts, against 18 and 15.
+- Hypothesis 2 is false in the test. At 24 hours the AUC of the growth risk was 0.9116, against 0.9144 for the
+  number of detections. In the second run it is 0.9338, against 0.9095, 0.9144 and 0.61 for the confidence, the
+  number of detections and the persistence rule. The alerts from 2 September decide.
+- Hypothesis 3 is true at 30 minutes and false at 24 hours, in the two runs. In the test: 0.6212 against 0.564 and
+  0.6133, and 0.7777 against 0.8085 for the number of detections. In the second run: 0.6633 and 0.7917.
+  At 24 hours the growth risk does not put the sizes in a better sequence.
 - For 1000 hectares the test has 15 and 13 large alerts: no answer. The growth risk has the largest AUC at
   30 minutes (0.9317), and the number of detections at 24 hours (0.9754 against 0.9718).
 
@@ -1697,7 +1710,8 @@ For the alerts of 2025 it reads the annual map. No person had those maps at the 
 The replay changes only this:
 
 1. `chispa fetch monitor` saves the time of the last change of each month image (`docs/sources.md` section 8.18).
-   The map of a month came 9 to 15 days after the end of that month.
+   For a month from October 2025, that time is 9 to 15 days after the end of the month. An image can have an older
+   version that was different. The replay has each image as it is now, from the time of its last change.
 2. T is the time of a test alert. The outcome and the group of each older alert of 2025 and of 2026 come from
    the Monitor map as it was at T: only the months that it had. Its burn days are those of the months before the
    last month.
@@ -1720,20 +1734,27 @@ The result of the replay (table `risk_replay` of 2026, 2026-11-26). The hypothes
 
 - With the maps of the time, the four models with an answer expected 3.5 to 6.2 percent fewer large alerts.
   The median factor is 0.7507 to 0.7961 for them, against 0.7826 to 0.8372 in the second run.
-- The replay is a third look at the same alerts. It is the form of the test for the alerts from 2 September.
+- The replay is a third look at the same alerts.
+
+The rule for the next run. The owner decided it on 2026-11-26. That was after the replay, and before a look at an
+alert from 2 September 2026. In the run on those alerts, the answer of a model is that of the replay (table
+`risk_replay`). The conditions of the answer do not change. The table `risk_test` stays as a second number.
 
 - Limits: the fires of the test come from a different map than the fires that gave the weights. The Monitor map
-  shows no burn farther than 5 km from a hotspot of the month or of the month before, also in the Pantanal. Its
-  method document says that the Pantanal has no such rule, and the pixels of the asset show the rule
-  (`docs/sources.md` section 8.18). Thus the reference is not independent of our sources. The ground of each alert
-  is in the mapped area, and this test scores alerts only. The map cannot score the fires with no detection.
+  of the Pantanal has almost no burned pixel far from a detection: more than 5.5 km from each detection of its
+  month and of the month before. In the annual map, approximately 1 of 9 burned pixels is that far
+  (`docs/sources.md` section 8.18 has the counts). The method document of the map says that the Pantanal has
+  no hotspot rule. `UNVERIFIED`: the rule that made the asset.
+  We use the map as a reference that is not independent of our sources. The ground of each alert is near a
+  hotspot, and this test scores alerts only. We do not use the map to score the fires with no detection.
   `PLAN.md` has a comparison of the two maps on the alerts of 2025. In the replay, the weights and the ground that
   burned read the annual map with 2025, which came in April 2026. A check outside the repository changed the two
   for the alerts before 1 July: the four answers stayed (`PLAN.md`). The burn days of the replay are those that the
-  product has now, and the product changes its older months. A fire that burned after October 2026 has the size that it had in October. The test is a part of one year, with 38 to 108 large
-  alerts for a model with an answer: we did not measure how much its numbers change by chance. The detections of 2026
-  before 2026-11-20 have an estimate of `available_at`. The alerts from 2 September 2026 are not read: they
-  give a clean test when the Monitor map has them. The annual map of 2026 then gives a test of the full year.
+  product has now, and the product changes its older months. A fire that burned after October 2026 has the size
+  that it had in October. The test is a part of one year, with 38 to 108 large alerts for a model with an answer:
+  we did not measure how much its numbers change by chance. The detections of 2026 before 2026-11-20 have an
+  estimate of `available_at`. The alerts from 2 September 2026 are not read: they give a clean test when the
+  Monitor map has them. The annual map of 2026 then gives a test of the full year.
 
 ## 12. Agent and MCP rules
 
