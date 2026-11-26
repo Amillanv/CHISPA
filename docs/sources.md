@@ -134,6 +134,29 @@ Checked 2026-11-25 with live requests, for the years before 2023:
   Thus 2019, 2020 and 2021 have GOES detections only from INPE, and 2022 has the rows of FIRMS from 9 August.
 - The annual file of 2019 also has the satellite NOAA-15: 222 rows in the box. We do not use it.
 
+Checked 2026-11-25 with the raw files, for the dryness fields of a row:
+
+- A monthly file and an annual file have the fields `numero_dias_sem_chuva`, `precipitacao` and `risco_fogo`.
+  A live file of 10 minutes has only `lat`, `lon`, `satelite` and `data`: INPE adds the three fields later.
+- In the Pantanal box, 828 365 of the 829 990 rows of 2020 have the days with no rain and the rain, and 802 427 have a
+  fire risk. Each of the 157 960 rows of September 2024 has the first two, and 154 671 have a fire risk.
+- The days with no rain go from 0 to 120. The rain is 0 for 3 of 4 rows or more. The fire risk goes from 0 to 1, and it
+  is 1 for half of the rows or more. An absent fire risk has the mark -999.
+- In the annual file of 2022, 4411 of the 80 418 rows of the box have no value for the days with no rain.
+- `UNVERIFIED`: the unit of the rain (we read millimetres), and if the rain and the fire risk use the hours after a detection.
+
+Checked 2026-11-25 with the store, for the GOES rows of INPE in the Pantanal box
+(`sqlite3 data/chispa.sqlite`, the table `detections` with `sensor_family = 'abi'`, by `source` and by month):
+
+- No GOES row of INPE has a fire power in 2019, 2020 and 2021: 50 958, 249 940 and 144 257 rows.
+  In 2022, 13 449 of the 27 317 rows have none. Each of the 195 085 rows of 2023 has one.
+  Thus an alert with only GOES rows has no fire power before 2022, and it has one from 2023.
+- From August 2022 the store also has the GOES rows of FIRMS. In most months INPE has 0.03 to 0.46 rows for each row
+  of FIRMS. In five months it has more: 0.47 in October 2023, 0.79 in November 2023, 1.22 in December 2023
+  (35 350 and 29 082 rows), 1.04 in January 2024 and 0.62 in February 2024.
+  October and November 2024 are not in this comparison: FIRMS has a gap there (section 8.2).
+- We do not know the cause of those five months. `docs/method.md` section 11.22 gives what they do to the growth risk.
+
 Terms, from a check of the INPE pages on 2026-11-20:
 
 - INPE calls the files "open data for public use", free of charge, for any user.
@@ -154,6 +177,36 @@ Checked 2026-11-19 with live requests.
 - The weather grid is coarse. A value is for a grid cell, not for a point.
 - The AOD grid has cells of approximately 0.4 degrees (44 km). Checked 2026-11-21: five points on one latitude gave three different series.
 - One request accepts a list of positions.
+
+Checked 2026-11-25 with a live request and on the pages `open-meteo.com/en/terms` and `open-meteo.com/en/pricing`:
+
+- The archive API (`archive-api.open-meteo.com/v1/archive`) gives, for each day and with the model `era5`: the sum of
+  rain in mm, the largest wind speed and the largest gust in km/h, the wind direction, the largest temperature, the
+  smallest relative humidity and the largest vapour pressure deficit in kPa. An answer is for a cell of 0.25 degrees.
+- The free API is for non-commercial use: less than 10 000 calls each day, 5000 each hour and 600 each minute.
+  A request for more than 2 weeks, or for more than 10 variables, counts as more than one call for each position.
+- Thus the Pantanal box at 0.25 degrees (609 positions) for 2018 to 2025 is approximately 115 000 calls: 12 days.
+  We do not use it for the recorded years (section 8.21). It stays a candidate for a forecast for a live alert.
+- The weather data has the licence CC BY 4.0.
+
+Checked 2026-11-26 with live requests, for the weather of a live alert (`docs/method.md` section 11.22):
+
+- The archive API with the model `ecmwf_ifs` (cells of 9 km) had each day to 2026-11-26, the day of the request.
+  With `era5`, `era5_land` and `era5_seamless` the newest day was 2026-11-20. The forecast API with `past_days=92`
+  gave the 92 days before the day of the request and the 7 days from that day. Each gave the sum of rain, the
+  largest wind speed, the dominant wind direction and the largest vapour pressure deficit of a day.
+  The historical forecast API had values for 2019-01-01.
+- One request for 101 days and 4 measures needed approximately 2 seconds: 770 requests in 40 minutes.
+- A comparison for the 770 alerts of the 2026 test at 30 minutes, outside the repository: the six weather inputs to
+  7 days before an alert, from ERA5-Land (our files) and from `ecmwf_ifs`. The correlation is 0.87, 0.92 and 0.94
+  for the rain of 7, 30 and 90 days. It is 0.78 for the days with no rain, 0.85 for the wind and 0.90 for the
+  dryness of the air. The level is not the same: the rain sums of IFS are 1.18 to 1.20 times those of ERA5-Land, and the mean
+  wind is 15.3 against 11.7 km/h. The dryness of the air has the same level: 2.49 and 2.52 kPa.
+- In ERA5-Land, we compared the inputs to 7 days before with the inputs to 1 day before. The correlation is 0.99 and
+  0.97 for the rain of 90 and 30 days. It is 0.66 for the rain of 7 days, 0.22 for the wind and 0.48 for the dryness.
+- `UNVERIFIED`, read by a research agent on the pages of Open-Meteo: `ecmwf_ifs` starts in 2017 and gets new hours
+  each 6 hours, and its series changes when ECMWF changes its model. The free limit is also 300 000 calls each month.
+  The archive API is not in the plan "Standard". One position counts as (measures / 10) x (days / 14) calls, 1 or more.
 
 ### 8.5 MapBiomas Fogo
 
@@ -190,7 +243,30 @@ Independence from hotspots:
 - The authors used hotspots and MODIS burned area to select which Landsat scenes to sample for training.
 - A hotspot filter removes some scars, but only in Amazon forest. It does not apply to the Pantanal.
 - Thus the ground truth for the Pantanal is almost independent of our detections. Say "almost", and give the reason.
-- Do not use the product "Monitor do Fogo" as ground truth without a new check. In other biomes it maps only near INPE hotspots.
+- Do not use the product "Monitor do Fogo" as the ground truth for the fires that no source detected.
+  Almost none of its burned pixels in the Pantanal is far from a hotspot: section 8.18 has the check.
+
+Checked 2026-11-25 with live requests to Earth Engine, for the ground that burned before an alert
+(`docs/method.md` section 11.22):
+
+- `chispa fetch burned --year` reads the layer `burned_monthly_{year}` of the same asset (`sources/burned.py`).
+  It saves, for each cell of the layer grid, the share of its 100 pixels that have a burn, in percent.
+  One year is one file of approximately 0.4 MB. The read of one year needs approximately 2 minutes.
+- A comparison for 2020: the share from Earth Engine is equal to the share from the scar tiles on disk for each of
+  the 4 817 435 cells. 332 156 cells have a share of half or more.
+- The folder `collection5_1` also has `..._time_after_fire_v1` and `..._year_last_fire_v1`, with one band for each
+  year from 1985 to 2026. In the band `time_after_fire` of a year, a pixel that burned in that year has 0. A pixel
+  with no burn from 1985 has no value. Thus the band of a year has the fires of that year.
+- In a window of the north Pantanal (57.6 W to 57.3 W, 17.9 S to 17.6 S), the band of 2020 has 0 for 632 262 pixels,
+  and the band of 2021 has 1 for 761 499 pixels. We did not find the cause of the difference. We do not use these assets.
+
+Checked 2026-11-26 with live requests to Earth Engine, for the day that the map of a year comes:
+
+- The asset of Collection 4, with the years to 2024, changed last on 2025-05-21. That of Collection 5, with the
+  years to 2025, on 2026-04-09. That of Collection 5.1, which we read, on 2026-08-27.
+- Thus the map of a year is in Earth Engine in April or May of the next year, or later. An alert of the first
+  months of a year cannot have it. `UNVERIFIED`, read by a research agent on the pages of MapBiomas: the public
+  release of the three collections with 2023, 2024 and 2025 was on 2024-06-18, 2025-06-24 and 2026-07-21.
 
 Known errors of the ground truth:
 
@@ -267,6 +343,9 @@ Our comparison in the Pantanal biome, 2023, on a grid of 0.004 degrees:
 - The two products agree on the burn day to 1 day for 48 percent of cells, to 3 days for 77 percent and to 7 days for 95 percent.
 - MapBiomas gives the same month as the burn day for 37 percent of the area, one month later for 60 percent, two months later for 1.5 percent. It almost never gives an earlier month. The two products give the same numbers.
 - Thus the month margin of the evaluation must be on one side: the detection is in the scar month or the month before.
+- Checked 2026-11-26 with a live request: the images of MCD64A1 for February to September 2026 changed last 40 to 51
+  days after the end of their month. The 13 images of January 2025 to January 2026 have a time of change from April
+  to October 2026: the product changes its older months.
 
 ### 8.10 Live products
 
@@ -459,12 +538,37 @@ Checked 2026-11-23 with live requests to Earth Engine:
   the asset had 1 hectare or more for 22 of the 30 chips that the person called burned, and for 9 of the 33 others.
   For the 44 unmatched HIGH events it had 1 hectare or more for 13.
 
-Read 2026-11-23 by a research agent, on the pages of each owner. `UNVERIFIED`: no second read confirmed these facts.
-A web search on 2026-11-24 found the method document of collection 1 of the Monitor map, and no document for the
-collection of the asset that we read.
+Checked 2026-11-26 with live requests, for the fires of a year with no annual map (`docs/method.md` section 11.25):
 
-- Monitor do Fogo: the method document of its collection 1 gives monthly Sentinel-2 mosaics, a deep learning model, and
-  only the ground not farther than 5 km from an INPE hotspot. Licence CC BY 4.0. Thus it cannot show a fire with no hotspot.
+- The asset had the months from January to October 2026: the images `brazil-2026-1` to `brazil-2026-10`.
+  It changed last on 2026-11-09. Each image of 2026 has the properties collection 2 and source IPAM.
+- An image has the pixel size of the annual map, 0.00026949458523585647 degrees, in EPSG:4326.
+- `chispa fetch monitor --year` reads, for each pixel, the first month of the year with a burn, on the grid of the scar
+  tiles (`sources/monitor.py`). A year is 130 tiles of approximately 1 MB together, and the read needs approximately
+  9 minutes. The folder name has the last month that the map had, for example `2026-10`: a folder never changes.
+- The burn day product MCD64A1 had the months to September 2026 on that day. `chispa fetch burnday --year` now saves
+  the months that the product has, and a year in progress has no burn day for its last months.
+
+Checked 2026-11-26, for the day that a month comes and for the hotspot rule of the map:
+
+- Earth Engine gives the time of the last change of each image. The 13 images of October 2025 to October 2026 each
+  changed 9 to 15 days after the end of their month, and not after that. That time is not always the first day of
+  an image: an image can have an older version that we do not have. The images of January 2019 to September
+  2025 changed from 2025-10-06 to 2025-11-06: the first day of those months in the asset is not known.
+  `chispa fetch monitor` saves the times of a year in the file `published.json` of its folder.
+- The Monitor page gives one method document: "Método Monitor Fogo, Coleção 1", a copy of 2026-08-25. Its section
+  2.2 gives monthly Sentinel-2 mosaics and a deep learning model. The map has only the ground in 5 km of an INPE
+  hotspot of the month and of the month before, for each biome "exceto Pantanal". We found no document of collection 2.
+- The asset does not agree with that exception. In the biome, 0 of 1 262 193 burned pixels of 2025 are farther than
+  5.5 km from each detection in our store of those two months. For 2026 it is 86 of 1 396 391. In the annual map of
+  2025, 164 633 of 1 434 261 burned pixels are that far (11.5 percent). In a month of 2025, 78 to 94 percent of the
+  biome is that far. A check outside the repository, on blocks of 10 pixels, with the detections of INPE and of FIRMS.
+- `UNVERIFIED`: the rule that made the asset of collection 2. The counts are a measure of distance with our
+  detections. They are not the rule of the owner of the map. We use the map as dependent on hotspots: it is not
+  the reference for the fires that no source detected. The ground of an alert is near a hotspot: the alert.
+
+Read 2026-11-23 by a research agent, on the pages of each owner. `UNVERIFIED`: no second read confirmed these facts.
+
 - OlmoEarth (Ai2): an encoder for Sentinel-2 L2A, Sentinel-1 and Landsat. It gives embeddings. The agent found no model,
   weights or benchmark for burned area. A use needs our labels and a head for two dates. The weights have the
   "OlmoEarth Artifact License": it prohibits military and extractive uses. The package `olmoearth-pretrain-minimal`
@@ -500,8 +604,12 @@ Candidate inputs:
 - MapBiomas Fogo, collection 5: the asset folder `projects/mapbiomas-public/assets/brazil/fire/collection5/` has
   `mapbiomas_fire_collection5_time_after_fire_v1` (years after the last fire) and `..._fire_frequency_v1`, 1985 to 2025.
 - Surface water: MapBiomas has an annual asset (`.../brazil/water/collection5/mapbiomas_brazil_collection5_water_annual_v4`).
-  A monthly asset was not found. `JRC/GSW1_4/MonthlyHistory` in Earth Engine ends in December 2021.
-- Paraguay River level at Ladário: the ANA service `telemetriaws1.ana.gov.br/ServiceANA.asmx`, station 66825000, daily values.
+  `JRC/GSW1_4/MonthlyHistory` in Earth Engine ends in December 2021.
+  Checked 2026-11-25 with live requests: the same folder has the collection `mapbiomas_brazil_collection5_water_monthly_v4`.
+  It has 492 images of 30 m, one for each month from January 1985 to December 2025. A pixel of water has the number of
+  the month, and each other pixel has no value. The asset changed last on 2026-05-29. Thus the map of a month is not
+  there in that month: an alert cannot have it. The annual asset has the bands `classification_1985` to `classification_2025`.
+- Paraguay River level at Ladário: section 8.22 has the checked facts.
 - INPE fire risk: daily grids of 1 km from 2001, at `dataserver-coids.inpe.br/queimadas/queimadas/riscofogo_meteorologia/`.
   Its formula uses rain, humidity, temperature and the vegetation class. It does not use wind. The forecast grids have no archive.
 - Formulas with public equations: the Canadian fire weather index (Van Wagner and Pickett 1985), the Monte Alegre formula
@@ -525,3 +633,43 @@ Public work, as a comparison:
 - Barros-Rosa et al. 2026 (DOI 10.1111/gcb.71089): for the monthly burned area of the Pantanal, the main inputs were the
   rain of the month before, a dryness index and the surface water.
 - The search found no fuel model map of the Pantanal, and no model for the size of one fire in the Pantanal.
+
+### 8.21 ERA5-Land weather
+
+Checked 2026-11-25 with live requests to Earth Engine. `chispa fetch weather --year` reads it (`sources/weather.py`).
+`docs/method.md` section 11.22 gives its use.
+
+- Asset: `ECMWF/ERA5_LAND/HOURLY`. One image for each hour, 69 bands, cells of 0.1 degrees (11 132 m).
+  On 2026-11-25 its newest image was 2026-11-19 20:00 UTC: a day is in the product approximately 6 days after it.
+- We read the bands `u_component_of_wind_10m`, `v_component_of_wind_10m`, `temperature_2m`, `dewpoint_temperature_2m`
+  and `total_precipitation_hourly`. The wind is in metres for each second, the temperatures in kelvin and the rain in metres.
+- We save four measures of each UTC day: the largest wind speed in km/h, the largest vapour pressure deficit in kPa
+  (from the temperature and the dew point, with the Tetens formula), the largest temperature and the sum of rain in mm.
+- The grid of the Pantanal box has 51 columns and 71 rows, with a cell centre at each tenth of a degree.
+  One day of the box is one request of less than 1 second. No cell of the box is without a value.
+- A comparison at one cell (18.0 S, 57.0 W) for 1 to 4 September 2020. ERA5-Land: largest wind 14.93, 12.74, 13.99
+  and 9.09 km/h, and largest vapour pressure deficit 3.78, 3.26, 3.49 and 5.17 kPa. Open-Meteo, with ERA5 at 0.25
+  degrees: 16.9, 15.1, 16.4 and 8.4 km/h, and 3.06, 2.83, 3.3 and 4.92 kPa. The wind has the same sequence of the
+  days in the two. The dryness of the air does not: day 1 is above day 3 in ERA5-Land, and below it in Open-Meteo.
+  They are two models.
+- The asset `ECMWF/ERA5_LAND/DAILY_AGGR` has the mean of each wind component of a day, not the largest wind speed.
+- `UNVERIFIED`: the terms of the product (Copernicus). Do a check before we publish a copy of the files.
+
+### 8.22 ANA river level at Ladário
+
+Checked 2026-11-25 with live requests. `chispa fetch river --year` reads it (`sources/river.py`).
+`docs/method.md` section 11.22 gives its use.
+
+- Service: `telemetriaws1.ana.gov.br/ServiceANA.asmx/HidroSerieHistorica`, with no key. ANA is the water agency of Brazil.
+  The station 66825000 is Ladário, on the Paraguay River. The type of data 1 is the river level.
+- The answer is XML, with one or more rows for a month. A row has the fields `Cota01` to `Cota31`: the level of each
+  day in centimetres. The field `NivelConsistencia` is 1 or 2. `UNVERIFIED`: 2 is data that ANA examined.
+- A month can have a row with levels and rows with no level. September 2023 has one row with 30 levels, and three rows with none.
+- On 2026-11-25 the history had a level for each day from 2018-01-01 to 2026-06-30: 3103 days.
+  Thus the history ends approximately 5 months before today. A row of September 2023 has the insert date 2024-10-11.
+- The method `DadosHidrometeorologicos` of the same service gives the telemetry: a level each 15 minutes.
+  Its newest row was 2026-11-25 19:00, with 90 cm. No command reads it. We did not compare it with the history.
+- A level can be less than zero: the zero of the gauge is not the bed of the river.
+- The mean of September, from the field `Media`: 287 cm in 2019, 32 in 2020, -11 in 2021, 123 in 2022, 336 in 2023,
+  -35 in 2024 and 242 in 2025.
+- `UNVERIFIED`: the terms of the data, and the time zone of a day in the answer.

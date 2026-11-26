@@ -4,7 +4,7 @@ import zipfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from chispa.sources.inpe import parse_file
+from chispa.sources.inpe import dryness_rows, parse_file, year_files
 
 SAMPLE = Path(__file__).parent / "samples" / "inpe_202302.csv"
 ANNUAL = Path(__file__).parent / "samples" / "inpe_anual_sample.csv"
@@ -63,3 +63,35 @@ def test_annual_file_has_other_field_names():
     )
     assert first.observed_at == datetime(2019, 1, 1, 17, 36, tzinfo=UTC)
     assert detections[2].frp_mw is None
+
+
+def test_archive_rows_give_the_dryness_and_no_value_for_the_mark_of_inpe(tmp_path):
+    rows = list(dryness_rows(ANNUAL))
+    # 7 of the 8 rows are in the box. The first of them has 2 days with no rain, 1.2 mm and 0.1.
+    assert len(rows) == 7
+    assert rows[0] == (
+        datetime(2019, 1, 1, 17, 36, tzinfo=UTC),
+        -18.95416,
+        -57.27932,
+        2.0,
+        1.2,
+        0.1,
+    )
+    # The GOES-16 row has the mark -999 for the fire risk: no value.
+    assert rows[3][3:] == (12.0, 0.1, None)
+    # A monthly file has the same fields with other names for the time and the position.
+    assert len(list(dryness_rows(SAMPLE))) == 10
+
+
+def test_year_has_its_annual_file_or_its_monthly_files(tmp_path):
+    (tmp_path / "inpe").mkdir()
+    for name in (
+        "focos_br_todos-sats_2019.zip",
+        "focos_mensal_br_202301.zip",
+        "focos_mensal_br_202302.csv",
+    ):
+        (tmp_path / "inpe" / name).write_text("")
+    (tmp_path / "inpe" / "focos_mensal_br_202303.part").write_text("")
+    assert [path.name for path in year_files(tmp_path, 2019)] == ["focos_br_todos-sats_2019.zip"]
+    names = [path.name for path in year_files(tmp_path, 2023)]
+    assert names == ["focos_mensal_br_202301.zip", "focos_mensal_br_202302.csv"]

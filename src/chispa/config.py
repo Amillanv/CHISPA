@@ -382,6 +382,14 @@ CONFIDENCE_PENALTY = 0.001
 # is in degrees (approximately 11 km).
 CONFIDENCE_NEAR_DAYS = 7
 CONFIDENCE_NEAR_CELL_DEG = 0.1
+# A detection is at night if its solar hour at the place is at or after the first value, or
+# before the second. The confidence and the growth risk use it for their inputs.
+NIGHT_HOURS = (18, 6)
+
+# --- Weather ---
+
+# The side of a cell of the ERA5-Land weather grid, in degrees (approximately 11 km).
+WEATHER_PIXEL_DEG = 0.1
 
 # --- Growth risk ---
 
@@ -390,6 +398,55 @@ CONFIDENCE_NEAR_CELL_DEG = 0.1
 RISK_LIMITS_HA = (100.0, 1000.0)
 # Too few fires are this large for a model: 9 in the development year. They get a count only.
 RISK_LARGEST_HA = 10000.0
+# The level of a year is in range if the large alerts that came, divided by the expected large
+# alerts, are from the first value to the second (condition 3 of a percentage).
+RISK_LEVEL_YEAR = (0.5, 2.0)
+# The rule for a group of inputs. The AUC must be larger in this many years or more. The level
+# of all years together must not be farther from 1 by more than the margin: the owner set the
+# margin on 2026-11-25, after the first results of the rule. A group stays if it passes for
+# this many models or more.
+RISK_RULE_MIN_YEARS = 5
+RISK_RULE_LEVEL_MARGIN = 0.05
+RISK_RULE_MIN_MODELS = 3
+# The weather inputs of an alert. The sums of rain are for these numbers of days before the day
+# of the moment. A day with this much rain or more, in mm, is a day with rain. The wind and the
+# dryness of the air are for this number of days before the day, and from the day.
+RISK_RAIN_DAYS = (7, 30, 90)
+RISK_RAIN_DAY_MM = 1.0
+RISK_WEATHER_DAYS = 3
+# A day is in the weather product approximately 6 days after it. Thus the inputs that an alert
+# can have at its time stop this many days before the usual end.
+RISK_WEATHER_LATE_DAYS = 6
+# The inputs of the ground that burned before an alert. They use the maps of this number of years
+# before the year of the alert. A cell burned in a year if this share of its pixels or more
+# burned. The burned share near an alert is for a square with this side in layer cells
+# (approximately 10 km), for each of these numbers of years before.
+RISK_BURNED_YEARS = 10
+RISK_BURNED_CELL_SHARE = 0.5
+RISK_BURNED_NEAR_CELLS = 33
+RISK_BURNED_NEAR_YEARS = (1, 3)
+# The change of the river level is for this number of days before the day before an alert.
+RISK_RIVER_CHANGE_DAYS = 30
+# The conditions of a percentage. The level of all scored years together must be in this range
+# (condition 2). A year is scored only if its models have this number of training years or
+# more: the owner set this on 2026-11-25, after the first results of the conditions.
+RISK_LEVEL_ALL = (0.8, 1.25)
+RISK_MIN_TRAINING_YEARS = 2
+# The limits of the percentage of an alert, and of its size classes. The first limit is the
+# minimum area of a counted fire: the owner asked for it on 2026-11-26. The other tables of
+# the growth risk, and the rule for a group of inputs, keep the limits of RISK_LIMITS_HA.
+RISK_CLASS_LIMITS_HA = (10.0, 100.0, 1000.0)
+# The recalibration of the growth risk. An outcome is known this number of days after the moment
+# of its alert: an estimate, for a live map of each month. The known outcomes of this number of
+# days count. The prior is added to the large alerts that came and to those that the values
+# expected: with few outcomes, the factor stays near 1.
+RISK_RECALIBRATION_DELAY_DAYS = 60
+RISK_RECALIBRATION_WINDOW_DAYS = 365
+RISK_RECALIBRATION_PRIOR = 10.0
+# The test year of the growth risk: its fires come from the Monitor map. A model with less than
+# this number of large alerts in the test has no answer (owner, 2026-11-25).
+RISK_TEST_YEAR = 2026
+RISK_TEST_MIN_LARGE = 30
 
 # === The values above this line can change a result. The configuration hash covers them. ===
 # The values below this line change no number in a result table.

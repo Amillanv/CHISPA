@@ -1,0 +1,5 @@
+inputs,moment_h,limit_ha,alerts,large,auc,average_precision,top_tenth_large
+inputs now,0,100.0,440,167,0.6682,0.5725,31
+inputs now,0,1000.0,440,50,0.7405,0.3384,14
+inputs now,24,100.0,392,141,0.7207,0.6364,30
+inputs now,24,1000.0,392,41,0.7825,0.3732,13

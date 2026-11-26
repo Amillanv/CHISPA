@@ -1,0 +1,9 @@
+moment_h,limit_ha,group,alerts,probability_mean,large,large_share,expected_large,observed_to_expected
+0,100.0,only GOES rows of INPE,943,0.0291,34,0.0361,27.4,1.2401
+0,100.0,each other alert,3266,0.0474,153,0.0468,154.8,0.9886
+0,1000.0,only GOES rows of INPE,943,0.0081,10,0.0106,7.6,1.3099
+0,1000.0,each other alert,3266,0.017,64,0.0196,55.5,1.1536
+24,100.0,only GOES rows of INPE,756,0.0122,14,0.0185,9.2,1.5191
+24,100.0,each other alert,3152,0.042,137,0.0435,132.4,1.0344
+24,1000.0,only GOES rows of INPE,756,0.003,4,0.0053,2.3,1.7539
+24,1000.0,each other alert,3152,0.0146,57,0.0181,46.0,1.2388

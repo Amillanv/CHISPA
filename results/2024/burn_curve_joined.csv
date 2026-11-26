@@ -1,4 +1,4 @@
-group,day,boxes,joined_answers,joined_burned,joined_burned_share,curve_answers,curve_burned,curve_burned_share,config,run_date
-"HIGH events, unmatched",30,309,300,151,0.5033,295,85,0.2881,e06a03177d61,2026-11-24
-"HIGH events, matched",30,100,92,87,0.9457,96,85,0.8854,e06a03177d61,2026-11-24
-"boxes, no fire",30,100,99,14,0.1414,98,4,0.0408,e06a03177d61,2026-11-24
+group,day,boxes,joined_answers,joined_burned,joined_burned_share,curve_answers,curve_burned,curve_burned_share
+"HIGH events, unmatched",30,309,300,151,0.5033,295,85,0.2881
+"HIGH events, matched",30,100,92,87,0.9457,96,85,0.8854
+"boxes, no fire",30,100,99,14,0.1414,98,4,0.0408

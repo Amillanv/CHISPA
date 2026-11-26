@@ -20,7 +20,7 @@ export function drawClock(state) {
   tick(state);
   const select = $("replays");
   const options = state.settings.replays.map((t) => `<option value="${t}"${!state.live && t === state.anchor ? " selected" : ""}>${stamp(t, zone)}</option>`).join("");
-  select.innerHTML = `<option value="">Replay a moment (${zoneTag(zone)})</option>${options}`;
+  select.innerHTML = `<option value="">Replay a moment</option>${options}`;
 }
 
 /* Each second: the time and the lag. Live: the time now, with seconds. Replay: the as-of time, with its year.
@@ -28,7 +28,7 @@ export function drawClock(state) {
 export function tick(state) {
   const zone = zoneOf(state), live = state.live;
   const moment = live ? Date.now() : new Date(state.asOf).getTime();
-  $("asof-label").textContent = `${live ? "Now" : "As-of"} · ${zoneLabel(zone, moment)}`;
+  $("asof-label").textContent = `${live ? "" : "As-of · "}`;
   if (live) {
     const t = zoned(moment, zone ?? "UTC", true);
     $("asof").innerHTML = `<span class="d">${t.date}</span>${t.time}`;

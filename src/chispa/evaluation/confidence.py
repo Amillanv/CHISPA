@@ -75,7 +75,8 @@ def moment_rows(detections: Fields, merges: list, links: tuple, layers: severity
         position = (detections["lat"][first], detections["lon"][first])
         near = near_count(counts, place, detections["available"][first], *position)
         row = _alert_row(detections, chosen, layers, near)
-        row["alert"] = alert
+        row["alert"], row["positions"] = alert, chosen
+        row["at"] = float(detections["available"][first]) + limits[moment]
         row["fires"] = fires_of.get(int(detections["event"][first]), frozenset())
         spans = [link_fire[first_link[d] : first_link[d + 1]] for d in chosen.tolist()]
         row["own_fires"] = frozenset(np.concatenate(spans).tolist())
@@ -232,9 +233,15 @@ def detection_fires(
     return first, fire
 
 
-def year_rows(year: int, store_path: Path, raw_dir: Path) -> tuple[dict[str, list], tuple]:
-    """Return the rows of each moment for one fused year, and its detections, matches and fires."""
-    detections, pairs, fires, _ = prepare(year, store_path, raw_dir)
+def year_rows(
+    year: int, store_path: Path, raw_dir: Path, matched: tuple | None = None
+) -> tuple[dict[str, list], tuple]:
+    """Return the rows of each moment for one fused year, and its detections, matches and fires.
+
+    `matched` has the detections, the matches and the fires of a year whose fires are not in
+    the store: a year with no annual map.
+    """
+    detections, pairs, fires = matched or prepare(year, store_path, raw_dir)[:3]
     layers = severity.load_layers(raw_dir, severity.cover_year(year))
     merges = load_merges(sqlite3.connect(store_path), year)
     links = (event_fires(detections, pairs, fires), detection_fires(detections, pairs, fires))

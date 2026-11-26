@@ -1,4 +1,4 @@
-group,rule_boxes,rule_same,rule_same_share,rule_rank_correlation,monitor_boxes,monitor_same,monitor_same_share,monitor_rank_correlation,config,run_date
-"HIGH events, unmatched",419,419,1.0,1.0,419,326,0.778,0.5431,e06a03177d61,2026-11-24
-"HIGH events, matched",99,99,1.0,0.9998,99,88,0.8889,0.6835,e06a03177d61,2026-11-24
-"boxes, no fire",98,98,1.0,1.0,98,85,0.8673,0.3282,e06a03177d61,2026-11-24
+group,rule_boxes,rule_same,rule_same_share,rule_rank_correlation,monitor_boxes,monitor_same,monitor_same_share,monitor_rank_correlation
+"HIGH events, unmatched",419,419,1.0,1.0,419,326,0.778,0.5431
+"HIGH events, matched",99,99,1.0,0.9998,99,88,0.8889,0.6835
+"boxes, no fire",98,98,1.0,1.0,98,85,0.8673,0.3282

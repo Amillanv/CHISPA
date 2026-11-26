@@ -1,4 +1,4 @@
-input,alerts,alerts_with_a_value,p50,p75,p90,config,run_date
-"fire power, MW",6037,5990,54.81,83.57,108.7,ff28cb069294,2026-11-23
-"extent, km",6037,3725,2.2,4.42,8.61,ff28cb069294,2026-11-23
-"advance, m",6037,152,1263.59,1852.71,2745.11,ff28cb069294,2026-11-23
+input,alerts,alerts_with_a_value,p50,p75,p90
+"fire power, MW",6037,5990,54.81,83.57,108.7
+"extent, km",6037,3725,2.2,4.42,8.61
+"advance, m",6037,152,1263.59,1852.71,2745.11

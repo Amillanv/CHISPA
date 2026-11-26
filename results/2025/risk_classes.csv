@@ -1,0 +1,9 @@
+moment_h,class,alerts,expected_alerts,observed_to_expected,wrong_sequence_alerts
+0,less than 10 hectares,1402,1381.4,1.0149,0
+0,10 to 100 hectares,96,102.6,0.9352,0
+0,100 to 1000 hectares,36,43.8,0.8224,0
+0,1000 hectares or more,13,19.2,0.6773,0
+24,less than 10 hectares,1394,1370.9,1.0169,2
+24,10 to 100 hectares,92,101.0,0.9105,2
+24,100 to 1000 hectares,40,46.1,0.8673,2
+24,1000 hectares or more,11,18.9,0.5807,2
