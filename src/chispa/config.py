@@ -382,6 +382,9 @@ CONFIDENCE_PENALTY = 0.001
 # is in degrees (approximately 11 km).
 CONFIDENCE_NEAR_DAYS = 7
 CONFIDENCE_NEAR_CELL_DEG = 0.1
+# A detection is at night if its solar hour at the place is at or after the first value, or
+# before the second. The confidence and the growth risk use it for their inputs.
+NIGHT_HOURS = (18, 6)
 
 # --- Weather ---
 

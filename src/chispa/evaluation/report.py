@@ -31,8 +31,9 @@ LIMITS = """Limits of these results:
 - The availability delay of each sensor family is an estimate in `config.py`.
 - A fire in January can have detections in December of the year before. They cannot match it.
 - A detection of December that became available in January is in the tables of the new year
-  (`first_day`). The match uses the month and the day with no year: such a detection can match
-  a fire of December of the new year at the same place.
+  (`first_day`). From 2026-11-26 the match has the year, and such a detection matches no fire.
+  The tables of `chispa evaluate` here are from before that day: there, such a detection can
+  match a fire of December of the new year at the same place.
 """
 
 

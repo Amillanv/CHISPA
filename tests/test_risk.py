@@ -325,7 +325,8 @@ def test_models_can_have_more_inputs_and_fewer_inputs(monkeypatch):
     assert changed["24h_100ha"]["inputs"] == ["x"]
 
 
-def test_first_hours_count_the_scans_the_passes_and_the_time_that_the_sensors_saw():
+def test_first_hours_count_the_scans_the_passes_and_the_time_that_the_sensors_saw(monkeypatch):
+    monkeypatch.setattr("chispa.config.NIGHT_HOURS", (18, 6))
     hour = 3600.0
     # At longitude -60 the solar time is 4 hours before UTC. Four detections:
     # GOES at 20:00 and 20:05 local (one scan from two sources) and at 21:00, VIIRS at 14:00.
@@ -345,6 +346,14 @@ def test_first_hours_count_the_scans_the_passes_and_the_time_that_the_sensors_sa
     only_goes = risk_inputs.first_hours_inputs(detections, np.array([0]))
     assert (only_goes["polar_passes_log"], only_goes["span_h_log"]) == (0.0, 0.0)
     assert set(found) == set(risk_inputs.FIRST_HOURS)
+    # A second GOES platform in the period of 20:00 adds no scan: the count is of periods.
+    detections["platform"][1] = "GOES19"
+    again = risk_inputs.first_hours_inputs(detections, np.arange(4))
+    assert again["abi_scans_log"] == found["abi_scans_log"]
+    # The night comes from the configuration: with a night from 21:00, one scan is at night.
+    monkeypatch.setattr("chispa.config.NIGHT_HOURS", (21, 6))
+    later = risk_inputs.first_hours_inputs(detections, np.arange(4))
+    assert round(later["abi_night_scans_log"], 4) == round(float(np.log(1 + 1)), 4)
 
 
 def set_row(name: str, auc: float, large: int, expected: float | None) -> dict:

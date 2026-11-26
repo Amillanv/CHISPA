@@ -45,6 +45,7 @@ def inputs(found: dict, seen: dict) -> dict[str, float]:
     """
     angle = 2 * np.pi * seen["day"] / 365.25
     power = found["max_frp_mw"]
+    dusk, dawn = config.NIGHT_HOURS
     values = {
         "detections_log": np.log1p(found["detections"]),
         "families": len(seen["families"]),
@@ -53,7 +54,7 @@ def inputs(found: dict, seen: dict) -> dict[str, float]:
         "no_power": float(power is None),
         "season_sin": np.sin(angle),
         "season_cos": np.cos(angle),
-        "night": float(seen["local_hour"] < 6 or seen["local_hour"] >= 18),
+        "night": float(seen["local_hour"] >= dusk or seen["local_hour"] < dawn),
         "people_log": np.log1p(found["people_near"]),
         "protected_km_log": np.log1p(found["protected_km"]),
         "indigenous_km_log": np.log1p(found["indigenous_km"]),
