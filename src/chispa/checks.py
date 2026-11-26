@@ -15,7 +15,7 @@ from chispa.evaluation.confidence_curve import curve_tables
 from chispa.evaluation.events import events_with_a_match
 from chispa.evaluation.growth import step_rows
 from chispa.evaluation.report import write_summary, write_tables
-from chispa.evaluation.risk import risk_tables
+from chispa.evaluation.risk_run import risk_tables
 from chispa.evaluation.run import prepare
 from chispa.evaluation.severity import severity_tables
 from chispa.evaluation.visibility import month_table, visibility
@@ -51,13 +51,14 @@ def run_table(name: str, year: int) -> None:
     print(f"{year}: see results/SUMMARY.md, tables {', '.join(tables)}.")
 
 
-def run_risk() -> None:
+def run_risk(test_run: bool) -> None:
     """Make the growth risk tables of each year with mapped fires, in one run.
 
     The numbers of a year come from models of the other years. Thus one run makes all years:
     each table then has the same rows, the same code and the same configuration.
+    A test run also makes the tables of the test year, with fires from the Monitor map.
     """
-    tables = risk_tables(config.STORE_PATH, config.RAW_DIR)
+    tables = risk_tables(config.STORE_PATH, config.RAW_DIR, test_run)
     for year, of_year in tables.items():
         write_tables(of_year, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)

@@ -1,0 +1,41 @@
+inputs,moment_h,limit_ha,tested,auc_mean,auc_mean_other,years_larger,years,level,level_other,years_out,years_out_other,passes,models_passed,stays
+without first hours,0,100.0,inputs now,0.8237,0.8167,7,7,0.9584,0.9566,0,0,True,4,True
+without first hours,0,1000.0,inputs now,0.8594,0.8539,7,7,0.9655,0.9729,0,0,True,4,True
+without first hours,24,100.0,inputs now,0.902,0.8959,7,7,0.8971,0.8841,0,0,True,4,True
+without first hours,24,1000.0,inputs now,0.9192,0.9149,7,7,0.9722,0.9904,0,0,True,4,True
+without weather,0,100.0,inputs now,0.8237,0.7998,6,7,0.9584,0.9601,0,0,True,3,True
+without weather,0,1000.0,inputs now,0.8594,0.8153,6,7,0.9655,0.9908,0,0,True,3,True
+without weather,24,100.0,inputs now,0.902,0.8956,4,7,0.8971,0.9045,0,0,False,3,True
+without weather,24,1000.0,inputs now,0.9192,0.905,5,7,0.9722,0.9809,0,0,True,3,True
+weather before for weather late,0,100.0,weather before for weather late,0.8267,0.8237,5,7,0.9659,0.9584,0,0,True,3,True
+weather before for weather late,0,1000.0,weather before for weather late,0.8613,0.8594,5,7,0.9967,0.9655,0,0,True,3,True
+weather before for weather late,24,100.0,weather before for weather late,0.9023,0.902,5,7,0.8994,0.8971,0,0,True,3,True
+weather before for weather late,24,1000.0,weather before for weather late,0.9173,0.9192,1,7,0.9722,0.9722,0,0,False,3,True
+with weather after,0,100.0,with weather after,0.8263,0.8237,6,7,0.9682,0.9584,0,0,True,2,False
+with weather after,0,1000.0,with weather after,0.8631,0.8594,5,7,0.978,0.9655,0,0,True,2,False
+with weather after,24,100.0,with weather after,0.9018,0.902,4,7,0.902,0.8971,0,0,False,2,False
+with weather after,24,1000.0,with weather after,0.9186,0.9192,3,7,0.9765,0.9722,0,0,False,2,False
+with calendar,0,100.0,with calendar,0.8238,0.8237,4,7,0.9496,0.9584,0,0,False,0,False
+with calendar,0,1000.0,with calendar,0.8615,0.8594,4,7,0.9503,0.9655,0,0,False,0,False
+with calendar,24,100.0,with calendar,0.9018,0.902,4,7,0.8956,0.8971,0,0,False,0,False
+with calendar,24,1000.0,with calendar,0.9187,0.9192,2,7,0.9747,0.9722,0,0,False,0,False
+with fire power,0,100.0,with fire power,0.8307,0.8237,5,7,0.8607,0.9584,1,0,False,0,False
+with fire power,0,1000.0,with fire power,0.8623,0.8594,5,7,0.8584,0.9655,1,0,False,0,False
+with fire power,24,100.0,with fire power,0.903,0.902,4,7,0.8569,0.8971,0,0,False,0,False
+with fire power,24,1000.0,with fire power,0.9194,0.9192,3,7,0.9362,0.9722,0,0,False,0,False
+with dryness,0,100.0,with dryness,0.8199,0.8237,2,7,0.9414,0.9584,0,0,False,0,False
+with dryness,0,1000.0,with dryness,0.8578,0.8594,3,7,0.9587,0.9655,0,0,False,0,False
+with dryness,24,100.0,with dryness,0.9006,0.902,0,7,0.8924,0.8971,0,0,False,0,False
+with dryness,24,1000.0,with dryness,0.9176,0.9192,2,7,0.9821,0.9722,0,0,False,0,False
+without people and land,0,100.0,inputs now,0.8237,0.8095,7,7,0.9584,0.9547,0,0,True,4,True
+without people and land,0,1000.0,inputs now,0.8594,0.8438,7,7,0.9655,0.9704,0,0,True,4,True
+without people and land,24,100.0,inputs now,0.902,0.8948,6,7,0.8971,0.9071,0,0,True,4,True
+without people and land,24,1000.0,inputs now,0.9192,0.9116,6,7,0.9722,0.9859,0,0,True,4,True
+without burned before,0,100.0,inputs now,0.8237,0.801,6,7,0.9584,1.0225,0,0,True,3,True
+without burned before,0,1000.0,inputs now,0.8594,0.8443,6,7,0.9655,1.0168,0,0,True,3,True
+without burned before,24,100.0,inputs now,0.902,0.8833,7,7,0.8971,0.9606,0,0,False,3,True
+without burned before,24,1000.0,inputs now,0.9192,0.9068,7,7,0.9722,1.0233,0,0,True,3,True
+with river level,0,100.0,with river level,0.8285,0.8237,4,7,0.8209,0.9584,2,0,False,0,False
+with river level,0,1000.0,with river level,0.8692,0.8594,5,7,0.8502,0.9655,2,0,False,0,False
+with river level,24,100.0,with river level,0.9032,0.902,5,7,0.8192,0.8971,0,0,False,0,False
+with river level,24,1000.0,with river level,0.9241,0.9192,6,7,0.8886,0.9722,2,0,False,0,False

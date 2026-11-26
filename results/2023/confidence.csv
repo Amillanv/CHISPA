@@ -1,5 +1,5 @@
-moment_h,measure,alerts,alerts_matched,match_separation,brier,brier_skill,top_tenth,top_tenth_matched,top_tenth_fires,top_tenth_own_fires,config,run_date
-0,probability,6873,1845,0.8234,0.1377,0.2989,687,559,426,192,a84ef20c2e1b,2026-11-23
-0,level,6873,1845,0.558,0.1942,0.0113,687,210,441,179,a84ef20c2e1b,2026-11-23
-24,probability,6037,1326,0.8567,0.1119,0.3471,603,483,606,405,a84ef20c2e1b,2026-11-23
-24,level,6037,1326,0.6649,0.1584,0.0756,603,234,316,264,a84ef20c2e1b,2026-11-23
+moment_h,measure,alerts,alerts_matched,match_separation,brier,brier_skill,top_tenth,top_tenth_matched,top_tenth_fires,top_tenth_own_fires
+0,probability,6873,1845,0.8234,0.1377,0.2989,687,559,426,192
+0,level,6873,1845,0.558,0.1942,0.0113,687,210,441,179
+24,probability,6037,1326,0.8567,0.1119,0.3471,603,483,606,405
+24,level,6037,1326,0.6649,0.1584,0.0756,603,234,316,264

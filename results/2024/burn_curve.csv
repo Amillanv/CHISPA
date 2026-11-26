@@ -1,13 +1,13 @@
-group,day,boxes,answers,answer_share,burned,burned_share,hectares_median,with_last_day,same_as_last_day,config,run_date
-"HIGH events, unmatched",5,309,115,0.3722,23,0.2,11.27,115,114,e06a03177d61,2026-11-24
-"HIGH events, unmatched",10,309,225,0.7282,55,0.2444,9.37,225,222,e06a03177d61,2026-11-24
-"HIGH events, unmatched",20,309,288,0.932,82,0.2847,9.11,288,286,e06a03177d61,2026-11-24
-"HIGH events, unmatched",30,309,295,0.9547,85,0.2881,9.48,295,295,e06a03177d61,2026-11-24
-"HIGH events, matched",5,100,22,0.22,19,0.8636,23.99,22,22,e06a03177d61,2026-11-24
-"HIGH events, matched",10,100,57,0.57,48,0.8421,45.67,57,56,e06a03177d61,2026-11-24
-"HIGH events, matched",20,100,87,0.87,76,0.8736,61.15,87,87,e06a03177d61,2026-11-24
-"HIGH events, matched",30,100,96,0.96,85,0.8854,93.16,96,96,e06a03177d61,2026-11-24
-"boxes, no fire",5,100,39,0.39,0,0.0,,39,39,e06a03177d61,2026-11-24
-"boxes, no fire",10,100,79,0.79,2,0.0253,3.53,79,79,e06a03177d61,2026-11-24
-"boxes, no fire",20,100,96,0.96,4,0.0417,6.4,96,96,e06a03177d61,2026-11-24
-"boxes, no fire",30,100,98,0.98,4,0.0408,6.4,98,98,e06a03177d61,2026-11-24
+group,day,boxes,answers,answer_share,burned,burned_share,hectares_median,with_last_day,same_as_last_day
+"HIGH events, unmatched",5,309,115,0.3722,23,0.2,11.27,115,114
+"HIGH events, unmatched",10,309,225,0.7282,55,0.2444,9.37,225,222
+"HIGH events, unmatched",20,309,288,0.932,82,0.2847,9.11,288,286
+"HIGH events, unmatched",30,309,295,0.9547,85,0.2881,9.48,295,295
+"HIGH events, matched",5,100,22,0.22,19,0.8636,23.99,22,22
+"HIGH events, matched",10,100,57,0.57,48,0.8421,45.67,57,56
+"HIGH events, matched",20,100,87,0.87,76,0.8736,61.15,87,87
+"HIGH events, matched",30,100,96,0.96,85,0.8854,93.16,96,96
+"boxes, no fire",5,100,39,0.39,0,0.0,,39,39
+"boxes, no fire",10,100,79,0.79,2,0.0253,3.53,79,79
+"boxes, no fire",20,100,96,0.96,4,0.0417,6.4,96,96
+"boxes, no fire",30,100,98,0.98,4,0.0408,6.4,98,98

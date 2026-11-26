@@ -1,2 +1,2 @@
-reference_fires,called_burned,recall,reference_boxes_no_fire,boxes_called_burned,false_share,precision,f1,config,run_date
-100,83,0.83,100,17,0.17,0.83,0.83,18b5fd2e0d5e,2026-11-23
+reference_fires,called_burned,recall,reference_boxes_no_fire,boxes_called_burned,false_share,precision,f1
+100,83,0.83,100,17,0.17,0.83,0.83

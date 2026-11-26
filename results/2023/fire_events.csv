@@ -1,6 +1,6 @@
-size_class_ha,fires,fires_with_burn_day,fires_isolated,fires_found,fires_in_one_event,events_per_fire_median,events_per_fire_max,completeness,config,run_date
-10 to 100,794,223,106,619,242,2.0,12,0.8837,a84ef20c2e1b,2026-11-23
-100 to 1000,122,106,21,114,28,2.0,13,0.9022,a84ef20c2e1b,2026-11-23
-1000 to 10000,44,44,3,44,0,5.0,22,0.7883,a84ef20c2e1b,2026-11-23
-10000 to inf,9,9,0,9,0,14.0,256,0.8786,a84ef20c2e1b,2026-11-23
-all,969,382,130,786,270,2.0,256,0.8641,a84ef20c2e1b,2026-11-23
+size_class_ha,fires,fires_with_burn_day,fires_isolated,fires_found,fires_in_one_event,events_per_fire_median,events_per_fire_max,completeness
+10 to 100,794,223,106,619,242,2.0,12,0.8837
+100 to 1000,122,106,21,114,28,2.0,13,0.9022
+1000 to 10000,44,44,3,44,0,5.0,22,0.7883
+10000 to inf,9,9,0,9,0,14.0,256,0.8786
+all,969,382,130,786,270,2.0,256,0.8641

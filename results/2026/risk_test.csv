@@ -1,0 +1,7 @@
+moment_h,limit_ha,alerts,large,expected_large,factor_median,auc,brier_skill,observed_to_expected,enough_large_alerts,better_than_base_rate,level_in_range,percentage_holds
+0,10.0,763,108,79.3,0.8131,0.8449,0.1969,1.362,True,True,True,True
+0,100.0,763,43,29.2,0.7826,0.8723,0.1287,1.4709,True,True,True,True
+0,1000.0,763,14,9.3,0.8218,0.9231,0.0672,1.5121,False,True,True,
+24,10.0,746,96,78.1,0.8372,0.9014,0.368,1.2295,True,True,True,True
+24,100.0,746,38,31.0,0.8288,0.9326,0.4244,1.2244,True,True,True,True
+24,1000.0,746,13,10.0,0.8042,0.9702,0.4022,1.3026,False,True,True,

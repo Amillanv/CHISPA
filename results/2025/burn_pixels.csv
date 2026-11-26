@@ -1,4 +1,4 @@
-group,boxes,rule_ha,map_ha,both_ha,found_share,in_map_share,rank_correlation,boxes_with_map,ratio_median,config,run_date
-"HIGH events, unmatched",193,5276,16723,324,0.0194,0.0613,0.1099,12,0.0,f453adfd141a,2026-11-24
-"HIGH events, matched",100,63472,73335,35312,0.4815,0.5563,0.6694,82,0.3954,f453adfd141a,2026-11-24
-"boxes, no fire",100,40,0,0,,0.0,,0,,f453adfd141a,2026-11-24
+group,boxes,rule_ha,map_ha,both_ha,found_share,in_map_share,rank_correlation,boxes_with_map,ratio_median
+"HIGH events, unmatched",193,5276,16723,324,0.0194,0.0613,0.1099,12,0.0
+"HIGH events, matched",100,63472,73335,35312,0.4815,0.5563,0.6694,82,0.3954
+"boxes, no fire",100,40,0,0,,0.0,,0,

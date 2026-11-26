@@ -30,7 +30,7 @@ def match(detections: Fields, numbers: np.ndarray, grid: Grid, fires: Fields) ->
     """Return (detection index, fire number) for each detection that matches a fire.
 
     A detection matches a fire if a pixel of the fire is in the square of the footprint
-    plus the margin, and the fire burned near the time of the detection.
+    plus the margin, and the fire burned near the time of the detection, in the year of the map.
     """
     reach_m = detections["footprint_m"] + config.EVAL_MARGIN_M
     d_rows = np.ceil(reach_m / (grid.pixel_deg * 110_574)).astype(int)
@@ -39,8 +39,12 @@ def match(detections: Fields, numbers: np.ndarray, grid: Grid, fires: Fields) ->
     ).astype(int)
     rows, cols = grid.rows_cols(detections["lat"], detections["lon"])
     months, days = detections["month"], detections["day"]
+    # A detection of a different year is not on a fire of this map: its month and its day are
+    # those of its own year. A detection of 31 December can be available in the next year.
+    seconds = detections["observed"].astype(np.int64).astype("datetime64[s]")
+    in_year = seconds.astype("datetime64[Y]").astype(int) + 1970 == fires["year"]
     pair_detection, pair_fire = [], []
-    for i in range(len(rows)):
+    for i in np.flatnonzero(in_year):
         window = numbers[
             max(rows[i] - d_rows[i], 0) : rows[i] + d_rows[i] + 1,
             max(cols[i] - d_cols[i], 0) : cols[i] + d_cols[i] + 1,

@@ -1,5 +1,5 @@
-group,events,sample,clear,dnbr_step,min_ha,burned,burned_share,chosen,config,run_date
-"HIGH events, unmatched",193,193,186,0.3,10.0,93,0.5,yes,18b5fd2e0d5e,2026-11-23
-"HIGH events, unmatched, no mapped fire in the box",,167,160,0.3,10.0,82,0.5125,yes,18b5fd2e0d5e,2026-11-23
-"HIGH events, matched",214,100,100,0.3,10.0,83,0.83,yes,18b5fd2e0d5e,2026-11-23
-"boxes, no fire",,100,100,0.3,10.0,17,0.17,yes,18b5fd2e0d5e,2026-11-23
+group,events,sample,clear,dnbr_step,min_ha,burned,burned_share,chosen
+"HIGH events, unmatched",193,193,186,0.3,10.0,93,0.5,yes
+"HIGH events, unmatched, no mapped fire in the box",,167,160,0.3,10.0,82,0.5125,yes
+"HIGH events, matched",214,100,100,0.3,10.0,83,0.83,yes
+"boxes, no fire",,100,100,0.3,10.0,17,0.17,yes
