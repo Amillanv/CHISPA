@@ -28,7 +28,6 @@ from chispa.evaluation.risk_calibration import calibration_table, source_table
 from chispa.evaluation.risk_inputs import (
     INPUT_SETS,
     add_model_inputs,
-    burned_layers,
     dryness_inputs,
     dryness_of,
     river_inputs,
@@ -36,8 +35,7 @@ from chispa.evaluation.risk_inputs import (
 from chispa.evaluation.risk_recalibration import recalibration_tables
 from chispa.evaluation.risk_rule import NOW, rule_table
 from chispa.evaluation.risk_test import monitor_part
-from chispa.grid import layer_grid
-from chispa.sources import burned, river
+from chispa.sources import river
 
 Tables = dict[str, list[dict]]
 COMPARED = ("alerts", "large", "auc", "average_precision", "top_tenth_large")
@@ -48,21 +46,13 @@ def year_parts(year: int, store_path: Path, raw_dir: Path) -> dict:
     fires and its groups."""
     rows, (detections, pairs, fires) = year_rows(year, store_path, raw_dir)
     dryness = dryness_of(detections, raw_dir, year)
-    # The ground that burned before comes from the maps of the years before the year only.
-    before = range(year - config.RISK_BURNED_YEARS, year)
-    ground = burned_layers([burned.read_year(one, raw_dir) for one in before])
-    levels, cells = river.read_days(raw_dir, year - 1, year), layer_grid()
+    levels = river.read_days(raw_dir, year - 1, year)
     for moment in MOMENTS:
         add_model_inputs(rows[moment], detections, raw_dir, year, date(year + 1, 1, 10))
         for row in rows[moment]:
             # The inputs of the groups that the table `risk_inputs` examines, and no model has.
-            positions = row.pop("positions")
-            row["inputs"] |= dryness_inputs(dryness, positions)
-            place = detections["lat"][positions].mean(), detections["lon"][positions].mean()
-            spot = tuple(int(index) for index in cells.rows_cols(*place))
-            row["inputs"] |= {name: float(layer[spot]) for name, layer in ground.items()}
-            day = datetime.fromtimestamp(row["at"], UTC).date()
-            row["inputs"] |= river_inputs(levels, day)
+            row["inputs"] |= dryness_inputs(dryness, row.pop("positions"))
+            row["inputs"] |= river_inputs(levels, datetime.fromtimestamp(row["at"], UTC).date())
     first = seen_first(detections, pairs, fires)
     sized = {moment: sized_rows(rows[moment], first, fires["area_ha"]) for moment in MOMENTS}
     return {"rows": sized, "area_ha": fires["area_ha"], "alerts": group_table(sized, fires)}
@@ -78,7 +68,7 @@ def risk_tables(store_path: Path, raw_dir: Path, test_run: bool = False) -> dict
     parts = {year: year_parts(year, store_path, raw_dir) for year in config.YEAR_ROLES}
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
     baselines, tables, change = confidence.load(path), {}, INPUT_SETS[NOW]
-    of_earlier = {}
+    of_earlier, levels = {}, set_levels(parts)
     for year, part in parts.items():
         others, earlier = [o for o in parts if o != year], [o for o in parts if o < year]
         kept = {moment: new_or_none(part["rows"][moment]) for moment in MOMENTS}
@@ -89,7 +79,9 @@ def risk_tables(store_path: Path, raw_dir: Path, test_run: bool = False) -> dict
             "risk_calibration": calibration_table(kept, models),
             "risk_alerts": part["alerts"],
             "risk_weights": weight_table(models),
-            "risk_inputs": input_table(parts, year, kept, tuple(INPUT_SETS)),
+            "risk_inputs": with_levels(
+                input_table(parts, year, kept, tuple(INPUT_SETS)), levels, year
+            ),
         }
         if earlier:
             # The models of the earlier years also have the limits of the percentage.
@@ -159,20 +151,12 @@ def input_table(parts: dict[int, dict], year: int, kept: dict[str, list], names:
     """Return the measures of each named set of inputs for one year.
 
     `docs/method.md` section 11.22 gives the sets. The AUC, the average precision and the top
-    tenth have models from each other year. The three last columns are the level, with models
-    from the earlier years only.
+    tenth have models from each other year: a cross-validation by year.
     """
-    others, earlier = [o for o in parts if o != year], [o for o in parts if o < year]
+    others = [o for o in parts if o != year]
     table = []
     for name in names:
-        change = INPUT_SETS[name]
-        models = fit_models(_training(parts, others), *change)
-        level = (
-            calibration_table(kept, fit_models(_training(parts, earlier), *change))
-            if earlier
-            else []
-        )
-        level = {(row["moment_h"], row["limit_ha"]): row for row in level if row["group"] == "all"}
+        models = fit_models(_training(parts, others), *INPUT_SETS[name])
         for moment in MOMENTS:
             rows = kept[moment]
             size = np.array([row["size_ha"] for row in rows])
@@ -180,14 +164,44 @@ def input_table(parts: dict[int, dict], year: int, kept: dict[str, list], names:
             for limit in config.RISK_LIMITS_HA:
                 model = models[key(moment, limit)]
                 values = confidence.probability(model, as_table(rows, tuple(model["inputs"]))[0])
-                found, at = measures(values, size, seen, limit), level.get((moment, limit), {})
+                found = measures(values, size, seen, limit)
                 row = {"inputs": name, "moment_h": moment, "limit_ha": limit}
-                row |= {column: found[column] for column in COMPARED}
-                row["expected_large_earlier"] = at.get("expected_large")
-                row["observed_to_expected_earlier"] = at.get("observed_to_expected")
-                row["brier_skill_earlier"] = at.get("brier_skill")
-                table.append(row)
+                table.append(row | {column: found[column] for column in COMPARED})
     return table
+
+
+def set_levels(parts: dict[int, dict]) -> dict[tuple, dict]:
+    """Return the level of each set of inputs after the recalibration, for each scored year.
+
+    The rule for a group of inputs reads this level (`docs/method.md` section 11.22). A key
+    has the set, the year, the moment and the limit.
+    """
+    limits = tuple(sorted({*config.RISK_LIMITS_HA, *config.RISK_CLASS_LIMITS_HA}))
+    found = {}
+    for name, change in INPUT_SETS.items():
+        models = {}
+        for year in parts:
+            earlier = [other for other in parts if other < year]
+            if earlier:
+                models[year] = fit_models(_training(parts, earlier), *change, limits)
+        for year, tables in recalibration_tables(parts, models).items():
+            for row in tables["risk_recalibrated"]:
+                if row["group"] == "all":
+                    found[(name, year, row["moment_h"], row["limit_ha"])] = row
+    return found
+
+
+def with_levels(table: list[dict], levels: dict[tuple, dict], year: int) -> list[dict]:
+    """Return the rows of the table `risk_inputs` with the level of their set of inputs.
+
+    The level is that after the recalibration. A year that is not scored has no level.
+    """
+    names = ("large", "expected_large", "observed_to_expected", "brier_skill")
+    rows = []
+    for row in table:
+        level = levels.get((row["inputs"], year, row["moment_h"], row["limit_ha"]), {})
+        rows.append(row | {f"recalibrated_{name}": level.get(name) for name in names})
+    return rows
 
 
 def _training(parts: dict[int, dict], years: list[int]) -> dict[str, list]:

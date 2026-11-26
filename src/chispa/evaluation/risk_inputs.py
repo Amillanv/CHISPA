@@ -14,7 +14,8 @@ from scipy import ndimage
 
 from chispa import config, growth
 from chispa.evaluation.match import Fields
-from chispa.sources import inpe, weather
+from chispa.grid import layer_grid
+from chispa.sources import burned, inpe, weather
 
 DRYNESS = ("dry_days_log", "rain_mm_log", "fire_risk", "no_dryness", "no_fire_risk")
 HOURS = ("hour_sin", "hour_cos", "abi_scans_log", "abi_night_scans_log", "polar_passes_log")
@@ -31,10 +32,11 @@ RIVER = ("river_m", "river_change_m")
 # The sets of inputs that the table `risk_inputs` compares. A set has a name, the inputs that
 # it adds to the inputs of now, and the inputs of now that it removes.
 # The inputs that the models have and the confidence does not have: the groups that passed the
-# rule on 2026-11-25. The weather is the late weather: an alert can have it at its time.
+# rule. The weather is the late weather: an alert can have it at its time. The ground that
+# burned before passed on 2026-11-26, with the level after the recalibration.
 # Each set below is a change of the inputs of now. For a set with a name that starts with
 # "without", the inputs of now are tested against the set. For each other set, the set is tested.
-ADOPTED = FIRST_HOURS + WEATHER_LATE
+ADOPTED = FIRST_HOURS + WEATHER_LATE + BURNED
 POWER = ("power_log", "no_power")
 # The inputs of the confidence that the models do not have: they did not pass the rule on
 # 2026-11-25. The weather in the models replaced the calendar. The fire power and its mark made
@@ -50,10 +52,8 @@ INPUT_SETS = {
     "with fire power": (POWER, ()),
     "with dryness": (DRYNESS, ()),
     "without people and land": ((), EXPOSURE),
-    "with burned before": (BURNED, ()),
+    "without burned before": ((), BURNED),
     "with river level": (RIVER, ()),
-    "with last burn": (("burned_years_log", *BURNED_NEAR), ()),
-    "with burn frequency": (("burned_times",), ()),
 }
 
 
@@ -123,12 +123,16 @@ def add_model_inputs(
 ) -> None:
     """Give each row of one year the inputs of the models that the confidence does not have.
 
-    They are the first hours and the weather. A row also gets the mark of an alert with only
-    GOES rows of INPE. `last` is the last day of the weather that the rows need.
+    They are the first hours, the weather and the ground that burned before. A row also gets
+    the mark of an alert with only GOES rows of INPE. `last` is the last day of the weather
+    that the rows need.
     """
     # The weather inputs need more than 90 days before an alert and some days after its moment.
     start, grid = date(year - 1, 9, 1), weather.weather_grid()
     days = weather.read_days(raw_dir, start, last)
+    # The ground that burned before comes from the maps of the years before the year only.
+    before = range(year - config.RISK_BURNED_YEARS, year)
+    ground, cells = burned_layers([burned.read_year(one, raw_dir) for one in before]), layer_grid()
     for row in rows:
         positions = row["positions"]
         family, source = detections["family"][positions], detections["source"][positions]
@@ -139,6 +143,8 @@ def add_model_inputs(
         day = datetime.fromtimestamp(row["at"], UTC).date()
         series = {name: layers[:, cell[0], cell[1]] for name, layers in days.items()}
         row["inputs"] |= weather_inputs(series, (day - start).days)
+        spot = tuple(int(index) for index in cells.rows_cols(*place))
+        row["inputs"] |= {name: float(layer[spot]) for name, layer in ground.items()}
 
 
 def weather_inputs(series: dict[str, np.ndarray], today: int) -> dict[str, float]:

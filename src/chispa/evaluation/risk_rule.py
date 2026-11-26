@@ -2,7 +2,7 @@
 
 The table `risk_inputs` of each year compares sets of inputs. This module puts the years
 together and says, for each set and each model, if the rule is true: a larger mean AUC,
-a larger AUC in most years, and a level that is not worse.
+a larger AUC in most years, and a level after the recalibration that is not worse.
 `docs/method.md` section 11.22 gives the rule.
 """
 
@@ -27,11 +27,12 @@ def rule_table(by_year: dict[int, list[dict]], removes: set[str]) -> list[dict]:
         for row in rows:
             found = facts.setdefault((row["inputs"], *(row[name] for name in MODEL)), _empty())
             found["auc"].append(row["auc"])
-            if row["observed_to_expected_earlier"] is not None:
-                found["large"] += row["large"]
-                found["expected"] += row["expected_large_earlier"]
+            # The level is that of the scored years, after the recalibration.
+            if row["recalibrated_observed_to_expected"] is not None:
+                found["large"] += row["recalibrated_large"]
+                found["expected"] += row["recalibrated_expected_large"]
                 low, high = config.RISK_LEVEL_YEAR
-                found["out"] += not low <= row["observed_to_expected_earlier"] <= high
+                found["out"] += not low <= row["recalibrated_observed_to_expected"] <= high
     table = []
     for (name, moment, limit), found in facts.items():
         if name == NOW:

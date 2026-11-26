@@ -1,5 +1,5 @@
-inputs,moment_h,limit_ha,alerts,large,auc,average_precision,top_tenth_large,expected_large_earlier,observed_to_expected_earlier,brier_skill_earlier,config,run_date
-inputs now,0,100.0,1047,362,0.6398,0.5074,64,,,,8d8d69857248,2026-11-26
-inputs now,0,1000.0,1047,97,0.6132,0.1569,19,,,,8d8d69857248,2026-11-26
-inputs now,24,100.0,896,286,0.7224,0.6067,70,,,,8d8d69857248,2026-11-26
-inputs now,24,1000.0,896,73,0.6463,0.1902,19,,,,8d8d69857248,2026-11-26
+inputs,moment_h,limit_ha,alerts,large,auc,average_precision,top_tenth_large,config,run_date
+inputs now,0,100.0,1047,362,0.6441,0.512,66,8d8d69857248,2026-11-26
+inputs now,0,1000.0,1047,97,0.6156,0.1782,21,8d8d69857248,2026-11-26
+inputs now,24,100.0,896,286,0.7235,0.6126,71,8d8d69857248,2026-11-26
+inputs now,24,1000.0,896,73,0.6429,0.2132,18,8d8d69857248,2026-11-26
