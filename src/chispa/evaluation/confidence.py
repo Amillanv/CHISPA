@@ -233,9 +233,15 @@ def detection_fires(
     return first, fire
 
 
-def year_rows(year: int, store_path: Path, raw_dir: Path) -> tuple[dict[str, list], tuple]:
-    """Return the rows of each moment for one fused year, and its detections, matches and fires."""
-    detections, pairs, fires, _ = prepare(year, store_path, raw_dir)
+def year_rows(
+    year: int, store_path: Path, raw_dir: Path, matched: tuple | None = None
+) -> tuple[dict[str, list], tuple]:
+    """Return the rows of each moment for one fused year, and its detections, matches and fires.
+
+    `matched` has the detections, the matches and the fires of a year whose fires are not in
+    the store: a year with no annual map.
+    """
+    detections, pairs, fires = matched or prepare(year, store_path, raw_dir)[:3]
     layers = severity.load_layers(raw_dir, severity.cover_year(year))
     merges = load_merges(sqlite3.connect(store_path), year)
     links = (event_fires(detections, pairs, fires), detection_fires(detections, pairs, fires))

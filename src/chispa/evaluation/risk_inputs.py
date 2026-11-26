@@ -1,18 +1,20 @@
-"""Inputs of the growth risk for the state of the season.
+"""Inputs of the growth risk for the state of the season and of the ground.
 
 The share of the alerts that become large changes with the year, and the inputs of the confidence
-do not have the state of the season. This module gives each alert the dryness of its place,
-from the fields that INPE adds to the rows of its archive files.
-`docs/method.md` section 11.22 gives the rules.
+do not have the state of the season. This module gives each alert the candidate inputs for it:
+the dryness fields of INPE, the first hours of the alert, the weather, the ground that burned
+in the years before, and the river level. `docs/method.md` section 11.22 gives the rules.
 """
 
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
+from scipy import ndimage
 
 from chispa import config, growth
 from chispa.evaluation.match import Fields
-from chispa.sources import inpe
+from chispa.sources import inpe, weather
 
 DRYNESS = ("dry_days_log", "rain_mm_log", "fire_risk", "no_dryness", "no_fire_risk")
 HOURS = ("hour_sin", "hour_cos", "abi_scans_log", "abi_night_scans_log", "polar_passes_log")
@@ -23,6 +25,9 @@ WEATHER_BEFORE = (*RAIN, "no_rain_days_log", "wind_before_kmh", "vpd_before_kpa"
 WEATHER_AFTER = ("wind_after_kmh", "vpd_after_kpa", "rain_after_log")
 WEATHER_LATE = tuple(f"{name}_late" for name in WEATHER_BEFORE)
 EXPOSURE = ("people_log", "protected_km_log", "indigenous_km_log")
+BURNED_NEAR = tuple(f"burned_near_{years}y" for years in config.RISK_BURNED_NEAR_YEARS)
+BURNED = ("burned_years_log", "burned_times", *BURNED_NEAR)
+RIVER = ("river_m", "river_change_m")
 # The sets of inputs that the table `risk_inputs` compares. A set has a name, the inputs that
 # it adds to the inputs of now, and the inputs of now that it removes.
 # The inputs that the models have and the confidence does not have: the groups that passed the
@@ -45,6 +50,10 @@ INPUT_SETS = {
     "with fire power": (POWER, ()),
     "with dryness": (DRYNESS, ()),
     "without people and land": ((), EXPOSURE),
+    "with burned before": (BURNED, ()),
+    "with river level": (RIVER, ()),
+    "with last burn": (("burned_years_log", *BURNED_NEAR), ()),
+    "with burn frequency": (("burned_times",), ()),
 }
 
 
@@ -109,6 +118,29 @@ def first_hours_inputs(detections: Fields, positions: np.ndarray) -> dict[str, f
     }
 
 
+def add_model_inputs(
+    rows: list[dict], detections: Fields, raw_dir: Path, year: int, last: date
+) -> None:
+    """Give each row of one year the inputs of the models that the confidence does not have.
+
+    They are the first hours and the weather. A row also gets the mark of an alert with only
+    GOES rows of INPE. `last` is the last day of the weather that the rows need.
+    """
+    # The weather inputs need more than 90 days before an alert and some days after its moment.
+    start, grid = date(year - 1, 9, 1), weather.weather_grid()
+    days = weather.read_days(raw_dir, start, last)
+    for row in rows:
+        positions = row["positions"]
+        family, source = detections["family"][positions], detections["source"][positions]
+        row["only_inpe_goes"] = bool(((family == "abi") & (source == "inpe")).all())
+        row["inputs"] |= first_hours_inputs(detections, positions)
+        place = detections["lat"][positions].mean(), detections["lon"][positions].mean()
+        cell = tuple(int(index) for index in grid.rows_cols(*place))
+        day = datetime.fromtimestamp(row["at"], UTC).date()
+        series = {name: layers[:, cell[0], cell[1]] for name, layers in days.items()}
+        row["inputs"] |= weather_inputs(series, (day - start).days)
+
+
 def weather_inputs(series: dict[str, np.ndarray], today: int) -> dict[str, float]:
     """Return the weather inputs of one alert.
 
@@ -147,3 +179,37 @@ def _before(series: dict[str, np.ndarray], today: int) -> dict[str, float]:
         "wind_before_kmh": float(series["wind_kmh"][before].mean()),
         "vpd_before_kpa": float(series["vpd_kpa"][before].mean()),
     }
+
+
+def burned_layers(shares: list[np.ndarray]) -> dict[str, np.ndarray]:
+    """Return the inputs of the ground that burned before, for each cell of the layer grid.
+
+    `shares` has the burned share of each cell for each of the years before the year of the
+    alerts: the oldest year first, and the year before the alerts last. A cell burned in a year
+    if the share is the minimum of `config.py` or more. A cell with no burn in those years gets
+    one year more than their number.
+    """
+    burned = np.stack(shares) >= config.RISK_BURNED_CELL_SHARE
+    # From the newest year to the oldest, the first year with a burn: 1 is the year before.
+    years = np.where(burned.any(axis=0), burned[::-1].argmax(axis=0) + 1, len(shares) + 1)
+    layers = {"burned_years_log": np.log(years), "burned_times": burned.sum(axis=0).astype(float)}
+    side = config.RISK_BURNED_NEAR_CELLS
+    for name, count in zip(BURNED_NEAR, config.RISK_BURNED_NEAR_YEARS, strict=True):
+        largest = np.max(shares[-count:], axis=0).astype(float)
+        # The filter can give a very small negative number where no ground burned.
+        layers[name] = np.clip(ndimage.uniform_filter(largest, size=side, mode="constant"), 0, 1)
+    return layers
+
+
+def river_inputs(levels: dict[date, float], day: date) -> dict[str, float]:
+    """Return the river inputs of one alert: the level of the day before the day of the moment,
+    and its change in the days before that day. The levels are in metres."""
+    before = day - timedelta(days=1)
+    earlier = before - timedelta(days=config.RISK_RIVER_CHANGE_DAYS)
+    for needed in (before, earlier):
+        if needed not in levels:
+            raise ValueError(
+                f"The river has no level for {needed}. "
+                f"Run `chispa fetch river --year {needed.year}`, or wait for the data of ANA."
+            )
+    return {"river_m": levels[before], "river_change_m": levels[before] - levels[earlier]}

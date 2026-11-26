@@ -383,6 +383,11 @@ The time condition has two forms:
 - A fire with burn days: the day of the detection is from the first burn day of the fire minus the day margin, to the last burn day plus the day margin.
 - A fire with no burn day: the detection is in the map month or in the month before it. It is not in the month after it.
 
+From 2026-11-26 the match also has the year: a detection matches only a fire of the map of the year of its
+observation. Before that day, a detection of 31 December that became available in the next year matched a fire by its
+month and its day only. The owner decided the change on 2026-11-23, for the first run on 2026 (section 11.25).
+The tables of `chispa evaluate` in `results/` are from before the change: we did not make them again.
+
 One fire can match many detections. One detection can match many fires.
 Only detections in the biome border count. Only fires in the biome border exist in the store.
 A merged row uses the level of the event immediately after each detection (table `memberships`).
@@ -1463,6 +1468,8 @@ Claude proposed the limits of the three conditions, and the owner agreed to them
 From that day the level uses the split in time sequence (table `risk_calibration_earlier`): the years are 2020 to 2025.
 If a condition is false, an alert gets a rank or a class with its track record, and not a percentage.
 The final answer is the test of 2026. The field of the event record is not built.
+The owner added on 2026-11-25: a year is scored only if its models have two training years or more, and the values
+get a recalibration first. Section 11.24 has the two rules and the result.
 
 The results below, to the end of this section, are for the first model: it had the inputs of the confidence.
 Their tables are in the commit `b23ae63` of 2026-11-25. The models of now have more inputs (section 11.22), and the
@@ -1582,7 +1589,8 @@ In each list below, the seven numbers are for 2019 to 2025. A sum is for the sev
   no GOES row from FIRMS (`docs/sources.md` section 8.1). We cannot separate the two causes.
 - A caution on the weights. The input "no fire power value" has one of the largest weights at 30 minutes.
   A detection of INPE frequently has no fire power, and the years before August 2022 have more first detections from INPE.
-  Thus this weight can be a property of the sources of a year, not of a fire. Not examined.
+  Thus this weight can be a property of the sources of a year, not of a fire.
+  Examined on 2026-11-25: it is (section 11.22, the fire power and its mark).
 - With these numbers in a test year, hypotheses 1 and 2 are true for each limit. Hypothesis 3 is true at 30 minutes.
   At 24 hours it is false in 1 of the 7 years for 100 hectares, and in 2 of the 7 years for 1000 hectares.
   Hypothesis 4 is false.
@@ -1821,12 +1829,421 @@ inputs of the confidence without the calendar and without the fire power and its
   The calendar: 1. The dryness fields of INPE: 0.
 - The fire power and its mark: 0 of the 4 models. With them the mean AUC is 0.809, 0.8486, 0.8846 and 0.9075, and the
   level is 0.6158, 0.6115, 0.7431 and 0.7587, with 2022 out of its range for three models.
-  A possible cause, not examined: the years before August 2022 have a fire power for few GOES rows, because their
-  GOES rows are from INPE (`docs/sources.md` section 8.3). Then the two inputs do not say the same thing in each year.
+  The cause, examined on 2026-11-25 with the store (`docs/sources.md` section 8.3). No GOES row of INPE has a fire
+  power in 2019, 2020 and 2021. Each GOES row has one from 2023. Thus in the training years "no fire power" is the
+  mark of an alert with only GOES rows. The fire power there is the power of a VIIRS or MODIS pixel. From 2023 an
+  alert with only GOES rows has the fire power of a GOES pixel. The mean of a row of 2023 in the store is 146.1 MW
+  for GOES, and 15.8 MW for VIIRS.
+  The two inputs do not say the same thing in each year: they stay out of the models.
 - The weights of the weather, for the model of 2025 at 30 minutes and 1000 hectares. The rain of the 30 days has the
   largest weather weight (-0.3166: more rain, a smaller fire), then the rain of the 90 days (-0.1938), the rain of the
   7 days (-0.1834) and the wind (0.1749: more wind, a larger fire). The wind of these inputs is 7 to 9 days old:
   it is a sign of the weather of the season, not the wind at the fire.
+
+Where the level changes with the year (table `risk_alerts` of each year, 2026-11-25). At 30 minutes, for 100 hectares:
+
+- Of the alerts with a new fire, the share that became large is almost the same in each year: 362 of 1047 in 2019
+  (34.6 percent), 342 of 946 in 2020 (36.2), 167 of 440 in 2021 (38.0), 85 of 246 in 2022 (34.6), 86 of 245 in 2023
+  (35.1), 187 of 417 in 2024 (44.8) and 57 of 155 in 2025 (36.8).
+- The share of the alerts that have a new fire is not the same: 1047 of 6074 in 2019 (17.2 percent), 946 of 6800 in
+  2020 (13.9), 440 of 3617 in 2021 (12.2), 246 of 2980 in 2022 (8.3), 245 of 5630 in 2023 (4.4), 417 of 4209 in 2024
+  (9.9) and 155 of 1569 in 2025 (9.9). The alerts on a known fire are not in these counts.
+- Thus the level of a year is wrong in the first question: "does this alert have a mapped fire". It is not wrong
+  in the second question: "does a mapped fire become large". The first question is the question of the confidence.
+
+The group "burned before" (2026-11-25). Ground that burned a short time before has little fuel, and ground that burns
+frequently is ground where a fire can grow. No input has this. MapBiomas Fogo maps the burned ground of each year
+(`docs/sources.md` section 8.5). `chispa fetch burned --year` saves, for each cell of the layer grid, the share of its
+pixels that burned in that year. Each input uses the maps of the 10 years before the year of the alert.
+The place of an alert is the mean position of its detections at the moment:
+
+1. The years from the last burn of the cell of the alert, as a logarithm. A cell burned in a year if half of its
+   pixels or more burned. A cell with no burn in the 10 years gets 11 years.
+2. The number of those 10 years in which the cell burned.
+3. The burned share of the square of approximately 10 km around the cell, in the year before the year of the alert.
+4. The same for the 3 years before. A cell counts with its largest share of the three years.
+
+- Limits: the map of a year comes in the next year, and we did not check its date for each year. Thus an alert of the
+  first months of a year can be before the map of the year before it. A live alert needs the Monitor map for that
+  year. The land cover has the same limit. The map covers Brazil only: a cell out of Brazil counts as not burned.
+  The map has the errors of section 11.5.
+
+The hypothesis of the group "burned before", written on 2026-11-25 before its first run: the group passes the rule.
+We also look at the level of 2022 and of 2023 with the split in time sequence. Those years came after the large
+fires of 2020 and of 2021. Observed to expected nearer to 1 says that the burned ground has a part of the rate of a year.
+
+The group "river level" (2026-11-25). The flood of the Pantanal changes with the year, and no input has the flood.
+ANA gives the level of the Paraguay River at Ladário for each day (`docs/sources.md` section 8.22).
+`chispa fetch river --year` saves it. The inputs use the days before the day of the moment. A day is a UTC day:
+
+1. The level of the day before, in metres.
+2. The change of the level in the 30 days to that day, in metres.
+
+- Each alert of one day has the same two values: they are the state of the region, not of a place.
+- Limits: one station for all the region. The history of ANA ends some months before today: a live alert needs
+  the telemetry of ANA, which we did not compare with the history.
+
+The hypothesis of the group "river level", written on 2026-11-25 before its first run: the group does not pass the
+rule, and 2023 stays out of its range. The reason: the river was high in 2019 and in 2023 (`docs/sources.md` section
+8.22). But 2019 has the largest share of large alerts, and 2023 has the smallest.
+If the hypothesis is true, the inputs stay as they are. If it is false, the models get the two inputs.
+
+The result of the groups "burned before" and "river level" (tables `risk_inputs` and `risk_input_rule`, 2026-11-25).
+The command ran one time with the two sets. In each list, the four numbers are for 30 minutes with 100 and with 1000
+hectares, then for 24 hours with 100 and with 1000 hectares. The mean AUC with the inputs of now is 0.801, 0.8443,
+0.8833 and 0.9068, and the level for the six years together is 0.7028, 0.7541, 0.8213 and 0.8431.
+
+- Burned before: the hypothesis is false. The group passes for 0 of the 4 models, and by the rule it goes.
+  The mean AUC with the group is 0.8237, 0.8594, 0.902 and 0.9192: larger in 6, 6, 7 and 7 of the 7 years. The large
+  alerts in the top tenth are 536 of 1286, 190 of 388, 674 of 1059 and 210 of 311 (now: 507, 183, 651 and 208).
+  But the level is farther from 1, by more than the margin: 0.6219, 0.6226, 0.7495 and 0.7294 (924 large alerts for
+  1485.7 expected, 291 for 467.4, 773 for 1031.4 and 238 for 326.3).
+- The level of 2022 and of 2023 is not nearer to 1 with the group. Observed to expected of 2022: 0.4386, 0.5238,
+  0.5299 and 0.6337. Of 2023: 0.2515, 0.2485, 0.3489 and 0.3644. Thus the burned ground does not have the rate of a year.
+- Thus the group gives the best gain of the AUC of each group that we examined, and it makes the level worse.
+  The group has two reasons: the fuel that a burn removed, and the ground that burns frequently. After a year with
+  much burned ground, such as 2020, a large part of the region has one more burn in its count.
+  We examine each reason as its own group (see below).
+- River level: the hypothesis is true. The group passes for 1 of the 4 models (24 hours and 1000 hectares), and the
+  inputs stay as they are. The mean AUC with the group is 0.8059, 0.8554, 0.8842 and 0.9123: larger in 5, 5, 4 and 6
+  of the 7 years. The level for the six years together is nearer to 1: 0.8149, 0.788, 0.935 and 0.9257. But 2020 goes
+  out of its range for three models, and 2023 is farther from it. Observed to expected of 2020: 2.2424, 2.1519, 2.2643
+  and 1.9737. Of 2023: 0.1944, 0.1758, 0.3085 and 0.2966.
+- The model for 2020 has only 2019, a year with a high river. One value for all alerts of a day cannot get its
+  weight from one year. The river was high in 2023 too, and its share of large alerts was the smallest.
+
+The groups "last burn" and "burn frequency" (2026-11-25). The group "burned before" had two reasons. Each is a group now:
+
+1. Last burn: the inputs 1, 3 and 4 of the group "burned before". They are the years from the last burn of the
+   cell, and the two burned shares of the square around it. The reason: a burn removes the fuel.
+2. Burn frequency: the number of the 10 years in which the cell burned (the input 2). The reason: ground that burns
+   frequently is ground where a fire can grow.
+
+The hypotheses, written on 2026-11-25 after the result of the group "burned before" and before the first run of
+these two sets. The group "last burn" passes the rule. The group "burn frequency" does not pass: its level is
+farther from 1 by more than the margin. We did not examine the weights of the group "burned before" before we wrote this.
+
+The result of the groups "last burn" and "burn frequency" (tables `risk_inputs` and `risk_input_rule`, 2026-11-25).
+The command ran one time with the two sets.
+
+- Last burn: the hypothesis is false. The group passes for 0 of the 4 models. The mean AUC is 0.8232, 0.8583, 0.9016
+  and 0.9191: larger in 6, 6, 7 and 7 of the 7 years. The level is 0.6103, 0.6117, 0.7416 and 0.7249: farther from 1
+  by more than the margin. Thus these three inputs give almost all the gain of the group "burned before", and all
+  its loss of the level.
+- Burn frequency: the group passes for 2 of the 4 models (30 minutes with 1000 hectares, and 24 hours with 100
+  hectares). Thus it does not stay. The hypothesis gave this result with the wrong reason: the level is in the margin
+  for each model (0.6733, 0.723, 0.7904 and 0.819). In the two other models, one more year goes out of its range:
+  2022 at 30 minutes with 100 hectares (0.4903), and 2025 at 24 hours with 1000 hectares (0.4839).
+  The mean AUC is 0.8169, 0.8545, 0.8955 and 0.9129: larger in 7, 6, 7 and 6 of the 7 years.
+- The inputs of the models stay as they are. Each of the four groups of this list makes the mean AUC larger, and
+  none passes condition 3 of the rule. The sets stay in the tables as results, and no model uses them.
+- The tables of the models did not change. Each number of the tables `risk`, `risk_earlier`, `risk_calibration`,
+  `risk_calibration_earlier`, `risk_all_alerts`, `risk_alerts` and `risk_weights` is equal to that of the run before.
+
+The two parts of the level error of 2023 (table `risk_level_sources` of each year from 2020, 2026-11-25).
+The table gives the level for two groups of alerts, with the models of the earlier years. The groups are the alerts
+with only GOES rows of INPE at the moment, and each other alert. In each list, the four numbers are for 30 minutes with 100 and with
+1000 hectares, then for 24 hours with 100 and with 1000 hectares.
+
+- The alerts with only GOES rows of INPE. 2023 has 2765 of them at 30 minutes, of its 5630 alerts. Each other year
+  from 2020 has 22 to 1137. In 2023, 14 became large for 100 hectares, and the models expected 166.3.
+  Observed to expected of this group in 2023: 0.0842, 0.1209, 0.0349 and 0.1374.
+- Each other alert of 2023: 72 large alerts for 147.6 expected at 30 minutes with 100 hectares.
+  Observed to expected: 0.4878, 0.4962, 0.4793 and 0.4723. Each is a little below the range of one year.
+- Thus the level error of 2023 has two parts of almost equal size. The first part is a source. INPE has many more
+  GOES rows from October 2023 to February 2024 than in each other month (`docs/sources.md` section 8.3).
+  Almost none of the alerts from them has a mapped fire. A model of the years before cannot know this.
+  The second part is the year: in 2022 and in 2023 a smaller share of each kind of alert has a mapped fire.
+- We do not know what those GOES rows of INPE are. They are unmatched alerts, not false alarms (section 11.5).
+- The same group in 2020: 70 large alerts for 169.1 expected at 30 minutes with 100 hectares. The model for 2020
+  has only 2019. In 2021 and in 2024 the level of this group is from 0.96 to 1.69.
+- The three conditions of a percentage (section 11.21) did not change: no model has them, and 2023 is out of its
+  range for each model. The two models at 24 hours have two of the three.
+- What can have a percentage is the second question of this section: "does a mapped fire become large".
+  Its share is almost the same in each year. Section 11.23 has the model for that question, and its result.
+
+### 11.23 The growth risk of an alert with a new fire
+
+Question: if an alert has a new fire, how probable is it that this fire becomes large?
+Section 11.22 shows that the level of the growth risk is wrong in the first question: "does this alert have a mapped
+fire". This part asks only the second question. The owner chose this form on 2026-11-25.
+`evaluation/risk_run.py` makes its tables in the run of `chispa risk`.
+
+1. The alerts are the alerts with a new fire only (section 11.21): the alert saw a counted fire first.
+   A counted fire has 10 hectares or more.
+2. The label, the two limits, the two moments, the inputs and the form of the model are those of the growth risk,
+   with the inputs of now (section 11.22). The models get their weights from the alerts with a new fire only.
+3. The value is a conditional probability. It is correct only for an alert that has a fire of 10 hectares or more.
+   At the time of an alert we do not know this. Thus the text of an alert must give the condition:
+   "if this is a fire of 10 hectares or more".
+
+The table `risk_fire` has, for each moment and each limit of a year: the alerts, the large alerts, the AUC, the average
+precision and the large alerts in the top tenth, with the cross-validation by year. With the split in time sequence
+it has the expected large alerts, observed to expected and the Brier skill score.
+The table `risk_fire_calibration` has the values against what came, for all alerts and for each tenth, with the split
+in time sequence. The baseline is the constant of the Brier skill score: the base rate of the training years.
+
+The hypothesis, written on 2026-11-25 before the first run of the command with these tables.
+A check outside the repository came before the hypothesis, on the same day: it gave the level of each year for the
+four models. Thus the hypothesis is not blind, and we say so. With the split in time sequence, for 2020 to 2025:
+
+1. The three conditions of a percentage (section 11.21) are true for the model at 24 hours with 100 hectares.
+2. For each of the three other models, conditions 2 and 3 are true, and condition 1 is false in 2020 or in 2023.
+
+If the three conditions are true for a model, a percentage with its condition can go into an alert, for that moment
+and that limit. The owner decides the field and its words. The final answer is the test of 2026.
+If they are false for each model, an alert gets no percentage from this part.
+
+- Limits: an alert on a known fire and an alert with no mapped fire have no label here. The label has the errors of
+  the map (section 11.5). A year has few alerts with a new fire: 155 to 1047 at 30 minutes. The rule of section 11.22
+  chose the inputs for the first form of the question, with all alerts. The years that gave the idea of this part
+  are the years of its numbers: they are validation numbers, not a test.
+
+The result (tables `risk_fire` and `risk_fire_calibration` of 2019 to 2025, 2026-11-25). The command ran one time
+with these tables. Each number is equal to that of the check outside the repository. The two hypotheses are true.
+In each list of six numbers, the numbers are for 2020 to 2025.
+
+- The alerts with a new fire, for 2019 to 2025. At 30 minutes: 1047, 946, 440, 246, 245, 417 and 155.
+  At 24 hours: 896, 823, 392, 232, 217, 355 and 143.
+- 24 hours, 100 hectares: the three conditions are true. The Brier skill score: 0.1774, 0.1404, 0.208, 0.0168,
+  0.1773 and 0.2363. Observed to expected: 1.1317, 1.0, 0.841, 0.7427, 1.0438 and 0.8085. For the six years together
+  it is 0.9816: 773 large alerts for 787.5 expected. The mean AUC of the seven years is 0.7401.
+- The tenths of that model, each from the alerts of one year, for the six years together. Of the 214 alerts with the
+  largest values, 175 became large (81.8 percent), and the model expected 180.6. Of the 220 alerts with the smallest
+  values, 27 became large (12.3 percent), and the model expected 19.9.
+- The values are too low at the low end. In the three lowest tenths, 125 of 658 alerts became large, for 91.1 expected.
+  In the tenths 7 and 8 the values are too high: 168 of 429 alerts became large, for 198.5 expected.
+- 30 minutes, 100 hectares: condition 1 is false in 2020 (-0.001) and in 2023 (-0.0511). Observed to expected is
+  from 0.7786 to 1.1065, and 0.9742 for the six years together (924 for 948.5). The mean AUC is 0.6535.
+- 30 minutes, 1000 hectares: condition 1 is false in 2020 (-0.0118) and in 2023 (-0.0081). Observed to expected is
+  from 0.618 to 1.1562, and 1.0257 for the six years together (291 for 283.7). The mean AUC is 0.6978.
+- 24 hours, 1000 hectares: condition 1 is false in 2023 (-0.0137). Observed to expected is from 0.5069 to 1.1428,
+  and 0.981 for the six years together (238 for 242.6). The mean AUC is 0.7634.
+- Thus, for 24 hours and 100 hectares, a percentage with its condition can go into an alert. For the three other
+  models it cannot: in one year or two, the value is not better than the base rate of the training years.
+- What the percentage adds. Of the alerts with a new fire at 24 hours, 773 of 2162 became large in 2020 to 2025
+  (35.8 percent). The model moves an alert from that base rate to a value from approximately 9 to 84 percent:
+  the expected large alerts are 19.9 of 220 in the lowest tenth, and 180.6 of 214 in the highest tenth.
+- The field of the event record and its words are not built: the owner decides. The test year is 2026.
+
+### 11.24 The recalibration of the growth risk
+
+Question: can the outcomes that are known at the time of an alert give the growth risk the correct level?
+The share of the alerts with a mapped fire changes with the size of the fire season (section 11.22), and no input
+has it. A recalibration corrects the level of the values with what the last months showed. It does not change the
+models. The owner agreed to this part on 2026-11-25. `evaluation/risk_recalibration.py` makes it, in the run of `chispa risk`.
+
+The rule:
+
+1. The alerts are those of section 11.21, without the alerts with only GOES rows of INPE at the moment.
+   Such an alert gets a rank and no percentage (owner, 2026-11-25): section 11.22 gives the reason.
+   When a row of a different source or sensor family joins the alert, it gets a percentage at the next moment.
+2. The value of an alert comes from the models of the earlier years: the split in time sequence, with the inputs of now.
+3. At the time T of the moment of an alert, an outcome is known if its alert had its moment 60 days or more before T.
+   The known outcomes of the 365 days before T count. The factor is the large alerts that came plus 10, divided by
+   the large alerts that the values expected plus 10. The values are those of that time, with no recalibration.
+4. The odds of the value are multiplied by the factor. Each of the four models has its own factor.
+   Two alerts with a moment at one time get the same factor: the recalibration does not change their sequence.
+5. The classes of an alert come from its two values: less than 100 hectares, 100 to 1000 hectares, and 1000 hectares
+   or more. If the value for 1000 hectares is larger than that for 100 hectares, the alert has a wrong sequence:
+   the smaller of the two is its value for 1000 hectares, and the class between gets 0.
+
+The scored years. The owner decided on 2026-11-25: a year is scored for a percentage only if its models have two
+training years or more (`config.RISK_MIN_TRAINING_YEARS`). Thus the scored years are 2021 to 2025: the models for 2020
+have only 2019. This is a change of the conditions of section 11.21 after their first results, and we say so.
+The rule for a group of inputs (section 11.22) did not change: it counts 2020.
+
+The tables, for each scored year:
+
+- `risk_recalibrated`: for each moment and each limit, for all alerts and for each tenth by the new value: the
+  alerts, the large alerts, the expected large alerts and observed to expected, after and before the recalibration.
+  For all alerts also the Brier skill score after and before, the smallest, the median and the largest factor, and
+  the number of the alerts with a rank only.
+- `risk_classes`: for each moment and each class: the alerts that ended in the class, the expected alerts and
+  observed to expected, and the alerts with a wrong sequence.
+- `risk_percentage`, with the tables of the newest year: for each model, the three conditions of section 11.21 for the
+  scored years, after and before the recalibration. The rule is code.
+
+- Limits: the outcome of an alert is its label of the annual map, as if a map gave it 60 days after the alert.
+  A live alert needs the Monitor map for this (`docs/sources.md` section 8.18): not built, and the two maps do not
+  give the same hectares. The models of a year start on 1 January with the map of the year before it.
+  The 60 days, the 365 days and the 10 came from a check outside the repository. That check gave the same result for
+  12 settings: 30 to 120 days, and 5 to 20. The three choices of this part came after results: the recalibration,
+  the scored years, and the rank for the alerts with only GOES rows of INPE. Thus the numbers are validation numbers.
+
+The hypotheses, written on 2026-11-25 before the first run of the command with these tables.
+A check outside the repository came before hypotheses 1 and 2: they are not blind, and we say so.
+Hypothesis 3 had no check before it. With the recalibration, for the scored years:
+
+1. The three conditions are true for 30 minutes with 100 hectares, and for the two models at 24 hours.
+2. For 30 minutes with 1000 hectares, condition 1 is false: the Brier skill score is not more than 0 in 2024.
+3. At 24 hours, observed to expected of the class from 100 to 1000 hectares is from 0.5 to 2 in each scored year,
+   and less than 1 of 100 alerts has a wrong sequence.
+
+If the three conditions are true for a model, a percentage can go into an alert for that moment and that limit.
+If hypothesis 3 is also true, an alert at 24 hours can give the three classes. The owner decides the field and its
+words. The final answer is the test of 2026, with outcomes from the Monitor map.
+
+The result (tables `risk_recalibrated`, `risk_classes` and `risk_percentage`, 2026-11-25). The command ran one time
+with these tables. The three hypotheses are true. In each list of five numbers, the numbers are for 2021 to 2025.
+The values before the recalibration are for the same alerts: without those with only GOES rows of INPE.
+
+- 30 minutes, 100 hectares: the three conditions are true. Observed to expected: 1.1752, 0.6328, 0.9541, 1.3355 and
+  0.9395. Before the recalibration: 0.9285, 0.546, 0.4878, 1.0211 and 0.7866. For the five years together it is
+  1.0225: 445 large alerts for 435.2 expected. The Brier skill score: 0.0678, 0.1159, 0.0513, 0.0204 and 0.142.
+- 24 hours, 100 hectares: the three conditions are true. Observed to expected: 0.9933, 0.7089, 0.7612, 1.4138 and
+  0.9177. For the five years together it is 0.9606: 463 large alerts for 482.0 expected.
+  The Brier skill score: 0.2418, 0.3092, 0.1361, 0.2262 and 0.3413.
+- 24 hours, 1000 hectares: the three conditions are true. Observed to expected: 1.2865, 0.7955, 0.721, 1.3944 and
+  0.6607. For the five years together it is 1.0233: 154 large alerts for 150.5 expected.
+  The Brier skill score: 0.1638, 0.2805, 0.0843, 0.1982 and 0.3068.
+- 30 minutes, 1000 hectares: condition 1 is false. The Brier skill score: 0.0283, 0.0679, 0.0013, -0.0141 and
+  0.0837. The level is in its range: 1.3576, 0.6905, 0.8354, 1.2273 and 0.7924, and 1.0168 for the five years together
+  (151 for 148.5). Thus this model gives a rank and no percentage. A year has 13 to 64 large alerts of this kind.
+- Before the recalibration, no model has the three conditions for the scored years: 2023 is out of its range for each
+  model (0.4723 to 0.4962), also without the alerts with only GOES rows of INPE.
+- The factor. Its median in 2023 is 0.511, 0.5454, 0.5439 and 0.5673 for the four models. In 2024 it is 0.6512, 0.7861,
+  0.6156 and 0.6975: the small season of 2023 is in the known outcomes of 2024. Thus the new values of 2024 are too
+  low (1.2273 to 1.4138), and in the range.
+- The cost. The recalibration makes the Brier skill score a little smaller in the years with a correct level before
+  it. For 30 minutes with 100 hectares: from 0.0768 to 0.0678 in 2021, from 0.0265 to 0.0204 in 2024 and from 0.152
+  to 0.142 in 2025. In 2023 it goes from -0.0109 to 0.0513.
+- The tenth of the alerts with the largest new values, each from the alerts of one year, for the five years together.
+  30 minutes with 100 hectares: 183 of 1323 alerts became large (13.8 percent), for 181.1 expected. 24 hours with 100
+  hectares: 301 of 1319 (22.8 percent), for 326.6 expected. 24 hours with 1000 hectares: 109 of 1319 (8.3 percent),
+  for 110.1 expected.
+- The classes at 24 hours (hypothesis 3). Observed to expected of the class from 100 to 1000 hectares: 0.9052, 0.6737,
+  0.7821, 1.428 and 1.0276. 2 of the 13 207 alerts have a wrong sequence.
+- The alerts with a rank only, at 30 minutes: 644, 372, 2765, 943 and 22.
+- Thus, with these numbers in a test year: at 30 minutes an alert can give a percentage for 100 hectares or more, and
+  a rank for 1000 hectares or more. At 24 hours it can give the three classes as percentages.
+- Not built: the field of the event record and its words (the owner decides), and the outcomes from the Monitor map.
+  The test year is 2026.
+
+The limit of 10 hectares (2026-11-26). The owner asked for one more class: a fire of 10 to 100 hectares.
+A fire of 10 hectares or more is a counted fire. Thus the new models ask: does this alert have a new fire?
+They have the form, the inputs and the alerts of the four models, and the same recalibration.
+`config.RISK_CLASS_LIMITS_HA` has the three limits of the percentage: 10, 100 and 1000 hectares. The tables of sections
+11.21 to 11.23 and the rule for a group of inputs keep the two limits that they have.
+The table `risk_recalibrated` also gets the AUC of the new values of each model.
+
+The hypotheses of the limit of 10 hectares, written on 2026-11-26 before the first run with it. No check came before
+them: they are blind. With the recalibration, for the scored years:
+
+1. The three conditions are true for 10 hectares at 30 minutes and at 24 hours.
+2. At each of the two moments, observed to expected of the class from 10 to 100 hectares is from 0.5 to 2 in each
+   scored year.
+
+If hypothesis 1 is false at a moment, an alert gets no percentage for 10 hectares at that moment.
+
+The result of the limit of 10 hectares (tables `risk_recalibrated`, `risk_classes` and `risk_percentage`, 2026-11-26).
+The command ran one time with the three limits. The two hypotheses are true. In each list of five numbers, the
+numbers are for 2021 to 2025. The numbers of the four models of the result above did not change.
+
+- 30 minutes, 10 hectares: the three conditions are true. Observed to expected: 1.049, 0.7567, 0.8579, 1.2521 and
+  1.017. For the five years together it is 0.9906: 1239 alerts with a new fire for 1250.7 expected.
+  The Brier skill score: 0.1307, 0.1787, 0.1227, 0.0429 and 0.1612. The AUC: 0.7617, 0.7955, 0.7507, 0.7367 and 0.7943.
+- 24 hours, 10 hectares: the three conditions are true. Observed to expected: 0.9837, 0.8192, 0.7762, 1.2594 and
+  0.9912. For the five years together it is 0.963: 1231 alerts with a new fire for 1278.3 expected.
+  The Brier skill score: 0.2132, 0.2438, 0.2103, 0.1542 and 0.2988. The AUC: 0.8194, 0.836, 0.8395, 0.786 and 0.8502.
+- These two models also have the three conditions before the recalibration, for the scored years and without the
+  alerts with only GOES rows of INPE. The level for the five years together is then 0.801 and 0.8347, and 0.5656 and
+  0.5682 in 2023: near the limits of the two ranges.
+- The class from 10 to 100 hectares. Observed to expected at 30 minutes: 0.9987, 0.8312, 0.8132, 1.1944 and 1.0618.
+  At 24 hours: 0.9742, 0.883, 0.7837, 1.1622 and 1.0369.
+- The alerts with a wrong sequence of their three values: 11 of 13 259 at 30 minutes, and 59 of 13 207 at 24 hours.
+- Thus 5 of the 6 models have the three conditions. At 30 minutes an alert can give a percentage for 10 hectares or
+  more and for 100 hectares or more, and a rank for 1000 hectares or more. At 24 hours it can give four classes:
+  no fire of 10 hectares, 10 to 100, 100 to 1000, and 1000 hectares or more.
+
+### 11.25 The test of the growth risk on 2026
+
+The owner asked on 2026-11-26 for the test of 2026, with fires from the Monitor map. This section gives its rules.
+We wrote them before the first run of the command on 2026. `chispa risk --test-run` makes the tables of the test
+year, in `results/2026`. With no `--test-run`, the command does not read an outcome of 2026.
+`evaluation/risk_test.py` makes the fires and the rows of the test year.
+
+The rules:
+
+1. The models are the six models of section 11.24: three limits at two moments, with the inputs of now.
+   They get their weights from each year with an annual map: 2019 to 2025. No rule and no input changes for the test.
+2. The fires of 2026 come from the Monitor map (`docs/sources.md` section 8.18). `chispa fetch monitor --year` saves,
+   for each pixel, the first month of the year in which the map gives a burn. The rule for a fire is that of the
+   annual map (section 11.3), with the burn days of the months that the burn day product has.
+3. The match rule has the year from 2026-11-26: a detection matches only a fire of the year of its observation
+   (section 11.4). The owner decided this on 2026-11-23, for the first run on 2026.
+4. Only an alert with a known outcome is in the test: its moment is 60 days or more before the end of the last month
+   of the map. The map had the months to October 2026. Thus the test has the alerts with a moment before
+   2026-09-02 00:00 UTC: it is a test of a part of the year, and not of September to December.
+5. The groups of the alerts, the alerts with a rank only and the recalibration are those of sections 11.21 and 11.24.
+   The known outcomes of the alerts of 2025 are those of the annual map. Those of 2026 are those of the Monitor map.
+6. The command runs one time on 2026 for this test. A second run needs a reason, and the result must give it.
+
+The answer of a model (table `risk_test`). A model holds its percentage in the test if these are true:
+
+1. It has 30 large alerts or more (section 11.21). With less, the model has no answer: too few.
+2. The Brier skill score of its recalibrated values is more than 0.
+3. Observed to expected is from 0.5 to 2: the range of one year.
+
+The range of all years together (0.8 to 1.25) is not a condition of one year.
+The table `risk` of the test year gives the AUC of the growth risk and of its baselines, for hypotheses 1 to 3 of
+section 11.21. Hypothesis 4 of that section (all alerts, with no group left out) has no table for the test year: not built.
+
+- Limits: the fires of the test come from a different map than the fires that gave the weights. A fire that burned
+  after October 2026 has the size that it had in October. The test has the months from January to August: it has a
+  part of the fire season only. The detections of 2026 before 2026-11-20 have an estimate of `available_at`.
+  The annual map of 2026 gives a second run of the test, for the full year.
+
+A rehearsal, before the run on 2026 (2026-11-26). 2025 has the two maps. Thus we ran the same code with 2025 as the
+test year: models from 2019 to 2024, and the fires of 2025 from the Monitor map. It reads no outcome of 2026.
+The numbers of the rehearsal are in `PLAN.md`: they come from a check outside the repository.
+
+The result of the test (tables `risk_test`, `risk_recalibrated`, `risk_classes` and `risk` of 2026, 2026-11-26).
+The owner decided on 2026-11-26 to run the test on that day, for the alerts with a moment before 2026-09-02.
+The command ran one time on 2026. The test has satellite sources only. It has 763 alerts at 30 minutes and 746 at
+24 hours, without the alerts on a known fire and without the 7 and the 2 alerts with a rank only.
+
+- 10 hectares at 30 minutes: the percentage holds. 108 alerts had a new fire, for 84.9 expected (observed to
+  expected 1.2727). The Brier skill score is 0.1729, and the AUC is 0.8208.
+- 100 hectares at 30 minutes: the percentage holds. 43 large alerts for 31.4 expected (1.3711).
+  The Brier skill score is 0.1222, and the AUC is 0.8432.
+- 10 hectares at 24 hours: the percentage holds. 96 alerts had a new fire, for 81.7 expected (1.1754).
+  The Brier skill score is 0.3457, and the AUC is 0.8857.
+- 100 hectares at 24 hours: the percentage holds. 38 large alerts for 31.6 expected (1.2043).
+  The Brier skill score is 0.4023, and the AUC is 0.9114.
+- 1000 hectares: no answer, too few. The test has 14 large alerts at 30 minutes and 13 at 24 hours, and the minimum
+  is 30. Their numbers have that mark: observed to expected 1.5597 and 1.4188, Brier skill score 0.044 and 0.3436.
+- In each model, more alerts became large than the values expected: the values are too low, and in the range.
+- The recalibration changed little in this test, and not for the better. Before it, observed to expected of the
+  four models with an answer was 1.2436, 1.3283, 1.1576 and 1.187, and the Brier skill score 0.1737, 0.1261, 0.3472
+  and 0.4095. The median factor was from 0.9386 to 0.9684. Thus the values with no recalibration also hold in this test.
+- The classes. From 10 to 100 hectares: 65 alerts for 53.5 expected at 30 minutes (1.2146), and 58 for 50.1 at
+  24 hours (1.1571). From 100 to 1000 hectares: 29 for 22.4 (1.2965), and 25 for 22.4 (1.1166).
+  1 of the 763 alerts at 30 minutes has a wrong sequence, and no alert at 24 hours.
+
+The hypotheses of section 11.21 in the test, with the table `risk` of 2026. It has the alerts that are not on a known
+fire, with those that have a rank only: 770 at 30 minutes and 748 at 24 hours. The limits are 100 and 1000 hectares.
+
+- Hypothesis 1 is true for 100 hectares: at 30 minutes the AUC of the growth risk is 0.8519, that of the confidence
+  0.8326, and that of the number of detections 0.714. The top tenth has 21 of the 45 large alerts, against 18 and 15.
+- Hypothesis 2 is false for 100 hectares: at 24 hours the AUC of the growth risk is 0.9116, and that of the number of
+  detections is 0.9144. The confidence has 0.9095, and the persistence rule 0.61. The top tenth of the growth risk has
+  29 of the 38 large alerts, against 27 for the number of detections.
+- Hypothesis 3 is true at 30 minutes and false at 24 hours, for 100 hectares. For the alerts with a new fire only,
+  the AUC of the growth risk is 0.6212 at 30 minutes (0.564 and 0.6133 for the baselines), and 0.7777 at 24 hours,
+  against 0.8085 for the number of detections.
+- For 1000 hectares the test has 15 and 13 large alerts: no answer, too few. The numbers have the same direction:
+  the growth risk has the largest AUC at 30 minutes (0.8921), and the number of detections at 24 hours (0.9754 against 0.9605).
+- Thus, by the rule of section 11.21, this test gives no growth risk for 100 hectares at 24 hours as a sequence: the
+  number of detections puts the alerts in a sequence as well. The percentage of that model holds, and the number of
+  detections is not a percentage. The owner decides what an alert gives at 24 hours.
+- The cross-validation by year had a larger AUC for the growth risk than for the number of detections in each of the
+  7 years at 24 hours (section 11.22). The test does not confirm that.
+- The limit of 10 hectares has no hypothesis of this kind: it came after section 11.21, and the table `risk` does not have it.
+
+- Limits: the test is one part of one year, with 38 to 108 large alerts for a model with an answer. We did not
+  measure how much these numbers change by chance: the difference of the AUC at 24 hours is 0.0028.
+  The limits of the rules above are also limits of this result.
 
 ## 12. Agent and MCP rules
 

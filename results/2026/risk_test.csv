@@ -1,0 +1,7 @@
+moment_h,limit_ha,alerts,large,auc,brier_skill,observed_to_expected,enough_large_alerts,better_than_base_rate,level_in_range,percentage_holds,config,run_date
+0,10.0,763,108,0.8208,0.1729,1.2727,True,True,True,True,8d8d69857248,2026-11-26
+0,100.0,763,43,0.8432,0.1222,1.3711,True,True,True,True,8d8d69857248,2026-11-26
+0,1000.0,763,14,0.8758,0.044,1.5597,False,True,True,,8d8d69857248,2026-11-26
+24,10.0,746,96,0.8857,0.3457,1.1754,True,True,True,True,8d8d69857248,2026-11-26
+24,100.0,746,38,0.9114,0.4023,1.2043,True,True,True,True,8d8d69857248,2026-11-26
+24,1000.0,746,13,0.9576,0.3436,1.4188,False,True,True,,8d8d69857248,2026-11-26

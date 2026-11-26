@@ -9,6 +9,7 @@ import numpy as np
 
 from chispa import config
 from chispa.evaluation.match import Fields
+from chispa.models import Fire
 from chispa.store import read_fires
 
 QUERY = """
@@ -58,7 +59,11 @@ def load_fires(store: sqlite3.Connection, year: int) -> Fields:
     Index 0 is "no fire". `counted` marks the fires that fire recall counts.
     A fire with no burn day has 0 in `first_day` and `last_day`, and its map month in `month`.
     """
-    found = read_fires(store, year)
+    return fire_fields(read_fires(store, year), year)
+
+
+def fire_fields(found: list[Fire], year: int) -> Fields:
+    """Return the fields of the fires of one map year, in number sequence, as arrays."""
     area = np.array([0.0] + [fire.area_ha for fire in found])
     return {
         "area_ha": area,
@@ -66,6 +71,7 @@ def load_fires(store: sqlite3.Connection, year: int) -> Fields:
         "first_day": np.array([0] + [fire.first_burn_day or 0 for fire in found]),
         "last_day": np.array([0] + [fire.last_burn_day or 0 for fire in found]),
         "counted": area >= config.EVAL_MIN_FIRE_HA,
+        "year": year,
     }
 
 
