@@ -19,12 +19,15 @@ from chispa.grid import layer_grid, pantanal_grid
 from chispa.sources import (
     border,
     burnday,
+    burned,
     firms,
     goes,
     inpe,
     landcover,
+    monitor,
     passes,
     protected,
+    river,
     scars,
     settlements,
     weather,
@@ -33,7 +36,7 @@ from chispa.store import clear_stale, open_store, read_detections, replace_fusio
 from chispa.web import server
 
 YEAR_SOURCES = ("firms", "goes", "goes_mask", "inpe", "passes", "scars", "burnday", "landcover")
-YEAR_SOURCES += ("weather",)
+YEAR_SOURCES += ("weather", "burned", "river", "monitor")
 FIXED_SOURCES = ("border", "protected", "settlements")
 NOT_BUILT = {
     "mcp": "Start the MCP server.",
@@ -47,10 +50,7 @@ def main(arguments: list[str] | None = None) -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("check", help="Do a check of the keys and the logins.")
     fetch = commands.add_parser("fetch", help="Get the raw files of one source for one year.")
-    fetch.add_argument(
-        "source",
-        choices=[*YEAR_SOURCES, *FIXED_SOURCES],
-    )
+    fetch.add_argument("source", choices=[*YEAR_SOURCES, *FIXED_SOURCES])
     fetch.add_argument("--year", type=int, help="Necessary for a source that has years.")
     fetch.add_argument("--push", action="store_true", help="Also copy new files to the bucket.")
     build = commands.add_parser("build", help="Make the store from the raw files.")
@@ -77,7 +77,8 @@ def main(arguments: list[str] | None = None) -> None:
         if name == "images":
             look = "1: the first look. 2: the same events again and boxes with no fire."
             check.add_argument("--look", type=int, choices=(1, 2), default=1, help=look)
-    commands.add_parser("risk", help="Make the growth risk tables of each year with fires.")
+    risk = commands.add_parser("risk", help="Make the growth risk tables of each year with fires.")
+    risk.add_argument("--test-run", action="store_true", help="Also score the test year one time.")
     poll = commands.add_parser("poll", help="Do one pass of the live poller: record the new rows.")
     since = "Read back the GOES scans and the INPE files to this UTC time, to fill a hole: "
     since += "2026-11-20T00:00:00+00:00. It does not change the FIRMS request."
@@ -115,7 +116,7 @@ def main(arguments: list[str] | None = None) -> None:
     elif chosen.command in ("visibility", "growth", "severity", "confidence"):
         checks.run_table(chosen.command, chosen.year)
     elif chosen.command == "risk":
-        checks.run_risk()
+        checks.run_risk(chosen.test_run)
     elif chosen.command == "images":
         checks.run_images(chosen.year, lambda: read_setting("EE_PROJECT"), chosen.look)
     elif chosen.command == "poll":
@@ -196,18 +197,18 @@ def run_fetch(source: str, year: int | None, push: bool) -> None:
         files = protected.download(read_setting("EE_PROJECT"), config.RAW_DIR, layer_grid())
     elif source == "settlements":
         files = settlements.download(read_setting("EE_PROJECT"), config.RAW_DIR, layer_grid())
-    elif source == "passes":
-        files = passes.download_year(year, config.RAW_DIR)
+    elif source in ("passes", "river"):
+        module = {"passes": passes, "river": river}[source]
+        files = module.download_year(year, config.RAW_DIR)
     elif source == "goes_mask":
         yesterday = datetime.now(UTC).date() - timedelta(days=1)
         files = goes.download_masks(year, config.RAW_DIR, yesterday)
-    elif source == "scars":
-        project = read_setting("EE_PROJECT")
-        files = scars.download_year(year, project, config.RAW_DIR, pantanal_grid())
-    elif source == "burnday":
-        files = burnday.download_year(year, read_setting("EE_PROJECT"), config.RAW_DIR)
-    elif source == "weather":
-        files = weather.download_year(year, read_setting("EE_PROJECT"), config.RAW_DIR)
+    elif source in ("scars", "monitor"):
+        module, project = {"scars": scars, "monitor": monitor}[source], read_setting("EE_PROJECT")
+        files = module.download_year(year, project, config.RAW_DIR, pantanal_grid())
+    elif source in ("burnday", "weather", "burned"):
+        module = {"burnday": burnday, "weather": weather, "burned": burned}[source]
+        files = module.download_year(year, read_setting("EE_PROJECT"), config.RAW_DIR)
     elif source == "border":
         files = [border.download(config.RAW_DIR)]
     elif year == config.GOES_GAP_START.year:

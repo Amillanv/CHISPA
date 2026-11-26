@@ -32,7 +32,7 @@ def calibration_table(kept: dict[str, list], models: dict) -> list[dict]:
             large = size >= limit
             brier = float(((chance - large) ** 2).mean())
             constant = float(((model["base_rate"] - large) ** 2).mean())
-            first = _row(chance, large) | {
+            first = level_row(chance, large) | {
                 "brier": round(brier, 5),
                 # With no large alert in the training years and in the year, the constant has
                 # no error: the skill has no value.
@@ -41,7 +41,7 @@ def calibration_table(kept: dict[str, list], models: dict) -> list[dict]:
             }
             parts = np.array_split(np.argsort(chance, kind="stable"), TENTHS)
             groups = [("all", first)] + [
-                (str(number), _row(chance[part], large[part]))
+                (str(number), level_row(chance[part], large[part]))
                 for number, part in enumerate(parts, 1)
             ]
             table += [
@@ -51,8 +51,32 @@ def calibration_table(kept: dict[str, list], models: dict) -> list[dict]:
     return table
 
 
-def _row(chance: np.ndarray, large: np.ndarray) -> dict:
-    # With less alerts than groups, a group has no alert: its mean is absent, not a number.
+def source_table(kept: dict[str, list], models: dict) -> list[dict]:
+    """Return the values of the growth risk against what came, for two groups of alerts.
+
+    The first group has the alerts with only GOES rows of INPE at the moment. INPE finds its
+    GOES rows with its own method, and their number changes much with the year. The second
+    group has each other alert. The table shows where the level of a year is wrong.
+    """
+    table = []
+    for moment in MOMENTS:
+        rows = kept[moment]
+        size = np.array([row["size_ha"] for row in rows])
+        only = np.array([row["only_inpe_goes"] for row in rows], dtype=bool)
+        for limit in config.RISK_LIMITS_HA:
+            model = models[f"{moment}h_{limit:g}ha"]
+            chance = confidence.probability(model, as_table(rows, tuple(model["inputs"]))[0])
+            for name, group in (("only GOES rows of INPE", only), ("each other alert", ~only)):
+                found = level_row(chance[group], size[group] >= limit)
+                table.append({"moment_h": moment, "limit_ha": limit, "group": name} | found)
+    return table
+
+
+def level_row(chance: np.ndarray, large: np.ndarray) -> dict:
+    """Return the values of a group of alerts against what came: the level of the group.
+
+    With less alerts than groups, a group has no alert: its mean is absent, not a number.
+    """
     return {
         "alerts": len(large),
         "probability_mean": round(float(chance.mean()), 4) if len(chance) else None,

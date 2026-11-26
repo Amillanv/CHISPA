@@ -25,6 +25,7 @@ def fire_fields(month, first_day=None, last_day=None):
         "month": np.array([0, *month]),
         "first_day": np.array([0, *(first_day or [0] * count)]),
         "last_day": np.array([0, *(last_day or [0] * count)]),
+        "year": 1970,
     }
 
 
@@ -65,6 +66,15 @@ def test_fire_with_no_burn_day_uses_its_month_and_the_month_before(monkeypatch):
     found = detections(lat=[0.0095] * 4, lon=[0.0005] * 4, month=[6, 7, 8, 9])
     pair_detection, _ = match(found, numbers_grid(), GRID, AUGUST)
     assert pair_detection.tolist() == [1, 2]  # July and August. Not June. Not September.
+
+
+def test_detection_of_a_different_year_matches_no_fire(monkeypatch):
+    monkeypatch.setattr("chispa.config.EVAL_MARGIN_M", 0.0)
+    # Two detections on fire 1 in August: one of the year of the map, and one a year later.
+    later = 400 * 86_400.0
+    found = detections(lat=[0.0095] * 2, lon=[0.0005] * 2, month=[8, 8], observed=[0.0, later])
+    pair_detection, _ = match(found, numbers_grid(), GRID, AUGUST)
+    assert pair_detection.tolist() == [0]
 
 
 def test_fire_with_burn_days_uses_the_day_margin(monkeypatch):

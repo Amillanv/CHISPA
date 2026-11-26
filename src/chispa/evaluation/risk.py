@@ -68,12 +68,14 @@ def key(moment: str, limit_ha: float) -> str:
     return f"{moment}h_{limit_ha:g}ha"
 
 
-def fit_models(kept: dict[str, list], add: tuple = (), remove: tuple = ()) -> dict[str, dict]:
+def fit_models(
+    kept: dict[str, list], add: tuple = (), remove: tuple = (), limits: tuple | None = None
+) -> dict[str, dict]:
     """Return one model for each moment and each limit, from the rows of the training years.
 
     The inputs of now are those of the confidence at the moment without the removed inputs,
     then the adopted inputs. A set of inputs is the inputs of now without the names in `remove`,
-    then the names in `add`.
+    then the names in `add`. With no `limits`, the limits are those of the main tables.
     """
     models = {}
     for moment in MOMENTS:
@@ -81,7 +83,7 @@ def fit_models(kept: dict[str, list], add: tuple = (), remove: tuple = ()) -> di
         names = tuple(name for name in now if name not in remove) + add
         table, _ = as_table(kept[moment], names)
         size = np.array([row["size_ha"] for row in kept[moment]])
-        for limit in config.RISK_LIMITS_HA:
+        for limit in limits or config.RISK_LIMITS_HA:
             models[key(moment, limit)] = confidence.fit(table, (size >= limit) * 1.0, names)
     return models
 

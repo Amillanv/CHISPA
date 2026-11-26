@@ -22,7 +22,7 @@ from chispa.evaluation.risk import (
     sized_rows,
     weight_table,
 )
-from chispa.evaluation.risk_calibration import calibration_table
+from chispa.evaluation.risk_calibration import calibration_table, source_table
 from chispa.evaluation.risk_rule import rule_table
 
 SAMPLES = Path(__file__).parent / "samples"
@@ -108,7 +108,7 @@ def test_average_precision_of_equal_values_is_the_base_rate():
 def alert(x: float, size_ha: float, advance_m: float | None = None, **more) -> dict:
     row = {"inputs": {"x": x, "detections_log": -x}, "size_ha": size_ha, "advance_m": advance_m}
     row |= {"seen_ha": size_ha, "known": False, "own_fires": frozenset(), "alert": int(x)}
-    return row | {"matched": size_ha > 0} | more
+    return row | {"matched": size_ha > 0, "only_inpe_goes": False, "at": 0.0} | more
 
 
 MODEL = {"inputs": ["x"], "mean": [0.0], "spread": [1.0], "start": 0.0, "weights": [1.0]}
@@ -207,7 +207,7 @@ def test_tables_of_a_year_come_from_models_of_the_other_years(tmp_path, monkeypa
     tables = risk_run.risk_tables(tmp_path / "store", tmp_path)
     assert set(tables) == {2001, 2002, 2003}
     names = {"risk", "risk_all_alerts", "risk_calibration", "risk_alerts", "risk_weights"}
-    names |= {"risk_inputs"}
+    names |= {"risk_inputs", "risk_fire"}
     sets = {(row["inputs"], row["moment_h"]): row for row in tables[2003]["risk_inputs"]}
     assert set(sets) == {
         ("inputs now", "0"),
@@ -220,9 +220,12 @@ def test_tables_of_a_year_come_from_models_of_the_other_years(tmp_path, monkeypa
     assert tables[2001]["risk_inputs"][0]["observed_to_expected_earlier"] is None
     assert tables[2001]["risk_inputs"][0]["alerts"] == 20
     assert set(tables[2001]) == names
-    assert set(tables[2002]) == names | {"risk_earlier", "risk_calibration_earlier"}
+    earlier = {"risk_earlier", "risk_calibration_earlier", "risk_level_sources"}
+    assert set(tables[2002]) == names | earlier | {"risk_fire_calibration"}
     # The table of the rule is for all years together: it is with the newest year.
-    assert set(tables[2003]) == set(tables[2002]) | {"risk_input_rule"}
+    # Only 2003 has two training years: it is the one scored year of the recalibration.
+    scored = {"risk_recalibrated", "risk_classes", "risk_percentage"}
+    assert set(tables[2003]) == set(tables[2002]) | {"risk_input_rule"} | scored
     assert {row["inputs"] for row in tables[2003]["risk_input_rule"]} == {"with more"}
     # With the earlier years only, 2002 has the weights of 2001: the same form, thus correct.
     assert tables[2002]["risk_earlier"][0]["auc"] == 1.0
@@ -425,3 +428,87 @@ def test_late_weather_inputs_stop_some_days_before_the_usual_end(monkeypatch):
     assert round(found["rain_2d_log"], 4) == round(float(np.log(1 + 1.0)), 4)
     assert round(found["rain_2d_log_late"], 4) == round(float(np.log(1 + 6.0)), 4)
     assert (found["wind_before_kmh"], found["wind_before_kmh_late"]) == (7.0, 4.0)
+
+
+def test_ground_that_burned_before_gives_the_years_the_times_and_the_share_near(monkeypatch):
+    monkeypatch.setattr("chispa.config.RISK_BURNED_CELL_SHARE", 0.5)
+    monkeypatch.setattr("chispa.config.RISK_BURNED_NEAR_CELLS", 3)
+    monkeypatch.setattr("chispa.config.RISK_BURNED_NEAR_YEARS", (1, 2))
+    monkeypatch.setattr(risk_inputs, "BURNED_NEAR", ("burned_near_1y", "burned_near_2y"))
+    # Three years of a grid of 3 rows and 3 columns, the oldest year first.
+    oldest = np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
+    middle = np.array([[0.6, 0.4, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
+    newest = np.array([[0.0, 0.0, 0.0], [0.0, 0.9, 0.0], [0.0, 0.0, 0.0]])
+    found = risk_inputs.burned_layers([oldest, middle, newest])
+    # The corner cell burned in the two oldest years: its last burn is 2 years before.
+    # The centre cell burned the year before. A cell with no burn gets 3 + 1 years.
+    years = found["burned_years_log"]
+    assert round(float(years[0, 0]), 4) == round(float(np.log(2)), 4)
+    assert (float(years[1, 1]), round(float(years[2, 2]), 4)) == (0.0, round(float(np.log(4)), 4))
+    # A share of 0.4 is less than half of the cell: no burn.
+    assert round(float(years[0, 1]), 4) == round(float(np.log(4)), 4)
+    assert found["burned_times"].tolist() == [[2.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 0.0]]
+    # The square of the centre cell is the 9 cells: 0.9 of 9 burned in the year before.
+    assert round(float(found["burned_near_1y"][1, 1]), 4) == 0.1
+    # For 2 years a cell counts with its largest share: 0.6 + 0.4 + 0.9 of 9 cells.
+    assert round(float(found["burned_near_2y"][1, 1]), 4) == round(1.9 / 9, 4)
+    # A cell at the edge has a part of its square out of the grid: that part counts as no burn.
+    assert round(float(found["burned_near_1y"][0, 0]), 4) == 0.1
+    assert set(found) == {"burned_years_log", "burned_times", "burned_near_1y", "burned_near_2y"}
+
+
+def test_river_inputs_use_the_days_before_the_day_of_the_moment(monkeypatch):
+    monkeypatch.setattr("chispa.config.RISK_RIVER_CHANGE_DAYS", 2)
+    first = datetime(2020, 1, 1, tzinfo=UTC).date()
+    levels = {first.replace(day=day): level for day, level in ((2, 1.0), (3, 1.2), (4, 1.5))}
+    levels[first.replace(day=5)] = 9.0
+    # The day of the moment is 5 January: the level is that of 4 January, and not of 5 January.
+    found = risk_inputs.river_inputs(levels, first.replace(day=5))
+    assert found == {"river_m": 1.5, "river_change_m": 0.5}
+    # A day with no level is an error, not a wrong value.
+    with pytest.raises(ValueError, match="chispa fetch river --year 2020"):
+        risk_inputs.river_inputs(levels, first.replace(day=4))
+
+
+def test_level_of_the_alerts_with_only_goes_rows_of_inpe_is_apart(monkeypatch):
+    monkeypatch.setattr("chispa.config.RISK_LIMITS_HA", (100.0,))
+    # The model gives each alert the probability 0.5: x is 0, and the start is 0.
+    rows = [alert(0.0, 500.0), alert(0.0, 0.0), alert(0.0, 0.0), alert(0.0, 0.0)]
+    rows += [alert(0.0, 0.0, only_inpe_goes=True), alert(0.0, 0.0, only_inpe_goes=True)]
+    table = source_table({"0": rows, "24": rows[:4]}, {"0h_100ha": MODEL, "24h_100ha": MODEL})
+    found = {(row["moment_h"], row["group"]): row for row in table}
+    only = found[("0", "only GOES rows of INPE")]
+    # Two alerts with 0.5 each expect one large alert, and none came.
+    assert (only["alerts"], only["large"], only["expected_large"]) == (2, 0, 1.0)
+    assert only["observed_to_expected"] == 0.0
+    other = found[("0", "each other alert")]
+    assert (other["alerts"], other["large"], other["observed_to_expected"]) == (4, 1, 0.5)
+    # A group with no alert has no level.
+    assert found[("24", "only GOES rows of INPE")]["observed_to_expected"] is None
+
+
+def test_tables_for_a_new_fire_use_only_the_alerts_with_a_new_fire(monkeypatch):
+    monkeypatch.setattr("chispa.config.RISK_LIMITS_HA", (100.0,))
+    monkeypatch.setattr("chispa.evaluation.risk.names_of", lambda moment: ("x",))
+    monkeypatch.setattr(risk_run, "INPUT_SETS", {"inputs now": ((), ())})
+    # Ten new fires of 500 hectares with x = 1, and ten new fires of 50 hectares with x = 0.
+    fire = [alert(float(n % 2), 500.0 if n % 2 else 50.0) for n in range(20)]
+    # These alerts are not in the question: no mapped fire, and a known fire. They say the opposite.
+    out = [alert(1.0, 0.0)] * 30 + [alert(0.0, 500.0, known=True)] * 30
+    parts = {year: {"rows": {"0": fire + out, "24": fire + out}} for year in (2001, 2002)}
+    tables = risk_run.fire_tables(parts)
+    assert set(tables[2001]) == {"risk_fire"}
+    assert set(tables[2002]) == {"risk_fire", "risk_fire_calibration"}
+    first = tables[2002]["risk_fire"][0]
+    assert (first["inputs"], first["alerts"], first["large"], first["auc"]) == (
+        "inputs now",
+        20,
+        10,
+        1.0,
+    )
+    # The model of 2001 expects the ten large alerts of 2002, and it is better than the base rate.
+    assert 0.9 < first["observed_to_expected_earlier"] < 1.1
+    assert first["brier_skill_earlier"] > 0.5
+    assert tables[2001]["risk_fire"][0]["observed_to_expected_earlier"] is None
+    all_alerts = tables[2002]["risk_fire_calibration"][0]
+    assert (all_alerts["group"], all_alerts["alerts"], all_alerts["large"]) == ("all", 20, 10)

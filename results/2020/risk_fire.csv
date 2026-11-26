@@ -1,0 +1,5 @@
+inputs,moment_h,limit_ha,alerts,large,auc,average_precision,top_tenth_large,expected_large_earlier,observed_to_expected_earlier,brier_skill_earlier,config,run_date
+inputs now,0,100.0,946,342,0.6342,0.4764,53,309.1,1.1065,-0.001,8d8d69857248,2026-11-26
+inputs now,0,1000.0,946,94,0.6767,0.198,19,81.3,1.1562,-0.0118,8d8d69857248,2026-11-26
+inputs now,24,100.0,823,277,0.7496,0.6444,67,244.8,1.1317,0.1774,8d8d69857248,2026-11-26
+inputs now,24,1000.0,823,74,0.7547,0.3118,27,64.8,1.1428,0.0362,8d8d69857248,2026-11-26

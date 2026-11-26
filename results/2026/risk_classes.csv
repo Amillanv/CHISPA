@@ -1,0 +1,9 @@
+moment_h,class,alerts,expected_alerts,observed_to_expected,wrong_sequence_alerts,config,run_date
+0,less than 10 hectares,655,678.1,0.9659,1,8d8d69857248,2026-11-26
+0,10 to 100 hectares,65,53.5,1.2146,1,8d8d69857248,2026-11-26
+0,100 to 1000 hectares,29,22.4,1.2965,1,8d8d69857248,2026-11-26
+0,1000 hectares or more,14,9.0,1.5597,1,8d8d69857248,2026-11-26
+24,less than 10 hectares,650,664.3,0.9784,0,8d8d69857248,2026-11-26
+24,10 to 100 hectares,58,50.1,1.1571,0,8d8d69857248,2026-11-26
+24,100 to 1000 hectares,25,22.4,1.1166,0,8d8d69857248,2026-11-26
+24,1000 hectares or more,13,9.2,1.4188,0,8d8d69857248,2026-11-26
