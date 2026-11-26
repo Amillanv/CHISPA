@@ -208,3 +208,24 @@ def test_configuration_hash_covers_only_the_values_before_the_marker(monkeypatch
     assert report.config_hash() == first
     path.write_text(f"LIMIT = 2\n{report.HASH_END}\nPATH = 'b'\n")
     assert report.config_hash() != first
+
+
+def test_stamp_of_a_table_is_in_the_file_of_the_year_and_not_in_its_rows(tmp_path, monkeypatch):
+    from chispa.evaluation import report
+
+    monkeypatch.setattr(report, "config_hash", lambda: "first")
+    report.write_tables({"a": [{"x": 1}], "b": [{"y": 2}]}, 2024, tmp_path)
+    # A second run with a new configuration makes only the table `b` again.
+    monkeypatch.setattr(report, "config_hash", lambda: "second")
+    report.write_tables({"b": [{"y": 3}]}, 2024, tmp_path)
+    assert (tmp_path / "2024" / "a.csv").read_text().split() == ["x", "1"]
+    assert (tmp_path / "2024" / "b.csv").read_text().split() == ["y", "3"]
+    stamps = report.read_stamps(tmp_path / "2024")
+    # The table `a` keeps the stamp of its run.
+    assert (stamps["a"]["config"], stamps["b"]["config"]) == ("first", "second")
+    report.write_summary(tmp_path)
+    summary = (tmp_path / "SUMMARY.md").read_text()
+    # The summary gives each table with its stamp, and the stamp file is not a table.
+    assert "### 2024 a\n\nConfiguration `first`" in summary
+    assert "### 2024 b\n\nConfiguration `second`" in summary
+    assert "stamps" not in summary

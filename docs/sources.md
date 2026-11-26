@@ -189,6 +189,25 @@ Checked 2026-11-25 with a live request and on the pages `open-meteo.com/en/terms
   We do not use it for the recorded years (section 8.21). It stays a candidate for a forecast for a live alert.
 - The weather data has the licence CC BY 4.0.
 
+Checked 2026-11-26 with live requests, for the weather of a live alert (`docs/method.md` section 11.22):
+
+- The archive API with the model `ecmwf_ifs` (cells of 9 km) had each day to 2026-11-26, the day of the request.
+  With `era5`, `era5_land` and `era5_seamless` the newest day was 2026-11-20. The forecast API with `past_days=92`
+  gave the 92 days before the day of the request and the 7 days from that day. Each gave the sum of rain, the
+  largest wind speed, the dominant wind direction and the largest vapour pressure deficit of a day.
+  The historical forecast API had values for 2019-01-01.
+- One request for 101 days and 4 measures needed approximately 2 seconds: 770 requests in 40 minutes.
+- A comparison for the 770 alerts of the 2026 test at 30 minutes, outside the repository: the six weather inputs to
+  7 days before an alert, from ERA5-Land (our files) and from `ecmwf_ifs`. The correlation is 0.87, 0.92 and 0.94
+  for the rain of 7, 30 and 90 days. It is 0.78 for the days with no rain, 0.85 for the wind and 0.90 for the
+  dryness of the air. The level is not the same: the rain sums of IFS are 1.18 to 1.20 times those of ERA5-Land, and the mean
+  wind is 15.3 against 11.7 km/h. The dryness of the air has the same level: 2.49 and 2.52 kPa.
+- In ERA5-Land, we compared the inputs to 7 days before with the inputs to 1 day before. The correlation is 0.99 and
+  0.97 for the rain of 90 and 30 days. It is 0.66 for the rain of 7 days, 0.22 for the wind and 0.48 for the dryness.
+- `UNVERIFIED`, read by a research agent on the pages of Open-Meteo: `ecmwf_ifs` starts in 2017 and gets new hours
+  each 6 hours, and its series changes when ECMWF changes its model. The free limit is also 300 000 calls each month.
+  The archive API is not in the plan "Standard". One position counts as (measures / 10) x (days / 14) calls, 1 or more.
+
 ### 8.5 MapBiomas Fogo
 
 Checked 2026-11-19 against the MapBiomas pages, the method document for Collection 5.1 and Alencar et al. 2022.
@@ -224,7 +243,8 @@ Independence from hotspots:
 - The authors used hotspots and MODIS burned area to select which Landsat scenes to sample for training.
 - A hotspot filter removes some scars, but only in Amazon forest. It does not apply to the Pantanal.
 - Thus the ground truth for the Pantanal is almost independent of our detections. Say "almost", and give the reason.
-- Do not use the product "Monitor do Fogo" as ground truth without a new check. In other biomes it maps only near INPE hotspots.
+- The product "Monitor do Fogo" is not independent of hotspots, also in the Pantanal: section 8.18 has the check.
+  Do not use it as the ground truth for the fires that no source detected.
 
 Checked 2026-11-25 with live requests to Earth Engine, for the ground that burned before an alert
 (`docs/method.md` section 11.22):
@@ -239,6 +259,14 @@ Checked 2026-11-25 with live requests to Earth Engine, for the ground that burne
   with no burn from 1985 has no value. Thus the band of a year has the fires of that year.
 - In a window of the north Pantanal (57.6 W to 57.3 W, 17.9 S to 17.6 S), the band of 2020 has 0 for 632 262 pixels,
   and the band of 2021 has 1 for 761 499 pixels. We did not find the cause of the difference. We do not use these assets.
+
+Checked 2026-11-26 with live requests to Earth Engine, for the day that the map of a year comes:
+
+- The asset of Collection 4, with the years to 2024, changed last on 2025-05-21. That of Collection 5, with the
+  years to 2025, on 2026-04-09. That of Collection 5.1, which we read, on 2026-08-27.
+- Thus the map of a year is in Earth Engine in April or May of the next year, or later. An alert of the first
+  months of a year cannot have it. `UNVERIFIED`, read by a research agent on the pages of MapBiomas: the public
+  release of the three collections with 2023, 2024 and 2025 was on 2024-06-18, 2025-06-24 and 2026-07-21.
 
 Known errors of the ground truth:
 
@@ -315,6 +343,9 @@ Our comparison in the Pantanal biome, 2023, on a grid of 0.004 degrees:
 - The two products agree on the burn day to 1 day for 48 percent of cells, to 3 days for 77 percent and to 7 days for 95 percent.
 - MapBiomas gives the same month as the burn day for 37 percent of the area, one month later for 60 percent, two months later for 1.5 percent. It almost never gives an earlier month. The two products give the same numbers.
 - Thus the month margin of the evaluation must be on one side: the detection is in the scar month or the month before.
+- Checked 2026-11-26 with a live request: the images of MCD64A1 for February to September 2026 changed last 40 to 51
+  days after the end of their month. The 13 images of January 2025 to January 2026 have a time of change from April
+  to October 2026: the product changes its older months.
 
 ### 8.10 Live products
 
@@ -518,12 +549,24 @@ Checked 2026-11-26 with live requests, for the fires of a year with no annual ma
 - The burn day product MCD64A1 had the months to September 2026 on that day. `chispa fetch burnday --year` now saves
   the months that the product has, and a year in progress has no burn day for its last months.
 
-Read 2026-11-23 by a research agent, on the pages of each owner. `UNVERIFIED`: no second read confirmed these facts.
-A web search on 2026-11-24 found the method document of collection 1 of the Monitor map, and no document for the
-collection of the asset that we read.
+Checked 2026-11-26, for the day that a month comes and for the hotspot rule of the map:
 
-- Monitor do Fogo: the method document of its collection 1 gives monthly Sentinel-2 mosaics, a deep learning model, and
-  only the ground not farther than 5 km from an INPE hotspot. Licence CC BY 4.0. Thus it cannot show a fire with no hotspot.
+- Earth Engine gives the time of the last change of each image. The 13 images of October 2025 to October 2026 each
+  changed 9 to 15 days after the end of their month, and not after that. The images of January 2019 to September
+  2025 changed from 2025-10-06 to 2025-11-06: the first day of those months in the asset is not known.
+  `chispa fetch monitor` saves the times of a year in the file `published.json` of its folder.
+- The Monitor page gives one method document: "Método Monitor Fogo, Coleção 1", a copy of 2026-08-25. Its section
+  2.2 gives monthly Sentinel-2 mosaics and a deep learning model. The map has only the ground in 5 km of an INPE
+  hotspot of the month and of the month before, for each biome "exceto Pantanal". We found no document of collection 2.
+- The asset does not agree with that exception. In the biome, 0 of 1 262 193 burned pixels of 2025 are farther than
+  5.5 km from each detection in our store of those two months. For 2026 it is 86 of 1 396 391. In the annual map of
+  2025, 164 633 of 1 434 261 burned pixels are that far (11.5 percent). In a month of 2025, 78 to 94 percent of the
+  biome is that far. A check outside the repository, on blocks of 10 pixels, with the detections of INPE and of FIRMS.
+- Thus the map shows no burn with no hotspot near it, also in the Pantanal. It cannot be the reference for the
+  fires that no source detected. The ground of an alert is in the mapped area: an alert is a hotspot.
+
+Read 2026-11-23 by a research agent, on the pages of each owner. `UNVERIFIED`: no second read confirmed these facts.
+
 - OlmoEarth (Ai2): an encoder for Sentinel-2 L2A, Sentinel-1 and Landsat. It gives embeddings. The agent found no model,
   weights or benchmark for burned area. A use needs our labels and a head for two dates. The weights have the
   "OlmoEarth Artifact License": it prohibits military and extractive uses. The package `olmoearth-pretrain-minimal`

@@ -53,9 +53,9 @@ def recalibration_tables(
     but the count `rank_only_alerts`. A year is scored if it has enough training years.
     The scored years get the table of the conditions, and the test year gets its own table.
     """
-    scored = {year: _split(parts[year]["rows"]) for year in models}
+    scored = {year: percent_rows(parts[year]["rows"]) for year in models}
     facts = {
-        (moment, limit): _facts(scored, models, moment, limit)
+        (moment, limit): model_facts(scored, models, moment, limit)
         for moment in MOMENTS
         for limit in config.RISK_CLASS_LIMITS_HA
     }
@@ -68,7 +68,7 @@ def recalibration_tables(
             values = []
             for limit in config.RISK_CLASS_LIMITS_HA:
                 value, factor = _corrected(facts[(moment, limit)], year)
-                found = _level_rows(facts[(moment, limit)][year], value, factor)
+                found = year_level_rows(facts[(moment, limit)][year], value, factor)
                 found[0]["rank_only_alerts"] = len(scored[year][moment][1])
                 name = {"moment_h": moment, "limit_ha": limit}
                 tables[year]["risk_recalibrated"] += [name | row for row in found]
@@ -84,7 +84,7 @@ def recalibration_tables(
     return tables
 
 
-def _split(rows: dict[str, list]) -> dict[str, tuple[list, list]]:
+def percent_rows(rows: dict[str, list]) -> dict[str, tuple[list, list]]:
     """Return, for each moment, the alerts that get a percentage and those with a rank only."""
     found = {}
     for moment in MOMENTS:
@@ -96,11 +96,18 @@ def _split(rows: dict[str, list]) -> dict[str, tuple[list, list]]:
     return found
 
 
-def _facts(scored: dict, models: dict[int, dict], moment: str, limit: float) -> dict[int, dict]:
+def model_facts(
+    scored: dict, models: dict[int, dict], moment: str, limit: float
+) -> dict[int, dict]:
     """Return, for one model and each year, the time, the value and the label of its alerts."""
     found = {}
     for year, of_year in models.items():
         rows, model = scored[year][moment][0], of_year[key(moment, limit)]
+        if not rows:
+            raise RuntimeError(
+                f"No alert of {year} can get a percentage: each is on a known fire or has only "
+                "GOES rows of INPE. For the test year, wait for a later month of the Monitor map."
+            )
         found[year] = {
             "time": np.array([row["at"] for row in rows]),
             "value": confidence.probability(model, as_table(rows, tuple(model["inputs"]))[0]),
@@ -124,7 +131,7 @@ def _corrected(facts: dict[int, dict], year: int) -> tuple[np.ndarray, np.ndarra
     return recalibrate(facts[year]["value"], factor), factor
 
 
-def _level_rows(facts: dict, value: np.ndarray, factor: np.ndarray) -> list[dict]:
+def year_level_rows(facts: dict, value: np.ndarray, factor: np.ndarray) -> list[dict]:
     """Return the level of one model in one year: for all alerts, then for each tenth."""
     before, large = facts["value"], facts["large"]
     constant = float(((facts["base_rate"] - large) ** 2).mean())
@@ -132,6 +139,7 @@ def _level_rows(facts: dict, value: np.ndarray, factor: np.ndarray) -> list[dict
         "brier_skill": _skill(value, large, constant),
         "brier_skill_before": _skill(before, large, constant),
         "auc": separation(value, large),
+        "auc_before": separation(before, large),
         "factor_smallest": round(float(factor.min()), 4),
         "factor_median": round(float(np.median(factor)), 4),
         "factor_largest": round(float(factor.max()), 4),
@@ -232,7 +240,8 @@ def answer_table(rows: list[dict]) -> list[dict]:
         better = row["brier_skill"] is not None and row["brier_skill"] > 0
         level = row["observed_to_expected"]
         in_range = level is not None and low <= level <= high
-        names = ("moment_h", "limit_ha", "alerts", "large", "auc", "brier_skill")
+        names = ("moment_h", "limit_ha", "alerts", "large", "expected_large", "factor_median")
+        names += ("auc", "brier_skill")
         table.append(
             {name: row[name] for name in names}
             | {

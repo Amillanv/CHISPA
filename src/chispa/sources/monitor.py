@@ -4,6 +4,7 @@ The annual map of burn scars comes in the next year. This map comes some weeks a
 It is a candidate for the burned ground of an event, and a reference for a year with no annual map.
 """
 
+import json
 import re
 from datetime import datetime
 from pathlib import Path
@@ -49,11 +50,13 @@ def download_year(year: int, project: str, raw_dir: Path, grid: Grid) -> list[Pa
 
     A pixel holds the first month of the year in which the map gives it as burned, or 0.
     The folder name has the last month that the map had: a year in progress gets a new
-    folder when the map has one more month, and a folder never changes.
+    folder when the map has one more month, and a folder never changes. The file
+    `published.json` has the time of the last change of each month image.
     """
     ee.Initialize(project=project)
-    names = set(ee.ImageCollection(ASSET).aggregate_array("name").getInfo())
-    months = [month for month in range(1, 13) if f"brazil-{year}-{month}" in names]
+    images = ee.data.listAssets({"parent": ASSET, "pageSize": 1000})["assets"]
+    changed = {image["name"].rsplit("/", 1)[-1]: image["updateTime"] for image in images}
+    months = [month for month in range(1, 13) if f"brazil-{year}-{month}" in changed]
     if not months:
         raise RuntimeError(f"The Monitor map has no month of {year}.")
     layers = []
@@ -71,6 +74,10 @@ def download_year(year: int, project: str, raw_dir: Path, grid: Grid) -> list[Pa
                 path.parent.mkdir(parents=True, exist_ok=True)
                 np.savez_compressed(path, month=tile[tile.dtype.names[0]].astype(np.uint8))
             paths.append(path)
+    times = folder / "published.json"
+    if not times.exists():
+        found = {month: changed[f"brazil-{year}-{month}"] for month in months}
+        times.write_text(json.dumps(found, indent=1))
     return paths
 
 
@@ -92,3 +99,16 @@ def read_year(year: int, raw_dir: Path, grid: Grid) -> tuple[np.ndarray, int]:
     if covered != months.size:
         raise RuntimeError(f"The Monitor tiles of {year} do not cover the grid. Run fetch again.")
     return months, int(folders[-1].name[-2:])
+
+
+def read_published(year: int, raw_dir: Path) -> dict[int, datetime]:
+    """Return, for each month of the map of one year, the time when its image last changed.
+
+    An image that did not change after its first day in the asset has the time when the map
+    of that month came. The newest folder of the year has the file.
+    """
+    folders = sorted((raw_dir / "monitor").glob(f"{year}-[0-9][0-9]"))
+    if not folders or not (folders[-1] / "published.json").exists():
+        raise RuntimeError(f"Run `chispa fetch monitor --year {year}` first.")
+    found = json.loads((folders[-1] / "published.json").read_text())
+    return {int(month): datetime.fromisoformat(time) for month, time in found.items()}

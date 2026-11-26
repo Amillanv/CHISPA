@@ -1,6 +1,7 @@
 """Tests of the recalibration of the growth risk, with cases that a person can calculate."""
 
 import numpy as np
+import pytest
 
 from chispa.evaluation import risk_recalibration
 from chispa.evaluation.risk_recalibration import (
@@ -96,6 +97,8 @@ def test_scored_year_gets_the_factor_of_the_year_before(monkeypatch):
     )
     # The outcomes of 2002 are known: 2 came for 5 expected. The factor is 3 divided by 6.
     assert (first["factor_smallest"], first["factor_largest"]) == (0.5, 0.5)
+    # Each alert of the year has the same value before and after: the AUC is that of chance.
+    assert (first["auc_before"], first["auc"]) == (0.5, 0.5)
     # Before: 6 alerts with 0.5 expect 3. After: odds of 0.5, a value of 1 in 3, expect 2.
     assert (first["expected_large_before"], first["expected_large"]) == (3.0, 2.0)
     assert (first["observed_to_expected_before"], first["observed_to_expected"]) == (0.6667, 1.0)
@@ -110,6 +113,22 @@ def test_scored_year_gets_the_factor_of_the_year_before(monkeypatch):
         "less than 100 hectares",
         "100 hectares or more",
     ]
+
+
+def test_year_with_no_alert_for_a_percentage_says_why(monkeypatch):
+    settings(monkeypatch, delay=1, window=1000, prior=1.0)
+    monkeypatch.setattr("chispa.config.RISK_CLASS_LIMITS_HA", (100.0,))
+    monkeypatch.setattr("chispa.config.RISK_MIN_TRAINING_YEARS", 2)
+    monkeypatch.setattr(risk_recalibration, "MOMENTS", ("0",))
+    model = {"inputs": ["x"], "mean": [0.0], "spread": [1.0], "start": 0.0, "weights": [1.0]}
+    model |= {"base_rate": 0.5}
+    second = [alert(day, 500.0 if day < 2 else 0.0) for day in range(10)]
+    # Each alert of 2003 has only GOES rows of INPE, or is on a known fire.
+    third = [alert(400.0, 500.0, only_inpe_goes=True), alert(400.0, 500.0) | {"known": True}]
+    parts = {2001: {"rows": {"0": []}}, 2002: {"rows": {"0": second}}, 2003: {"rows": {"0": third}}}
+    models = {year: {"0h_100ha": model} for year in (2002, 2003)}
+    with pytest.raises(RuntimeError, match="No alert of 2003 can get a percentage"):
+        recalibration_tables(parts, models)
 
 
 def test_percentage_needs_each_of_the_three_conditions(monkeypatch):
@@ -135,6 +154,7 @@ def test_percentage_needs_each_of_the_three_conditions(monkeypatch):
 
 def answer_row(large: int, skill: float | None, level: float | None) -> dict:
     row = {"moment_h": "0", "limit_ha": 100.0, "group": "all", "alerts": 500, "large": large}
+    row |= {"expected_large": 30.0, "factor_median": 1.0}
     return row | {"auc": 0.8, "brier_skill": skill, "observed_to_expected": level}
 
 

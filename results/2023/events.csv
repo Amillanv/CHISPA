@@ -1,5 +1,5 @@
-final_level,events,events_matched,matched_share,events_on_counted_fires,events_on_one_fire,fires_per_event_max,purity,config,run_date
-LOW,2739,619,0.226,345,289,7,0.8438,a84ef20c2e1b,2026-11-23
-MEDIUM,2072,776,0.3745,405,269,21,0.6886,a84ef20c2e1b,2026-11-23
-HIGH,1079,655,0.607,470,232,125,0.7383,a84ef20c2e1b,2026-11-23
-all,5890,2050,0.348,1220,790,125,0.7378,a84ef20c2e1b,2026-11-23
+final_level,events,events_matched,matched_share,events_on_counted_fires,events_on_one_fire,fires_per_event_max,purity
+LOW,2739,619,0.226,345,289,7,0.8438
+MEDIUM,2072,776,0.3745,405,269,21,0.6886
+HIGH,1079,655,0.607,470,232,125,0.7383
+all,5890,2050,0.348,1220,790,125,0.7378

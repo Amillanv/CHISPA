@@ -1,9 +1,9 @@
-moment_h,limit_ha,group,alerts,probability_mean,large,large_share,expected_large,observed_to_expected,config,run_date
-0,100.0,only GOES rows of INPE,1137,0.1621,70,0.0616,184.3,0.3799,8d8d69857248,2026-11-26
-0,100.0,each other alert,5663,0.0467,272,0.048,264.3,1.029,8d8d69857248,2026-11-26
-0,1000.0,only GOES rows of INPE,1137,0.0434,20,0.0176,49.4,0.405,8d8d69857248,2026-11-26
-0,1000.0,each other alert,5663,0.0153,74,0.0131,86.7,0.8533,8d8d69857248,2026-11-26
-24,100.0,only GOES rows of INPE,842,0.0496,12,0.0143,41.7,0.2876,8d8d69857248,2026-11-26
-24,100.0,each other alert,5429,0.0421,265,0.0488,228.8,1.1581,8d8d69857248,2026-11-26
-24,1000.0,only GOES rows of INPE,842,0.0201,0,0.0,16.9,0.0,8d8d69857248,2026-11-26
-24,1000.0,each other alert,5429,0.014,74,0.0136,76.0,0.9732,8d8d69857248,2026-11-26
+moment_h,limit_ha,group,alerts,probability_mean,large,large_share,expected_large,observed_to_expected
+0,100.0,only GOES rows of INPE,1137,0.1621,70,0.0616,184.3,0.3799
+0,100.0,each other alert,5663,0.0467,272,0.048,264.3,1.029
+0,1000.0,only GOES rows of INPE,1137,0.0434,20,0.0176,49.4,0.405
+0,1000.0,each other alert,5663,0.0153,74,0.0131,86.7,0.8533
+24,100.0,only GOES rows of INPE,842,0.0496,12,0.0143,41.7,0.2876
+24,100.0,each other alert,5429,0.0421,265,0.0488,228.8,1.1581
+24,1000.0,only GOES rows of INPE,842,0.0201,0,0.0,16.9,0.0
+24,1000.0,each other alert,5429,0.014,74,0.0136,76.0,0.9732

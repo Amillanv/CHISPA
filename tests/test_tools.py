@@ -243,11 +243,14 @@ def test_evaluation_summary_reads_the_result_tables(tmp_path, monkeypatch):
     folder = tmp_path / "2024"
     folder.mkdir()
     for name in ("configurations", "events", "merge_gain"):
-        (folder / f"{name}.csv").write_text("fire_recall,config,run_date\n0.5,abc,2026-11-21\n")
+        (folder / f"{name}.csv").write_text("fire_recall\n0.5\n")
+    # The stamp of each table of the year is in one file, not in the rows of a table.
+    (folder / "stamps.csv").write_text("table,config,run_date\nconfigurations,abc,2026-11-21\n")
     (tmp_path / "SUMMARY.md").write_text("# Results\n\nLimits of these results:\n\n- One limit.\n")
     summary = tools.evaluation_summary(2024)
     assert (summary["configuration"], summary["role"]) == ("abc", "test year of the merge")
-    assert summary["configurations"][0]["fire_recall"] == "0.5"
+    assert summary["run_date"] == "2026-11-21"
+    assert summary["configurations"] == [{"fire_recall": "0.5"}]
     assert summary["limits"].endswith("- One limit.")
     with pytest.raises(ValueError):
         tools.evaluation_summary(2019)
