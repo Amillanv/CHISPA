@@ -43,14 +43,16 @@ def save(looks: list[dict], folder: Path, made_at: datetime) -> list[Path]:
     """Save each forecast that adds to the files of its look, and return the new files.
 
     A forecast adds if its look has no file, or if it has more pixels or more fronts with a
-    chance than the newest file. A file has `made_at`, the time when it was complete, also in
-    its name. A file never changes: the first forecast of a look stays as we gave it.
+    chance than the newest file, or other trees. A file has `made_at`, the time when it was
+    complete, also in its name. A file never changes: the first forecast of a look stays as we
+    gave it.
     """
     written = []
     for look in looks:
         newest = _newest(folder, look["look_at"])
         size, before = _size(look), _size(newest) if newest else (-1, -1)
-        if size[0] <= before[0] and size[1] <= before[1]:
+        same_trees = newest is not None and newest.get("trees") == look.get("trees")
+        if size[0] <= before[0] and size[1] <= before[1] and same_trees:
             continue
         stamp = datetime.fromisoformat(look["look_at"]).astimezone(UTC).strftime(LOOK)
         path = folder / f"{stamp}_{made_at.astimezone(UTC).strftime(MADE)}.json"
