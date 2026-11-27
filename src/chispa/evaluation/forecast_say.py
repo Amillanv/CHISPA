@@ -4,8 +4,11 @@ A stated chance has a use only if it is near what comes: of 100 fronts with a st
 70 percent, approximately 70 must get the answer yes. This module counts that for each band of
 the stated chance. It also counts how frequently the most likely sectors of a front get its new
 pixels, and it gives the scores for the first look of a fire apart.
+It also gives apart the fronts that have no annual map of the year before.
 `docs/method.md` section 11.28 gives the rules.
 """
+
+from datetime import UTC, date, datetime
 
 import numpy as np
 
@@ -84,12 +87,40 @@ def first_look_rows(rows: dict, hours: int, use: np.ndarray, trees: dict) -> lis
     from each pixel that we knew before. `use` is True for each front with a row, and `trees`
     has the chances of the questions for those fronts.
     """
-    answers = rows["answers"]
-    found = {"new": answers[f"new_{hours}"][use], "chance": trees["new_ground"]}
-    found["truth"] = answers[f"direction_deg_{hours}"][use]
-    found["guess"] = forecast.directions(trees["sector"])
+    found = _found(rows, hours, use, trees)
     first = rows["inputs"]["first_look"][use]
     return [
         _score(hours, name, part, found)
         for name, part in (("first look", first), ("other", ~first))
     ]
+
+
+def _found(rows: dict, hours: int, use: np.ndarray, trees: dict) -> dict:
+    """Return what `_score` needs for the fronts with a row: the answers and what the trees say."""
+    answers = rows["answers"]
+    found = {"new": answers[f"new_{hours}"][use], "chance": trees["new_ground"]}
+    found["truth"] = answers[f"direction_deg_{hours}"][use]
+    return found | {"guess": forecast.directions(trees["sector"])}
+
+
+def period_rows(rows: dict, hours: int, use: np.ndarray, trees: dict) -> list[dict]:
+    """Return the scores of the trees and of two baselines for the fronts of a year before the
+    month in which the annual map of the year before comes (`config.py`), and for the others.
+
+    A front before that month has no value for the inputs from that map (`docs/method.md`
+    section 11.31). The two groups have the name of that day: the calendar makes them, not
+    the map on disk. `trees` also has the persistence value of each front.
+    """
+    found = _found(rows, hours, use, trees)
+    wind = rows["inputs"]["wind_direction_deg"][use]
+    starts = rows["answers"]["start"][use]
+    month = np.array([datetime.fromtimestamp(float(start), UTC).month for start in starts])
+    early = month < config.FRONT_LAST_YEAR_FROM_MONTH
+    day, table = f"1 {date(2000, config.FRONT_LAST_YEAR_FROM_MONTH, 1):%B}", []
+    for name, part in ((f"before {day}", early), (f"from {day}", ~early)):
+        row = _score(hours, name, part, found)
+        label = (found["new"][part] > 0).astype(float)
+        many = part & (found["new"] >= config.FRONT_DIRECTION_PIXELS)
+        row["auc_persistence"] = separation(trees["persistence"][part], label)
+        table.append(row | {"wind_in_45": forecast.in_45(wind, found["truth"], many)})
+    return table

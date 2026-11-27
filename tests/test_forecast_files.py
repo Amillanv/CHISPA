@@ -83,6 +83,26 @@ def test_a_forecast_with_a_chance_comes_after_one_with_no_chance(tmp_path):
     )
 
 
+def test_a_forecast_from_other_trees_comes_after_the_first_one(tmp_path):
+    first = look_of([front(4, [7])]) | {"trees": "mark of the trees before"}
+    second = look_of([front(4, [7])]) | {"trees": "mark of the new trees"}
+    second["fronts"][0]["hours_12"]["new_ground"] = 0.25
+    forecast_files.save([first], tmp_path, after(3))
+    # The same pixels and the same trees: no new file. Other trees: a new file for the look.
+    assert forecast_files.save([first], tmp_path, after(4)) == []
+    assert len(forecast_files.save([second], tmp_path, after(5))) == 1
+    assert forecast_files.save([second], tmp_path, after(6)) == []
+    # The record has the forecast that existed at its time.
+    assert (
+        forecast_files.of_event(tmp_path, [7], after(4))["fronts"][0]["hours_12"]["new_ground"]
+        == 0.2
+    )
+    assert (
+        forecast_files.of_event(tmp_path, [7], after(6))["fronts"][0]["hours_12"]["new_ground"]
+        == 0.25
+    )
+
+
 def test_an_event_gets_the_fronts_with_one_of_its_issued_ids(tmp_path):
     # The look has a front of 4 pixels of the alert 7, and a front of 1 pixel of the alert 9.
     forecast_files.save([look_of([front(4, [7]), front(1, [9])])], tmp_path, after(3))

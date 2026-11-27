@@ -1,5 +1,7 @@
 """Tests of the counts of what the forecast says, with cases small enough for paper."""
 
+from datetime import UTC, datetime
+
 import numpy as np
 import pytest
 
@@ -69,3 +71,37 @@ def test_the_first_look_of_a_fire_has_its_scores_apart():
     assert (other["fronts_with_direction"], other["trees_in_45"]) == (1, 0)
     # The stated chances of the first two fronts expect 0.8 + 0.2 = 1 front with new ground.
     assert first["chance_sum"] == 1.0
+
+
+def test_the_fronts_before_the_map_of_last_year_have_their_scores_apart(monkeypatch):
+    monkeypatch.setattr("chispa.config.FRONT_LAST_YEAR_FROM_MONTH", 7)
+    # Fronts 1 and 2 are in May, and fronts 3 and 4 in August. Front 1 gets 3 new pixels to the
+    # east: the forecast says east, and the wind goes to the west.
+    may, august = (datetime(2024, month, 10, 17, tzinfo=UTC).timestamp() for month in (5, 8))
+    rows = {
+        "inputs": {"wind_direction_deg": np.array([270.0, 0.0, 0.0, 0.0])},
+        "answers": {
+            "start": np.array([may, may, august, august]),
+            "new_12": np.array([3, 0, 4, 0]),
+            "direction_deg_12": np.array([90.0, np.nan, 0.0, np.nan]),
+        },
+    }
+    sector = np.zeros((4, 8))
+    sector[0, 2], sector[2, 4] = 0.5, 0.5
+    trees = {"new_ground": np.array([0.8, 0.2, 0.3, 0.6]), "sector": sector.ravel()}
+    # Persistence has the fronts of May in the reverse sequence, and those of August correct.
+    trees["persistence"] = np.array([0.0, 1.0, 2.0, 1.0])
+    before, after = forecast_say.period_rows(rows, 12, np.ones(4, dtype=bool), trees)
+    assert (before["fronts"], before["rows"], before["new_ground"]) == ("before 1 July", 2, 1)
+    assert (before["auc_trees"], before["auc_persistence"]) == (1.0, 0.0)
+    assert (before["fronts_with_direction"], before["trees_in_45"], before["wind_in_45"]) == (
+        1,
+        1,
+        0,
+    )
+    assert (after["fronts"], after["auc_trees"], after["auc_persistence"]) == (
+        "from 1 July",
+        0.0,
+        1.0,
+    )
+    assert (after["trees_in_45"], after["wind_in_45"]) == (0, 1)

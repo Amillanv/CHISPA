@@ -1,9 +1,10 @@
 """The inputs of a front for the growth forecast: what we know at the time of its look.
 
 A forecast for a front can use only the past: the pixels of its look and of the looks before,
-the maps of the years before, and the weather to the time of the look. This module makes those
-inputs for each front of a look. An input for a sector has a name that ends with `_s`.
-`docs/method.md` section 11.28 gives the list and the reason of each group.
+the maps that existed at the look, and the weather to the time of the look. This module makes
+those inputs for each front of a look. An input for a sector has a name that ends with `_s`.
+`docs/method.md` section 11.28 gives the list and the reason of each group, and section 11.31
+gives the maps that a look can have.
 """
 
 from dataclasses import dataclass
@@ -20,6 +21,8 @@ from chispa.sources import burned, landcover, weather
 
 ON_FRONT = ("forest", "savanna", "wetland", "grassland", "pasture")
 AHEAD = ("water", "forest", "savanna", "wetland", "grassland", "pasture")
+# The inputs from the annual map of the burned ground of the year before.
+LAST_YEAR = ("burned_last_year", "ahead_burned_last_year_s")
 
 
 @dataclass(frozen=True)
@@ -38,17 +41,27 @@ class Layers:
     wind: np.ndarray
 
 
-def load_layers(raw_dir: Path, year: int) -> Layers:
-    """Return the layers of one year. The weather starts in December of the year before. It ends
-    with the last complete month on disk, or with the last complete day of a month in progress."""
+def load_layers(raw_dir: Path, year: int, live: bool = False) -> Layers:
+    """Return the layers of one year, as a look of that year can have them.
+
+    The land cover is the map of some years before (`config.py`), or of the last year that
+    the map has if that is older. The burned map of the year before must be on disk: thus two
+    computers make the same trees. `live`: for a live forecast that map can be absent, and
+    then it has no value. The weather starts in December of the year before. It ends with the
+    last complete month on disk, or with the last complete day of a month in progress.
+    """
     to_group = np.zeros(256, dtype=int)
     for number, name in enumerate(config.COVER_GROUPS, start=1):
         to_group[list(config.COVER_GROUPS[name])] = number
-    cover = to_group[landcover.read_year(min(year - 1, config.LANDCOVER_LAST_YEAR), raw_dir)]
+    cover_year = min(year - config.FRONT_COVER_YEARS_BEFORE, config.LANDCOVER_LAST_YEAR)
+    cover = to_group[landcover.read_year(cover_year, raw_dir)]
     before = np.maximum(burned.read_year(year - 2, raw_dir), burned.read_year(year - 3, raw_dir))
+    last = np.full(before.shape, np.nan, dtype=np.float32)
+    if not live or (raw_dir / "burned" / f"{year - 1}.npz").exists():
+        last = burned.read_year(year - 1, raw_dir)  # If absent, this stops with an instruction.
     first = date(year - 1, 12, 1)
     days, wind = weather.read_newest(raw_dir, first, date(year + 1, 1, 31))
-    return Layers(cover, (burned.read_year(year - 1, raw_dir), before), first, days, wind)
+    return Layers(cover, (last, before), first, days, wind)
 
 
 def units() -> np.ndarray:
@@ -248,4 +261,16 @@ def look_inputs(pixels: dict, bounds: tuple[int, int], look: fronts.Look, layers
         "north_s": np.tile(sectors[:, 0], (count, 1)),
         "east_s": np.tile(sectors[:, 1], (count, 1)),
     }
-    return inputs | weather_inputs(layers, centre, pixels["seconds"][a], pixels["seconds"][b - 1])
+    inputs |= weather_inputs(layers, centre, pixels["seconds"][a], pixels["seconds"][b - 1])
+    return of_the_time(inputs, pixels["seconds"][a])
+
+
+def of_the_time(inputs: dict, start: float) -> dict:
+    """Return the inputs of a look with only the maps that existed at its start.
+
+    The annual map of the burned ground of a year comes some months into the next year
+    (`config.py`). A look before that month has no value for the inputs from that map.
+    """
+    if datetime.fromtimestamp(float(start), UTC).month >= config.FRONT_LAST_YEAR_FROM_MONTH:
+        return inputs
+    return inputs | {name: np.full(inputs[name].shape, np.nan) for name in LAST_YEAR}

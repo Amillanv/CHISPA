@@ -1,0 +1,5 @@
+hours,fronts,rows,new_ground,chance_sum,auc_trees,fronts_with_direction,trees_in_45,auc_persistence,wind_in_45
+12,before 1 July,100,4,8.7,0.8672,1,1,0.8893,1
+12,from 1 July,530,97,120.2,0.861,71,40,0.6965,33
+24,before 1 July,64,6,11.4,0.7098,4,1,0.8448,0
+24,from 1 July,414,121,161.1,0.8039,93,45,0.707,33
