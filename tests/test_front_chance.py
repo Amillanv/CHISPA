@@ -102,6 +102,8 @@ def test_a_model_with_a_sign_puts_the_alerts_with_a_front_first():
     tables = front_chance.year_tables(rows, training, BASELINE)
     (row,) = tables["front_chance"]
     assert (row["auc_model"], row["auc_confidence"], row["auc_detections"]) == (1.0, 1.0, 1.0)
+    # Each alert has the same hour: the baseline of the hour puts no pair in sequence.
+    assert row["auc_hour"] == 0.5
     # The two groups are equal in size: the chances are p and 1 - p, and their sum is 2.
     assert row["expected"] == 2.0 and row["brier_skill"] > 0
     assert tables["front_chance_weights"][0]["input"] == "detections_log"
@@ -125,3 +127,7 @@ def test_a_year_gets_the_model_of_the_other_development_years(monkeypatch, tmp_p
     }
     tables = front_chance.chance_tables(tmp_path, tmp_path, test_run=True)
     assert tables[2021] == (["alert 2021"], ["alert 2019", "alert 2020"], "confidence")
+    # A year with no row stops the run: it cannot have a table.
+    monkeypatch.setattr(front_chance, "goes_alerts", lambda year, *arguments: [])
+    with pytest.raises(RuntimeError, match="no alert of 2019 that only GOES started"):
+        front_chance.chance_tables(tmp_path, tmp_path, test_run=False)

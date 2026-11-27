@@ -14,9 +14,9 @@ from pathlib import Path
 import sklearn
 
 from chispa import config, forecast_model, front_inputs, fronts
+from chispa.config_hash import config_hash
 from chispa.evaluation import forecast, forecast_run
 from chispa.evaluation import fronts as steps
-from chispa.evaluation.report import config_hash
 from chispa.grid import pantanal_grid
 from chispa.sources import border
 

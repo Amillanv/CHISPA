@@ -29,6 +29,8 @@ NAMES += FIRST_HOURS + WEATHER_LATE
 # A year needs no mapped fire for this: the rows get no fire.
 NO_FIRES = ((np.empty(0, dtype=int), np.empty(0, dtype=int)), {"counted": np.empty(0, dtype=bool)})
 TABLES = ("front_chance", "front_chance_bands", "front_chance_weights")
+# The inputs of a baseline with only the hour of the first detection: how near a VIIRS pass is.
+HOUR = ("hour_sin", "hour_cos")
 
 
 def weather_last(raw_dir: Path, year: int) -> date:
@@ -92,8 +94,9 @@ def year_tables(rows: list[dict], training: list[dict], baseline: dict) -> dict[
     """Return the tables of one year, from the model of the rows of the training years.
 
     `baseline` is the model of the confidence at the first moment: the probability that an
-    alert is a mapped fire. The Brier skill score compares the chance with one number, the
-    share of the training rows with a front: more than 0 is better than that number.
+    alert is a mapped fire. `auc_hour` is for a regression with only the hour of the first
+    detection, from the same training rows. The Brier skill score compares the chance with one
+    number, the share of the training rows with a front: more than 0 is better than that number.
     """
     label = np.array([row["front"] for row in rows], dtype=float)
     had = np.array([row["front"] for row in training], dtype=float)
@@ -106,6 +109,8 @@ def year_tables(rows: list[dict], training: list[dict], baseline: dict) -> dict[
     row |= {"expected": round(float(chance.sum()), 1), "auc_model": separation(chance, label)}
     row["auc_confidence"] = separation(known, label)
     row["auc_detections"] = separation(_table(rows, ("detections_log",))[:, 0], label)
+    clock = confidence.fit(_table(training, HOUR), had, HOUR)
+    row["auc_hour"] = separation(confidence.probability(clock, _table(rows, HOUR)), label)
     row["brier_skill"] = round(float(1 - brier / alone), 4) if alone else None
     bands = chance_rows(("front", int(config.SEVERITY_EVAL_HOURS)), chance, label)
     return dict(zip(TABLES, ([row], bands, weight_table({"front": model})), strict=True))
@@ -118,6 +123,9 @@ def chance_tables(store_path: Path, raw_dir: Path, test_run: bool) -> dict[int, 
         year: with_fronts(goes_alerts(year, store_path, raw_dir), store_path, year)
         for year in years
     }
+    for year, rows in parts.items():
+        if not rows:
+            raise RuntimeError(f"The store has no alert of {year} that only GOES started.")
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
     baseline, tables = confidence.load(path)[MOMENT], {}
     for year in years:

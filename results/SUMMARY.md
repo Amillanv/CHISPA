@@ -216,9 +216,9 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
 
-| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | brier_skill |
-|---|---|---|---|---|---|---|---|---|
-| 707 | 412 | 0.5827 | 0.2756 | 328.4 | 0.8348 | 0.6619 | 0.593 | 0.4562 |
+| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|
+| 707 | 412 | 0.5827 | 0.2756 | 328.4 | 0.8348 | 0.6619 | 0.593 | 0.7363 | 0.4562 |
 
 ### 2019 front_chance_bands
 
@@ -834,9 +834,9 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
 
-| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | brier_skill |
-|---|---|---|---|---|---|---|---|---|
-| 2328 | 624 | 0.268 | 0.2971 | 724.4 | 0.8627 | 0.6186 | 0.5691 | 0.4091 |
+| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|
+| 2328 | 624 | 0.268 | 0.2971 | 724.4 | 0.8627 | 0.6186 | 0.5691 | 0.8209 | 0.4091 |
 
 ### 2020 front_chance_bands
 
@@ -1590,9 +1590,9 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
 
-| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | brier_skill |
-|---|---|---|---|---|---|---|---|---|
-| 1046 | 463 | 0.4426 | 0.2791 | 404.5 | 0.8667 | 0.6128 | 0.6129 | 0.4345 |
+| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|
+| 1046 | 463 | 0.4426 | 0.2791 | 404.5 | 0.8667 | 0.6128 | 0.6129 | 0.7804 | 0.4345 |
 
 ### 2021 front_chance_bands
 
@@ -2434,9 +2434,9 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
 
-| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | brier_skill |
-|---|---|---|---|---|---|---|---|---|
-| 971 | 418 | 0.4305 | 0.2811 | 380.5 | 0.7316 | 0.4903 | 0.6133 | 0.1642 |
+| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|
+| 971 | 418 | 0.4305 | 0.2811 | 380.5 | 0.7316 | 0.4903 | 0.6133 | 0.6269 | 0.1642 |
 
 ### 2022 front_chance_bands
 
@@ -3702,9 +3702,9 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
 
-| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | brier_skill |
-|---|---|---|---|---|---|---|---|---|
-| 4709 | 895 | 0.1901 | 0.348 | 1191.2 | 0.7965 | 0.6067 | 0.5803 | 0.3176 |
+| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|
+| 4709 | 895 | 0.1901 | 0.348 | 1191.2 | 0.7965 | 0.6067 | 0.5803 | 0.6033 | 0.3176 |
 
 ### 2023 front_chance_bands
 
@@ -4902,9 +4902,9 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
 
-| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | brier_skill |
-|---|---|---|---|---|---|---|---|---|
-| 3513 | 1064 | 0.3029 | 0.2881 | 1016.2 | 0.838 | 0.6789 | 0.6246 | 0.3334 |
+| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|
+| 3513 | 1064 | 0.3029 | 0.2881 | 1016.2 | 0.838 | 0.6789 | 0.6246 | 0.6493 | 0.3334 |
 
 ### 2024 front_chance_bands
 
@@ -6137,9 +6137,9 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
 
-| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | brier_skill |
-|---|---|---|---|---|---|---|---|---|
-| 693 | 263 | 0.3795 | 0.292 | 231.4 | 0.8254 | 0.6418 | 0.7186 | 0.3124 |
+| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|
+| 693 | 263 | 0.3795 | 0.292 | 231.4 | 0.8254 | 0.6418 | 0.7186 | 0.624 | 0.3124 |
 
 ### 2025 front_chance_bands
 
@@ -7188,9 +7188,9 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
 
-| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | brier_skill |
-|---|---|---|---|---|---|---|---|---|
-| 440 | 223 | 0.5068 | 0.292 | 201.7 | 0.7661 | 0.6394 | 0.6837 | 0.293 |
+| alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|
+| 440 | 223 | 0.5068 | 0.292 | 201.7 | 0.7661 | 0.6394 | 0.6837 | 0.559 | 0.293 |
 
 ### 2026 front_chance_bands
 

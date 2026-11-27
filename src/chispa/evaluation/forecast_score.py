@@ -14,10 +14,12 @@ from pathlib import Path
 
 import numpy as np
 
-from chispa import config, forecast_live, front_inputs, fronts
+from chispa import config, forecast_live, front_inputs, fronts, polls
+from chispa.build import live_logs
 from chispa.evaluation import burn, forecast
 from chispa.evaluation import fronts as steps
 from chispa.evaluation.confidence import separation
+from chispa.store import read_log_sizes
 
 SIZES = {"3 or more": False, "1 or 2": True}
 JOINED = ("seconds", "available", "lat", "lon", "points")
@@ -28,6 +30,23 @@ def _hours() -> tuple[int, int]:
     """Return the hours from a look to the start of its first window and to its last end."""
     windows = config.FRONT_WINDOWS_H.values()
     return min(low for low, _ in windows), max(high for _, high in windows)
+
+
+def data_to(store: sqlite3.Connection, raw_dir: Path, now: datetime) -> datetime | None:
+    """Return the time to which the store has the live data. None: the poller has no such pass.
+
+    It is the newest pass of the poller that read each source with no failure (`polls.py`).
+    The time of the clock is not sufficient: after a stop of a source, the later pixels of a
+    window come late, and "no pixel" must not become "no new ground". The store must also have
+    each row of the FIRMS logs on disk: if not, this stops and says what to do.
+    """
+    read = read_log_sizes(store)
+    for source, path in live_logs(raw_dir):
+        name = path.relative_to(raw_dir).as_posix()
+        if source == "firms" and read.get(name) != path.stat().st_size:
+            raise RuntimeError(f"The store does not have each row of {name}. Run `chispa update`.")
+    at = polls.status(raw_dir, now)["complete_pass_at"]
+    return datetime.fromisoformat(at) if at else None
 
 
 def issued(folder: Path, year: int) -> list[dict]:
@@ -112,10 +131,11 @@ def _came(answers: dict | None, hours: int, number: int) -> dict:
     }
 
 
-def front_table(saved: dict, answers: dict | None, now: datetime) -> list[dict]:
+def front_table(saved: dict, answers: dict | None, known: datetime) -> list[dict]:
     """Return one row for each front and each window of a saved forecast that has an answer.
 
-    A window has an answer some hours after its end: the hours in which a look must be complete
+    `known` is the time to which the store has the live data (`data_to`). A window has an answer
+    if that time is some hours after its end: the hours in which a look must be complete
     (`config.py`), because the pixels of the last pass of the window come late. A front with no
     chance has no row. `same_look` is False if the look has no answers (`as_seen`).
     """
@@ -125,7 +145,7 @@ def front_table(saved: dict, answers: dict | None, now: datetime) -> list[dict]:
             window = front.get(f"hours_{hours}")
             if window is None or window["new_ground"] is None:
                 continue
-            if datetime.fromisoformat(window["to"]) + wait > now:
+            if datetime.fromisoformat(window["to"]) + wait > known:
                 continue
             guess = forecast.directions(np.array(list(window["sectors"].values()))[None])[0]
             row = {name: saved[name] for name in ("look_at", "made_at")}
@@ -178,13 +198,16 @@ def score_tables(store_path: Path, raw_dir: Path, now: datetime) -> dict[int, di
     year. The masks are those of the live poller: each scan that it recorded.
     """
     store, folder, tables = sqlite3.connect(store_path), config.FORECAST_LIVE_DIR, {}
+    known = data_to(store, raw_dir, now)
+    if known is None:
+        return {}
     masks = steps.masks_in(raw_dir / "live")
     for year in sorted({int(path.name[:4]) for path in folder.glob("*.json")}):
         table = []
         for saved in issued(folder, year):
             seen = as_seen(store, saved)
             answers = front_answers(saved, seen, masks) if seen else None
-            table += front_table(saved, answers, now)
+            table += front_table(saved, answers, known)
         if table:
             burn.write(config.RESULTS_DIR / str(year) / "forecast_live" / "fronts.csv", table)
             tables[year] = {"forecast_live": summary(table)}
