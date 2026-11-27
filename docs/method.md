@@ -2001,7 +2001,12 @@ training years by 4 percent.
 
 - A front that was not visible is not in a result. The forecast has no score for the fires under cloud.
 - The answers come from VIIRS, with the limits of sections 11.26 and 11.27.
-- The maps of the year before are inputs. Early in a year, a live forecast does not have the annual map of the year before.
+- The maps of the year before are inputs. Early in a year, a live forecast does not have the annual map of the
+  year before, and the live command stops (section 11.29). The scores have the fronts of those months, with that
+  map. A check outside the repository (2026-11-27): 601 of the 2675 rows of 2025 and 2026 at 12 hours are before
+  1 May, and 8704 of the 81 947 rows of 2019 to 2024. No score exists with the maps of the time.
+- A Brier skill score of more than 0 says that the chances are better than one number for all fronts. It does not
+  say that the level of the chances is correct. The bands of rule 8 and the counts of section 11.30 measure the level.
 - The weather is ERA5-Land, which is 6 days late. A live forecast must read the weather before the look from a second source.
 - Many fronts are one fire at different looks. The rows of one year are not independent: thus a model never gets a row of the year that it scores.
 - The forecast has satellite sources only.
@@ -2121,13 +2126,17 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
 1. The fronts are those of the looks that started in the last hours (`config.py`), with the minimum size and their
    centre in the biome (section 11.26, rules 1 to 3). A year in progress has no end here.
 2. The trees are `trees` of section 11.30, from the rows of all development years. A file holds them. The command
-   fits them again when the first part of `config.py` changes, or the code that makes the rows and the trees.
+   fits them again when one of these changes: the first part of `config.py`, the code that makes the rows and the
+   trees, the version of scikit-learn, or a detection of the development years in the store. It does not read the
+   raw layers: a raw file does not change (`docs/sources.md` section 8.7).
 3. The inputs are those of section 11.28, rule 3. The weather comes from ERA5-Land to its last day on disk.
    The later days come from Open-Meteo, with the model IFS, for the weather cell of each front.
 4. The answer of the command is JSON: one object for each look, with the time of the look, the time of the run,
    and each front. A front has its centre, its number of pixels, and the events of its pixels: an alert is for an
-   event, and this list joins a front to its alerts. For 12 and for 24 hours, a front has the chance of new ground,
-   of large growth, and of a new pixel in each of the 8 sectors. It has no distance and no speed.
+   event, and this list joins a front to its alerts. For each window, a front has the limits of the window as
+   UTC times, and the chance of new ground, of large growth, and of a new pixel in each of the 8 sectors. It has no
+   distance and no speed. A window that ended before the run gets no forecast. A front with no weather before
+   its look, or with no pixel with a fire power, gets no chance: the trees have no row and no score for it.
 5. Each look gets its object as a file in `data/forecasts`. The name has the time of the look and the time of the
    run, and a file does not change. A look can get more pixels when a second satellite comes: then it gets a
    second file, and the first forecast stays as we gave it.
@@ -2144,6 +2153,9 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
   (section 11.30). The answer gives the number of pixels of each front.
 - In the first months of a year, the annual map of the burned ground of the year before is not on disk: the
   command stops with an instruction. The weather has no such stop: December can be a month in progress.
+  The command reads the pixels of one year: on 1 January, a look of 31 December is not in its answer.
+- A window can start before the run: the 12 hours window starts 6 hours after the look. The answer gives its
+  limits. The test scored each forecast as made before its windows (section 11.26, rule 11).
 - The command has no schedule: a person starts it.
 - The forecast has satellite sources only.
 
@@ -2169,10 +2181,10 @@ section are from those tables. The tables of now have the same rows, and the sam
 4. The weather after the look is in blocks of 6 hours, from the block after that of the start of the look. For 12
    and for 24 hours: how much of the wind goes to each sector, its mean speed and its largest speed. For the UTC day
    of the first block, and for the day after it: the largest wind, dryness and temperature, and the rain.
-5. `ahead` gets the recorded weather (ERA5-Land). No forecast can be better: this is the best case. `forecast` is
+5. `ahead` gets the recorded weather (ERA5-Land), which the trees learned from. `forecast` is
    the same trees with a forecast in the place of the recorded weather: the value that the IFS model predicted
    24 hours before each hour, and 48 hours before for the day after, from Open-Meteo (`docs/sources.md` section 8.4,
-   `evaluation/forecast_weather.py` of that commit). A forecast that we get at the look is not older than that.
+   `evaluation/forecast_weather.py` of that commit). The lead is from each hour of the weather, not from the look.
    Only the test years have `forecast`. An hour with no value in the forecast stays with no value: the measure of
    its day is absent, and the trees read an absent value. We wrote this on 2026-11-27 before a score: a first run
    stopped on such an hour (`docs/sources.md` section 8.4).
@@ -2233,8 +2245,13 @@ For the small fronts, which no model has read:
 - No number of the small fronts of the test years was known.
 - The forecast is of the IFS model with cells of 0.25 degrees. A live forecast can use the model of 9 km, which
   has no forecast of the past before 2026. The two are not the same model run.
-- The forecast of 24 hours before is older than the forecast that we can get at a look. Thus `forecast` is a
-  cautious estimate, and `ahead` is the best case.
+- The review of 2026-11-27 corrected two claims that this section had before the run. `ahead` is not an upper
+  limit: ERA5-Land is a model value for a cell, not the weather at the front. And the weather of `forecast` is not
+  always older than a forecast that we can get at a look: the lead is from each hour. For most looks, the last
+  1 or 2 hours of the window of 24 hours have a value from a time after the start of the look. For a look that
+  starts at 18:00 UTC or later it is more hours: 1 of the 3720 fronts of 2025 and 2026 has such a start (a check
+  outside the repository). We did not select the weather by the time when a run was published.
+  This error can only help `forecast`.
 - The limits of sections 11.26 to 11.28 apply. The forecast has satellite sources only.
 
 The result of the test (the same tables of 2025 and 2026, 2026-11-27): the statements 2, 3 and 4 are true, and the
@@ -2290,7 +2307,7 @@ The direction, as the sum of the two years:
 Why the weather after the look gave no gain. This is a check outside the repository on 2026-11-27, with the fronts
 of 3 pixels or more of 2019 to 2024 and the recorded weather:
 
-- The error of the forecast is not the cause. `ahead` has the weather that came, and it gave no gain at 12 hours.
+- The error of the forecast is not the cause. `ahead` has the recorded weather, and it gave no gain at 12 hours.
   The wind of the forecast is in 45 degrees of the recorded wind for 3278 of the 3719 fronts of 2025 and 2026.
 - The wind after a look is near the wind before it: in 45 degrees for 6009 of the 7698 fronts with a direction at
   12 hours. `trees` has the wind before the look. Thus the wind after the look is not much new data.
