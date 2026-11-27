@@ -109,6 +109,10 @@ def test_a_pixel_of_the_look_that_came_after_the_file_gives_no_score(tmp_path):
     # The store has no pixel that was available at the time of the file.
     late = store_of(tmp_path / "late", [(0, 5, 0.0)])
     assert forecast_score.as_seen(late, saved_of()) is None
+    # A file of a look that started one hour before the first pixel of the store: not that look.
+    whole = store_of(tmp_path / "whole", FRONT + NEW)
+    before = (LOOK - timedelta(hours=1)).isoformat(timespec="minutes")
+    assert forecast_score.as_seen(whole, saved_of() | {"look_at": before}) is None
 
 
 def test_a_front_of_the_file_that_is_not_in_the_look_gives_no_answers(tmp_path):
@@ -116,6 +120,23 @@ def test_a_front_of_the_file_that_is_not_in_the_look_gives_no_answers(tmp_path):
     seen = forecast_score.as_seen(store, saved_of())
     # The file says 4 pixels, and the look has a front of 3 pixels at that place.
     assert forecast_score.front_answers(saved_of(pixels=4), seen, masks_of()) is None
+
+
+def test_two_fronts_with_the_same_centre_and_size_give_no_answers(tmp_path, monkeypatch):
+    store = store_of(tmp_path, FRONT + NEW)
+    seen = forecast_score.as_seen(store, saved_of())
+    rows = steps.look_rows(
+        seen[0], seen[1], fronts.make_look(seen[0]["points"][:3], seen[0]["points"][:0]), masks_of()
+    )
+    twice = {name: np.concatenate([values, values]) for name, values in rows.items()}
+    monkeypatch.setattr(steps, "look_rows", lambda *arguments: twice)
+    monkeypatch.setattr(
+        forecast_score.front_inputs,
+        "came_inputs",
+        lambda look: {"log_came": np.zeros(2), "log_fresh": np.zeros(2)},
+    )
+    # The centre and the size do not say which of the two fronts the file has.
+    assert forecast_score.front_answers(saved_of(), seen, masks_of()) is None
 
 
 def test_the_forecast_of_a_look_is_its_newest_file_before_the_first_window(tmp_path):
@@ -186,6 +207,11 @@ def test_a_window_has_a_row_when_it_has_an_answer(tmp_path):
     assert (row["new_pixels"], row["forecast_direction_deg"], row["direction_deg"]) == (3, 90, 90)
     # 36 hours after the look, the window of 24 hours has its row also.
     assert [one["hours"] for one in table(saved, answers, 36)] == [12, 24]
+    # The sectors of a file in a different sequence give the same direction.
+    turned = saved_of()
+    sectors = turned["fronts"][0]["hours_12"]["sectors"]
+    turned["fronts"][0]["hours_12"]["sectors"] = dict(reversed(sectors.items()))
+    assert table(turned, answers, 24)[0]["forecast_direction_deg"] == 90
     # A look with no answers has its rows, with no answer in them.
     (row,) = table(saved, None, 24)
     assert (row["same_look"], row["examined"], row["answer"]) == (False, None, None)
