@@ -9,10 +9,23 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 
 from chispa import config
-from chispa.evaluation import advance, burn, candidates, curve, images, joined, pixels
+from chispa.evaluation import (
+    advance,
+    burn,
+    candidates,
+    curve,
+    flames,
+    forecast_live,
+    front_alerts,
+    fronts,
+    images,
+    joined,
+    pixels,
+)
 from chispa.evaluation.confidence import confidence_tables
 from chispa.evaluation.confidence_curve import curve_tables
 from chispa.evaluation.events import events_with_a_match
+from chispa.evaluation.forecast_run import forecast_tables
 from chispa.evaluation.growth import step_rows
 from chispa.evaluation.report import write_summary, write_tables
 from chispa.evaluation.risk_run import risk_tables
@@ -41,6 +54,9 @@ def run_table(name: str, year: int) -> None:
             raise SystemExit(f"Run `chispa curve --year {year} --events` first.")
     elif name == "growth":
         tables = {"growth_steps": step_rows(*arguments)}
+    elif name == "fronts":
+        tables = {"front_steps": fronts.step_rows(*arguments)}
+        tables["front_alerts"] = front_alerts.table(*arguments)
     else:
         tables = {
             "visibility": visibility(*arguments),
@@ -130,6 +146,39 @@ def run_advance(year: int, project: Callable[[], str]) -> None:
     write_tables({"advance_check": advance.table(burn.read(path))}, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
     print(f"{year}: {len(targets)} events. See results/SUMMARY.md, table advance_check.")
+
+
+def run_forecast(test_run: bool, live: bool) -> None:
+    """Make the growth forecast tables of each development year, in one run.
+
+    The numbers of a year come from models of the other years. A test run also makes the tables
+    of the test years, one time, from the models of all development years.
+    A live run makes no table: it gives the forecast of the fronts of the newest looks.
+    """
+    if live:
+        rows = forecast_live.live_rows(config.STORE_PATH, config.RAW_DIR, datetime.now(UTC))
+        files = forecast_live.save(rows, config.FORECAST_LIVE_DIR)
+        for row in rows:
+            print(forecast_live.text(row))
+        hours = config.FORECAST_LIVE_HOURS
+        print(f"forecast: {len(rows)} fronts in the biome in the last {hours} hours.", end=" ")
+        print(f"{len(files)} new files in {config.FORECAST_LIVE_DIR}. Satellite sources only.")
+        return
+    tables = forecast_tables(config.STORE_PATH, config.RAW_DIR, test_run)
+    for year, of_year in tables.items():
+        write_tables(of_year, year, config.RESULTS_DIR)
+    write_summary(config.RESULTS_DIR)
+    print(f"{min(tables)} to {max(tables)}: see results/SUMMARY.md, tables {', '.join(of_year)}.")
+
+
+def run_flames(year: int, project: Callable[[], str]) -> None:
+    """Compare the answers of the fronts of a year with the flames in Sentinel-2 images."""
+    scars.check_access(project())
+    path = config.RESULTS_DIR / str(year) / "front_flames" / "fronts.csv"
+    flames.measure(year, config.STORE_PATH, config.RAW_DIR, path)
+    write_tables({"front_flames": flames.table(burn.read(path))}, year, config.RESULTS_DIR)
+    write_summary(config.RESULTS_DIR)
+    print(f"{year}: see results/SUMMARY.md, table front_flames.")
 
 
 def run_pixels(year: int, project: Callable[[], str]) -> None:

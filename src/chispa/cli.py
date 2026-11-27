@@ -38,6 +38,9 @@ from chispa.web import server
 YEAR_SOURCES = ("firms", "goes", "goes_mask", "inpe", "passes", "scars", "burnday", "landcover")
 YEAR_SOURCES += ("weather", "burned", "river", "monitor")
 FIXED_SOURCES = ("border", "protected", "settlements")
+# The commands that make results. A test year needs `--test-run` for them.
+RESULTS = ("evaluate", "burn", "candidates", "curve", "pixels", "advance", "images")
+RESULTS += ("visibility", "growth", "severity", "confidence", "fronts", "flames")
 NOT_BUILT = {
     "mcp": "Start the MCP server.",
     "grade": "Run the gold questions and grade the answers.",
@@ -66,7 +69,8 @@ def main(arguments: list[str] | None = None) -> None:
     names["pixels"] = "table of the burned pixels of the rule against the map"
     names["advance"] = "table of the advance of VIIRS against the new burned ground"
     names |= {"growth": "growth table", "severity": "severity tables"}
-    names["confidence"] = "confidence tables"
+    names |= {"confidence": "confidence tables", "fronts": "table of the fronts"}
+    names["flames"] = "table of the fronts against the flames of Sentinel-2"
     for name, text in names.items():
         check = commands.add_parser(name, help=f"Make the {text} of one fused year.")
         check.add_argument("--year", type=int, required=True)
@@ -79,6 +83,9 @@ def main(arguments: list[str] | None = None) -> None:
             check.add_argument("--look", type=int, choices=(1, 2), default=1, help=look)
     risk = commands.add_parser("risk", help="Make the growth risk tables of each year with fires.")
     risk.add_argument("--test-run", action="store_true", help="Also score the test year one time.")
+    forecast = commands.add_parser("forecast", help="Make the growth forecast of the fronts.")
+    forecast.add_argument("--test-run", action="store_true", help="Also score the test years.")
+    forecast.add_argument("--live", action="store_true", help="Forecast the newest fronts.")
     poll = commands.add_parser("poll", help="Do one pass of the live poller: record the new rows.")
     since = "Read back the GOES scans and the INPE files to this UTC time, to fill a hole: "
     since += "2026-11-20T00:00:00+00:00. It does not change the FIRMS request."
@@ -113,10 +120,14 @@ def main(arguments: list[str] | None = None) -> None:
         checks.run_candidates(chosen.year, lambda: read_setting("EE_PROJECT"))
     elif chosen.command == "burn":
         checks.run_burn(chosen.year, lambda: read_setting("EE_PROJECT"))
-    elif chosen.command in ("visibility", "growth", "severity", "confidence"):
+    elif chosen.command == "flames":
+        checks.run_flames(chosen.year, lambda: read_setting("EE_PROJECT"))
+    elif chosen.command in ("visibility", "growth", "severity", "confidence", "fronts"):
         checks.run_table(chosen.command, chosen.year)
     elif chosen.command == "risk":
         checks.run_risk(chosen.test_run)
+    elif chosen.command == "forecast":
+        checks.run_forecast(chosen.test_run, chosen.live)
     elif chosen.command == "images":
         checks.run_images(chosen.year, lambda: read_setting("EE_PROJECT"), chosen.look)
     elif chosen.command == "poll":
@@ -142,22 +153,11 @@ def permit_year(chosen: argparse.Namespace) -> None:
 
     A test year scores a part one time. A run by accident shows its results too early.
     """
-    is_result = chosen.command in (
-        "evaluate",
-        "burn",
-        "candidates",
-        "curve",
-        "pixels",
-        "advance",
-        "images",
-        "visibility",
-        "growth",
-        "severity",
-        "confidence",
-    )
     test_years = (config.TEST_YEAR, config.PART_TEST_YEAR)
-    if is_result and chosen.year in test_years and not chosen.test_run:
-        role = config.YEAR_ROLES[chosen.year]
+    if chosen.command in ("fronts", "flames"):  # This part has its own test years (7.4).
+        test_years = config.FRONT_TEST_YEARS
+    if chosen.command in RESULTS and chosen.year in test_years and not chosen.test_run:
+        role = config.YEAR_ROLES.get(chosen.year, "test year of this part")
         raise SystemExit(
             f"{chosen.year} is the {role}. Freeze the rules of the part first, then add --test-run."
         )

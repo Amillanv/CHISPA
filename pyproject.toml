@@ -15,6 +15,7 @@ dependencies = [
     "netCDF4>=1.7",          # reads the raw GOES files
     "numpy>=2.0",            # array calculations for the GOES grid and the scar grid
     "scipy>=1.13",           # groups burned pixels that touch into scars
+    "scikit-learn>=1.5",     # gradient-boosted trees for the growth forecast
 ]
 
 [project.optional-dependencies]
