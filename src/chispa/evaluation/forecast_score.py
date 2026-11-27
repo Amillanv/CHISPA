@@ -91,7 +91,8 @@ def as_seen(store: sqlite3.Connection, saved: dict) -> tuple[dict, tuple[int, in
     start = datetime.fromisoformat(saved["look_at"])
     then = forecast_live.pixels_at(store, start.year, datetime.fromisoformat(saved["pixels_to"]))
     a = 0 if then is None else int(np.searchsorted(then["seconds"], start.timestamp()))
-    if then is None or a == len(then["seconds"]):
+    # A file has the start of its look to the minute: the first pixel must be in that minute.
+    if then is None or a == len(then["seconds"]) or then["seconds"][a] - start.timestamp() >= 60:
         return None
     b = int(np.searchsorted(then["look"], then["look"][a], side="right"))
     now = fronts.load_pixels(store, start.year)
@@ -108,7 +109,7 @@ def front_answers(saved: dict, seen: tuple, masks: steps.Masks) -> dict | None:
 
     `seen` has the pixels and the rows of the look (`as_seen`). A front of the file is the front
     of the look with the same centre and the same size. None: a front of the file is not in the
-    look.
+    look, or two fronts of the look have the same centre and the same size.
     """
     pixels, (a, b) = seen
     look = fronts.make_look(pixels["points"][a:b], pixels["points"][:a])
@@ -122,7 +123,7 @@ def front_answers(saved: dict, seen: tuple, masks: steps.Masks) -> dict | None:
         )
     }
     keys = [(front["lat"], front["lon"], front["pixels"]) for front in saved["fronts"]]
-    if any(key not in place for key in keys):
+    if len(place) < len(rows["pixels"]) or any(key not in place for key in keys):
         return None
     order = [place[key] for key in keys]
     return {name: values[order] for name, values in rows.items()}
@@ -158,7 +159,9 @@ def front_table(saved: dict, answers: dict | None, raw_dir: Path, now: datetime)
                 has[hours] = answered(raw_dir, window, now)
             if not has[hours]:
                 continue
-            guess = forecast.directions(np.array(list(window["sectors"].values()))[None])[0]
+            # The chance of each sector by its name: the sequence in a file is not a rule.
+            sectors = [window["sectors"][name] for name in forecast_live.SECTORS]
+            guess = forecast.directions(np.array(sectors)[None])[0]
             row = {name: saved[name] for name in ("look_at", "made_at")}
             row |= {"trees": saved.get("trees"), "hours": hours}
             row |= {name: front[name] for name in ("lat", "lon", "pixels")}

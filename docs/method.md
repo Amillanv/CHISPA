@@ -2725,8 +2725,9 @@ By stated chance, for the six years together (table `front_chance_bands`):
 
 - The model has a higher AUC than the two baselines in 6 of 6 years. The mean AUC of the six years is 0.8217,
   against 0.6115 for the confidence and 0.5989 for the number of detections.
-- The hour alone has a mean AUC of 0.7029, and the model is above it in 6 of 6 years. In 2019 to 2021 the hour
-  gives most of the sequence: 0.7363, 0.8209 and 0.7804. In 2022 to 2024 it gives less: 0.6033 to 0.6493.
+- From after the test (rule 5): the hour alone has a mean AUC of 0.7029, and the model is above it in 6 of
+  6 years. In 2019 to 2021 the hour gives most of the sequence: 0.7363, 0.8209 and 0.7804. In 2022 to 2024 it
+  gives less: 0.6033 to 0.6493.
 - The share of the alerts with a front changes with the year: 895 of 4709 in 2023, and 412 of 707 in 2019.
   The stated chances follow that only in part: observed to expected for one year is 0.75 to 1.25. For the six
   years together it is 3876 to 4045.2.
@@ -2735,7 +2736,8 @@ By stated chance, for the six years together (table `front_chance_bands`):
   The hour says how near the next VIIRS pass is. A weight is not a cause: the weather inputs go together.
 
 The hypothesis, written on 2026-11-27 before the run on 2025 and 2026. The numbers above were known, and the
-counts of the table `front_alerts` of the two years. The test years get the model of 2019 to 2024, one time.
+counts of the table `front_alerts` of the two years. The column of the hour was not known: it came after the
+test (rule 5). The test years get the model of 2019 to 2024, one time.
 
 1. In each test year, the model has a higher AUC than the confidence and than the number of detections.
 2. The mean AUC of the model of the two years is 0.75 or more. No two development years have a lower mean
@@ -2794,6 +2796,8 @@ The result of the test (the same tables of 2025 and 2026, 2026-11-27): the four 
 - Statement 4: the Brier skill score is 0.3124 and 0.2930.
 - 200 of the 249 alerts with a chance of 0.7 or more had a front, and 27 of the 242 alerts below 0.1.
   In 2026, 4 of the 17 alerts below 0.05 had a front: the lowest band has few alerts.
+- Statement 3 is for the sum of the chances, not for each band. In the band from 0.1 to 0.2, 52 of 230 alerts
+  had a front: more than the band says. A percentage for a person needs a test for each band, written first.
 - 2026 has the alerts to 2026-10-31 (rule 6): 440 rows.
 - This is one test on two years, with the limits above. The chance is a candidate for a field of the event
   record, for an alert with no front. The field is not built, and no live code makes these inputs: the owner
