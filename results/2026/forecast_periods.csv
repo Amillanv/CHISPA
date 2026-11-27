@@ -1,0 +1,5 @@
+hours,fronts,rows,new_ground,chance_sum,auc_trees,fronts_with_direction,trees_in_45,auc_persistence,wind_in_45
+12,before the map,211,58,48.7,0.8639,38,21,0.718,16
+12,with the map,349,71,89.7,0.7976,47,17,0.6057,16
+24,before the map,161,61,58.5,0.8361,49,24,0.7025,13
+24,with the map,259,101,117.3,0.7272,80,27,0.6031,16

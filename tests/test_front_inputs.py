@@ -100,6 +100,48 @@ def test_the_ground_inputs_give_the_cover_on_the_front_and_ahead_of_it():
     assert inputs["ahead_burned_last_year_s"].tolist() == [[1.0] * 8]
 
 
+def test_a_look_before_the_map_of_last_year_has_no_value_from_that_map(monkeypatch):
+    monkeypatch.setattr("chispa.config.FRONT_LAST_YEAR_FROM_MONTH", 7)
+    inputs = {"burned_last_year": np.array([0.4]), "burned_before": np.array([0.2])}
+    inputs["ahead_burned_last_year_s"] = np.full((1, 8), 0.1)
+    # A look on 30 June: the map of the year before did not exist. A look on 1 July has it.
+    june = front_inputs.of_the_time(inputs, datetime(2024, 6, 30, 17, tzinfo=UTC).timestamp())
+    assert np.isnan(june["burned_last_year"]).all() and june["burned_before"].tolist() == [0.2]
+    assert june["ahead_burned_last_year_s"].shape == (1, 8)
+    assert np.isnan(june["ahead_burned_last_year_s"]).all()
+    july = front_inputs.of_the_time(inputs, datetime(2024, 7, 1, 5, tzinfo=UTC).timestamp())
+    assert july["burned_last_year"].tolist() == [0.4]
+
+
+def test_the_layers_of_a_year_have_only_the_maps_that_a_look_can_have(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.FRONT_COVER_YEARS_BEFORE", 2)
+    monkeypatch.setattr("chispa.config.LANDCOVER_LAST_YEAR", 2024)
+    nothing = ({}, np.zeros((0, 3, 1, 1)))
+    monkeypatch.setattr(weather, "read_newest", lambda *arguments: nothing)
+    grass = min(front_inputs.config.COVER_GROUPS["grassland"])
+    (tmp_path / "landcover").mkdir()
+    (tmp_path / "burned").mkdir()
+    for year, cover in ((2022, 0), (2023, grass), (2024, grass)):
+        np.savez(
+            tmp_path / "landcover" / f"{year}.npz", cover=np.full((2, 2), cover, dtype=np.uint8)
+        )
+    for year in (2021, 2022, 2023, 2024):
+        np.savez(tmp_path / "burned" / f"{year}.npz", percent=np.full((2, 2), year - 2000))
+    # A look of 2024 gets the land cover of 2022 and the burned map of 2023.
+    layers = front_inputs.load_layers(tmp_path, 2024)
+    assert layers.cover.tolist() == [[0, 0], [0, 0]]
+    assert layers.burned[0][0, 0] == np.float32(0.23)
+    # A look of 2026: the burned map of 2025 is not on disk, thus it has no value.
+    layers = front_inputs.load_layers(tmp_path, 2026)
+    number = list(front_inputs.config.COVER_GROUPS).index("grassland") + 1
+    assert layers.cover.tolist() == [[number, number], [number, number]]
+    assert np.isnan(layers.burned[0]).all() and layers.burned[1][0, 0] == np.float32(0.24)
+    # A land cover year that is later than the last map on disk: the newest map on disk.
+    monkeypatch.setattr("chispa.config.FRONT_COVER_YEARS_BEFORE", 0)
+    np.savez(tmp_path / "burned" / "2025.npz", percent=np.full((2, 2), 25))
+    assert front_inputs.load_layers(tmp_path, 2026).cover.tolist() == layers.cover.tolist()
+
+
 def test_the_weather_before_a_look_and_the_wind_to_each_sector():
     centre = fronts.metres(np.array([-19.0]), np.array([-57.0]))
     start = datetime(2023, 1, 5, 5, 0, tzinfo=UTC).timestamp()

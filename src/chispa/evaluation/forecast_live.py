@@ -9,20 +9,16 @@ A later run can score those files against what came: they are data that no model
 `docs/method.md` section 11.29 gives the rules.
 """
 
-import hashlib
-import pickle
 import sqlite3
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
-import sklearn
 
 from chispa import config, forecast_files, fronts
-from chispa.evaluation import forecast, forecast_run, front_inputs
+from chispa.evaluation import forecast, forecast_trees, front_inputs
 from chispa.evaluation import fronts as steps
-from chispa.evaluation.report import config_hash
 from chispa.grid import pantanal_grid
 from chispa.sources import border, openmeteo, weather
 from chispa.store import to_text
@@ -32,62 +28,16 @@ EVENTS = """
 SELECT d.lat, d.lon, m.issued_id FROM detections d JOIN memberships m ON m.detection_id = d.id
 WHERE d.sensor_family = ? AND d.source = ? AND d.observed_at >= ? AND d.observed_at <= ?
 """
-# The detections that the trees learn from: the mark of the saved trees has a hash of them.
-TRAINING = """
-SELECT observed_at, available_at, lat, lon, frp_mw, platform FROM detections
-WHERE sensor_family = ? AND source = ? AND observed_at >= ? AND observed_at < ? ORDER BY id
-"""
 NO_INPUTS = "no weather before the look, or no pixel with a fire power"
+ANY_PIXEL = """
+SELECT 1 FROM detections WHERE sensor_family = ? AND source = ? AND observed_at >= ?
+AND observed_at < ? AND available_at <= ? LIMIT 1
+"""
 
 
-def _stamp(store_path: Path) -> str:
-    """Return a mark of what makes the trees: the configuration, the code of the rows and of the
-    trees, the version of scikit-learn, and the detections of the development years in the store.
-
-    A raw file does not change (`docs/sources.md` section 8.7), thus the mark does not read the
-    raw layers. After a new download of a layer of a development year, delete the saved file.
-    """
-    modules = (fronts, steps, front_inputs, forecast, forecast_run)
-    code = "".join(Path(module.__file__).read_text() for module in modules)
-    years = (f"{min(config.FRONT_YEARS)}-01-01", f"{max(config.FRONT_YEARS) + 1}-01-01")
-    mark = hashlib.sha256(f"{code}{sklearn.__version__}".encode())
-    store = sqlite3.connect(store_path)
-    for row in store.execute(TRAINING, (fronts.SENSOR_FAMILY, steps.SOURCE, *years)):
-        mark.update(repr(row).encode())
-    return config_hash() + mark.hexdigest()[:12]
-
-
-def current_models(store_path: Path) -> dict | None:
-    """Return the saved trees if their mark is the mark of now. None: they must be fitted again."""
-    path = config.FORECAST_MODELS_PATH
-    if path.exists():
-        saved = pickle.loads(path.read_bytes())
-        if saved["config"] == _stamp(store_path):
-            return saved
-    return None
-
-
-def saved_models(store_path: Path, raw_dir: Path, in_biome: np.ndarray) -> dict:
-    """Return the trees of each question and their input names, from all development years.
-
-    A saved file gives them, if the configuration, the code and the detections that made it
-    are those of now. If not, this fits the trees again and saves them: some minutes.
-    """
-    saved = current_models(store_path)
-    if saved is not None:
-        return saved
-    path, stamp, years = config.FORECAST_MODELS_PATH, _stamp(store_path), config.FRONT_YEARS
-    cases = forecast_run.year_cases(
-        {year: forecast.year_rows(year, store_path, raw_dir, in_biome) for year in years}
-    )
-    saved = {"config": stamp, "models": {}, "names": {}}
-    for key, case in cases[years[0]].items():
-        train = forecast_run.training(cases, years, key)
-        saved["models"][key] = forecast.fit_trees(train["x"], train["y"], train["years"])
-        saved["names"][key] = case["names"]
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(pickle.dumps(saved))
-    return saved
+def _biome(raw_dir: Path) -> np.ndarray:
+    rings = border.read_rings(raw_dir / "border" / "pantanal.geojson")
+    return border.rasterize(rings, pantanal_grid())
 
 
 def newest_days(layers: front_inputs.Layers, cells: np.ndarray, path: Path) -> front_inputs.Layers:
@@ -126,21 +76,24 @@ def live_layers(raw_dir: Path, centres: np.ndarray, last: date) -> front_inputs.
     return newest_days(layers, cells, openmeteo.download(lats, lons, (first, last), raw_dir))
 
 
-def pixels_at(store: sqlite3.Connection, now: datetime) -> dict:
-    """Return the VIIRS pixels of the year of now that were available at that time."""
-    pixels = steps.load_pixels(store, now.year)
+def pixels_at(store: sqlite3.Connection, year: int, now: datetime) -> dict | None:
+    """Return the VIIRS pixels of one year that were available at the time of now.
+
+    None: we had no pixel of that year. On 1 January that is the usual state of the new year.
+    """
+    span = (fronts.SENSOR_FAMILY, steps.SOURCE, f"{year}-01-01", f"{year + 1}-01-01", to_text(now))
+    if store.execute(ANY_PIXEL, span).fetchone() is None:
+        return None
+    pixels = steps.load_pixels(store, year)
     had = pixels["available"] <= now.timestamp()
     pixels = {name: values[had] for name, values in pixels.items()}
-    if had.any():  # A look is a group of the pixels that we had: make the groups again.
-        pixels["look"] = fronts.looks(pixels["seconds"])
-    return pixels
+    # A look is a group of the pixels that we had: make the groups again.
+    return pixels | {"look": fronts.looks(pixels["seconds"])}
 
 
 def newest_fronts(pixels: dict, in_biome: np.ndarray, since: float) -> list[dict]:
     """Return the looks that started at or after the time `since` and have a front that counts."""
     found = []
-    if not len(pixels["seconds"]):
-        return found
     for a, b, look in steps.each_look(pixels, since):
         places = steps.places(pixels, (a, b), look)
         keep = steps.counted(places, in_biome)
@@ -248,6 +201,35 @@ def _is_new(one: dict, folder: Path) -> bool:
     return forecast_files.is_new(folder, _look_at(one).isoformat(timespec="minutes"), pixels)
 
 
+def recent_looks(store: sqlite3.Connection, raw_dir: Path, now: datetime) -> list[tuple]:
+    """Return (pixels of its year, look) for each look of the last hours with a front that counts.
+
+    The last hours can have looks of two years: on 1 January, a look of 31 December is in them.
+    A look has the known pixels of its year only, as in the test (section 11.26, rule 4).
+    """
+    since = now - timedelta(hours=config.FORECAST_LIVE_HOURS)
+    found, in_biome = [], None
+    for year in range(since.year, now.year + 1):
+        pixels = pixels_at(store, year, now)
+        # No new pixel: an update gets its answer quickly, with no read of the border.
+        if pixels is None or not (pixels["seconds"] >= since.timestamp()).any():
+            continue
+        in_biome = _biome(raw_dir) if in_biome is None else in_biome
+        found += [(pixels, one) for one in newest_fronts(pixels, in_biome, since.timestamp())]
+    return found
+
+
+def _year_layers(raw_dir: Path, looks: list[tuple]) -> front_inputs.Layers:
+    """Return the layers for the looks of one year, with the weather to the day of the last."""
+    places = [
+        (one["places"]["lat"][one["keep"]], one["places"]["lon"][one["keep"]]) for _, one in looks
+    ]
+    centres = np.concatenate([np.column_stack(place) for place in places])
+    pixels, newest = looks[-1]
+    last = datetime.fromtimestamp(float(pixels["seconds"][newest["bounds"][1] - 1]), UTC).date()
+    return live_layers(raw_dir, centres, last)
+
+
 def live_looks(
     store_path: Path, raw_dir: Path, now: datetime, only_new: Path | None = None
 ) -> list[dict] | None:
@@ -259,30 +241,22 @@ def live_looks(
     the answer is None if the saved trees are not those of now.
     """
     store = sqlite3.connect(store_path)
-    pixels = pixels_at(store, now)
-    since = (now - timedelta(hours=config.FORECAST_LIVE_HOURS)).timestamp()
-    if not (pixels["seconds"] >= since).any():  # No new pixel: an update gets its answer quickly.
-        return []
-    grid = pantanal_grid()
-    in_biome = border.rasterize(border.read_rings(raw_dir / "border" / "pantanal.geojson"), grid)
-    looks = newest_fronts(pixels, in_biome, since)
+    looks = recent_looks(store, raw_dir, now)
     if only_new:
-        looks = [one for one in looks if _is_new(one, only_new)]
+        looks = [(pixels, one) for pixels, one in looks if _is_new(one, only_new)]
     if not looks:
         return []
-    saved = current_models(store_path) if only_new else saved_models(store_path, raw_dir, in_biome)
+    trees = forecast_trees.current if only_new else forecast_trees.fitted
+    saved = trees(store_path) if only_new else trees(store_path, raw_dir)
     if saved is None:
         return None
-    places = [
-        (one["places"]["lat"][one["keep"]], one["places"]["lon"][one["keep"]]) for one in looks
-    ]
-    centres = np.concatenate([np.column_stack(place) for place in places])
-    last = datetime.fromtimestamp(float(pixels["seconds"][looks[-1]["bounds"][1] - 1]), UTC).date()
-    layers = live_layers(raw_dir, centres, last)
     found = []
-    for one in looks:
-        made = look_forecast(one, pixels, layers, saved, now)
-        for front, events in zip(made["fronts"], front_events(store, pixels, one), strict=True):
-            front["events"] = events
-        found.append(made)
+    for year in sorted({_look_at(one).year for _, one in looks}):
+        of_year = [(pixels, one) for pixels, one in looks if _look_at(one).year == year]
+        layers = _year_layers(raw_dir, of_year)
+        for pixels, one in of_year:
+            made = look_forecast(one, pixels, layers, saved, now)
+            for front, events in zip(made["fronts"], front_events(store, pixels, one), strict=True):
+                front["events"] = events
+            found.append(made)
     return found

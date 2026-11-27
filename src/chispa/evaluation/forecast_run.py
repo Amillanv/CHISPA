@@ -15,7 +15,7 @@ from chispa.grid import pantanal_grid
 from chispa.sources import border
 
 TABLES = ("forecast", "forecast_direction", "forecast_inputs")
-TABLES += ("forecast_chances", "forecast_sectors", "forecast_first_look")
+TABLES += ("forecast_chances", "forecast_sectors", "forecast_first_look", "forecast_periods")
 # The name of each size of front in a table, and True for the small fronts (`config.py`).
 SIZES = {"3 or more": False, "1 or 2": True}
 JOINED = ("x", "y", "small")
@@ -41,10 +41,16 @@ def year_cases(rows: dict[int, dict]) -> dict[int, dict]:
 
 
 def _models(train: dict, held: dict) -> tuple[dict[str, np.ndarray], object]:
-    """Return the chances of the regression and of the trees for the held rows, and the trees."""
+    """Return the chances of the regression and of the trees for the held rows, and the trees.
+
+    The trees read an absent value as absent. The regression cannot: it gets the mean of the
+    training rows in its place.
+    """
     trees = forecast.fit_trees(train["x"], train["y"], train["years"])
-    regression = confidence.fit(train["x"], train["y"], held["names"])
-    chances = {"regression": confidence.probability(regression, held["x"])}
+    mean = np.nanmean(train["x"], axis=0)
+    filled = [np.where(np.isnan(table), mean, table) for table in (train["x"], held["x"])]
+    regression = confidence.fit(filled[0], train["y"], held["names"])
+    chances = {"regression": confidence.probability(regression, filled[1])}
     chances["trees"] = trees.predict_proba(held["x"])[:, 1]
     return chances, trees
 
@@ -64,16 +70,22 @@ def _scores(key: tuple[str, int], train: dict, held: dict, chances: dict) -> lis
 def _counts(of_year: dict, hours: int, held: dict, trees: dict) -> dict[str, list[dict]]:
     """Return the tables of what the trees say, for the fronts that are not small.
 
-    `held` has the rows of the sector question. `trees` has the chances of each question.
+    `held` has the rows of the sector question. `trees` has the chances of each question, and
+    the persistence value of each front.
     """
     large = ~held["small"][:: config.FRONT_SECTORS]
     use = held["fronts"].copy()
     use[use] = large
-    chances = {"new_ground": trees["new_ground"][large]}
+    chances = {name: trees[name][large] for name in ("new_ground", "persistence")}
     chances["sector"] = trees["sector"].reshape(-1, config.FRONT_SECTORS)[large].ravel()
     sectors = forecast_say.sector_row(of_year["answers"], hours, use, chances["sector"])
     first = forecast_say.first_look_rows(of_year, hours, use, chances)
-    return {"forecast_sectors": [sectors], "forecast_first_look": first}
+    periods = forecast_say.period_rows(of_year, hours, use, chances)
+    return {
+        "forecast_sectors": [sectors],
+        "forecast_first_look": first,
+        "forecast_periods": periods,
+    }
 
 
 def year_tables(rows: dict, cases: dict, year: int, training_years: tuple[int, ...]) -> dict:
@@ -95,6 +107,7 @@ def year_tables(rows: dict, cases: dict, year: int, training_years: tuple[int, .
             for size, small in SIZES.items() if question == "sector" else ():
                 row = forecast.direction_row(rows[year], held, chances, (hours, small))
                 tables["forecast_direction"].append({"size": size} | row)
+        trees["persistence"] = cases[year][("new_ground", hours)]["persistence"]
         # The rows of the three questions of one window are the same fronts.
         for name, found in _counts(rows[year], hours, held, trees).items():
             tables[name] += found
