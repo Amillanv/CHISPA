@@ -241,15 +241,16 @@ Checked 2026-11-27 with live requests, for the weather forecast that we had at a
   120 seconds after 32 to 35 answers. The same request, 11 seconds later, got its answer in 0.7 seconds.
   A pause of 2 seconds between two requests did not prevent this. A connection can also drop.
   We do not know the cause.
-- Thus `sources/openmeteo.py` waits 30 seconds for an answer, then sends the request again (`config.py`).
+- Thus the code of the test waited 30 seconds for an answer, then sent the request again.
   With that, 24 of 432 requests got no answer, and each of their 408 files came.
 - With `ecmwf_ifs025`, the fields `dew_point_2m`, `relative_humidity_2m` and `vapour_pressure_deficit` of 1 day
   before had no value from 2026-04-17 15:00 to 2026-04-22 23:00 UTC, at 18.00 S, 57.00 W: 129 hours. The temperature
   had its values, and those fields of 2 days before had theirs. The model `ecmwf_ifs` (9 km) had each value.
 - In the 585 files, no other field has an hour with no value. 8 files and 21 of the 2732 positions have that hole.
-  `sources/openmeteo.py` keeps such an hour as no value: the dryness of its day is absent.
+  The code of the test kept such an hour as no value: the dryness of its day was absent.
 - The owner agreed on 2026-11-27 to a copy of the 585 files in the bucket (`openmeteo_previous/`). Its file
-  `README.txt` has the terms: CC BY 4.0, with credit to Open-Meteo.
+  `README.txt` has the terms: CC BY 4.0, with credit to Open-Meteo. The code of now does not read these files.
+  The commit `39b6a49` has the code of the test (`docs/method.md` section 11.30).
 - A check outside the repository: 17 of the 1680 fronts of 2026 have the first day after their look in those days.
   At 12 hours, 5 of them are in the 560 rows of the fronts of 3 pixels or more, and 5 in the 684 rows of the small
   fronts. None of them had new ground at 12 hours. At 24 hours, 1 had new ground.

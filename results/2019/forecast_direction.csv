@@ -1,5 +1,5 @@
-size,hours,fronts,regression_in_45,regression_in_45_of_them,trees_in_45,trees_in_45_of_them,ahead_in_45,ahead_in_45_of_them,wind_in_45,fronts_with_persistence,persistence_in_45
-3 or more,12,1190,589,417,682,491,716,518,382,868,371
-1 or 2,12,290,119,37,138,42,142,44,111,100,28
-3 or more,24,1990,1014,704,1053,733,1103,766,536,1397,641
-1 or 2,24,609,230,74,247,77,253,86,191,208,59
+size,hours,fronts,regression_in_45,regression_in_45_of_them,trees_in_45,trees_in_45_of_them,wind_in_45,fronts_with_persistence,persistence_in_45
+3 or more,12,1190,589,417,682,491,382,868,371
+1 or 2,12,290,119,37,138,42,111,100,28
+3 or more,24,1990,1014,704,1053,733,536,1397,641
+1 or 2,24,609,230,74,247,77,191,208,59

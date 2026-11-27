@@ -228,41 +228,8 @@ def weather_inputs(layers: Layers, centre: np.ndarray, start: float, end: float)
     return inputs
 
 
-def next_inputs(layers: Layers, tomorrow: dict, centre: np.ndarray, start: float) -> dict:
-    """Return the weather after the look at the centre of each front. NaN: no such weather.
-
-    The blocks are those after the block of the start of the look, for each window. The first
-    day is the UTC day of the first of those blocks, and `tomorrow` has the measures of the day
-    after it. In the training this is the recorded weather: a forecast cannot be better than
-    that. A forecast of the weather has the same form, with the values that we knew at the look.
-    """
-    grid, each = weather.weather_grid(), 24 // weather.BLOCK_HOURS
-    rows, cols = grid.rows_cols(*fronts.degrees(centre))
-    rows, cols = np.clip(rows, 0, grid.height - 1), np.clip(cols, 0, grid.width - 1)
-    midnight = datetime(*layers.first_day.timetuple()[:3], tzinfo=UTC).timestamp()
-    block = int((start - midnight) // (weather.BLOCK_HOURS * 3600)) + 1
-    day, longest = block // each, max(config.FRONT_WINDOWS_H) // weather.BLOCK_HOURS
-    inputs, measures = {}, (("wind_kmh", "wind"), ("vpd_kpa", "vpd"), ("temp_c", "temp"))
-    known = block + longest <= len(layers.wind) and day + 2 <= len(tomorrow["rain_mm"])
-    for hours in config.FRONT_WINDOWS_H:
-        steps = slice(block, block + hours // weather.BLOCK_HOURS)
-        wind = layers.wind[steps][:, :, rows, cols] if known else np.full((1, 3, len(rows)), np.nan)
-        toward = np.column_stack([wind[:, 1].mean(axis=0), wind[:, 0].mean(axis=0)]) @ units().T
-        inputs |= {f"next_toward_{hours}_s": toward, f"next_speed_{hours}": wind[:, 2].mean(axis=0)}
-        inputs[f"next_speed_max_{hours}"] = wind[:, 2].max(axis=0)
-    for name, short in measures:
-        for label, source, at in (("today", layers.days, day), ("tomorrow", tomorrow, day + 1)):
-            value = source[name][at, rows, cols] if known else np.full(len(rows), np.nan)
-            inputs[f"next_{label}_{short}"] = value
-    for label, source, at in (("today", layers.days, day), ("tomorrow", tomorrow, day + 1)):
-        rain = source["rain_mm"][at, rows, cols] if known else np.full(len(rows), np.nan)
-        inputs[f"next_{label}_rain"] = np.log1p(rain)
-    return inputs
-
-
 def look_inputs(pixels: dict, bounds: tuple[int, int], look: fronts.Look, layers: Layers) -> dict:
-    """Return the inputs of each front of a look. The names of the weather after the look start
-    with `next_`: only the trees with that weather read them."""
+    """Return the inputs of each front of a look."""
     a, b = bounds
     count = look.labels.max() + 1
     inputs, centre, reach = shape_inputs(look, pixels["frp_mw"][a:b])
@@ -281,5 +248,4 @@ def look_inputs(pixels: dict, bounds: tuple[int, int], look: fronts.Look, layers
         "north_s": np.tile(sectors[:, 0], (count, 1)),
         "east_s": np.tile(sectors[:, 1], (count, 1)),
     }
-    inputs |= weather_inputs(layers, centre, pixels["seconds"][a], pixels["seconds"][b - 1])
-    return inputs | next_inputs(layers, layers.days, centre, pixels["seconds"][a])
+    return inputs | weather_inputs(layers, centre, pixels["seconds"][a], pixels["seconds"][b - 1])
