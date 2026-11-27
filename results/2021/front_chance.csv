@@ -1,0 +1,2 @@
+alerts,with_front,share,training_share,expected,auc_model,auc_confidence,auc_detections,brier_skill
+1046,463,0.4426,0.2791,404.5,0.8667,0.6128,0.6129,0.4345
