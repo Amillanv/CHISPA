@@ -2714,6 +2714,37 @@ gets a field. A negative result is a valid result.
   `front_alerts`). `UNVERIFIED`: we did not examine the cause, or why 2023 has the lowest share with a front.
 - The result has satellite sources only.
 
+The result of the test (the same tables of 2025 and 2026, 2026-11-27): the four statements are true.
+
+| Year | Alerts | With a front | Expected | AUC of the model | AUC of the confidence | AUC of the detections | Brier skill |
+|---|---|---|---|---|---|---|---|
+| 2025 | 693 | 263 | 231.4 | 0.8254 | 0.6418 | 0.7186 | 0.3124 |
+| 2026 | 440 | 223 | 201.7 | 0.7661 | 0.6394 | 0.6837 | 0.2930 |
+
+| Stated chance | Alerts of the two years | With a front |
+|---|---|---|
+| Below 0.05 | 64 | 4 |
+| 0.05 to 0.1 | 178 | 23 |
+| 0.1 to 0.2 | 230 | 52 |
+| 0.2 to 0.35 | 162 | 65 |
+| 0.35 to 0.5 | 108 | 54 |
+| 0.5 to 0.7 | 142 | 88 |
+| 0.7 or more | 249 | 200 |
+
+- Statement 1: the model has the highest AUC in each year. The number of detections is a better baseline than
+  in the development years: 0.7186 and 0.6837, against a mean of 0.5989.
+- Statement 2: the mean AUC of the two years is 0.79575.
+- Statement 3: 486 alerts had a front, and the chances expected 433.1: 1.12. For one year: 1.14 and 1.11.
+  The stated chances are too low by approximately one part in ten.
+- Statement 4: the Brier skill score is 0.3124 and 0.2930.
+- 200 of the 249 alerts with a chance of 0.7 or more had a front, and 27 of the 242 alerts below 0.1.
+  In 2026, 4 of the 17 alerts below 0.05 had a front: the lowest band has few alerts.
+- 2026 has the alerts to 2026-10-31 (rule 6): 440 rows.
+- This is one test on two years, with the limits above. The chance is a candidate for a field of the event
+  record, for an alert with no front. The field is not built, and no live code makes these inputs: the owner
+  decides (section 12.1).
+- The result has satellite sources only.
+
 ## 12. Agent and MCP rules
 
 ### 12.1 Tools
