@@ -60,11 +60,16 @@ def load_pixels(store: sqlite3.Connection, year: int) -> dict[str, np.ndarray]:
     }
 
 
-def each_look(pixels: dict):
-    """Give (first row, row after the last, look) for each look of the year, in time sequence."""
+def each_look(pixels: dict, since: float = -np.inf):
+    """Give (first row, row after the last, look) for each look of the year, in time sequence.
+
+    `since`: only the looks that started at or after this time. A live forecast needs only the
+    newest looks, and to make each look of a year needs seconds.
+    """
     first = np.searchsorted(pixels["look"], np.arange(pixels["look"].max() + 2))
     for a, b in zip(first[:-1], first[1:], strict=True):
-        yield a, b, fronts.make_look(pixels["points"][a:b], pixels["points"][:a])
+        if pixels["seconds"][a] >= since:
+            yield a, b, fronts.make_look(pixels["points"][a:b], pixels["points"][:a])
 
 
 def open_masks(raw_dir: Path, year: int) -> Masks:

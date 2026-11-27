@@ -1,13 +1,12 @@
 """Tests of the live growth forecast, with cases small enough for paper."""
 
-import json
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from chispa import fronts
+from chispa import checks, fronts
 from chispa.evaluation import forecast_live
 from chispa.evaluation.front_inputs import Layers
 from chispa.grid import pantanal_grid
@@ -42,12 +41,6 @@ class Fixed:
         )
 
 
-def look_of(pixels: int, made_at: str) -> dict:
-    """The forecast of a look with one front, seen at 16:34 UTC on 22 November 2026."""
-    front = {"lat": -16.82, "lon": -55.02, "pixels": pixels}
-    return {"look_at": "2026-11-22T16:34+00:00", "made_at": made_at, "fronts": [front]}
-
-
 def two_fronts(power: list[float]) -> tuple[dict, dict, dict]:
     """Two fronts with their inputs, and saved models that give a fixed chance for each question."""
     places = {"lat": np.array([-16.82, -17.35]), "lon": np.array([-55.02, -57.24])}
@@ -80,8 +73,10 @@ def test_a_front_with_no_fire_power_gets_no_chance(monkeypatch):
     windows = {24: {"from": "a", "to": "c"}}
     first, second = forecast_live.front_rows(*two_fronts([1.0, np.nan]), windows)
     assert first["hours_24"]["new_ground"] == 0.13 and "no_forecast" not in first
-    assert second["hours_24"] is None and second["no_forecast"] == forecast_live.NO_INPUTS
-    assert second["pixels"] == 4
+    assert second["no_forecast"] == forecast_live.NO_INPUTS and second["pixels"] == 4
+    # The window keeps its limits, thus a reader knows when it ends.
+    nothing = {"new_ground": None, "large_growth": None, "sectors": None}
+    assert second["hours_24"] == {"from": "a", "to": "c"} | nothing
 
 
 def test_a_window_that_ended_gets_no_forecast():
@@ -130,18 +125,6 @@ def test_saved_trees_with_other_inputs_stop_the_forecast(monkeypatch):
         forecast_live.front_rows(saved, places, inputs, {12: {}})
 
 
-def test_the_first_forecast_of_a_look_stays_when_a_newer_one_comes(tmp_path):
-    first = forecast_live.save([look_of(9, "2026-11-22T20:00+00:00")], tmp_path)
-    assert [path.name for path in first] == ["2026-11-22T1634_2026-11-22T2000.json"]
-    # The same look again with the same pixels: no new file.
-    assert forecast_live.save([look_of(9, "2026-11-22T20:05+00:00")], tmp_path) == []
-    # A second satellite gave more pixels: a new file, and the first file stays as it was.
-    second = forecast_live.save([look_of(12, "2026-11-22T21:00+00:00")], tmp_path)
-    assert [path.name for path in second] == ["2026-11-22T1634_2026-11-22T2100.json"]
-    assert json.loads(first[0].read_text())["fronts"][0]["pixels"] == 9
-    assert forecast_live.save([look_of(12, "2026-11-22T21:05+00:00")], tmp_path) == []
-
-
 def test_only_the_looks_from_the_start_time_give_fronts():
     # Two looks 12 hours apart. Each has a front of three pixels in a row to the east.
     seconds = np.array([START] * 3 + [START + 12 * HOUR] * 3)
@@ -174,8 +157,9 @@ def test_the_days_of_open_meteo_come_after_the_last_day_at_their_cells():
 
 
 def test_a_front_lists_the_events_of_its_pixels(tmp_path):
-    # One look with two fronts 20 km apart. The pixels of the first front are in the events 7 and
-    # 8, and those of the second in the event 9. The second front is too small to count.
+    # One look with two fronts 20 km apart. The pixels of the first front came in the alerts 7
+    # and 8, which merged into the event 7. Those of the second came in the alert 9. The second
+    # front is too small to count.
     east = np.array([0.0, 400.0, 800.0, 20_000.0, 20_400.0])
     lat, lon = np.full(5, LAT), LON + east * EAST
     seconds = np.full(5, START)
@@ -186,7 +170,68 @@ def test_a_front_lists_the_events_of_its_pixels(tmp_path):
         place = (float(lat[number - 1]), float(lon[number - 1]))
         row = (number, "firms", "viirs", "NOAA20", when, when, *place, 375.0, 5.0, "nominal", 1)
         store.execute("INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
-        store.execute("INSERT INTO memberships VALUES (?, ?, 'LOW', ?)", (number, event, event))
+        merged = 7 if event == 8 else event
+        store.execute("INSERT INTO memberships VALUES (?, ?, 'LOW', ?)", (number, merged, event))
     look = fronts.make_look(pixels["points"], pixels["points"][:0])
     one = {"bounds": (0, 5), "look": look, "keep": np.bincount(look.labels) >= 3}
     assert forecast_live.front_events(store, pixels, one) == [[7, 8]]
+
+
+def test_the_live_forecast_has_only_the_pixels_that_were_available(tmp_path):
+    # Two pixels of one pass at 05:00. The first was available at 08:00, the second at 11:00.
+    store = open_store(tmp_path / "store.sqlite")
+    when = to_text(datetime.fromtimestamp(START, UTC))
+    for number, hours in enumerate((3, 6), start=1):
+        had = to_text(datetime.fromtimestamp(START + hours * HOUR, UTC))
+        place = (LAT, LON + number * 400 * EAST)
+        row = (number, "firms", "viirs", "NOAA20", when, had, *place, 375.0, 5.0, "nominal", 1)
+        store.execute("INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+    at = datetime.fromtimestamp(START, UTC)
+    assert len(forecast_live.pixels_at(store, at + timedelta(hours=4))["seconds"]) == 1
+    assert len(forecast_live.pixels_at(store, at + timedelta(hours=7))["seconds"]) == 2
+    # Before the first pixel was available, no pixel and no look.
+    early = forecast_live.pixels_at(store, at + timedelta(hours=1))
+    grid = pantanal_grid()
+    assert (
+        forecast_live.newest_fronts(early, np.ones((grid.height, grid.width), dtype=bool), 0) == []
+    )
+
+
+def test_the_step_of_the_update_says_why_it_made_no_forecast(monkeypatch, capsys):
+    now = datetime(2027, 1, 2, tzinfo=UTC)
+
+    def no_map(*arguments):
+        raise RuntimeError("Run `chispa fetch burned --year 2026` first.")
+
+    # A layer is absent: the update does not stop, and the text says what to do.
+    monkeypatch.setattr(forecast_live, "live_looks", no_map)
+    checks.run_new_forecasts(now)
+    assert capsys.readouterr().out == (
+        "forecast: no forecast. Run `chispa fetch burned --year 2026` first.\n"
+    )
+    # The saved trees are not those of now: the step fits no trees, and it says so.
+    monkeypatch.setattr(forecast_live, "live_looks", lambda *arguments: None)
+    checks.run_new_forecasts(now)
+    assert "the saved trees are not those of now" in capsys.readouterr().out
+
+
+def test_the_next_update_makes_the_forecast_that_the_weather_stopped(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr("chispa.config.FORECAST_LIVE_DIR", tmp_path)
+    front = {"lat": LAT, "lon": LON, "pixels": 4, "events": [7]}
+    look = {"look_at": "2026-11-25T17:19+00:00", "large_growth_pixels": 10, "fronts": [front]}
+    answers = [OSError("Open-Meteo gave no answer."), [look]]
+
+    def live(*arguments):
+        found = answers.pop(0)
+        if isinstance(found, OSError):
+            raise found
+        return found
+
+    monkeypatch.setattr(forecast_live, "live_looks", live)
+    # The weather does not come in the first update. The second update has no new detection.
+    checks.run_new_forecasts(datetime(2026, 11, 25, 21, 0, tzinfo=UTC))
+    assert capsys.readouterr().out == "forecast: no forecast. Open-Meteo gave no answer.\n"
+    assert list(tmp_path.iterdir()) == []
+    checks.run_new_forecasts(datetime(2026, 11, 25, 21, 5, tzinfo=UTC))
+    assert capsys.readouterr().out == "forecast: 1 new files.\n"
+    assert len(list(tmp_path.glob("2026-11-25T1719_*.json"))) == 1
