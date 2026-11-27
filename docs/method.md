@@ -103,7 +103,7 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 | Observation | `first_observed_at`, `last_observed_at`, `max_frp_mw`, `detections`, `sensor_families`, `newest_detections`, `timeline`: the detections of each day, the land cover in `severity` | |
 | Publication | `newest_available_at`, `newest_observation_age_h`, `passes`: when CHISPA had each pass | The time when a source published a pass |
 | Alert | `level`, `confidence`: the rank, its number of reference alerts and the inputs with the largest effect (section 11.15) | |
-| Growth | `growth`: the newest step. `growth_steps`: each step, the oldest first (section 11.13) | A burned area (section 11.12) |
+| Growth | `growth`: the newest step. `growth_steps`: each step, the oldest first (section 11.13). `forecast`: the growth forecast of each front of the event, for each window that is open (section 11.29) | A burned area (section 11.12). A distance and a speed of the growth to come |
 | Confirmation | `level_changes`, the pass that made each change (`passes`), `absorbed` | |
 | End | `goes_view`: what GOES said for the place in its newest saved scan and in each scan after the newest detection, with the last clear look. `viirs_passes_after_last_detection` | A cause of the end. A statement that a fire is out |
 | Mapping | The track record of the level (`evaluation_summary`) | |
@@ -111,6 +111,8 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 `severity` has the number, the points of each part and the facts (section 11.14).
 
 - A field with no value is `None`. Do not fill it with an estimate. `notes` says why a part is absent.
+- `forecast` is `None` when no forecast file has a front of the event with an open window. A front of 1 or 2
+  pixels has its chances and no sectors: the forecast has no direction for it (section 11.30).
 - `hours_from_first_detection` is a minimum of the age of a fire. The fire started before its first detection,
   and we do not know how long before. For a small fire under cloud, that time can be days.
 - An event out of the Pantanal biome of Brazil is in the answers of the tools, with a note: the confidence rank,
@@ -2121,10 +2123,12 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
 ### 11.29 The live growth forecast
 
 `evaluation/forecast_live.py` makes the forecast of section 11.28 for the fronts that burn now. The command
-`chispa forecast --live` gives it. The forecast is not in the event record: the owner decided this on 2026-11-26.
+`chispa forecast --live` gives it, and `chispa update` makes it for each new look. The event record has it
+(section 7.3): the owner agreed to that field on 2026-11-27.
 
 1. The fronts are those of the looks that started in the last hours (`config.py`), with the minimum size and their
-   centre in the biome (section 11.26, rules 1 to 3). A year in progress has no end here.
+   centre in the biome (section 11.26, rules 1 to 3). A year in progress has no end here. Only the pixels
+   that were available at the time of the run count.
 2. The trees are `trees` of section 11.30, from the rows of all development years. A file holds them. The command
    fits them again when one of these changes: the first part of `config.py`, the code that makes the rows and the
    trees, the version of scikit-learn, or a detection of the development years in the store: the file has a hash
@@ -2132,16 +2136,24 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
 3. The inputs are those of section 11.28, rule 3. The weather comes from ERA5-Land to its last day on disk.
    The later days come from Open-Meteo, with the model IFS, for the weather cell of each front.
 4. The answer of the command is JSON: one object for each look, with the time of the look, the time of the run,
-   and each front. A front has its centre, its number of pixels, and the events of its pixels: an alert is for an
-   event, and this list joins a front to its alerts. For each window, a front has the limits of the window as
+   and each front. A front has its centre, its number of pixels, and the ids of the events of its pixels as we
+   issued them: an alert is for an event, and this list joins a front to its alerts. An issued id does not change
+   when two events merge. For each window, a front has the limits of the window as
    UTC times, and the chance of new ground, of large growth, and of a new pixel in each of the 8 sectors. It has no
    distance and no speed. A window that ended before the run gets no forecast. A front with no weather before
    its look, or with no pixel with a fire power, gets no chance: the trees have no row and no score for it.
-5. Each look gets its object as a file in `data/forecasts`. The name has the time of the look and the time of the
-   run, and a file does not change. A look can get more pixels when a second satellite comes: then it gets a
-   second file, and the first forecast stays as we gave it.
+5. Each look gets its object as a file in `data/forecasts` (`forecast_files.py`). The name has the time of the
+   look and the time of the run, and a file does not change. A look can get more pixels when a second satellite
+   comes: then it gets a second file, and the first forecast stays as we gave it.
+6. `chispa update` makes the file of each new look as its last step, when the update has a new detection. It does
+   not fit the trees: if the saved trees are not those of now, it says so, and `chispa forecast --live` fits them.
+   If a layer or the weather is absent, it says so, and the next update does the step again.
+7. The field `forecast` of the event record is the forecast of the newest look that has a front of the event. It
+   comes from the newest file of that look that was made at or before the as-of time. A front is a front of the
+   event if one of its ids is an issued id of the event at that time (`issued.py`). The field has only the windows
+   that are open at the as-of time. A front of 1 or 2 pixels has no sectors (section 11.30, statement 5).
 
-- A live forecast has no answer at its time. The files of rule 4 are data that no model has read: a later command
+- A live forecast has no answer at its time. The files of rule 5 are data that no model has read: a later command
   can score them against what came. That command does not exist.
 - IFS is not ERA5-Land. On the fronts of September 2024, the two gave almost the same forecast (`docs/sources.md`
   section 8.4). A month with much rain is not checked.
@@ -2159,7 +2171,8 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
 - The trees have rows and scores only for the fronts at a place that GOES examined later (section 11.30, rule 1).
   A live chance comes before that is known. In 2025 and 2026, 1045 of the 3720 fronts were not rows at 12 hours,
   and 1706 at 24 hours (tables `front_steps`, `front_steps_small` and `forecast`).
-- The command has no schedule: a person starts it.
+- The files come from the computer that has the store and runs `chispa update`. The server only records the
+  logs. The dashboard does not show the field, and no text goes to a person with it.
 - The forecast has satellite sources only.
 
 ### 11.30 The second model: the examined fronts, the weather after the look, and the small fronts

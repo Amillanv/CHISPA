@@ -7,7 +7,7 @@ from datetime import timedelta
 import numpy as np
 import pytest
 
-from chispa import tools
+from chispa import forecast_files, tools
 from chispa.fusion import fuse
 from chispa.store import add_detections, open_store, read_detections, replace_fusion
 from tests.test_fusion import KM, T0, VIIRS
@@ -26,6 +26,7 @@ def store(tmp_path, monkeypatch):
     path = tmp_path / "store.sqlite"
     monkeypatch.setattr("chispa.config.STORE_PATH", path)
     monkeypatch.setattr("chispa.config.RAW_DIR", tmp_path)
+    monkeypatch.setattr("chispa.config.FORECAST_LIVE_DIR", tmp_path / "forecasts")
     connection = open_store(path)
     add_detections(connection, [VIIRS, SECOND, FAR])
     found = read_detections(connection, T0, T0 + timedelta(days=1))
@@ -73,6 +74,26 @@ def test_event_record_has_the_state_and_the_level_changes_to_the_as_of_time(stor
     assert (early["hours_from_first_detection"], late["hours_from_first_detection"]) == (4.0, 6.0)
     day = {"day": "2024-08-15", "detections": 2, "sensor_families": ["abi", "viirs"]}
     assert late["timeline"] == [day]
+
+
+def test_event_record_has_the_forecast_of_the_fronts_of_the_event(store, tmp_path):
+    event_id = tools.alerts_near(-17.5, -57.5, 10.0, 6.0, as_of=T0 + timedelta(hours=6))[0][
+        "event_id"
+    ]
+    # No forecast file: the record has no forecast.
+    assert tools.event_record(event_id, as_of=T0 + timedelta(hours=6))["forecast"] is None
+    # A look at 3 hours with one front of 4 pixels of this event. Its forecast is from 5 hours.
+    look, made = (T0 + timedelta(hours=hours) for hours in (3, 5))
+    window = {"from": (look + timedelta(hours=6)).isoformat(), "new_ground": 0.3}
+    window |= {"to": (look + timedelta(hours=18)).isoformat(), "sectors": {"north": 0.1}}
+    front = {"lat": -17.5, "lon": -57.5, "pixels": 4, "events": [event_id], "hours_12": window}
+    found = {"look_at": look.isoformat(), "made_at": made.isoformat(), "fronts": [front]}
+    forecast_files.save([found], tmp_path / "forecasts")
+    # At 4 hours the forecast did not exist. At 6 hours the record has it.
+    assert tools.event_record(event_id, as_of=T0 + timedelta(hours=4))["forecast"] is None
+    forecast = tools.event_record(event_id, as_of=T0 + timedelta(hours=6))["forecast"]
+    assert forecast["look_at"] == look.isoformat() and len(forecast["fronts"]) == 1
+    assert forecast["fronts"][0]["hours_12"]["new_ground"] == 0.3
 
 
 def test_event_record_says_what_it_cannot_give(store):
@@ -148,6 +169,7 @@ def test_level_changes_are_the_history_of_the_event_itself(tmp_path, monkeypatch
     path = tmp_path / "levels.sqlite"
     monkeypatch.setattr("chispa.config.STORE_PATH", path)
     monkeypatch.setattr("chispa.config.RAW_DIR", tmp_path)
+    monkeypatch.setattr("chispa.config.FORECAST_LIVE_DIR", tmp_path / "forecasts")
     connection = open_store(path)
     north = VIIRS.lat + 2.4 * KM
     start = VIIRS.available_at
@@ -173,6 +195,7 @@ def test_two_alerts_are_two_events_before_their_merge_and_one_after(tmp_path, mo
     path = tmp_path / "merge.sqlite"
     monkeypatch.setattr("chispa.config.STORE_PATH", path)
     monkeypatch.setattr("chispa.config.RAW_DIR", tmp_path)
+    monkeypatch.setattr("chispa.config.FORECAST_LIVE_DIR", tmp_path / "forecasts")
     connection = open_store(path)
     north = replace(VIIRS, lat=VIIRS.lat + 2.4 * KM, platform="NOAA20")
     bridge = replace(
