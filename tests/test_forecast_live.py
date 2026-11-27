@@ -112,7 +112,13 @@ def test_the_mark_of_the_saved_trees_changes_with_a_training_detection(tmp_path,
     # A detection of a year that the trees do not learn from changes nothing.
     assert add(2, "2026-11-25T17:00:00+00:00") == first
     # One more detection of a development year: the saved trees are not those of this store.
-    assert add(3, "2023-09-01T17:00:00+00:00") != first
+    second = add(3, "2023-09-01T17:00:00+00:00")
+    assert second != first
+    # Two fire powers change, and their number and their sum stay: the mark changes also.
+    store.execute("UPDATE detections SET frp_mw = 9.0 WHERE id = 1")
+    store.execute("UPDATE detections SET frp_mw = 1.0 WHERE id = 3")
+    store.commit()
+    assert forecast_live._stamp(tmp_path / "store.sqlite") != second
 
 
 def test_saved_trees_with_other_inputs_stop_the_forecast(monkeypatch):

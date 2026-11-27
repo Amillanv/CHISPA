@@ -2127,8 +2127,8 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
    centre in the biome (section 11.26, rules 1 to 3). A year in progress has no end here.
 2. The trees are `trees` of section 11.30, from the rows of all development years. A file holds them. The command
    fits them again when one of these changes: the first part of `config.py`, the code that makes the rows and the
-   trees, the version of scikit-learn, or a detection of the development years in the store. It does not read the
-   raw layers: a raw file does not change (`docs/sources.md` section 8.7).
+   trees, the version of scikit-learn, or a detection of the development years in the store: the file has a hash
+   of those detections. It does not read the raw layers: a raw file does not change (`docs/sources.md` section 8.7).
 3. The inputs are those of section 11.28, rule 3. The weather comes from ERA5-Land to its last day on disk.
    The later days come from Open-Meteo, with the model IFS, for the weather cell of each front.
 4. The answer of the command is JSON: one object for each look, with the time of the look, the time of the run,
@@ -2156,6 +2156,9 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
   The command reads the pixels of one year: on 1 January, a look of 31 December is not in its answer.
 - A window can start before the run: the 12 hours window starts 6 hours after the look. The answer gives its
   limits. The test scored each forecast as made before its windows (section 11.26, rule 11).
+- The trees have rows and scores only for the fronts at a place that GOES examined later (section 11.30, rule 1).
+  A live chance comes before that is known. In 2025 and 2026, 1045 of the 3720 fronts were not rows at 12 hours,
+  and 1706 at 24 hours (tables `front_steps`, `front_steps_small` and `forecast`).
 - The command has no schedule: a person starts it.
 - The forecast has satellite sources only.
 
@@ -2251,7 +2254,8 @@ For the small fronts, which no model has read:
   1 or 2 hours of the window of 24 hours have a value from a time after the start of the look. For a look that
   starts at 18:00 UTC or later it is more hours: 1 of the 3720 fronts of 2025 and 2026 has such a start (a check
   outside the repository). We did not select the weather by the time when a run was published.
-  This error can only help `forecast`.
+  A later run is nearer the weather that came, as a mean: thus we expect that this error helps `forecast`.
+  For one front it can do the reverse. We did not measure it.
 - The limits of sections 11.26 to 11.28 apply. The forecast has satellite sources only.
 
 The result of the test (the same tables of 2025 and 2026, 2026-11-27): the statements 2, 3 and 4 are true, and the
@@ -2313,8 +2317,9 @@ of 3 pixels or more of 2019 to 2024 and the recorded weather:
   12 hours. `trees` has the wind before the look. Thus the wind after the look is not much new data.
 - The recorded wind of the next 12 hours is a weak sign of the direction. It is in 45 degrees of the direction of
   the new pixels for 3132 of 7698 fronts. The wind before the look has 2615, and `trees` has 4581.
-- A faster wind is not a better sign: 927 of 2566 fronts in the third with the slowest wind, and 1083 of 2565 in
-  the third with the fastest wind. The mean wind after a look is 8.9 km/h.
+- A faster wind is a better sign, and it stays a weak sign: 927 of 2566 fronts in the third with the slowest
+  wind, 1122 of 2567 in the middle third, and 1083 of 2565 in the third with the fastest wind.
+  The mean wind after a look is 8.9 km/h.
 - A front with a direction has new pixels in 2.84 of the 8 sectors as a mean. Its growth is not one line.
 - The gain of the development years is 283 of 7698 fronts at 12 hours, and 323 of 12 160 at 24 hours. For the
   fronts of the test years, that is approximately 6 fronts at each time. The test cannot show a gain of that size.

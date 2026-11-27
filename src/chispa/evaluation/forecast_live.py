@@ -32,10 +32,10 @@ EVENTS = """
 SELECT d.lat, d.lon, m.event_id FROM detections d JOIN memberships m ON m.detection_id = d.id
 WHERE d.sensor_family = ? AND d.source = ? AND d.observed_at >= ? AND d.observed_at <= ?
 """
-# One row that changes when a detection of the development years changes in the store.
+# The detections that the trees learn from: the mark of the saved trees has a hash of them.
 TRAINING = """
-SELECT COUNT(*), TOTAL(lat), TOTAL(lon), TOTAL(frp_mw), MAX(available_at) FROM detections
-WHERE sensor_family = ? AND source = ? AND observed_at >= ? AND observed_at < ?
+SELECT observed_at, available_at, lat, lon, frp_mw, platform FROM detections
+WHERE sensor_family = ? AND source = ? AND observed_at >= ? AND observed_at < ? ORDER BY id
 """
 NO_INPUTS = "no weather before the look, or no pixel with a fire power"
 
@@ -50,10 +50,11 @@ def _stamp(store_path: Path) -> str:
     modules = (fronts, steps, front_inputs, forecast, forecast_run)
     code = "".join(Path(module.__file__).read_text() for module in modules)
     years = (f"{min(config.FRONT_YEARS)}-01-01", f"{max(config.FRONT_YEARS) + 1}-01-01")
+    mark = hashlib.sha256(f"{code}{sklearn.__version__}".encode())
     store = sqlite3.connect(store_path)
-    data = store.execute(TRAINING, (fronts.SENSOR_FAMILY, steps.SOURCE, *years)).fetchone()
-    made_from = f"{code}{sklearn.__version__}{data}"
-    return config_hash() + hashlib.sha256(made_from.encode()).hexdigest()[:12]
+    for row in store.execute(TRAINING, (fronts.SENSOR_FAMILY, steps.SOURCE, *years)):
+        mark.update(repr(row).encode())
+    return config_hash() + mark.hexdigest()[:12]
 
 
 def saved_models(store_path: Path, raw_dir: Path, in_biome: np.ndarray) -> dict:
