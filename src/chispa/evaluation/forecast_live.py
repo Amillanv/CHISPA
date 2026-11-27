@@ -3,30 +3,33 @@
 The evaluation scores the forecast on recorded years. This module makes the forecast of the
 newest looks: the same fronts, the same inputs and the same trees, with no answer yet.
 ERA5-Land is some days late, thus the weather of the newest days comes from Open-Meteo.
-Each look gets a file with its forecast and the time when we made it. A later run can score
-those files against what came: they are data that no model has read.
+The forecast of each look is one JSON object, saved in a file with the time when we made it.
+A later run can score those files against what came: they are data that no model has read.
 `docs/method.md` section 11.29 gives the rules.
 """
 
-import csv
+import json
 import pickle
 import sqlite3
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 import numpy as np
 
-from chispa import config
+from chispa import config, fronts
 from chispa.evaluation import forecast, forecast_run, front_inputs
 from chispa.evaluation import fronts as steps
 from chispa.evaluation.report import config_hash
 from chispa.grid import pantanal_grid
 from chispa.sources import border, openmeteo, weather
+from chispa.store import to_text
 
 SECTORS = ("north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west")
-SHOWN_SECTORS = 3  # A text names this many most likely sectors (`evaluation/forecast_say.py`).
+EVENTS = """
+SELECT d.lat, d.lon, m.event_id FROM detections d JOIN memberships m ON m.detection_id = d.id
+WHERE d.sensor_family = ? AND d.source = ? AND d.observed_at >= ? AND d.observed_at <= ?
+"""
 
 
 def saved_models(store_path: Path, raw_dir: Path, in_biome: np.ndarray) -> dict:
@@ -103,8 +106,11 @@ def newest_fronts(pixels: dict, in_biome: np.ndarray, since: float) -> list[dict
     return found
 
 
-def front_rows(saved: dict, places: dict, inputs: dict, made_at: datetime) -> list[dict]:
-    """Return one row for each front: its place, its size, and the chance of each question."""
+def front_rows(saved: dict, places: dict, inputs: dict) -> list[dict]:
+    """Return one object for each front: its place, its size, and its chances for each window.
+
+    A window has the chance of new ground, of large growth, and of a new pixel in each sector.
+    """
     chance = {}
     for key, model in saved["models"].items():
         table, names = forecast.matrix(inputs, key[0] == "sector")
@@ -112,30 +118,52 @@ def front_rows(saved: dict, places: dict, inputs: dict, made_at: datetime) -> li
             path = config.FORECAST_MODELS_PATH
             raise RuntimeError(f"Delete {path}: its inputs are not the inputs of now.")
         chance[key] = model.predict_proba(table)[:, 1]
-    rows = []
+    found = []
     for front in range(len(places["pixels"])):
-        look_at = datetime.fromtimestamp(float(places["start"][front]), UTC)
-        row = {"look_at": look_at.isoformat(timespec="minutes")}
-        row |= {"made_at": made_at.isoformat(timespec="minutes")}
-        row |= {name: round(float(places[name][front]), 4) for name in ("lat", "lon")}
-        row["pixels"] = int(places["pixels"][front])
+        one = {name: round(float(places[name][front]), 4) for name in ("lat", "lon")}
+        one["pixels"] = int(places["pixels"][front])
         for hours in config.FRONT_WINDOWS_H:
-            for question in ("new_ground", "large_growth"):
-                row[f"{question}_{hours}"] = round(float(chance[(question, hours)][front]), 4)
             sectors = chance[("sector", hours)].reshape(-1, config.FRONT_SECTORS)[front]
-            row |= {
-                f"{name}_{hours}": round(float(value), 4)
-                for name, value in zip(SECTORS, sectors, strict=True)
+            one[f"hours_{hours}"] = {
+                "new_ground": round(float(chance[("new_ground", hours)][front]), 4),
+                "large_growth": round(float(chance[("large_growth", hours)][front]), 4),
+                "sectors": {
+                    name: round(float(value), 4)
+                    for name, value in zip(SECTORS, sectors, strict=True)
+                },
             }
-        rows.append(row)
-    return rows
+        found.append(one)
+    return found
 
 
-def live_rows(store_path: Path, raw_dir: Path, now: datetime) -> list[dict]:
-    """Return the forecast of each front of the newest looks. No front: an empty list."""
+def front_events(store: sqlite3.Connection, pixels: dict, one: dict) -> list[list[int]]:
+    """Return the events of the pixels of each front of a look that counts, from the store of now.
+
+    An alert is for an event, and a front has no event. This list joins a front to its alerts.
+    """
+    a, b = one["bounds"]
+    span = [
+        to_text(datetime.fromtimestamp(float(pixels["seconds"][row]), UTC)) for row in (a, b - 1)
+    ]
+    rows = store.execute(EVENTS, (fronts.SENSOR_FAMILY, steps.SOURCE, *span)).fetchall()
+    events = {int(front): set() for front in np.nonzero(one["keep"])[0]}
+    if rows:
+        lat, lon, ids = (np.array(column) for column in zip(*rows, strict=True))
+        distance, nearest = one["look"].tree.query(fronts.metres(lat, lon))
+        labels = one["look"].labels[nearest]
+        for label, event in zip(labels[distance < 1.0], ids[distance < 1.0], strict=True):
+            if int(label) in events:
+                events[int(label)].add(int(event))
+    return [sorted(found) for found in events.values()]
+
+
+def live_looks(store_path: Path, raw_dir: Path, now: datetime) -> list[dict]:
+    """Return one object for each of the newest looks with a front: the time of the look, the
+    time of now, and the forecast of each front. No front: an empty list."""
     grid = pantanal_grid()
     in_biome = border.rasterize(border.read_rings(raw_dir / "border" / "pantanal.geojson"), grid)
-    pixels = steps.load_pixels(sqlite3.connect(store_path), now.year)
+    store = sqlite3.connect(store_path)
+    pixels = steps.load_pixels(store, now.year)
     since = (now - timedelta(hours=config.FORECAST_LIVE_HOURS)).timestamp()
     looks = newest_fronts(pixels, in_biome, since)
     if not looks:
@@ -149,53 +177,36 @@ def live_rows(store_path: Path, raw_dir: Path, now: datetime) -> list[dict]:
     )
     last = datetime.fromtimestamp(float(pixels["seconds"][looks[-1]["bounds"][1] - 1]), UTC).date()
     layers = live_layers(raw_dir, centres, last)
-    rows = []
+    found = []
     for one in looks:
         keep = one["keep"]
         inputs = front_inputs.look_inputs(pixels, one["bounds"], one["look"], layers)
         places = {name: values[keep] for name, values in one["places"].items()}
         kept = {name: values[keep] for name, values in inputs.items()}
-        rows += front_rows(saved, places, kept, now)
-    return rows
+        look_at = datetime.fromtimestamp(float(places["start"][0]), UTC)
+        times = {"look_at": look_at.isoformat(timespec="minutes")}
+        times["made_at"] = now.isoformat(timespec="minutes")
+        rows = front_rows(saved, places, kept)
+        for front, events in zip(rows, front_events(store, pixels, one), strict=True):
+            front["events"] = events
+        found.append(times | {"fronts": rows})
+    return found
 
 
-def save(rows: list[dict], folder: Path) -> list[Path]:
+def save(looks: list[dict], folder: Path) -> list[Path]:
     """Save the forecast of each look in its file, and return the files that are new or changed.
 
     A look can get more pixels when a second satellite comes. Then its fronts have more pixels,
     and the newer forecast replaces the file. If not, the file stays as we first made it.
     """
     written = []
-    for look_at in sorted({row["look_at"] for row in rows}):
-        of_look = [row for row in rows if row["look_at"] == look_at]
-        path = folder / f"{look_at[:16].replace(':', '')}.csv"
+    for look in looks:
+        path = folder / f"{look['look_at'][:16].replace(':', '')}.json"
         if path.exists():
-            with path.open(newline="") as file:
-                before = sum(int(row["pixels"]) for row in csv.DictReader(file))
-            if before >= sum(row["pixels"] for row in of_look):
+            before = sum(front["pixels"] for front in json.loads(path.read_text())["fronts"])
+            if before >= sum(front["pixels"] for front in look["fronts"]):
                 continue
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("w", newline="") as file:
-            writer = csv.DictWriter(file, fieldnames=list(of_look[0]))
-            writer.writeheader()
-            writer.writerows(of_look)
+        path.write_text(json.dumps(look, indent=1))
         written.append(path)
     return written
-
-
-def text(row: dict) -> str:
-    """Return the forecast of one front as sentences for a person, with the local time."""
-    seen = datetime.fromisoformat(row["look_at"]).astimezone(ZoneInfo(config.DASHBOARD_TIME_ZONE))
-    side = ("S" if row["lat"] < 0 else "N", "W" if row["lon"] < 0 else "E")
-    place = f"{abs(row['lat']):.2f} {side[0]}, {abs(row['lon']):.2f} {side[1]}"
-    last = max(config.FRONT_WINDOWS_H)
-    likely = sorted(SECTORS, key=lambda name: -row[f"{name}_{last}"])[:SHOWN_SECTORS]
-    lines = [f"A front of {row['pixels']} pixels near {place}, seen at {seen:%H:%M on %-d %B}."]
-    for hours in config.FRONT_WINDOWS_H:
-        lines.append(
-            f"  New ground in {hours} hours: {row[f'new_ground_{hours}']:.0%}. "
-            f"{config.FRONT_LARGE_PIXELS} or more new pixels: {row[f'large_growth_{hours}']:.0%}."
-        )
-    sectors = ", ".join(f"{name} {row[f'{name}_{last}']:.0%}" for name in likely)
-    lines.append(f"  The most likely sectors in {last} hours: {sectors}.")
-    return "\n".join(lines)

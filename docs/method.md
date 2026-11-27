@@ -2099,10 +2099,12 @@ A cell has how many had the answer yes, of the rows of the band, at 12 hours.
    fits them again when the first part of `config.py` changes.
 3. The inputs are those of section 11.28, rule 3. The weather comes from ERA5-Land to its last day on disk.
    The later days come from Open-Meteo, with the model IFS, for the weather cell of each front.
-4. Each look gets a file in `data/forecasts`, with the forecast of its fronts and the time when we made it.
-   A look can get more pixels when a second satellite comes. Then the newer forecast replaces the file.
-5. The text of a front gives the chance of new ground and of large growth in 12 and in 24 hours, and the three
-   most likely sectors in 24 hours. It gives no distance and no speed.
+4. The answer of the command is JSON: one object for each look, with the time of the look, the time of the run,
+   and each front. A front has its centre, its number of pixels, and the events of its pixels: an alert is for an
+   event, and this list joins a front to its alerts. For 12 and for 24 hours, a front has the chance of new ground,
+   of large growth, and of a new pixel in each of the 8 sectors. It has no distance and no speed.
+5. Each look gets its object as a file in `data/forecasts`. A look can get more pixels when a second satellite
+   comes. Then the newer forecast replaces the file.
 
 - A live forecast has no answer at its time. The files of rule 4 are data that no model has read: a later command
   can score them against what came. That command does not exist.
