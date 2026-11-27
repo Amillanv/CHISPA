@@ -1,7 +1,8 @@
 """The event record: all that CHISPA can say about one event at one time.
 
 An alert, a tool and the dashboard read this one record. It has the state of the event,
-the rank of its confidence, its severity, its growth steps and what GOES examined.
+the rank of its confidence, its severity, its growth steps, what GOES examined, and the growth
+forecast of its fronts.
 Each part uses only data that was available at the as-of time, and the event is the event
 as it was at that time (`issued.py`). A part that we cannot give is None, with a note.
 """
@@ -12,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-from chispa import confidence, config, growth, history, severity, view
+from chispa import confidence, config, forecast_files, growth, history, severity, view
 from chispa.fusion import LEVELS
 from chispa.grid import layer_grid
 from chispa.issued import Replay
@@ -233,6 +234,8 @@ def event_record(store: sqlite3.Connection, event_id: int, as_of: datetime, raw_
     place = (found["lat"][newest], found["lon"][newest])
     record["goes_view"] = view.goes_view(*place, last_seen, as_of, raw_dir)
     record["viirs_passes_after_last_detection"] = view.passes_after(found, as_of, raw_dir)
+    ids = replay.ids(event_id)
+    record["forecast"] = forecast_files.of_event(config.FORECAST_LIVE_DIR, ids, as_of)
     record |= {"severity": None, "confidence": None}
     return _with_layers(store, record, found, as_of, raw_dir)
 

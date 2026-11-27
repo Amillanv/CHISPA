@@ -109,19 +109,13 @@ def main(arguments: list[str] | None = None) -> None:
         run_fuse(chosen.year)
     elif chosen.command == "evaluate":
         run_evaluate(chosen.year)
-    elif chosen.command == "advance":
-        checks.run_advance(chosen.year, lambda: read_setting("EE_PROJECT"))
-    elif chosen.command == "pixels":
-        checks.run_pixels(chosen.year, lambda: read_setting("EE_PROJECT"))
+    elif chosen.command in ("advance", "pixels", "candidates", "burn", "flames"):
+        # These checks have one form: a year, and the project of Earth Engine.
+        run = getattr(checks, f"run_{chosen.command}")
+        run(chosen.year, lambda: read_setting("EE_PROJECT"))
     elif chosen.command == "curve":
         run = checks.run_event_curves if chosen.events else checks.run_curve
         run(chosen.year, lambda: read_setting("EE_PROJECT"))
-    elif chosen.command == "candidates":
-        checks.run_candidates(chosen.year, lambda: read_setting("EE_PROJECT"))
-    elif chosen.command == "burn":
-        checks.run_burn(chosen.year, lambda: read_setting("EE_PROJECT"))
-    elif chosen.command == "flames":
-        checks.run_flames(chosen.year, lambda: read_setting("EE_PROJECT"))
     elif chosen.command in ("visibility", "growth", "severity", "confidence", "fronts"):
         checks.run_table(chosen.command, chosen.year)
     elif chosen.command == "risk":
@@ -283,7 +277,8 @@ def run_poll(since: datetime | None) -> None:
 
 def run_update() -> None:
     """Add the detections of the live logs to the store, then make the events again for each
-    year with a mark: its events are older than its detections."""
+    year with a mark: its events are older than its detections. Then make the growth forecast
+    of each new look."""
     now = datetime.now(UTC)
     store = open_store(config.STORE_PATH)
     new, rejected = add_live(config.RAW_DIR, store)
@@ -298,3 +293,5 @@ def run_update() -> None:
     if status["late_at"] is None or now > datetime.fromisoformat(status["late_at"]):
         newest = status["complete_pass_at"] or "no pass"
         print(f"live: LATE. The newest pass with no failure: {newest}. Do a check of the poller.")
+    if new:  # No new detection: no new look.
+        checks.run_new_forecasts(now)

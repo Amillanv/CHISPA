@@ -70,7 +70,8 @@ def event_record(event_id: int, as_of: datetime) -> dict:
     """Return all that CHISPA can say about one event at the time `as_of`.
 
     The answer has the state of the event, the rank of its confidence, its severity with its
-    facts, its growth steps and what GOES examined. `record.py` gives each part.
+    facts, its growth steps, what GOES examined and the growth forecast of its fronts.
+    `record.py` gives each part.
     """
     _check(0.0, 0.0, as_of)
     return record.event_record(_open(), event_id, as_of, config.RAW_DIR)

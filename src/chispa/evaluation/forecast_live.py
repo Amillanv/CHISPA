@@ -3,13 +3,13 @@
 The evaluation scores the forecast on recorded years. This module makes the forecast of the
 newest looks: the same fronts, the same inputs and the same trees, with no answer yet.
 ERA5-Land is some days late, thus the weather of the newest days comes from Open-Meteo.
-The forecast of each look is one JSON object, saved in a file with the time when we made it.
+The forecast of each look is one JSON object. `forecast_files.py` saves it in a file with the
+time when we made it, and the event record reads that file.
 A later run can score those files against what came: they are data that no model has read.
 `docs/method.md` section 11.29 gives the rules.
 """
 
 import hashlib
-import json
 import pickle
 import sqlite3
 from dataclasses import replace
@@ -19,7 +19,7 @@ from pathlib import Path
 import numpy as np
 import sklearn
 
-from chispa import config, fronts
+from chispa import config, forecast_files, fronts
 from chispa.evaluation import forecast, forecast_run, front_inputs
 from chispa.evaluation import fronts as steps
 from chispa.evaluation.report import config_hash
@@ -29,7 +29,7 @@ from chispa.store import to_text
 
 SECTORS = ("north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west")
 EVENTS = """
-SELECT d.lat, d.lon, m.event_id FROM detections d JOIN memberships m ON m.detection_id = d.id
+SELECT d.lat, d.lon, m.issued_id FROM detections d JOIN memberships m ON m.detection_id = d.id
 WHERE d.sensor_family = ? AND d.source = ? AND d.observed_at >= ? AND d.observed_at <= ?
 """
 # The detections that the trees learn from: the mark of the saved trees has a hash of them.
@@ -57,18 +57,26 @@ def _stamp(store_path: Path) -> str:
     return config_hash() + mark.hexdigest()[:12]
 
 
+def current_models(store_path: Path) -> dict | None:
+    """Return the saved trees if their mark is the mark of now. None: they must be fitted again."""
+    path = config.FORECAST_MODELS_PATH
+    if path.exists():
+        saved = pickle.loads(path.read_bytes())
+        if saved["config"] == _stamp(store_path):
+            return saved
+    return None
+
+
 def saved_models(store_path: Path, raw_dir: Path, in_biome: np.ndarray) -> dict:
     """Return the trees of each question and their input names, from all development years.
 
     A saved file gives them, if the configuration, the code and the detections that made it
     are those of now. If not, this fits the trees again and saves them: some minutes.
     """
-    path, stamp = config.FORECAST_MODELS_PATH, _stamp(store_path)
-    if path.exists():
-        saved = pickle.loads(path.read_bytes())
-        if saved["config"] == stamp:
-            return saved
-    years = config.FRONT_YEARS
+    saved = current_models(store_path)
+    if saved is not None:
+        return saved
+    path, stamp, years = config.FORECAST_MODELS_PATH, _stamp(store_path), config.FRONT_YEARS
     cases = forecast_run.year_cases(
         {year: forecast.year_rows(year, store_path, raw_dir, in_biome) for year in years}
     )
@@ -118,9 +126,21 @@ def live_layers(raw_dir: Path, centres: np.ndarray, last: date) -> front_inputs.
     return newest_days(layers, cells, openmeteo.download(lats, lons, (first, last), raw_dir))
 
 
+def pixels_at(store: sqlite3.Connection, now: datetime) -> dict:
+    """Return the VIIRS pixels of the year of now that were available at that time."""
+    pixels = steps.load_pixels(store, now.year)
+    had = pixels["available"] <= now.timestamp()
+    pixels = {name: values[had] for name, values in pixels.items()}
+    if had.any():  # A look is a group of the pixels that we had: make the groups again.
+        pixels["look"] = fronts.looks(pixels["seconds"])
+    return pixels
+
+
 def newest_fronts(pixels: dict, in_biome: np.ndarray, since: float) -> list[dict]:
     """Return the looks that started at or after the time `since` and have a front that counts."""
     found = []
+    if not len(pixels["seconds"]):
+        return found
     for a, b, look in steps.each_look(pixels):
         if pixels["seconds"][a] < since:
             continue
@@ -181,9 +201,11 @@ def front_rows(saved: dict, places: dict, inputs: dict, windows: dict) -> list[d
 
 
 def front_events(store: sqlite3.Connection, pixels: dict, one: dict) -> list[list[int]]:
-    """Return the events of the pixels of each front of a look that counts, from the store of now.
+    """Return, for each front of a look that counts, the ids of the events of its pixels as we
+    issued them.
 
     An alert is for an event, and a front has no event. This list joins a front to its alerts.
+    An issued id does not change when two events merge: thus the list is correct at a later time.
     """
     a, b = one["bounds"]
     span = [
@@ -201,61 +223,62 @@ def front_events(store: sqlite3.Connection, pixels: dict, one: dict) -> list[lis
     return [sorted(found) for found in events.values()]
 
 
-def live_looks(store_path: Path, raw_dir: Path, now: datetime) -> list[dict]:
+def look_forecast(
+    one: dict, pixels: dict, layers: front_inputs.Layers, saved: dict, now: datetime
+) -> dict:
+    """Return the object of one look: its time, the time of now, and the forecast of each front."""
+    keep = one["keep"]
+    inputs = front_inputs.look_inputs(pixels, one["bounds"], one["look"], layers)
+    places = {name: values[keep] for name, values in one["places"].items()}
+    kept = {name: values[keep] for name, values in inputs.items()}
+    look_at = _look_at(one)
+    times = {"look_at": look_at.isoformat(timespec="minutes")}
+    times["made_at"] = now.isoformat(timespec="minutes")
+    return times | {"fronts": front_rows(saved, places, kept, open_windows(look_at, now))}
+
+
+def _look_at(one: dict) -> datetime:
+    return datetime.fromtimestamp(float(one["places"]["start"][0]), UTC)
+
+
+def _is_new(one: dict, folder: Path) -> bool:
+    pixels = int(one["places"]["pixels"][one["keep"]].sum())
+    return forecast_files.is_new(folder, _look_at(one).isoformat(timespec="minutes"), pixels)
+
+
+def live_looks(
+    store_path: Path, raw_dir: Path, now: datetime, only_new: Path | None = None
+) -> list[dict] | None:
     """Return one object for each of the newest looks with a front: the time of the look, the
-    time of now, and the forecast of each front. No front: an empty list."""
+    time of now, and the forecast of each front. No front: an empty list.
+
+    `only_new` is the folder of the forecast files, for the step of `chispa update`. Then the
+    answer has only the looks that are new in that folder, and this does not fit the trees:
+    the answer is None if the saved trees are not those of now.
+    """
     grid = pantanal_grid()
     in_biome = border.rasterize(border.read_rings(raw_dir / "border" / "pantanal.geojson"), grid)
     store = sqlite3.connect(store_path)
-    pixels = steps.load_pixels(store, now.year)
+    pixels = pixels_at(store, now)
     since = (now - timedelta(hours=config.FORECAST_LIVE_HOURS)).timestamp()
     looks = newest_fronts(pixels, in_biome, since)
+    if only_new:
+        looks = [one for one in looks if _is_new(one, only_new)]
     if not looks:
         return []
-    saved = saved_models(store_path, raw_dir, in_biome)
-    centres = np.concatenate(
-        [
-            np.column_stack([one["places"]["lat"][one["keep"]], one["places"]["lon"][one["keep"]]])
-            for one in looks
-        ]
-    )
+    saved = current_models(store_path) if only_new else saved_models(store_path, raw_dir, in_biome)
+    if saved is None:
+        return None
+    places = [
+        (one["places"]["lat"][one["keep"]], one["places"]["lon"][one["keep"]]) for one in looks
+    ]
+    centres = np.concatenate([np.column_stack(place) for place in places])
     last = datetime.fromtimestamp(float(pixels["seconds"][looks[-1]["bounds"][1] - 1]), UTC).date()
     layers = live_layers(raw_dir, centres, last)
     found = []
     for one in looks:
-        keep = one["keep"]
-        inputs = front_inputs.look_inputs(pixels, one["bounds"], one["look"], layers)
-        places = {name: values[keep] for name, values in one["places"].items()}
-        kept = {name: values[keep] for name, values in inputs.items()}
-        look_at = datetime.fromtimestamp(float(places["start"][0]), UTC)
-        times = {"look_at": look_at.isoformat(timespec="minutes")}
-        times["made_at"] = now.isoformat(timespec="minutes")
-        rows = front_rows(saved, places, kept, open_windows(look_at, now))
-        for front, events in zip(rows, front_events(store, pixels, one), strict=True):
+        made = look_forecast(one, pixels, layers, saved, now)
+        for front, events in zip(made["fronts"], front_events(store, pixels, one), strict=True):
             front["events"] = events
-        found.append(times | {"fronts": rows})
+        found.append(made)
     return found
-
-
-def save(looks: list[dict], folder: Path) -> list[Path]:
-    """Save the forecast of each look as a new file, and return the new files.
-
-    The name of a file has the time of the look and the time of the run, and a file never
-    changes: the first forecast of a look stays as we gave it. A look gets a newer file only
-    when it has more pixels than in its newest file: a second satellite came.
-    """
-    written = []
-    for look in looks:
-        name = look["look_at"][:16].replace(":", "")
-        before = sorted(folder.glob(f"{name}_*.json"))
-        pixels = sum(front["pixels"] for front in look["fronts"])
-        if before:
-            newest = json.loads(before[-1].read_text())["fronts"]
-            if sum(front["pixels"] for front in newest) >= pixels:
-                continue
-        path = folder / f"{name}_{look['made_at'][:16].replace(':', '')}.json"
-        if not path.exists():
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(look, indent=1))
-            written.append(path)
-    return written
