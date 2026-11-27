@@ -20,8 +20,10 @@ fire_sizes,652c3a3f5e8f,2026-11-26
 forecast,af9e040fd8d0,2026-11-27
 forecast_chances,af9e040fd8d0,2026-11-27
 forecast_direction,af9e040fd8d0,2026-11-27
+forecast_direction_outside,af9e040fd8d0,2026-11-27
 forecast_first_look,af9e040fd8d0,2026-11-27
 forecast_inputs,af9e040fd8d0,2026-11-27
+forecast_outside,af9e040fd8d0,2026-11-27
 forecast_periods,af9e040fd8d0,2026-11-27
 forecast_sectors,af9e040fd8d0,2026-11-27
 front_alerts,af9e040fd8d0,2026-11-27

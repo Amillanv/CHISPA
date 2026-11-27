@@ -2632,6 +2632,35 @@ A negative result is a valid result.
   of the training years, not with a share of the fronts outside.
 - The limits of sections 11.26 to 11.31 apply. The result has satellite sources only.
 
+The result of the test (the same tables of 2025 and 2026, 2026-11-27): the statements 1, 2, 4 and 5 are true.
+Statement 3 is false. Each cell has the value of 2025, then the value of 2026.
+
+| Fronts | Hours | Rows | With new ground | Expected | Persistence | Regression | Trees | Trees in the biome |
+|---|---|---|---|---|---|---|---|---|
+| 3 or more | 12 | 1386, 970 | 148, 78 | 187.1, 125.3 | 0.6605, 0.6267 | 0.7735, 0.7866 | 0.8192, 0.7991 | 0.8706, 0.8179 |
+| 3 or more | 24 | 1058, 776 | 228, 152 | 290.0, 207.8 | 0.6177, 0.6329 | 0.7385, 0.6714 | 0.7881, 0.6912 | 0.8111, 0.7675 |
+| 1 or 2 | 12 | 2394, 1674 | 67, 40 | 131.3, 89.0 | 0.4824, 0.5407 | 0.7130, 0.6901 | 0.7518, 0.7099 | 0.8060, 0.8034 |
+| 1 or 2 | 24 | 1832, 1293 | 190, 117 | 249.4, 177.6 | 0.4829, 0.4914 | 0.5541, 0.5716 | 0.6681, 0.6280 | 0.7328, 0.7462 |
+
+- Statement 1: the trees are above persistence in each year, at 12 and at 24 hours. They are also above the
+  regression in each cell of the table.
+- Statement 2: the mean AUC is 0.80915 at 12 hours and 0.73965 at 24 hours. It is lower than in the biome by
+  0.0351 and by 0.04965.
+- Statement 3: false. The trees expected 312.4 fronts with new ground at 12 hours, and 226 had it: 0.72.
+  At 24 hours: 497.8 and 380, 0.76. For one year: 0.79 and 0.62 at 12 hours, 0.79 and 0.73 at 24 hours.
+  The stated chances are too high. In the biome the same years had 0.86 and 0.83 (section 11.31).
+- Statement 4: the trees are in 45 degrees for 59 of 138 fronts at 12 hours, and the wind for 43. At 24 hours:
+  109 and 75 of 243. The regression has 61 and 90.
+- Statement 5: for a small front the trees are above persistence in each year. Their chances are too high:
+  107 small fronts had new ground at 12 hours of 220.3 expected, and 307 of 427.0 at 24 hours.
+- For a large growth, 61 fronts of 3 pixels or more had it at 12 hours of 92.4 expected.
+- What follows, by the rule above: a live forecast gives a front outside the biome no chance. The trees of the
+  biome put those fronts in a useful sequence, and their percentage is too high there.
+- Not tested: trees that also learn from the fronts outside the biome, and a correction of the chance for
+  those fronts. Each needs its hypothesis and its test. The fronts outside the biome of 2025 and 2026 now have
+  one read: a second score on them is not an independent test.
+- The result has satellite sources only.
+
 ### 11.34 The chance of a front for an alert that only GOES started
 
 A growth forecast is for a front of VIIRS pixels (section 11.26). An alert that only GOES started has no VIIRS
