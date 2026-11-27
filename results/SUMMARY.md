@@ -4,6 +4,178 @@ Code makes this file. Do not edit it by hand.
 
 ## 2019 (year before the development year)
 
+### 2019 forecast
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | brier_share | brier_trees | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 7887 | 1968 | 0.6615 |  | 0.7932 | 0.8115 | 0.6096 | 0.1873 | 0.1403 | 0.2507 |
+| large_growth | 12 | 7887 | 632 | 0.707 |  | 0.831 | 0.8476 | 0.3725 | 0.074 | 0.061 | 0.1755 |
+| sector | 12 | 63096 | 4181 | 0.6095 | 0.5508 | 0.8202 | 0.8493 | 0.3426 | 0.0619 | 0.0515 | 0.1674 |
+| new_ground | 24 | 7296 | 3462 | 0.6642 |  | 0.7661 | 0.781 | 0.7688 | 0.2504 | 0.1899 | 0.2414 |
+| large_growth | 24 | 7296 | 1503 | 0.7007 |  | 0.7901 | 0.7993 | 0.5379 | 0.1637 | 0.1293 | 0.2101 |
+| sector | 24 | 58368 | 8463 | 0.6032 | 0.5152 | 0.7831 | 0.7983 | 0.4492 | 0.124 | 0.1012 | 0.1837 |
+
+### 2019 forecast_chances
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
+|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 0.0 | 0.05 | 498 | 0.0386 | 12 | 0.0241 |
+| new_ground | 12 | 0.05 | 0.1 | 1902 | 0.0738 | 119 | 0.0626 |
+| new_ground | 12 | 0.1 | 0.2 | 1885 | 0.1412 | 225 | 0.1194 |
+| new_ground | 12 | 0.2 | 0.35 | 1336 | 0.2695 | 375 | 0.2807 |
+| new_ground | 12 | 0.35 | 0.5 | 958 | 0.4208 | 402 | 0.4196 |
+| new_ground | 12 | 0.5 | 0.7 | 961 | 0.5931 | 555 | 0.5775 |
+| new_ground | 12 | 0.7 | 1.0 | 347 | 0.781 | 280 | 0.8069 |
+| large_growth | 12 | 0.0 | 0.05 | 4592 | 0.0209 | 79 | 0.0172 |
+| large_growth | 12 | 0.05 | 0.1 | 1199 | 0.072 | 72 | 0.0601 |
+| large_growth | 12 | 0.1 | 0.2 | 981 | 0.144 | 127 | 0.1295 |
+| large_growth | 12 | 0.2 | 0.35 | 645 | 0.2616 | 159 | 0.2465 |
+| large_growth | 12 | 0.35 | 0.5 | 277 | 0.4134 | 90 | 0.3249 |
+| large_growth | 12 | 0.5 | 0.7 | 151 | 0.5861 | 71 | 0.4702 |
+| large_growth | 12 | 0.7 | 1.0 | 42 | 0.7785 | 34 | 0.8095 |
+| sector | 12 | 0.0 | 0.05 | 41137 | 0.019 | 661 | 0.0161 |
+| sector | 12 | 0.05 | 0.1 | 9297 | 0.0712 | 651 | 0.07 |
+| sector | 12 | 0.1 | 0.2 | 6841 | 0.1405 | 952 | 0.1392 |
+| sector | 12 | 0.2 | 0.35 | 3652 | 0.262 | 918 | 0.2514 |
+| sector | 12 | 0.35 | 0.5 | 1440 | 0.4129 | 568 | 0.3944 |
+| sector | 12 | 0.5 | 0.7 | 604 | 0.5781 | 333 | 0.5513 |
+| sector | 12 | 0.7 | 1.0 | 125 | 0.7585 | 98 | 0.784 |
+| new_ground | 24 | 0.0 | 0.05 | 10 | 0.0364 | 0 | 0.0 |
+| new_ground | 24 | 0.05 | 0.1 | 127 | 0.0805 | 12 | 0.0945 |
+| new_ground | 24 | 0.1 | 0.2 | 653 | 0.1573 | 102 | 0.1562 |
+| new_ground | 24 | 0.2 | 0.35 | 1715 | 0.2738 | 410 | 0.2391 |
+| new_ground | 24 | 0.35 | 0.5 | 1557 | 0.4231 | 619 | 0.3976 |
+| new_ground | 24 | 0.5 | 0.7 | 1548 | 0.5985 | 931 | 0.6014 |
+| new_ground | 24 | 0.7 | 1.0 | 1686 | 0.8232 | 1388 | 0.8233 |
+| large_growth | 24 | 0.0 | 0.05 | 719 | 0.0377 | 15 | 0.0209 |
+| large_growth | 24 | 0.05 | 0.1 | 1734 | 0.0734 | 97 | 0.0559 |
+| large_growth | 24 | 0.1 | 0.2 | 1969 | 0.1438 | 256 | 0.13 |
+| large_growth | 24 | 0.2 | 0.35 | 1353 | 0.2654 | 369 | 0.2727 |
+| large_growth | 24 | 0.35 | 0.5 | 763 | 0.416 | 304 | 0.3984 |
+| large_growth | 24 | 0.5 | 0.7 | 510 | 0.5883 | 272 | 0.5333 |
+| large_growth | 24 | 0.7 | 1.0 | 248 | 0.7857 | 190 | 0.7661 |
+| sector | 24 | 0.0 | 0.05 | 16553 | 0.0281 | 457 | 0.0276 |
+| sector | 24 | 0.05 | 0.1 | 13595 | 0.0731 | 900 | 0.0662 |
+| sector | 24 | 0.1 | 0.2 | 13197 | 0.1426 | 1722 | 0.1305 |
+| sector | 24 | 0.2 | 0.35 | 8429 | 0.2652 | 2170 | 0.2574 |
+| sector | 24 | 0.35 | 0.5 | 3851 | 0.4166 | 1533 | 0.3981 |
+| sector | 24 | 0.5 | 0.7 | 2169 | 0.5815 | 1217 | 0.5611 |
+| sector | 24 | 0.7 | 1.0 | 574 | 0.7757 | 464 | 0.8084 |
+
+### 2019 forecast_direction
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|
+| 12 | 1304 | 652 | 467 | 758 | 551 | 408 | 954 | 407 |
+| 24 | 2582 | 1294 | 902 | 1349 | 942 | 684 | 1816 | 804 |
+
+### 2019 forecast_first_look
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | rows | new_ground | auc_trees | fronts_with_direction | trees_in_45 |
+|---|---|---|---|---|---|---|
+| 12 | first look | 95 | 13 | 0.8386 | 8 | 4 |
+| 12 | other | 7792 | 1955 | 0.811 | 1296 | 754 |
+| 24 | first look | 81 | 30 | 0.8039 | 20 | 8 |
+| 24 | other | 7215 | 3432 | 0.7812 | 2562 | 1341 |
+
+### 2019 forecast_inputs
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | input | auc_decrease |
+|---|---|---|---|
+| new_ground | 12 | day_look | 0.0922 |
+| new_ground | 12 | log_span | 0.0538 |
+| new_ground | 12 | prev_share | 0.0209 |
+| new_ground | 12 | log_frp_mean | 0.0184 |
+| new_ground | 12 | log_older_near | 0.0177 |
+| new_ground | 12 | log_came_distance | 0.0051 |
+| new_ground | 12 | log_came | 0.0033 |
+| new_ground | 12 | log_pixels | 0.0029 |
+| large_growth | 12 | day_look | 0.0746 |
+| large_growth | 12 | log_span | 0.0319 |
+| large_growth | 12 | log_frp_mean | 0.0167 |
+| large_growth | 12 | prev_share | 0.0158 |
+| large_growth | 12 | log_came | 0.0097 |
+| large_growth | 12 | log_older_near | 0.0089 |
+| large_growth | 12 | burned_before | 0.0073 |
+| large_growth | 12 | log_pixels | 0.0045 |
+| sector | 12 | day_look | 0.0832 |
+| sector | 12 | log_span | 0.0621 |
+| sector | 12 | log_older_near_s | 0.015 |
+| sector | 12 | prev_share | 0.0136 |
+| sector | 12 | log_frp_mean | 0.0123 |
+| sector | 12 | older_near_share_s | 0.0118 |
+| sector | 12 | east_s | 0.0082 |
+| sector | 12 | log_older_behind_s | 0.0062 |
+| new_ground | 24 | log_span | 0.0706 |
+| new_ground | 24 | day_look | 0.0511 |
+| new_ground | 24 | log_older_near | 0.0342 |
+| new_ground | 24 | log_frp_mean | 0.0123 |
+| new_ground | 24 | prev_share | 0.0112 |
+| new_ground | 24 | past_temp | 0.0099 |
+| new_ground | 24 | on_pasture | 0.0077 |
+| new_ground | 24 | log_pixels | 0.0056 |
+| large_growth | 24 | log_span | 0.0434 |
+| large_growth | 24 | day_look | 0.0366 |
+| large_growth | 24 | log_frp_mean | 0.0149 |
+| large_growth | 24 | log_pixels | 0.0127 |
+| large_growth | 24 | log_older_near | 0.0111 |
+| large_growth | 24 | prev_share | 0.0093 |
+| large_growth | 24 | log_came | 0.0066 |
+| large_growth | 24 | came_steady | 0.0066 |
+| sector | 24 | log_span | 0.0659 |
+| sector | 24 | day_look | 0.0323 |
+| sector | 24 | log_older_near_s | 0.0237 |
+| sector | 24 | log_frp_mean | 0.0143 |
+| sector | 24 | older_near_share_s | 0.0135 |
+| sector | 24 | log_older_behind_s | 0.0108 |
+| sector | 24 | prev_share | 0.009 |
+| sector | 24 | log_pixels | 0.0055 |
+
+### 2019 forecast_sectors
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | 1304 | 24664 | 0.3285 | 828 | 7623 | 1044 | 13750 | 1156 | 18294 |
+| 24 | 2582 | 71624 | 0.3617 | 1661 | 20866 | 2049 | 37240 | 2242 | 49484 |
+
+### 2019 front_alerts
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| delay_h | alerts | with_front | share | goes_first | goes_first_with_front | viirs_first | viirs_first_with_front |
+|---|---|---|---|---|---|---|---|
+| 0.5 | 8358 | 1200 | 0.1436 | 629 | 19 | 6253 | 1144 |
+| 3 | 8358 | 2374 | 0.284 | 629 | 138 | 6253 | 2000 |
+| 6 | 8358 | 2589 | 0.3098 | 629 | 155 | 6253 | 2001 |
+| 12 | 8358 | 2674 | 0.3199 | 629 | 242 | 6253 | 1989 |
+| 24 | 8358 | 2720 | 0.3254 | 629 | 240 | 6253 | 2046 |
+| 48 | 8358 | 2687 | 0.3215 | 629 | 244 | 6253 | 2049 |
+
+### 2019 front_steps
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | fronts_with_10_new_pixels | distance_m_median |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | day | 7060 | 981 | 1321 | 3190 | 1568 | 0.1786 | 264 | 1442.56 |
+| 12 | night | 2627 | 987 | 994 | 414 | 232 | 0.4121 | 368 | 1797.74 |
+| 12 | all | 9687 | 1968 | 2315 | 3604 | 1800 | 0.2495 | 632 | 1604.74 |
+| 24 | day | 7060 | 2188 | 1404 | 1626 | 1842 | 0.4193 | 914 | 1907.81 |
+| 24 | night | 2627 | 1274 | 550 | 254 | 549 | 0.6131 | 589 | 2183.15 |
+| 24 | all | 9687 | 3462 | 1954 | 1880 | 2391 | 0.4745 | 1503 | 2008.95 |
+
 ### 2019 risk
 
 Configuration `652c3a3f5e8f`, run on 2026-11-26.
@@ -328,6 +500,178 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | 24h_1000ha | on_forest | -0.0143 |
 
 ## 2020 (year before the development year)
+
+### 2020 forecast
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | brier_share | brier_trees | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 19183 | 4211 | 0.6982 |  | 0.8068 | 0.8279 | 0.6015 | 0.1733 | 0.1263 | 0.2712 |
+| large_growth | 12 | 19183 | 1456 | 0.7649 |  | 0.8634 | 0.8775 | 0.4293 | 0.0711 | 0.0545 | 0.2334 |
+| sector | 12 | 153464 | 9352 | 0.6288 | 0.5563 | 0.8527 | 0.875 | 0.3655 | 0.0575 | 0.0463 | 0.1955 |
+| new_ground | 24 | 18086 | 7360 | 0.6843 |  | 0.7954 | 0.8137 | 0.7578 | 0.2458 | 0.1717 | 0.3014 |
+| large_growth | 24 | 18086 | 3284 | 0.7341 |  | 0.8306 | 0.8412 | 0.5879 | 0.1521 | 0.1078 | 0.2915 |
+| sector | 24 | 144688 | 18947 | 0.6163 | 0.5227 | 0.8379 | 0.8497 | 0.4982 | 0.1147 | 0.0863 | 0.2471 |
+
+### 2020 forecast_chances
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
+|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 0.0 | 0.05 | 2454 | 0.0369 | 31 | 0.0126 |
+| new_ground | 12 | 0.05 | 0.1 | 4558 | 0.0727 | 257 | 0.0564 |
+| new_ground | 12 | 0.1 | 0.2 | 4060 | 0.1425 | 521 | 0.1283 |
+| new_ground | 12 | 0.2 | 0.35 | 3269 | 0.2687 | 825 | 0.2524 |
+| new_ground | 12 | 0.35 | 0.5 | 2150 | 0.4187 | 866 | 0.4028 |
+| new_ground | 12 | 0.5 | 0.7 | 1832 | 0.5909 | 999 | 0.5453 |
+| new_ground | 12 | 0.7 | 1.0 | 860 | 0.7874 | 712 | 0.8279 |
+| large_growth | 12 | 0.0 | 0.05 | 11319 | 0.0191 | 121 | 0.0107 |
+| large_growth | 12 | 0.05 | 0.1 | 3010 | 0.0718 | 180 | 0.0598 |
+| large_growth | 12 | 0.1 | 0.2 | 2375 | 0.1414 | 285 | 0.12 |
+| large_growth | 12 | 0.2 | 0.35 | 1374 | 0.2625 | 330 | 0.2402 |
+| large_growth | 12 | 0.35 | 0.5 | 621 | 0.4154 | 243 | 0.3913 |
+| large_growth | 12 | 0.5 | 0.7 | 413 | 0.5797 | 237 | 0.5738 |
+| large_growth | 12 | 0.7 | 1.0 | 71 | 0.7708 | 60 | 0.8451 |
+| sector | 12 | 0.0 | 0.05 | 106758 | 0.0155 | 1385 | 0.013 |
+| sector | 12 | 0.05 | 0.1 | 19390 | 0.0709 | 1345 | 0.0694 |
+| sector | 12 | 0.1 | 0.2 | 13938 | 0.1413 | 1975 | 0.1417 |
+| sector | 12 | 0.2 | 0.35 | 7851 | 0.2628 | 2055 | 0.2618 |
+| sector | 12 | 0.35 | 0.5 | 3441 | 0.4152 | 1363 | 0.3961 |
+| sector | 12 | 0.5 | 0.7 | 1758 | 0.5778 | 984 | 0.5597 |
+| sector | 12 | 0.7 | 1.0 | 328 | 0.7653 | 245 | 0.747 |
+| new_ground | 24 | 0.0 | 0.05 | 208 | 0.0405 | 3 | 0.0144 |
+| new_ground | 24 | 0.05 | 0.1 | 1148 | 0.0771 | 35 | 0.0305 |
+| new_ground | 24 | 0.1 | 0.2 | 2841 | 0.1509 | 340 | 0.1197 |
+| new_ground | 24 | 0.2 | 0.35 | 3996 | 0.2713 | 979 | 0.245 |
+| new_ground | 24 | 0.35 | 0.5 | 3018 | 0.4215 | 1213 | 0.4019 |
+| new_ground | 24 | 0.5 | 0.7 | 3367 | 0.5966 | 1940 | 0.5762 |
+| new_ground | 24 | 0.7 | 1.0 | 3508 | 0.8313 | 2850 | 0.8124 |
+| large_growth | 24 | 0.0 | 0.05 | 2977 | 0.0346 | 36 | 0.0121 |
+| large_growth | 24 | 0.05 | 0.1 | 4375 | 0.0727 | 205 | 0.0469 |
+| large_growth | 24 | 0.1 | 0.2 | 4440 | 0.1429 | 506 | 0.114 |
+| large_growth | 24 | 0.2 | 0.35 | 2951 | 0.2643 | 719 | 0.2436 |
+| large_growth | 24 | 0.35 | 0.5 | 1504 | 0.4188 | 581 | 0.3863 |
+| large_growth | 24 | 0.5 | 0.7 | 1099 | 0.5923 | 632 | 0.5751 |
+| large_growth | 24 | 0.7 | 1.0 | 740 | 0.7959 | 605 | 0.8176 |
+| sector | 24 | 0.0 | 0.05 | 59616 | 0.0245 | 962 | 0.0161 |
+| sector | 24 | 0.05 | 0.1 | 28586 | 0.0719 | 1944 | 0.068 |
+| sector | 24 | 0.1 | 0.2 | 25302 | 0.1427 | 3689 | 0.1458 |
+| sector | 24 | 0.2 | 0.35 | 15940 | 0.2638 | 4268 | 0.2678 |
+| sector | 24 | 0.35 | 0.5 | 7721 | 0.4177 | 3255 | 0.4216 |
+| sector | 24 | 0.5 | 0.7 | 5302 | 0.5866 | 3104 | 0.5854 |
+| sector | 24 | 0.7 | 1.0 | 2221 | 0.7825 | 1725 | 0.7767 |
+
+### 2020 forecast_direction
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|
+| 12 | 2776 | 1541 | 966 | 1691 | 1076 | 941 | 1820 | 831 |
+| 24 | 5460 | 3196 | 1815 | 3249 | 1863 | 1580 | 3174 | 1612 |
+
+### 2020 forecast_first_look
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | rows | new_ground | auc_trees | fronts_with_direction | trees_in_45 |
+|---|---|---|---|---|---|---|
+| 12 | first look | 122 | 11 | 0.7682 | 5 | 3 |
+| 12 | other | 19061 | 4200 | 0.8278 | 2771 | 1688 |
+| 24 | first look | 106 | 29 | 0.6789 | 17 | 4 |
+| 24 | other | 17980 | 7331 | 0.8141 | 5443 | 3245 |
+
+### 2020 forecast_inputs
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | input | auc_decrease |
+|---|---|---|---|
+| new_ground | 12 | log_span | 0.0882 |
+| new_ground | 12 | day_look | 0.0571 |
+| new_ground | 12 | log_older_near | 0.0444 |
+| new_ground | 12 | prev_share | 0.0156 |
+| new_ground | 12 | log_frp_mean | 0.0155 |
+| new_ground | 12 | log_came_distance | 0.0154 |
+| new_ground | 12 | log_older_far | 0.0052 |
+| new_ground | 12 | log_came | 0.0027 |
+| large_growth | 12 | day_look | 0.0671 |
+| large_growth | 12 | log_span | 0.0628 |
+| large_growth | 12 | log_frp_mean | 0.0228 |
+| large_growth | 12 | log_older_near | 0.0218 |
+| large_growth | 12 | prev_share | 0.0135 |
+| large_growth | 12 | came_steady | 0.0104 |
+| large_growth | 12 | log_pixels | 0.0087 |
+| large_growth | 12 | rain_30 | 0.0071 |
+| sector | 12 | log_span | 0.098 |
+| sector | 12 | day_look | 0.0531 |
+| sector | 12 | log_older_near_s | 0.0297 |
+| sector | 12 | log_frp_mean | 0.0108 |
+| sector | 12 | log_older_near | 0.0088 |
+| sector | 12 | east_s | 0.0083 |
+| sector | 12 | prev_share | 0.0081 |
+| sector | 12 | older_near_share_s | 0.0079 |
+| new_ground | 24 | log_span | 0.1023 |
+| new_ground | 24 | log_older_near | 0.0695 |
+| new_ground | 24 | day_look | 0.0276 |
+| new_ground | 24 | log_frp_mean | 0.0119 |
+| new_ground | 24 | prev_share | 0.0099 |
+| new_ground | 24 | on_pasture | 0.0056 |
+| new_ground | 24 | log_came | 0.0045 |
+| new_ground | 24 | log_came_distance | 0.0037 |
+| large_growth | 24 | log_span | 0.0734 |
+| large_growth | 24 | log_older_near | 0.0345 |
+| large_growth | 24 | day_look | 0.0272 |
+| large_growth | 24 | log_frp_mean | 0.0139 |
+| large_growth | 24 | prev_share | 0.01 |
+| large_growth | 24 | log_pixels | 0.0089 |
+| large_growth | 24 | came_steady | 0.0075 |
+| large_growth | 24 | log_came | 0.0074 |
+| sector | 24 | log_span | 0.1045 |
+| sector | 24 | log_older_near_s | 0.0373 |
+| sector | 24 | day_look | 0.0168 |
+| sector | 24 | older_near_share_s | 0.014 |
+| sector | 24 | log_older_near | 0.0107 |
+| sector | 24 | log_older_behind_s | 0.0085 |
+| sector | 24 | log_frp_mean | 0.0067 |
+| sector | 24 | prev_share | 0.0065 |
+
+### 2020 forecast_sectors
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | 2776 | 61663 | 0.347 | 1883 | 19754 | 2321 | 34640 | 2516 | 45410 |
+| 24 | 5460 | 185816 | 0.3839 | 3746 | 56970 | 4591 | 101314 | 4984 | 133434 |
+
+### 2020 front_alerts
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| delay_h | alerts | with_front | share | goes_first | goes_first_with_front | viirs_first | viirs_first_with_front |
+|---|---|---|---|---|---|---|---|
+| 0.5 | 11394 | 972 | 0.0853 | 1982 | 16 | 7415 | 923 |
+| 3 | 11394 | 2178 | 0.1912 | 1982 | 167 | 7415 | 1846 |
+| 6 | 11394 | 2337 | 0.2051 | 1982 | 196 | 7415 | 1847 |
+| 12 | 11394 | 2446 | 0.2147 | 1982 | 281 | 7415 | 1856 |
+| 24 | 11394 | 2489 | 0.2184 | 1982 | 276 | 7415 | 1905 |
+| 48 | 11394 | 2460 | 0.2159 | 1982 | 272 | 7415 | 1883 |
+
+### 2020 front_steps
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | fronts_with_10_new_pixels | distance_m_median |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | day | 13470 | 2105 | 4845 | 5205 | 1315 | 0.1732 | 674 | 1399.37 |
+| 12 | night | 7598 | 2106 | 4006 | 916 | 570 | 0.2997 | 782 | 1633.42 |
+| 12 | all | 21068 | 4211 | 8851 | 6121 | 1885 | 0.2195 | 1456 | 1506.97 |
+| 24 | day | 13470 | 4154 | 5065 | 2264 | 1987 | 0.3618 | 1796 | 1622.4 |
+| 24 | night | 7598 | 3206 | 2869 | 528 | 995 | 0.4855 | 1488 | 1821.88 |
+| 24 | all | 21068 | 7360 | 7934 | 2792 | 2982 | 0.4069 | 3284 | 1694.98 |
 
 ### 2020 risk
 
@@ -791,6 +1135,178 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | 24h_1000ha | has_viirs | -0.0004 |
 
 ## 2021 (year before the development year)
+
+### 2021 forecast
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | brier_share | brier_trees | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 5635 | 1675 | 0.711 |  | 0.8079 | 0.8225 | 0.6813 | 0.2121 | 0.1484 | 0.3005 |
+| large_growth | 12 | 5635 | 676 | 0.7805 |  | 0.8548 | 0.8638 | 0.4999 | 0.1064 | 0.079 | 0.2577 |
+| sector | 12 | 45080 | 4051 | 0.6292 | 0.5534 | 0.8304 | 0.8532 | 0.4234 | 0.0822 | 0.0646 | 0.2141 |
+| new_ground | 24 | 5050 | 2615 | 0.7025 |  | 0.7924 | 0.8031 | 0.8196 | 0.256 | 0.1811 | 0.2925 |
+| large_growth | 24 | 5050 | 1333 | 0.7489 |  | 0.8182 | 0.822 | 0.6514 | 0.197 | 0.1399 | 0.2901 |
+| sector | 24 | 40400 | 7253 | 0.6204 | 0.527 | 0.8029 | 0.8177 | 0.5357 | 0.1485 | 0.1129 | 0.2398 |
+
+### 2021 forecast_chances
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
+|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 0.0 | 0.05 | 747 | 0.0337 | 34 | 0.0455 |
+| new_ground | 12 | 0.05 | 0.1 | 1005 | 0.0724 | 72 | 0.0716 |
+| new_ground | 12 | 0.1 | 0.2 | 1052 | 0.1428 | 163 | 0.1549 |
+| new_ground | 12 | 0.2 | 0.35 | 868 | 0.2723 | 255 | 0.2938 |
+| new_ground | 12 | 0.35 | 0.5 | 754 | 0.4223 | 309 | 0.4098 |
+| new_ground | 12 | 0.5 | 0.7 | 740 | 0.5938 | 452 | 0.6108 |
+| new_ground | 12 | 0.7 | 1.0 | 469 | 0.8011 | 390 | 0.8316 |
+| large_growth | 12 | 0.0 | 0.05 | 3035 | 0.0193 | 60 | 0.0198 |
+| large_growth | 12 | 0.05 | 0.1 | 788 | 0.0719 | 66 | 0.0838 |
+| large_growth | 12 | 0.1 | 0.2 | 749 | 0.1431 | 119 | 0.1589 |
+| large_growth | 12 | 0.2 | 0.35 | 562 | 0.2646 | 158 | 0.2811 |
+| large_growth | 12 | 0.35 | 0.5 | 281 | 0.419 | 125 | 0.4448 |
+| large_growth | 12 | 0.5 | 0.7 | 160 | 0.5969 | 98 | 0.6125 |
+| large_growth | 12 | 0.7 | 1.0 | 60 | 0.7992 | 50 | 0.8333 |
+| sector | 12 | 0.0 | 0.05 | 27658 | 0.0172 | 534 | 0.0193 |
+| sector | 12 | 0.05 | 0.1 | 6296 | 0.0718 | 524 | 0.0832 |
+| sector | 12 | 0.1 | 0.2 | 5286 | 0.1412 | 780 | 0.1476 |
+| sector | 12 | 0.2 | 0.35 | 3291 | 0.2648 | 919 | 0.2792 |
+| sector | 12 | 0.35 | 0.5 | 1598 | 0.4152 | 683 | 0.4274 |
+| sector | 12 | 0.5 | 0.7 | 792 | 0.5788 | 485 | 0.6124 |
+| sector | 12 | 0.7 | 1.0 | 159 | 0.758 | 126 | 0.7925 |
+| new_ground | 24 | 0.0 | 0.05 | 25 | 0.0395 | 3 | 0.12 |
+| new_ground | 24 | 0.05 | 0.1 | 214 | 0.0785 | 19 | 0.0888 |
+| new_ground | 24 | 0.1 | 0.2 | 567 | 0.1514 | 99 | 0.1746 |
+| new_ground | 24 | 0.2 | 0.35 | 903 | 0.2745 | 245 | 0.2713 |
+| new_ground | 24 | 0.35 | 0.5 | 846 | 0.4224 | 382 | 0.4515 |
+| new_ground | 24 | 0.5 | 0.7 | 1028 | 0.6014 | 623 | 0.606 |
+| new_ground | 24 | 0.7 | 1.0 | 1467 | 0.8374 | 1244 | 0.848 |
+| large_growth | 24 | 0.0 | 0.05 | 758 | 0.032 | 19 | 0.0251 |
+| large_growth | 24 | 0.05 | 0.1 | 917 | 0.074 | 66 | 0.072 |
+| large_growth | 24 | 0.1 | 0.2 | 1082 | 0.1429 | 194 | 0.1793 |
+| large_growth | 24 | 0.2 | 0.35 | 880 | 0.2667 | 230 | 0.2614 |
+| large_growth | 24 | 0.35 | 0.5 | 609 | 0.4223 | 256 | 0.4204 |
+| large_growth | 24 | 0.5 | 0.7 | 450 | 0.5918 | 278 | 0.6178 |
+| large_growth | 24 | 0.7 | 1.0 | 354 | 0.8062 | 290 | 0.8192 |
+| sector | 24 | 0.0 | 0.05 | 12448 | 0.0259 | 369 | 0.0296 |
+| sector | 24 | 0.05 | 0.1 | 7471 | 0.0729 | 594 | 0.0795 |
+| sector | 24 | 0.1 | 0.2 | 8172 | 0.1443 | 1278 | 0.1564 |
+| sector | 24 | 0.2 | 0.35 | 5968 | 0.2662 | 1570 | 0.2631 |
+| sector | 24 | 0.35 | 0.5 | 3255 | 0.4194 | 1390 | 0.427 |
+| sector | 24 | 0.5 | 0.7 | 2170 | 0.5847 | 1318 | 0.6074 |
+| sector | 24 | 0.7 | 1.0 | 916 | 0.7786 | 734 | 0.8013 |
+
+### 2021 forecast_direction
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|
+| 12 | 1192 | 625 | 468 | 679 | 508 | 377 | 890 | 381 |
+| 24 | 2029 | 1042 | 747 | 1089 | 781 | 574 | 1423 | 653 |
+
+### 2021 forecast_first_look
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | rows | new_ground | auc_trees | fronts_with_direction | trees_in_45 |
+|---|---|---|---|---|---|---|
+| 12 | first look | 89 | 19 | 0.9158 | 15 | 9 |
+| 12 | other | 5546 | 1656 | 0.821 | 1177 | 670 |
+| 24 | first look | 80 | 30 | 0.8473 | 24 | 9 |
+| 24 | other | 4970 | 2585 | 0.8023 | 2005 | 1080 |
+
+### 2021 forecast_inputs
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | input | auc_decrease |
+|---|---|---|---|
+| new_ground | 12 | day_look | 0.0858 |
+| new_ground | 12 | log_span | 0.0735 |
+| new_ground | 12 | log_older_near | 0.0257 |
+| new_ground | 12 | log_frp_mean | 0.0175 |
+| new_ground | 12 | prev_share | 0.015 |
+| new_ground | 12 | log_came_distance | 0.0112 |
+| new_ground | 12 | log_pixels | 0.0055 |
+| new_ground | 12 | on_pasture | 0.005 |
+| large_growth | 12 | day_look | 0.071 |
+| large_growth | 12 | log_span | 0.053 |
+| large_growth | 12 | log_came | 0.0165 |
+| large_growth | 12 | log_frp_mean | 0.016 |
+| large_growth | 12 | log_older_near | 0.0123 |
+| large_growth | 12 | prev_share | 0.0071 |
+| large_growth | 12 | log_pixels | 0.006 |
+| large_growth | 12 | rain_30 | 0.0052 |
+| sector | 12 | log_span | 0.0733 |
+| sector | 12 | day_look | 0.0684 |
+| sector | 12 | log_older_near_s | 0.0146 |
+| sector | 12 | older_near_share_s | 0.0121 |
+| sector | 12 | prev_share | 0.0113 |
+| sector | 12 | log_frp_mean | 0.0107 |
+| sector | 12 | east_s | 0.0095 |
+| sector | 12 | log_came | 0.0073 |
+| new_ground | 24 | log_span | 0.0775 |
+| new_ground | 24 | log_older_near | 0.0408 |
+| new_ground | 24 | day_look | 0.0376 |
+| new_ground | 24 | log_came_distance | 0.0128 |
+| new_ground | 24 | on_pasture | 0.0109 |
+| new_ground | 24 | log_frp_mean | 0.0092 |
+| new_ground | 24 | prev_share | 0.0091 |
+| new_ground | 24 | past_temp | 0.0068 |
+| large_growth | 24 | log_span | 0.0453 |
+| large_growth | 24 | day_look | 0.0284 |
+| large_growth | 24 | log_older_near | 0.0217 |
+| large_growth | 24 | log_pixels | 0.0135 |
+| large_growth | 24 | log_frp_mean | 0.0101 |
+| large_growth | 24 | prev_share | 0.0074 |
+| large_growth | 24 | on_pasture | 0.0065 |
+| large_growth | 24 | log_came | 0.0048 |
+| sector | 24 | log_span | 0.0734 |
+| sector | 24 | log_older_near_s | 0.0322 |
+| sector | 24 | day_look | 0.0257 |
+| sector | 24 | older_near_share_s | 0.011 |
+| sector | 24 | log_pixels | 0.0074 |
+| sector | 24 | log_older_near | 0.0065 |
+| sector | 24 | log_older_behind_s | 0.0065 |
+| sector | 24 | prev_share | 0.0063 |
+
+### 2021 forecast_sectors
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | 1192 | 31904 | 0.3676 | 804 | 9293 | 986 | 16991 | 1063 | 22059 |
+| 24 | 2029 | 88348 | 0.4061 | 1372 | 24540 | 1644 | 44112 | 1804 | 59507 |
+
+### 2021 front_alerts
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| delay_h | alerts | with_front | share | goes_first | goes_first_with_front | viirs_first | viirs_first_with_front |
+|---|---|---|---|---|---|---|---|
+| 0.5 | 4931 | 485 | 0.0984 | 901 | 17 | 3204 | 442 |
+| 3 | 4931 | 1028 | 0.2085 | 901 | 128 | 3204 | 816 |
+| 6 | 4931 | 1107 | 0.2245 | 901 | 147 | 3204 | 816 |
+| 12 | 4931 | 1212 | 0.2458 | 901 | 217 | 3204 | 846 |
+| 24 | 4931 | 1242 | 0.2519 | 901 | 235 | 3204 | 852 |
+| 48 | 4931 | 1200 | 0.2434 | 901 | 217 | 3204 | 843 |
+
+### 2021 front_steps
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | fronts_with_10_new_pixels | distance_m_median |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | day | 4214 | 779 | 1116 | 1562 | 757 | 0.2253 | 297 | 1618.72 |
+| 12 | night | 2443 | 896 | 915 | 367 | 265 | 0.4114 | 379 | 1908.82 |
+| 12 | all | 6657 | 1675 | 2031 | 1929 | 1022 | 0.2972 | 676 | 1751.58 |
+| 24 | day | 4214 | 1457 | 999 | 670 | 1088 | 0.4661 | 711 | 1936.31 |
+| 24 | night | 2443 | 1158 | 572 | 194 | 519 | 0.6019 | 622 | 2302.08 |
+| 24 | all | 6657 | 2615 | 1571 | 864 | 1607 | 0.5178 | 1333 | 2076.54 |
 
 ### 2021 risk
 
@@ -1342,6 +1858,178 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | 24h_1000ha | vpd_before_kpa_late | -0.001 |
 
 ## 2022 (year before the development year)
+
+### 2022 forecast
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | brier_share | brier_trees | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 1514 | 250 | 0.6622 |  | 0.8018 | 0.8137 | 0.5089 | 0.145 | 0.1085 | 0.2515 |
+| large_growth | 12 | 1514 | 67 | 0.7492 |  | 0.8568 | 0.866 | 0.3099 | 0.045 | 0.0365 | 0.1892 |
+| sector | 12 | 12112 | 525 | 0.606 | 0.5644 | 0.8269 | 0.8491 | 0.272 | 0.0423 | 0.0358 | 0.1527 |
+| new_ground | 24 | 1311 | 456 | 0.6473 |  | 0.7819 | 0.8044 | 0.7009 | 0.2373 | 0.1665 | 0.2983 |
+| large_growth | 24 | 1311 | 163 | 0.7368 |  | 0.8203 | 0.82 | 0.4698 | 0.118 | 0.0886 | 0.2493 |
+| sector | 24 | 10488 | 1081 | 0.5967 | 0.511 | 0.8059 | 0.8204 | 0.4039 | 0.0947 | 0.0758 | 0.1989 |
+
+### 2022 forecast_chances
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
+|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 0.0 | 0.05 | 386 | 0.0315 | 12 | 0.0311 |
+| new_ground | 12 | 0.05 | 0.1 | 380 | 0.0719 | 25 | 0.0658 |
+| new_ground | 12 | 0.1 | 0.2 | 285 | 0.1392 | 30 | 0.1053 |
+| new_ground | 12 | 0.2 | 0.35 | 196 | 0.2681 | 50 | 0.2551 |
+| new_ground | 12 | 0.35 | 0.5 | 118 | 0.4165 | 47 | 0.3983 |
+| new_ground | 12 | 0.5 | 0.7 | 108 | 0.5997 | 55 | 0.5093 |
+| new_ground | 12 | 0.7 | 1.0 | 41 | 0.776 | 31 | 0.7561 |
+| large_growth | 12 | 0.0 | 0.05 | 1096 | 0.0157 | 10 | 0.0091 |
+| large_growth | 12 | 0.05 | 0.1 | 174 | 0.0713 | 10 | 0.0575 |
+| large_growth | 12 | 0.1 | 0.2 | 114 | 0.1444 | 13 | 0.114 |
+| large_growth | 12 | 0.2 | 0.35 | 77 | 0.2697 | 15 | 0.1948 |
+| large_growth | 12 | 0.35 | 0.5 | 37 | 0.4162 | 12 | 0.3243 |
+| large_growth | 12 | 0.5 | 0.7 | 14 | 0.5541 | 5 | 0.3571 |
+| large_growth | 12 | 0.7 | 1.0 | 2 | 0.722 | 2 | 1.0 |
+| sector | 12 | 0.0 | 0.05 | 9186 | 0.0151 | 119 | 0.013 |
+| sector | 12 | 0.05 | 0.1 | 1284 | 0.0709 | 85 | 0.0662 |
+| sector | 12 | 0.1 | 0.2 | 918 | 0.1411 | 114 | 0.1242 |
+| sector | 12 | 0.2 | 0.35 | 491 | 0.2617 | 101 | 0.2057 |
+| sector | 12 | 0.35 | 0.5 | 174 | 0.4156 | 77 | 0.4425 |
+| sector | 12 | 0.5 | 0.7 | 56 | 0.5607 | 28 | 0.5 |
+| sector | 12 | 0.7 | 1.0 | 3 | 0.7178 | 1 | 0.3333 |
+| new_ground | 24 | 0.0 | 0.05 | 67 | 0.0298 | 2 | 0.0299 |
+| new_ground | 24 | 0.05 | 0.1 | 137 | 0.0797 | 9 | 0.0657 |
+| new_ground | 24 | 0.1 | 0.2 | 261 | 0.1482 | 41 | 0.1571 |
+| new_ground | 24 | 0.2 | 0.35 | 293 | 0.2667 | 77 | 0.2628 |
+| new_ground | 24 | 0.35 | 0.5 | 179 | 0.4226 | 75 | 0.419 |
+| new_ground | 24 | 0.5 | 0.7 | 176 | 0.5937 | 97 | 0.5511 |
+| new_ground | 24 | 0.7 | 1.0 | 198 | 0.819 | 155 | 0.7828 |
+| large_growth | 24 | 0.0 | 0.05 | 462 | 0.0265 | 8 | 0.0173 |
+| large_growth | 24 | 0.05 | 0.1 | 299 | 0.0721 | 20 | 0.0669 |
+| large_growth | 24 | 0.1 | 0.2 | 220 | 0.1439 | 30 | 0.1364 |
+| large_growth | 24 | 0.2 | 0.35 | 153 | 0.2644 | 27 | 0.1765 |
+| large_growth | 24 | 0.35 | 0.5 | 89 | 0.4208 | 25 | 0.2809 |
+| large_growth | 24 | 0.5 | 0.7 | 60 | 0.5944 | 34 | 0.5667 |
+| large_growth | 24 | 0.7 | 1.0 | 28 | 0.7804 | 19 | 0.6786 |
+| sector | 24 | 0.0 | 0.05 | 4979 | 0.0234 | 114 | 0.0229 |
+| sector | 24 | 0.05 | 0.1 | 2101 | 0.0714 | 139 | 0.0662 |
+| sector | 24 | 0.1 | 0.2 | 1616 | 0.1415 | 213 | 0.1318 |
+| sector | 24 | 0.2 | 0.35 | 1005 | 0.2647 | 257 | 0.2557 |
+| sector | 24 | 0.35 | 0.5 | 459 | 0.4155 | 167 | 0.3638 |
+| sector | 24 | 0.5 | 0.7 | 260 | 0.5775 | 137 | 0.5269 |
+| sector | 24 | 0.7 | 1.0 | 68 | 0.7608 | 54 | 0.7941 |
+
+### 2022 forecast_direction
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|
+| 12 | 150 | 67 | 45 | 77 | 48 | 45 | 100 | 39 |
+| 24 | 298 | 125 | 78 | 124 | 79 | 81 | 196 | 70 |
+
+### 2022 forecast_first_look
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | rows | new_ground | auc_trees | fronts_with_direction | trees_in_45 |
+|---|---|---|---|---|---|---|
+| 12 | first look | 56 | 11 | 0.7323 | 6 | 4 |
+| 12 | other | 1458 | 239 | 0.8185 | 144 | 73 |
+| 24 | first look | 53 | 17 | 0.7533 | 11 | 4 |
+| 24 | other | 1258 | 439 | 0.806 | 287 | 120 |
+
+### 2022 forecast_inputs
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | input | auc_decrease |
+|---|---|---|---|
+| new_ground | 12 | day_look | 0.0705 |
+| new_ground | 12 | log_span | 0.0531 |
+| new_ground | 12 | log_older_near | 0.0348 |
+| new_ground | 12 | on_pasture | 0.0148 |
+| new_ground | 12 | prev_share | 0.0147 |
+| new_ground | 12 | log_frp_mean | 0.0113 |
+| new_ground | 12 | log_came_distance | 0.0079 |
+| new_ground | 12 | rain_30 | 0.0047 |
+| large_growth | 12 | day_look | 0.0651 |
+| large_growth | 12 | log_span | 0.0474 |
+| large_growth | 12 | log_frp_mean | 0.0355 |
+| large_growth | 12 | log_older_near | 0.0218 |
+| large_growth | 12 | prev_share | 0.0076 |
+| large_growth | 12 | log_pixels | 0.0063 |
+| large_growth | 12 | on_pasture | 0.0051 |
+| large_growth | 12 | came_steady | 0.0049 |
+| sector | 12 | day_look | 0.0639 |
+| sector | 12 | log_span | 0.0525 |
+| sector | 12 | log_older_near_s | 0.0218 |
+| sector | 12 | log_frp_mean | 0.0203 |
+| sector | 12 | prev_share | 0.0138 |
+| sector | 12 | log_older_near | 0.0086 |
+| sector | 12 | east_s | 0.0078 |
+| sector | 12 | older_near_share_s | 0.0075 |
+| new_ground | 24 | log_older_near | 0.0901 |
+| new_ground | 24 | log_span | 0.0431 |
+| new_ground | 24 | on_pasture | 0.0354 |
+| new_ground | 24 | day_look | 0.0244 |
+| new_ground | 24 | prev_share | 0.0152 |
+| new_ground | 24 | log_frp_mean | 0.0135 |
+| new_ground | 24 | burned_before | 0.0057 |
+| new_ground | 24 | log_came_distance | 0.0048 |
+| large_growth | 24 | log_older_near | 0.063 |
+| large_growth | 24 | on_pasture | 0.0225 |
+| large_growth | 24 | log_frp_mean | 0.0123 |
+| large_growth | 24 | day_look | 0.0118 |
+| large_growth | 24 | burned_before | 0.0103 |
+| large_growth | 24 | log_span | 0.0102 |
+| large_growth | 24 | came_steady | 0.0098 |
+| large_growth | 24 | rain_30 | 0.009 |
+| sector | 24 | log_span | 0.0519 |
+| sector | 24 | log_older_near_s | 0.0321 |
+| sector | 24 | day_look | 0.0268 |
+| sector | 24 | on_pasture | 0.0107 |
+| sector | 24 | log_older_near | 0.0105 |
+| sector | 24 | log_frp_mean | 0.0088 |
+| sector | 24 | prev_share | 0.0067 |
+| sector | 24 | older_near_share_s | 0.0053 |
+
+### 2022 forecast_sectors
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | 150 | 2731 | 0.3417 | 93 | 652 | 112 | 1146 | 125 | 1781 |
+| 24 | 298 | 8231 | 0.3767 | 163 | 1727 | 216 | 3350 | 243 | 4910 |
+
+### 2022 front_alerts
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| delay_h | alerts | with_front | share | goes_first | goes_first_with_front | viirs_first | viirs_first_with_front |
+|---|---|---|---|---|---|---|---|
+| 0.5 | 3167 | 178 | 0.0562 | 936 | 2 | 1846 | 165 |
+| 3 | 3167 | 406 | 0.1282 | 936 | 56 | 1846 | 318 |
+| 6 | 3167 | 483 | 0.1525 | 936 | 105 | 1846 | 318 |
+| 12 | 3167 | 569 | 0.1797 | 936 | 186 | 1846 | 322 |
+| 24 | 3167 | 614 | 0.1939 | 936 | 218 | 1846 | 334 |
+| 48 | 3167 | 629 | 0.1986 | 936 | 229 | 1846 | 344 |
+
+### 2022 front_steps
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | fronts_with_10_new_pixels | distance_m_median |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | day | 1196 | 116 | 348 | 459 | 273 | 0.1257 | 32 | 1358.85 |
+| 12 | night | 711 | 134 | 259 | 198 | 120 | 0.2267 | 35 | 1523.42 |
+| 12 | all | 1907 | 250 | 607 | 657 | 393 | 0.1651 | 67 | 1438.03 |
+| 24 | day | 1196 | 270 | 315 | 230 | 381 | 0.3313 | 97 | 1678.7 |
+| 24 | night | 711 | 186 | 195 | 115 | 215 | 0.375 | 66 | 1816.41 |
+| 24 | all | 1907 | 456 | 510 | 345 | 596 | 0.3478 | 163 | 1702.93 |
 
 ### 2022 risk
 
@@ -2318,6 +3006,187 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | merged, level HIGH | 1000 to 10000 | 44 | 44 | 1.0 |
 | merged, level HIGH | 10000 to inf | 9 | 9 | 1.0 |
 
+### 2023 forecast
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | brier_share | brier_trees | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 4786 | 1367 | 0.6827 |  | 0.8083 | 0.8212 | 0.6444 | 0.2059 | 0.1494 | 0.2743 |
+| large_growth | 12 | 4786 | 565 | 0.7266 |  | 0.8231 | 0.8363 | 0.4447 | 0.1048 | 0.0836 | 0.2025 |
+| sector | 12 | 38288 | 3212 | 0.6052 | 0.5714 | 0.8337 | 0.8567 | 0.3935 | 0.0771 | 0.0622 | 0.1923 |
+| new_ground | 24 | 4383 | 2268 | 0.6842 |  | 0.8023 | 0.8154 | 0.8258 | 0.2557 | 0.1769 | 0.3083 |
+| large_growth | 24 | 4383 | 1197 | 0.7196 |  | 0.8126 | 0.8196 | 0.6456 | 0.2023 | 0.1451 | 0.2829 |
+| sector | 24 | 35064 | 6289 | 0.6108 | 0.548 | 0.818 | 0.8289 | 0.5419 | 0.1483 | 0.1116 | 0.2477 |
+
+### 2023 forecast_chances
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
+|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 0.0 | 0.05 | 683 | 0.0331 | 19 | 0.0278 |
+| new_ground | 12 | 0.05 | 0.1 | 907 | 0.0734 | 66 | 0.0728 |
+| new_ground | 12 | 0.1 | 0.2 | 880 | 0.1434 | 140 | 0.1591 |
+| new_ground | 12 | 0.2 | 0.35 | 744 | 0.2697 | 237 | 0.3185 |
+| new_ground | 12 | 0.35 | 0.5 | 532 | 0.4215 | 235 | 0.4417 |
+| new_ground | 12 | 0.5 | 0.7 | 627 | 0.5944 | 350 | 0.5582 |
+| new_ground | 12 | 0.7 | 1.0 | 413 | 0.7924 | 320 | 0.7748 |
+| large_growth | 12 | 0.0 | 0.05 | 2449 | 0.0198 | 46 | 0.0188 |
+| large_growth | 12 | 0.05 | 0.1 | 710 | 0.072 | 83 | 0.1169 |
+| large_growth | 12 | 0.1 | 0.2 | 619 | 0.1432 | 88 | 0.1422 |
+| large_growth | 12 | 0.2 | 0.35 | 476 | 0.267 | 102 | 0.2143 |
+| large_growth | 12 | 0.35 | 0.5 | 268 | 0.4226 | 94 | 0.3507 |
+| large_growth | 12 | 0.5 | 0.7 | 204 | 0.5823 | 108 | 0.5294 |
+| large_growth | 12 | 0.7 | 1.0 | 60 | 0.7648 | 44 | 0.7333 |
+| sector | 12 | 0.0 | 0.05 | 23142 | 0.0171 | 374 | 0.0162 |
+| sector | 12 | 0.05 | 0.1 | 5216 | 0.0717 | 367 | 0.0704 |
+| sector | 12 | 0.1 | 0.2 | 4421 | 0.1432 | 633 | 0.1432 |
+| sector | 12 | 0.2 | 0.35 | 2840 | 0.2664 | 658 | 0.2317 |
+| sector | 12 | 0.35 | 0.5 | 1578 | 0.4156 | 584 | 0.3701 |
+| sector | 12 | 0.5 | 0.7 | 955 | 0.5794 | 492 | 0.5152 |
+| sector | 12 | 0.7 | 1.0 | 136 | 0.757 | 104 | 0.7647 |
+| new_ground | 24 | 0.0 | 0.05 | 37 | 0.0403 | 0 | 0.0 |
+| new_ground | 24 | 0.05 | 0.1 | 260 | 0.079 | 17 | 0.0654 |
+| new_ground | 24 | 0.1 | 0.2 | 564 | 0.1482 | 100 | 0.1773 |
+| new_ground | 24 | 0.2 | 0.35 | 815 | 0.2753 | 256 | 0.3141 |
+| new_ground | 24 | 0.35 | 0.5 | 718 | 0.4237 | 366 | 0.5097 |
+| new_ground | 24 | 0.5 | 0.7 | 795 | 0.5991 | 503 | 0.6327 |
+| new_ground | 24 | 0.7 | 1.0 | 1194 | 0.8418 | 1026 | 0.8593 |
+| large_growth | 24 | 0.0 | 0.05 | 778 | 0.0312 | 21 | 0.027 |
+| large_growth | 24 | 0.05 | 0.1 | 789 | 0.0736 | 72 | 0.0913 |
+| large_growth | 24 | 0.1 | 0.2 | 865 | 0.1442 | 164 | 0.1896 |
+| large_growth | 24 | 0.2 | 0.35 | 693 | 0.2653 | 202 | 0.2915 |
+| large_growth | 24 | 0.35 | 0.5 | 441 | 0.4187 | 196 | 0.4444 |
+| large_growth | 24 | 0.5 | 0.7 | 450 | 0.594 | 239 | 0.5311 |
+| large_growth | 24 | 0.7 | 1.0 | 367 | 0.8042 | 303 | 0.8256 |
+| sector | 24 | 0.0 | 0.05 | 11860 | 0.0238 | 314 | 0.0265 |
+| sector | 24 | 0.05 | 0.1 | 5723 | 0.0732 | 462 | 0.0807 |
+| sector | 24 | 0.1 | 0.2 | 6389 | 0.144 | 960 | 0.1503 |
+| sector | 24 | 0.2 | 0.35 | 4877 | 0.2672 | 1300 | 0.2666 |
+| sector | 24 | 0.35 | 0.5 | 2714 | 0.4189 | 1079 | 0.3976 |
+| sector | 24 | 0.5 | 0.7 | 2305 | 0.5916 | 1272 | 0.5518 |
+| sector | 24 | 0.7 | 1.0 | 1196 | 0.7855 | 902 | 0.7542 |
+
+### 2023 forecast_direction
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|
+| 12 | 987 | 518 | 318 | 577 | 365 | 353 | 647 | 270 |
+| 24 | 1789 | 968 | 578 | 1002 | 611 | 580 | 1091 | 522 |
+
+### 2023 forecast_first_look
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | rows | new_ground | auc_trees | fronts_with_direction | trees_in_45 |
+|---|---|---|---|---|---|---|
+| 12 | first look | 89 | 17 | 0.902 | 14 | 8 |
+| 12 | other | 4697 | 1350 | 0.8201 | 973 | 569 |
+| 24 | first look | 83 | 31 | 0.8102 | 23 | 13 |
+| 24 | other | 4300 | 2237 | 0.8154 | 1766 | 989 |
+
+### 2023 forecast_inputs
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | input | auc_decrease |
+|---|---|---|---|
+| new_ground | 12 | log_span | 0.0972 |
+| new_ground | 12 | day_look | 0.0684 |
+| new_ground | 12 | log_older_near | 0.0419 |
+| new_ground | 12 | prev_share | 0.0205 |
+| new_ground | 12 | log_frp_mean | 0.0092 |
+| new_ground | 12 | log_came_distance | 0.008 |
+| new_ground | 12 | on_pasture | 0.0055 |
+| new_ground | 12 | log_pixels | 0.0037 |
+| large_growth | 12 | day_look | 0.0676 |
+| large_growth | 12 | log_span | 0.0447 |
+| large_growth | 12 | log_older_near | 0.0272 |
+| large_growth | 12 | prev_share | 0.0167 |
+| large_growth | 12 | log_came | 0.0111 |
+| large_growth | 12 | log_frp_mean | 0.0075 |
+| large_growth | 12 | log_came_distance | 0.0063 |
+| large_growth | 12 | log_pixels | 0.0049 |
+| sector | 12 | log_span | 0.084 |
+| sector | 12 | day_look | 0.0631 |
+| sector | 12 | log_older_near_s | 0.0202 |
+| sector | 12 | older_near_share_s | 0.0149 |
+| sector | 12 | prev_share | 0.0113 |
+| sector | 12 | east_s | 0.0105 |
+| sector | 12 | log_older_near | 0.0073 |
+| sector | 12 | log_came_distance | 0.0069 |
+| new_ground | 24 | log_span | 0.0976 |
+| new_ground | 24 | log_older_near | 0.0596 |
+| new_ground | 24 | day_look | 0.0305 |
+| new_ground | 24 | prev_share | 0.017 |
+| new_ground | 24 | log_pixels | 0.0133 |
+| new_ground | 24 | on_pasture | 0.0122 |
+| new_ground | 24 | log_came | 0.0071 |
+| new_ground | 24 | log_frp_mean | 0.0063 |
+| large_growth | 24 | log_span | 0.0607 |
+| large_growth | 24 | log_older_near | 0.0427 |
+| large_growth | 24 | day_look | 0.0306 |
+| large_growth | 24 | log_pixels | 0.0182 |
+| large_growth | 24 | prev_share | 0.0143 |
+| large_growth | 24 | log_frp_mean | 0.0083 |
+| large_growth | 24 | log_came | 0.0054 |
+| large_growth | 24 | on_pasture | 0.005 |
+| sector | 24 | log_span | 0.0841 |
+| sector | 24 | log_older_near_s | 0.0343 |
+| sector | 24 | day_look | 0.0212 |
+| sector | 24 | log_older_near | 0.0122 |
+| sector | 24 | older_near_share_s | 0.012 |
+| sector | 24 | log_older_behind_s | 0.01 |
+| sector | 24 | prev_share | 0.0093 |
+| sector | 24 | log_pixels | 0.0092 |
+
+### 2023 forecast_sectors
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | 987 | 26825 | 0.3508 | 660 | 7835 | 810 | 14577 | 879 | 19147 |
+| 24 | 1789 | 79957 | 0.4022 | 1228 | 22734 | 1502 | 41091 | 1625 | 55816 |
+
+### 2023 front_alerts
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| delay_h | alerts | with_front | share | goes_first | goes_first_with_front | viirs_first | viirs_first_with_front |
+|---|---|---|---|---|---|---|---|
+| 0.5 | 5810 | 267 | 0.046 | 3904 | 5 | 1739 | 262 |
+| 3 | 5810 | 521 | 0.0897 | 3904 | 153 | 1739 | 363 |
+| 6 | 5810 | 692 | 0.1191 | 3904 | 307 | 1739 | 363 |
+| 12 | 5810 | 784 | 0.1349 | 3904 | 398 | 1739 | 364 |
+| 24 | 5810 | 807 | 0.1389 | 3904 | 396 | 1739 | 388 |
+| 48 | 5810 | 806 | 0.1387 | 3904 | 400 | 1739 | 384 |
+
+### 2023 front_flames
+
+Configuration `ad7baf568695`, run on 2026-11-26.
+
+| hours | fronts_with_image | flames_on_new_ground | of_them_new_ground | share_of_them | of_them_not_visible | no_flames_on_new_ground | of_those_new_ground | share_of_those | directions_in_45 | directions_compared | distance_m_median | flames_distance_m_median |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 12 | 495 | 54 | 51 | 0.9444 | 2 | 166 | 42 | 0.253 | 39 | 51 | 2338.8 | 1361.8 |
+| 24 | 642 | 132 | 127 | 0.9621 | 3 | 208 | 30 | 0.1442 | 111 | 127 | 2100.1 | 1494.0 |
+
+### 2023 front_steps
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | fronts_with_10_new_pixels | distance_m_median |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | day | 3724 | 622 | 1066 | 1173 | 863 | 0.2174 | 250 | 1403.15 |
+| 12 | night | 2134 | 745 | 921 | 259 | 209 | 0.387 | 315 | 1765.24 |
+| 12 | all | 5858 | 1367 | 1987 | 1432 | 1072 | 0.2856 | 565 | 1592.17 |
+| 24 | day | 3724 | 1266 | 948 | 492 | 1018 | 0.4678 | 642 | 1746.95 |
+| 24 | night | 2134 | 1002 | 539 | 136 | 457 | 0.5975 | 555 | 1987.73 |
+| 24 | all | 5858 | 2268 | 1487 | 628 | 1475 | 0.5175 | 1197 | 1826.47 |
+
 ### 2023 growth_steps
 
 Configuration `a84ef20c2e1b`, run on 2026-11-23.
@@ -3215,6 +4084,187 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | merged, level HIGH | 100 to 1000 | 462 | 337 | 0.7294 |
 | merged, level HIGH | 1000 to 10000 | 102 | 98 | 0.9608 |
 | merged, level HIGH | 10000 to inf | 25 | 25 | 1.0 |
+
+### 2024 forecast
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | brier_share | brier_trees | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 10203 | 2678 | 0.7375 |  | 0.8264 | 0.8438 | 0.6742 | 0.194 | 0.1328 | 0.3155 |
+| large_growth | 12 | 10203 | 1264 | 0.7862 |  | 0.8587 | 0.8702 | 0.5275 | 0.1099 | 0.0799 | 0.2732 |
+| sector | 12 | 81624 | 6645 | 0.6446 | 0.5526 | 0.8567 | 0.8768 | 0.4309 | 0.075 | 0.0579 | 0.227 |
+| new_ground | 24 | 9429 | 4218 | 0.7199 |  | 0.8217 | 0.8349 | 0.8115 | 0.2472 | 0.1644 | 0.3349 |
+| large_growth | 24 | 9429 | 2421 | 0.758 |  | 0.8367 | 0.8486 | 0.6828 | 0.1933 | 0.1311 | 0.3221 |
+| sector | 24 | 75432 | 12185 | 0.6342 | 0.5251 | 0.8453 | 0.8557 | 0.5652 | 0.1357 | 0.0978 | 0.2796 |
+
+### 2024 forecast_chances
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
+|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 0.0 | 0.05 | 2230 | 0.0287 | 55 | 0.0247 |
+| new_ground | 12 | 0.05 | 0.1 | 1836 | 0.0722 | 170 | 0.0926 |
+| new_ground | 12 | 0.1 | 0.2 | 1879 | 0.1426 | 313 | 0.1666 |
+| new_ground | 12 | 0.2 | 0.35 | 1438 | 0.2714 | 393 | 0.2733 |
+| new_ground | 12 | 0.35 | 0.5 | 1044 | 0.4254 | 490 | 0.4693 |
+| new_ground | 12 | 0.5 | 0.7 | 1065 | 0.5918 | 671 | 0.63 |
+| new_ground | 12 | 0.7 | 1.0 | 711 | 0.8007 | 586 | 0.8242 |
+| large_growth | 12 | 0.0 | 0.05 | 6275 | 0.0171 | 159 | 0.0253 |
+| large_growth | 12 | 0.05 | 0.1 | 1216 | 0.0721 | 126 | 0.1036 |
+| large_growth | 12 | 0.1 | 0.2 | 1076 | 0.1438 | 221 | 0.2054 |
+| large_growth | 12 | 0.2 | 0.35 | 770 | 0.2667 | 243 | 0.3156 |
+| large_growth | 12 | 0.35 | 0.5 | 423 | 0.4158 | 210 | 0.4965 |
+| large_growth | 12 | 0.5 | 0.7 | 339 | 0.5836 | 220 | 0.649 |
+| large_growth | 12 | 0.7 | 1.0 | 104 | 0.7914 | 85 | 0.8173 |
+| sector | 12 | 0.0 | 0.05 | 55309 | 0.0135 | 940 | 0.017 |
+| sector | 12 | 0.05 | 0.1 | 9319 | 0.0716 | 814 | 0.0873 |
+| sector | 12 | 0.1 | 0.2 | 7755 | 0.1423 | 1263 | 0.1629 |
+| sector | 12 | 0.2 | 0.35 | 5003 | 0.2647 | 1443 | 0.2884 |
+| sector | 12 | 0.35 | 0.5 | 2400 | 0.416 | 1048 | 0.4367 |
+| sector | 12 | 0.5 | 0.7 | 1393 | 0.5807 | 792 | 0.5686 |
+| sector | 12 | 0.7 | 1.0 | 445 | 0.7773 | 345 | 0.7753 |
+| new_ground | 24 | 0.0 | 0.05 | 517 | 0.0371 | 14 | 0.0271 |
+| new_ground | 24 | 0.05 | 0.1 | 830 | 0.0748 | 81 | 0.0976 |
+| new_ground | 24 | 0.1 | 0.2 | 1500 | 0.1489 | 242 | 0.1613 |
+| new_ground | 24 | 0.2 | 0.35 | 1706 | 0.2706 | 542 | 0.3177 |
+| new_ground | 24 | 0.35 | 0.5 | 1247 | 0.423 | 571 | 0.4579 |
+| new_ground | 24 | 0.5 | 0.7 | 1426 | 0.6011 | 877 | 0.615 |
+| new_ground | 24 | 0.7 | 1.0 | 2203 | 0.8483 | 1891 | 0.8584 |
+| large_growth | 24 | 0.0 | 0.05 | 2799 | 0.0259 | 103 | 0.0368 |
+| large_growth | 24 | 0.05 | 0.1 | 1689 | 0.0724 | 171 | 0.1012 |
+| large_growth | 24 | 0.1 | 0.2 | 1599 | 0.1425 | 333 | 0.2083 |
+| large_growth | 24 | 0.2 | 0.35 | 1207 | 0.2684 | 405 | 0.3355 |
+| large_growth | 24 | 0.35 | 0.5 | 797 | 0.4176 | 401 | 0.5031 |
+| large_growth | 24 | 0.5 | 0.7 | 701 | 0.5948 | 467 | 0.6662 |
+| large_growth | 24 | 0.7 | 1.0 | 637 | 0.8153 | 541 | 0.8493 |
+| sector | 24 | 0.0 | 0.05 | 32619 | 0.0197 | 712 | 0.0218 |
+| sector | 24 | 0.05 | 0.1 | 11884 | 0.0726 | 1004 | 0.0845 |
+| sector | 24 | 0.1 | 0.2 | 11561 | 0.1441 | 1937 | 0.1675 |
+| sector | 24 | 0.2 | 0.35 | 8657 | 0.2653 | 2462 | 0.2844 |
+| sector | 24 | 0.35 | 0.5 | 4756 | 0.4184 | 2074 | 0.4361 |
+| sector | 24 | 0.5 | 0.7 | 3786 | 0.5905 | 2290 | 0.6049 |
+| sector | 24 | 0.7 | 1.0 | 2169 | 0.7944 | 1706 | 0.7865 |
+
+### 2024 forecast_direction
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|
+| 12 | 1997 | 1100 | 731 | 1181 | 803 | 692 | 1398 | 620 |
+| 24 | 3428 | 1913 | 1195 | 1953 | 1229 | 1059 | 2140 | 1101 |
+
+### 2024 forecast_first_look
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | rows | new_ground | auc_trees | fronts_with_direction | trees_in_45 |
+|---|---|---|---|---|---|---|
+| 12 | first look | 92 | 12 | 0.8135 | 10 | 7 |
+| 12 | other | 10111 | 2666 | 0.8436 | 1987 | 1174 |
+| 24 | first look | 85 | 23 | 0.6669 | 16 | 9 |
+| 24 | other | 9344 | 4195 | 0.8356 | 3412 | 1944 |
+
+### 2024 forecast_inputs
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | input | auc_decrease |
+|---|---|---|---|
+| new_ground | 12 | log_span | 0.1025 |
+| new_ground | 12 | day_look | 0.0519 |
+| new_ground | 12 | log_older_near | 0.0512 |
+| new_ground | 12 | prev_share | 0.0132 |
+| new_ground | 12 | log_came_distance | 0.0117 |
+| new_ground | 12 | log_frp_mean | 0.0104 |
+| new_ground | 12 | log_pixels | 0.0049 |
+| new_ground | 12 | log_older_far | 0.0048 |
+| large_growth | 12 | day_look | 0.0519 |
+| large_growth | 12 | log_span | 0.0484 |
+| large_growth | 12 | log_older_near | 0.025 |
+| large_growth | 12 | log_came_distance | 0.0219 |
+| large_growth | 12 | prev_share | 0.0109 |
+| large_growth | 12 | log_frp_mean | 0.0083 |
+| large_growth | 12 | rain_30 | 0.0059 |
+| large_growth | 12 | log_pixels | 0.0043 |
+| sector | 12 | log_span | 0.0889 |
+| sector | 12 | day_look | 0.0419 |
+| sector | 12 | log_older_near_s | 0.0187 |
+| sector | 12 | log_older_near | 0.0131 |
+| sector | 12 | log_frp_mean | 0.0104 |
+| sector | 12 | older_near_share_s | 0.0091 |
+| sector | 12 | prev_share | 0.0087 |
+| sector | 12 | log_came_distance | 0.0085 |
+| new_ground | 24 | log_span | 0.0888 |
+| new_ground | 24 | log_older_near | 0.0659 |
+| new_ground | 24 | day_look | 0.0187 |
+| new_ground | 24 | log_pixels | 0.0112 |
+| new_ground | 24 | prev_share | 0.009 |
+| new_ground | 24 | log_frp_mean | 0.0065 |
+| new_ground | 24 | on_pasture | 0.0062 |
+| new_ground | 24 | log_older_far | 0.0058 |
+| large_growth | 24 | log_span | 0.0745 |
+| large_growth | 24 | log_older_near | 0.0435 |
+| large_growth | 24 | day_look | 0.0195 |
+| large_growth | 24 | log_pixels | 0.0143 |
+| large_growth | 24 | prev_share | 0.0099 |
+| large_growth | 24 | log_frp_mean | 0.0079 |
+| large_growth | 24 | came_steady | 0.0057 |
+| large_growth | 24 | log_older_far | 0.0042 |
+| sector | 24 | log_span | 0.097 |
+| sector | 24 | log_older_near_s | 0.0283 |
+| sector | 24 | day_look | 0.0148 |
+| sector | 24 | older_near_share_s | 0.0138 |
+| sector | 24 | log_older_near | 0.0118 |
+| sector | 24 | log_pixels | 0.0084 |
+| sector | 24 | log_older_behind_s | 0.0069 |
+| sector | 24 | log_came_distance | 0.0058 |
+
+### 2024 forecast_sectors
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | 1997 | 74744 | 0.3672 | 1368 | 23439 | 1669 | 41706 | 1806 | 54619 |
+| 24 | 3428 | 217692 | 0.4113 | 2417 | 62467 | 2884 | 113670 | 3118 | 151330 |
+
+### 2024 front_alerts
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| delay_h | alerts | with_front | share | goes_first | goes_first_with_front | viirs_first | viirs_first_with_front |
+|---|---|---|---|---|---|---|---|
+| 0.5 | 6070 | 442 | 0.0728 | 3040 | 10 | 2649 | 430 |
+| 3 | 6070 | 782 | 0.1288 | 3040 | 209 | 2649 | 566 |
+| 6 | 6070 | 1009 | 0.1662 | 3040 | 411 | 2649 | 566 |
+| 12 | 6070 | 1112 | 0.1832 | 3040 | 510 | 2649 | 568 |
+| 24 | 6070 | 1147 | 0.189 | 3040 | 486 | 2649 | 620 |
+| 48 | 6070 | 1190 | 0.196 | 3040 | 510 | 2649 | 640 |
+
+### 2024 front_flames
+
+Configuration `ad7baf568695`, run on 2026-11-27.
+
+| hours | fronts_with_image | flames_on_new_ground | of_them_new_ground | share_of_them | of_them_not_visible | no_flames_on_new_ground | of_those_new_ground | share_of_those | directions_in_45 | directions_compared | distance_m_median | flames_distance_m_median |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 12 | 939 | 104 | 84 | 0.8077 | 10 | 539 | 135 | 0.2505 | 75 | 84 | 2100.6 | 1437.85 |
+| 24 | 1312 | 256 | 235 | 0.918 | 7 | 585 | 98 | 0.1675 | 218 | 235 | 2123.8 | 1788.8 |
+
+### 2024 front_steps
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | fronts_with_10_new_pixels | distance_m_median |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | day | 6907 | 1257 | 2575 | 2221 | 854 | 0.2077 | 584 | 1483.57 |
+| 12 | night | 4604 | 1421 | 2231 | 498 | 454 | 0.3424 | 680 | 1732.39 |
+| 12 | all | 11511 | 2678 | 4806 | 2719 | 1308 | 0.2625 | 1264 | 1619.27 |
+| 24 | day | 6907 | 2278 | 2323 | 996 | 1310 | 0.407 | 1272 | 1779.51 |
+| 24 | night | 4604 | 1940 | 1614 | 278 | 772 | 0.5063 | 1149 | 1972.25 |
+| 24 | all | 11511 | 4218 | 3937 | 1274 | 2082 | 0.4473 | 2421 | 1868.1 |
 
 ### 2024 growth_steps
 
@@ -4149,6 +5199,178 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | merged, level HIGH | 1000 to 10000 | 13 | 13 | 1.0 |
 | merged, level HIGH | 10000 to inf | 2 | 2 | 1.0 |
 
+### 2025 forecast
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | brier_share | brier_trees | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 675 | 116 | 0.7156 |  | 0.8679 | 0.8758 | 0.5986 | 0.1479 | 0.0999 | 0.3251 |
+| large_growth | 12 | 675 | 48 | 0.7436 |  | 0.8564 | 0.8656 | 0.3749 | 0.0666 | 0.0549 | 0.1756 |
+| sector | 12 | 5400 | 258 | 0.571 | 0.5449 | 0.8597 | 0.8739 | 0.2971 | 0.046 | 0.039 | 0.1527 |
+| new_ground | 24 | 576 | 207 | 0.7175 |  | 0.8252 | 0.8482 | 0.7645 | 0.238 | 0.1542 | 0.352 |
+| large_growth | 24 | 576 | 97 | 0.744 |  | 0.8359 | 0.848 | 0.5433 | 0.1424 | 0.1064 | 0.2532 |
+| sector | 24 | 4608 | 525 | 0.5901 | 0.5064 | 0.8098 | 0.824 | 0.4013 | 0.1022 | 0.0853 | 0.165 |
+
+### 2025 forecast_chances
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
+|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 0.0 | 0.05 | 150 | 0.0342 | 2 | 0.0133 |
+| new_ground | 12 | 0.05 | 0.1 | 152 | 0.0724 | 2 | 0.0132 |
+| new_ground | 12 | 0.1 | 0.2 | 121 | 0.1359 | 10 | 0.0826 |
+| new_ground | 12 | 0.2 | 0.35 | 93 | 0.2747 | 21 | 0.2258 |
+| new_ground | 12 | 0.35 | 0.5 | 66 | 0.424 | 26 | 0.3939 |
+| new_ground | 12 | 0.5 | 0.7 | 68 | 0.5975 | 36 | 0.5294 |
+| new_ground | 12 | 0.7 | 1.0 | 25 | 0.7722 | 19 | 0.76 |
+| large_growth | 12 | 0.0 | 0.05 | 443 | 0.0174 | 5 | 0.0113 |
+| large_growth | 12 | 0.05 | 0.1 | 66 | 0.0765 | 4 | 0.0606 |
+| large_growth | 12 | 0.1 | 0.2 | 77 | 0.1375 | 16 | 0.2078 |
+| large_growth | 12 | 0.2 | 0.35 | 56 | 0.2747 | 9 | 0.1607 |
+| large_growth | 12 | 0.35 | 0.5 | 21 | 0.4286 | 8 | 0.381 |
+| large_growth | 12 | 0.5 | 0.7 | 9 | 0.5514 | 3 | 0.3333 |
+| large_growth | 12 | 0.7 | 1.0 | 3 | 0.8158 | 3 | 1.0 |
+| sector | 12 | 0.0 | 0.05 | 3796 | 0.0156 | 30 | 0.0079 |
+| sector | 12 | 0.05 | 0.1 | 638 | 0.0717 | 50 | 0.0784 |
+| sector | 12 | 0.1 | 0.2 | 544 | 0.142 | 57 | 0.1048 |
+| sector | 12 | 0.2 | 0.35 | 286 | 0.2586 | 64 | 0.2238 |
+| sector | 12 | 0.35 | 0.5 | 95 | 0.4084 | 40 | 0.4211 |
+| sector | 12 | 0.5 | 0.7 | 39 | 0.5652 | 15 | 0.3846 |
+| sector | 12 | 0.7 | 1.0 | 2 | 0.7222 | 2 | 1.0 |
+| new_ground | 24 | 0.0 | 0.05 | 15 | 0.04 | 0 | 0.0 |
+| new_ground | 24 | 0.05 | 0.1 | 60 | 0.0758 | 1 | 0.0167 |
+| new_ground | 24 | 0.1 | 0.2 | 90 | 0.1475 | 7 | 0.0778 |
+| new_ground | 24 | 0.2 | 0.35 | 114 | 0.2751 | 26 | 0.2281 |
+| new_ground | 24 | 0.35 | 0.5 | 79 | 0.4249 | 24 | 0.3038 |
+| new_ground | 24 | 0.5 | 0.7 | 91 | 0.5938 | 49 | 0.5385 |
+| new_ground | 24 | 0.7 | 1.0 | 127 | 0.8342 | 100 | 0.7874 |
+| large_growth | 24 | 0.0 | 0.05 | 153 | 0.0283 | 1 | 0.0065 |
+| large_growth | 24 | 0.05 | 0.1 | 114 | 0.0735 | 5 | 0.0439 |
+| large_growth | 24 | 0.1 | 0.2 | 105 | 0.1425 | 12 | 0.1143 |
+| large_growth | 24 | 0.2 | 0.35 | 84 | 0.2667 | 23 | 0.2738 |
+| large_growth | 24 | 0.35 | 0.5 | 51 | 0.4152 | 18 | 0.3529 |
+| large_growth | 24 | 0.5 | 0.7 | 51 | 0.5996 | 25 | 0.4902 |
+| large_growth | 24 | 0.7 | 1.0 | 18 | 0.7952 | 13 | 0.7222 |
+| sector | 24 | 0.0 | 0.05 | 1796 | 0.0239 | 26 | 0.0145 |
+| sector | 24 | 0.05 | 0.1 | 854 | 0.0715 | 47 | 0.055 |
+| sector | 24 | 0.1 | 0.2 | 786 | 0.1421 | 110 | 0.1399 |
+| sector | 24 | 0.2 | 0.35 | 591 | 0.2678 | 115 | 0.1946 |
+| sector | 24 | 0.35 | 0.5 | 348 | 0.4168 | 103 | 0.296 |
+| sector | 24 | 0.5 | 0.7 | 196 | 0.5813 | 96 | 0.4898 |
+| sector | 24 | 0.7 | 1.0 | 37 | 0.7762 | 28 | 0.7568 |
+
+### 2025 forecast_direction
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|
+| 12 | 80 | 34 | 23 | 38 | 26 | 36 | 53 | 21 |
+| 24 | 162 | 76 | 51 | 76 | 49 | 57 | 105 | 39 |
+
+### 2025 forecast_first_look
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | rows | new_ground | auc_trees | fronts_with_direction | trees_in_45 |
+|---|---|---|---|---|---|---|
+| 12 | first look | 52 | 9 | 0.814 | 7 | 3 |
+| 12 | other | 623 | 107 | 0.8808 | 73 | 35 |
+| 24 | first look | 41 | 15 | 0.7436 | 11 | 5 |
+| 24 | other | 535 | 192 | 0.8553 | 151 | 71 |
+
+### 2025 forecast_inputs
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | input | auc_decrease |
+|---|---|---|---|
+| new_ground | 12 | day_look | 0.0822 |
+| new_ground | 12 | log_span | 0.0591 |
+| new_ground | 12 | log_older_near | 0.0355 |
+| new_ground | 12 | prev_share | 0.0163 |
+| new_ground | 12 | on_pasture | 0.0109 |
+| new_ground | 12 | log_came_distance | 0.008 |
+| new_ground | 12 | burned_before | 0.0065 |
+| new_ground | 12 | past_temp | 0.0051 |
+| large_growth | 12 | day_look | 0.0869 |
+| large_growth | 12 | log_older_near | 0.0227 |
+| large_growth | 12 | log_span | 0.0215 |
+| large_growth | 12 | log_came | 0.0143 |
+| large_growth | 12 | prev_share | 0.0111 |
+| large_growth | 12 | log_frp_mean | 0.009 |
+| large_growth | 12 | burned_before | 0.0074 |
+| large_growth | 12 | log_fresh | 0.0069 |
+| sector | 12 | log_span | 0.0804 |
+| sector | 12 | day_look | 0.076 |
+| sector | 12 | prev_share | 0.0137 |
+| sector | 12 | log_frp_mean | 0.0119 |
+| sector | 12 | log_older_near_s | 0.0099 |
+| sector | 12 | log_older_near | 0.0077 |
+| sector | 12 | east_s | 0.0076 |
+| sector | 12 | ahead_pasture_s | 0.0062 |
+| new_ground | 24 | log_span | 0.0664 |
+| new_ground | 24 | day_look | 0.0347 |
+| new_ground | 24 | on_pasture | 0.028 |
+| new_ground | 24 | log_older_near | 0.0277 |
+| new_ground | 24 | log_came_distance | 0.0159 |
+| new_ground | 24 | past_temp | 0.0152 |
+| new_ground | 24 | log_pixels | 0.009 |
+| new_ground | 24 | rain_7 | 0.006 |
+| large_growth | 24 | day_look | 0.0331 |
+| large_growth | 24 | log_span | 0.0298 |
+| large_growth | 24 | log_older_near | 0.0158 |
+| large_growth | 24 | on_pasture | 0.0141 |
+| large_growth | 24 | log_frp_mean | 0.0141 |
+| large_growth | 24 | log_came | 0.0129 |
+| large_growth | 24 | prev_share | 0.0119 |
+| large_growth | 24 | log_pixels | 0.0079 |
+| sector | 24 | log_span | 0.068 |
+| sector | 24 | day_look | 0.0268 |
+| sector | 24 | log_older_near_s | 0.0195 |
+| sector | 24 | on_pasture | 0.0107 |
+| sector | 24 | log_frp_mean | 0.0094 |
+| sector | 24 | log_older_behind_s | 0.0073 |
+| sector | 24 | log_older_near | 0.0065 |
+| sector | 24 | past_temp | 0.0048 |
+
+### 2025 forecast_sectors
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | 80 | 1832 | 0.3344 | 46 | 539 | 59 | 909 | 62 | 1247 |
+| 24 | 162 | 4949 | 0.3627 | 103 | 1581 | 119 | 2598 | 134 | 3197 |
+
+### 2025 front_alerts
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| delay_h | alerts | with_front | share | goes_first | goes_first_with_front | viirs_first | viirs_first_with_front |
+|---|---|---|---|---|---|---|---|
+| 0.5 | 1682 | 128 | 0.0761 | 674 | 1 | 917 | 127 |
+| 3 | 1682 | 216 | 0.1284 | 674 | 51 | 917 | 164 |
+| 6 | 1682 | 293 | 0.1742 | 674 | 119 | 917 | 164 |
+| 12 | 1682 | 334 | 0.1986 | 674 | 161 | 917 | 163 |
+| 24 | 1682 | 348 | 0.2069 | 674 | 171 | 917 | 167 |
+| 48 | 1682 | 350 | 0.2081 | 674 | 170 | 917 | 172 |
+
+### 2025 front_steps
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | fronts_with_10_new_pixels | distance_m_median |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | day | 591 | 52 | 128 | 242 | 169 | 0.1232 | 21 | 1363.44 |
+| 12 | night | 300 | 64 | 95 | 94 | 47 | 0.253 | 27 | 1715.63 |
+| 12 | all | 891 | 116 | 223 | 336 | 216 | 0.1719 | 48 | 1508.91 |
+| 24 | day | 591 | 126 | 110 | 133 | 222 | 0.3415 | 56 | 1860.81 |
+| 24 | night | 300 | 81 | 74 | 52 | 93 | 0.3913 | 41 | 1893.38 |
+| 24 | all | 891 | 207 | 184 | 185 | 315 | 0.3594 | 97 | 1879.64 |
+
 ### 2025 growth_steps
 
 Configuration `a84ef20c2e1b`, run on 2026-11-23.
@@ -4906,6 +6128,178 @@ Configuration `e06a03177d61`, run on 2026-11-24.
 | 0 | level | 1103 | 467 | 0.6097 | 110 | 59 |  |  |
 | 24 | probability | 1078 | 444 | 0.8439 | 107 | 106 |  |  |
 | 24 | level | 1078 | 444 | 0.7481 | 107 | 56 |  |  |
+
+### 2026 forecast
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | brier_share | brier_trees | brier_skill |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 613 | 153 | 0.663 |  | 0.786 | 0.8052 | 0.5869 | 0.1873 | 0.144 | 0.231 |
+| large_growth | 12 | 613 | 55 | 0.6839 |  | 0.8098 | 0.8211 | 0.3182 | 0.0817 | 0.0732 | 0.1035 |
+| sector | 12 | 4904 | 332 | 0.5935 | 0.5183 | 0.8131 | 0.8423 | 0.2877 | 0.0631 | 0.0548 | 0.1321 |
+| new_ground | 24 | 533 | 249 | 0.6523 |  | 0.7551 | 0.7687 | 0.7408 | 0.2493 | 0.1963 | 0.2128 |
+| large_growth | 24 | 533 | 113 | 0.6777 |  | 0.8007 | 0.7951 | 0.5125 | 0.1671 | 0.1352 | 0.1907 |
+| sector | 24 | 4264 | 618 | 0.5728 | 0.4735 | 0.776 | 0.7926 | 0.4105 | 0.1239 | 0.1049 | 0.1537 |
+
+### 2026 forecast_chances
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
+|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 0.0 | 0.05 | 77 | 0.0374 | 3 | 0.039 |
+| new_ground | 12 | 0.05 | 0.1 | 130 | 0.0712 | 6 | 0.0462 |
+| new_ground | 12 | 0.1 | 0.2 | 107 | 0.1461 | 19 | 0.1776 |
+| new_ground | 12 | 0.2 | 0.35 | 112 | 0.273 | 30 | 0.2679 |
+| new_ground | 12 | 0.35 | 0.5 | 72 | 0.4158 | 27 | 0.375 |
+| new_ground | 12 | 0.5 | 0.7 | 89 | 0.5951 | 49 | 0.5506 |
+| new_ground | 12 | 0.7 | 1.0 | 26 | 0.7832 | 19 | 0.7308 |
+| large_growth | 12 | 0.0 | 0.05 | 338 | 0.0205 | 8 | 0.0237 |
+| large_growth | 12 | 0.05 | 0.1 | 103 | 0.0734 | 6 | 0.0583 |
+| large_growth | 12 | 0.1 | 0.2 | 76 | 0.1368 | 17 | 0.2237 |
+| large_growth | 12 | 0.2 | 0.35 | 59 | 0.2597 | 11 | 0.1864 |
+| large_growth | 12 | 0.35 | 0.5 | 25 | 0.4154 | 6 | 0.24 |
+| large_growth | 12 | 0.5 | 0.7 | 10 | 0.5936 | 6 | 0.6 |
+| large_growth | 12 | 0.7 | 1.0 | 2 | 0.8229 | 1 | 0.5 |
+| sector | 12 | 0.0 | 0.05 | 2932 | 0.0187 | 35 | 0.0119 |
+| sector | 12 | 0.05 | 0.1 | 828 | 0.0715 | 57 | 0.0688 |
+| sector | 12 | 0.1 | 0.2 | 632 | 0.1402 | 83 | 0.1313 |
+| sector | 12 | 0.2 | 0.35 | 324 | 0.2573 | 83 | 0.2562 |
+| sector | 12 | 0.35 | 0.5 | 121 | 0.4118 | 44 | 0.3636 |
+| sector | 12 | 0.5 | 0.7 | 59 | 0.5748 | 27 | 0.4576 |
+| sector | 12 | 0.7 | 1.0 | 8 | 0.7475 | 3 | 0.375 |
+| new_ground | 24 | 0.0 | 0.05 | 2 | 0.0416 | 0 | 0.0 |
+| new_ground | 24 | 0.05 | 0.1 | 24 | 0.0799 | 2 | 0.0833 |
+| new_ground | 24 | 0.1 | 0.2 | 61 | 0.1464 | 7 | 0.1148 |
+| new_ground | 24 | 0.2 | 0.35 | 96 | 0.278 | 26 | 0.2708 |
+| new_ground | 24 | 0.35 | 0.5 | 89 | 0.4279 | 42 | 0.4719 |
+| new_ground | 24 | 0.5 | 0.7 | 126 | 0.6076 | 71 | 0.5635 |
+| new_ground | 24 | 0.7 | 1.0 | 135 | 0.8309 | 101 | 0.7481 |
+| large_growth | 24 | 0.0 | 0.05 | 83 | 0.0323 | 1 | 0.012 |
+| large_growth | 24 | 0.05 | 0.1 | 96 | 0.0734 | 7 | 0.0729 |
+| large_growth | 24 | 0.1 | 0.2 | 128 | 0.1517 | 16 | 0.125 |
+| large_growth | 24 | 0.2 | 0.35 | 104 | 0.2761 | 28 | 0.2692 |
+| large_growth | 24 | 0.35 | 0.5 | 60 | 0.4174 | 27 | 0.45 |
+| large_growth | 24 | 0.5 | 0.7 | 47 | 0.5955 | 22 | 0.4681 |
+| large_growth | 24 | 0.7 | 1.0 | 15 | 0.7858 | 12 | 0.8 |
+| sector | 24 | 0.0 | 0.05 | 1118 | 0.0278 | 21 | 0.0188 |
+| sector | 24 | 0.05 | 0.1 | 825 | 0.0728 | 51 | 0.0618 |
+| sector | 24 | 0.1 | 0.2 | 999 | 0.1437 | 134 | 0.1341 |
+| sector | 24 | 0.2 | 0.35 | 703 | 0.2654 | 148 | 0.2105 |
+| sector | 24 | 0.35 | 0.5 | 371 | 0.4158 | 118 | 0.3181 |
+| sector | 24 | 0.5 | 0.7 | 202 | 0.5825 | 116 | 0.5743 |
+| sector | 24 | 0.7 | 1.0 | 46 | 0.7701 | 30 | 0.6522 |
+
+### 2026 forecast_direction
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|
+| 12 | 102 | 53 | 38 | 52 | 38 | 36 | 78 | 26 |
+| 24 | 187 | 96 | 60 | 86 | 56 | 40 | 124 | 48 |
+
+### 2026 forecast_first_look
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | rows | new_ground | auc_trees | fronts_with_direction | trees_in_45 |
+|---|---|---|---|---|---|---|
+| 12 | first look | 42 | 10 | 0.775 | 8 | 3 |
+| 12 | other | 571 | 143 | 0.814 | 94 | 49 |
+| 24 | first look | 38 | 18 | 0.8917 | 15 | 3 |
+| 24 | other | 495 | 231 | 0.768 | 172 | 83 |
+
+### 2026 forecast_inputs
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| question | hours | input | auc_decrease |
+|---|---|---|---|
+| new_ground | 12 | day_look | 0.0467 |
+| new_ground | 12 | log_span | 0.0428 |
+| new_ground | 12 | prev_share | 0.0293 |
+| new_ground | 12 | log_frp_mean | 0.0171 |
+| new_ground | 12 | log_came_distance | 0.0153 |
+| new_ground | 12 | burned_before | 0.0151 |
+| new_ground | 12 | on_pasture | 0.0105 |
+| new_ground | 12 | log_fresh | 0.0054 |
+| large_growth | 12 | log_span | 0.041 |
+| large_growth | 12 | prev_share | 0.0289 |
+| large_growth | 12 | day_look | 0.0247 |
+| large_growth | 12 | burned_before | 0.0195 |
+| large_growth | 12 | log_frp_mean | 0.018 |
+| large_growth | 12 | log_older_near | 0.0135 |
+| large_growth | 12 | log_came | 0.0124 |
+| large_growth | 12 | log_pixels | 0.0091 |
+| sector | 12 | day_look | 0.0799 |
+| sector | 12 | log_span | 0.0691 |
+| sector | 12 | prev_share | 0.022 |
+| sector | 12 | older_near_share_s | 0.0133 |
+| sector | 12 | log_older_near_s | 0.0133 |
+| sector | 12 | east_s | 0.0112 |
+| sector | 12 | log_older_behind_s | 0.0111 |
+| sector | 12 | log_frp_mean | 0.0105 |
+| new_ground | 24 | on_pasture | 0.0353 |
+| new_ground | 24 | day_look | 0.0322 |
+| new_ground | 24 | log_span | 0.0286 |
+| new_ground | 24 | log_frp_mean | 0.0137 |
+| new_ground | 24 | prev_share | 0.012 |
+| new_ground | 24 | burned_before | 0.0083 |
+| new_ground | 24 | log_pixels | 0.006 |
+| new_ground | 24 | log_older_far | 0.006 |
+| large_growth | 24 | log_span | 0.0577 |
+| large_growth | 24 | day_look | 0.0321 |
+| large_growth | 24 | log_pixels | 0.023 |
+| large_growth | 24 | prev_share | 0.0159 |
+| large_growth | 24 | on_pasture | 0.0144 |
+| large_growth | 24 | log_frp_mean | 0.0143 |
+| large_growth | 24 | burned_before | 0.0108 |
+| large_growth | 24 | log_fresh | 0.0039 |
+| sector | 24 | log_span | 0.0468 |
+| sector | 24 | day_look | 0.0356 |
+| sector | 24 | log_older_near_s | 0.0189 |
+| sector | 24 | log_frp_mean | 0.0181 |
+| sector | 24 | older_near_share_s | 0.0166 |
+| sector | 24 | ahead_burned_before_s | 0.0118 |
+| sector | 24 | prev_share | 0.0088 |
+| sector | 24 | log_older_behind_s | 0.0083 |
+
+### 2026 forecast_sectors
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | 102 | 2058 | 0.3333 | 66 | 505 | 84 | 969 | 92 | 1403 |
+| 24 | 187 | 5924 | 0.365 | 110 | 1391 | 149 | 2781 | 165 | 3648 |
+
+### 2026 front_alerts
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| delay_h | alerts | with_front | share | goes_first | goes_first_with_front | viirs_first | viirs_first_with_front |
+|---|---|---|---|---|---|---|---|
+| 0.5 | 1221 | 62 | 0.0508 | 466 | 1 | 677 | 61 |
+| 3 | 1221 | 169 | 0.1384 | 466 | 51 | 677 | 118 |
+| 6 | 1221 | 229 | 0.1876 | 466 | 106 | 677 | 118 |
+| 12 | 1221 | 261 | 0.2138 | 466 | 131 | 677 | 121 |
+| 24 | 1221 | 280 | 0.2293 | 466 | 139 | 677 | 130 |
+| 48 | 1221 | 289 | 0.2367 | 466 | 143 | 677 | 136 |
+
+### 2026 front_steps
+
+Configuration `ff3410a924c0`, run on 2026-11-27.
+
+| hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | fronts_with_10_new_pixels | distance_m_median |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | day | 503 | 79 | 88 | 233 | 103 | 0.1975 | 25 | 1572.62 |
+| 12 | night | 252 | 74 | 73 | 66 | 39 | 0.3474 | 30 | 1664.9 |
+| 12 | all | 755 | 153 | 161 | 299 | 142 | 0.2496 | 55 | 1652.59 |
+| 24 | day | 503 | 150 | 78 | 120 | 155 | 0.431 | 64 | 2101.47 |
+| 24 | night | 252 | 99 | 39 | 47 | 67 | 0.5351 | 49 | 1797.99 |
+| 24 | all | 755 | 249 | 117 | 167 | 222 | 0.4672 | 113 | 1981.98 |
 
 ### 2026 risk
 

@@ -3,7 +3,8 @@
 Sentinel-2 has pixels of 10 m to 20 m and a new image each 5 days.
 A burn shows as a dark red area in an image of the bands B12, B8 and B4.
 This module finds an image near a date, saves a small picture of one box, and gives the
-cloud of a box in each image. `sentinel2_ground.py` measures the burned ground.
+cloud of a box in each image. It also gives the hot pixels of a box: flames are bright in B12.
+`sentinel2_ground.py` measures the burned ground.
 """
 
 import math
@@ -11,10 +12,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import ee
+import numpy as np
 import requests
 
 from chispa import config
-from chispa.earthengine import Box, region_of
+from chispa.earthengine import Box, again, read_grid, region_of
+from chispa.grid import Grid
 
 ASSET = config.SENTINEL2_ASSET
 CLOUD = config.SENTINEL2_CLOUD
@@ -102,3 +105,19 @@ def cloud_free_views(box: Box, start: datetime, end: datetime) -> list[tuple[str
     found = ee.Dictionary({name: images.aggregate_array(name) for name in names}).getInfo()
     times = [datetime.fromtimestamp(ms / 1000, UTC) for ms in found["system:time_start"]]
     return list(zip(found["system:index"], times, found["cloud_free"], strict=True))
+
+
+def hot_pixels(name: str, box: Box) -> tuple[np.ndarray, np.ndarray]:
+    """Return the latitude and the longitude of each hot pixel of one image in a box.
+
+    A hot pixel has a B12 of the limit in `config.py` or more, and the factor times B8A or more.
+    """
+    south, west, north, east = box
+    pixel = SCALE_M / 110_574  # The side of a pixel in degrees of latitude.
+    size = (math.ceil((east - west) / pixel), math.ceil((north - south) / pixel))
+    image = ee.Image(f"{ASSET}/{name}")
+    bright = image.select("B12").gte(config.SENTINEL2_HOT_B12 * 10_000)  # Reflectance times 10 000.
+    more = image.select("B12").gte(image.select("B8A").multiply(config.SENTINEL2_HOT_FACTOR))
+    grid = Grid(west, north, pixel, *size)
+    rows, cols = np.nonzero(again(lambda: read_grid(bright.And(more).unmask(0).toUint8(), grid)))
+    return grid.lats()[rows], grid.lons()[cols]

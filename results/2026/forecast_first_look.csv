@@ -1,0 +1,5 @@
+hours,fronts,rows,new_ground,auc_trees,fronts_with_direction,trees_in_45
+12,first look,42,10,0.775,8,3
+12,other,571,143,0.814,94,49
+24,first look,38,18,0.8917,15,3
+24,other,495,231,0.768,172,83

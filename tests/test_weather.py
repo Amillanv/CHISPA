@@ -39,3 +39,36 @@ def test_days_of_two_months_are_one_series():
 def test_month_with_no_file_says_what_to_do():
     with pytest.raises(RuntimeError, match="chispa fetch weather --year 2018"):
         weather.read_days(SAMPLES, date(2018, 2, 20), date(2018, 3, 2))
+
+
+def test_wind_blocks_of_two_months_are_one_series():
+    wind = weather.read_wind(SAMPLES, date(2018, 1, 31), date(2018, 2, 1))
+    assert wind.shape == (8, 3, 2, 2)  # Two days of four blocks, the three parts, four cells.
+    # The first block of 31 January and of 1 February at the first cell, as the product gave them:
+    # to the east, to the north and the mean speed, in km/h.
+    assert [round(float(value), 3) for value in wind[0, :, 0, 0]] == [-0.769, -4.188, 4.377]
+    assert [round(float(value), 3) for value in wind[4, :, 0, 0]] == [-1.792, -2.557, 3.165]
+
+
+def test_wind_month_with_no_file_says_what_to_do():
+    with pytest.raises(RuntimeError, match="chispa fetch weather --year 2019"):
+        weather.read_wind(SAMPLES, date(2019, 1, 1), date(2019, 1, 2))
+
+
+def test_month_in_progress_gives_its_complete_days(tmp_path):
+    # The first three days of the real file of February 2018, saved as a month in progress.
+    for kind in ("weather", "wind"):
+        saved = np.load(SAMPLES / kind / "2018" / "02.npz")
+        count = 3 if kind == "weather" else 3 * 24 // weather.BLOCK_HOURS
+        folder = tmp_path / kind / "2018"
+        folder.mkdir(parents=True)
+        with (folder / "02.npz.part").open("wb") as file:
+            np.savez_compressed(file, **{name: saved[name][:count] for name in saved.files})
+    days, wind = weather.read_part(tmp_path, date(2018, 2, 1))
+    assert days["rain_mm"].shape == (3, 2, 2) and wind.shape[:2] == (12, 3)
+    # 1 and 2 February at the first cell, as the product gave them.
+    assert [round(float(value), 3) for value in days["rain_mm"][:2, 0, 0]] == [12.453, 12.382]
+
+
+def test_month_with_no_file_in_progress_gives_none(tmp_path):
+    assert weather.read_part(tmp_path, date(2018, 2, 1)) is None

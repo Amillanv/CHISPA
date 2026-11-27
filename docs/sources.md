@@ -208,6 +208,23 @@ Checked 2026-11-26 with live requests, for the weather of a live alert (`docs/me
   each 6 hours, and its series changes when ECMWF changes its model. The free limit is also 300 000 calls each month.
   The archive API is not in the plan "Standard". One position counts as (measures / 10) x (days / 14) calls, 1 or more.
 
+Checked 2026-11-26 with live requests, for the weather of a live growth forecast (`sources/openmeteo.py`):
+
+- The archive API with `models=ecmwf_ifs` and `timezone=GMT` gives the hourly fields `temperature_2m`, `dew_point_2m`,
+  `wind_speed_10m`, `wind_direction_10m` and `precipitation` in degrees Celsius, km/h, degrees and mm.
+  A request with a list of positions gives a list of answers in the same sequence.
+- A request at 04:37 UTC for the day of the request gave a value for each of its 24 hours: the hours after the
+  request are forecast hours. The forecast API with the same model gave the same values for the day before.
+- `wind_direction_10m` is where the wind comes from. With the reverse direction, the blocks of 6 hours of two cells on
+  19 and 20 November 2026 were in 45 degrees of the blocks of ERA5-Land for 15 of 16 blocks.
+- A check outside the repository on the 2044 fronts of September 2024 (247 cells, 61 days, 7 requests of 40 cells):
+  the trees of 2019 to 2023 got the weather inputs from ERA5-Land, then from IFS. For new ground at 12 hours, the AUC
+  was 0.8395 and 0.8412, and the mean stated chance 0.245 and 0.243. A stated chance changed by more than 0.10 for
+  2 of 1931 fronts at 12 hours and 42 of 1845 at 24 hours. The direction was in 45 degrees for 226 and 222 of 372 fronts.
+- The inputs in that check, ERA5-Land and IFS: the largest wind 14.4 and 16.3 km/h (correlation 0.85), the dryness
+  5.25 and 4.98 kPa (0.94). The correlation of the rain of 7 days was 0.65. September is a dry month:
+  a month with much rain is not checked.
+
 ### 8.5 MapBiomas Fogo
 
 Checked 2026-11-19 against the MapBiomas pages, the method document for Collection 5.1 and Alencar et al. 2022.
@@ -224,6 +241,12 @@ Checked 2026-11-19 against the MapBiomas pages, the method document for Collecti
 - Asset: `projects/mapbiomas-public/assets/brazil/fire/collection5_1/mapbiomas_fire_collection51_monthly_burned_v1`.
 - The Cloud project ID is in the environment variable `EE_PROJECT`.
 - Earth Engine uses the Google login of `gcloud` on the computer. The command `earthengine authenticate` was blocked for the owner account.
+- Checked 2026-11-26 on the Earth Engine page "noncommercial tiers": from 2026-04-27, a non-commercial project has a
+  quota of compute for each calendar month. The Community Tier has 150 EECU-hours. A tier with a billing account has 1000.
+- Above the quota, the project is in restricted mode until the first day of the next month, at midnight Pacific Time.
+  Requests continue, with fewer in parallel and fewer workers. The page gives no number for these limits.
+- On 2026-11-26 a run of `chispa flames` got the warning that our project is in restricted mode. The wind download of
+  2018 to 2026 and two runs of `chispa flames` came before it. The tier of our project is not checked.
 - Licence: CC BY 4.0. Cite Alencar et al. 2022, Remote Sensing 14(11), 2510.
 
 What we store, from the download of 2026-11-20:
@@ -390,6 +413,16 @@ Checked 2026-11-22 with live requests to Earth Engine.
 - One measure of the burn check for one box took approximately 2 seconds, and 6 seconds for a box of 50 km.
 - The 152 pictures of the 2024 image check are 181 MB. They are in `data/images/`, not in the bucket.
 - For the 90 events of the 2024 sample, 69 have a picture before and a picture after. 13 have no picture before, and 15 have no picture after.
+
+Checked 2026-11-26 with live requests, outside the repository (`PLAN.md`, C6), with the asset `COPERNICUS/S2_HARMONIZED`.
+The asset of this section gave the same result (133 m). `chispa flames` reads it (`docs/method.md` section 11.27):
+
+- For 80 large groups of VIIRS pixels of an afternoon in 2023, 20 had an image of the same UTC day.
+  The image time was 13:57 to 14:17 UTC: 3.1 to 3.6 hours before the VIIRS passes of the afternoon.
+- Flames are bright in the band B12 (20 m). A simple rule gave 98 to 6010 hot pixels in each of the 20 images:
+  B12 of 0.5 or more, and 2 times B8A or more. It is not a published rule.
+- For each of the 20, the median distance from a hot pixel to the nearest VIIRS pixel of that afternoon was less than 500 m.
+  The median of the 20 values was 131 m. Thus Sentinel-2 gives the position of the flames at a known time, one day in five.
 - Checked 2026-11-23: the scene classes of the pixels of a box give its share with no cloud for each image, in one request
   of less than 1 second for 18 images. With a minimum share of 0.8, 80 of the same 90 events have the two pictures.
   For the 150 chips of the second look, the picture after came 5 days or less after the last detection for 64 chips,
@@ -412,6 +445,9 @@ GOES mask:
 - In the scan of 2024-08-15 15:00 UTC, 100 741 of the 101 460 pixels of this window had the class "no fire". 162 had a fire class, and 557 were water.
 - `chispa fetch goes_mask` reads one scan of each hour and keeps only the mask of the window. One day of January 2024 is approximately 0.2 MB, and takes approximately 25 seconds.
 - The file reader (HDF5) is not safe in threads. Only the downloads can run in threads.
+- Checked 2026-11-26, outside the repository, in the saved masks of 4 days of 2023 (day 15 of August to November):
+  the group "blocked" had 22 percent of the pixels of the window in the scans of 15 UTC, and 28 percent at 16 UTC.
+  It had 0 percent, to the nearest percent, in each other hour. The VIIRS passes of the afternoon are near 17 UTC.
 
 Polar-orbit pass times:
 
@@ -653,6 +689,15 @@ Checked 2026-11-25 with live requests to Earth Engine. `chispa fetch weather --y
   days in the two. The dryness of the air does not: day 1 is above day 3 in ERA5-Land, and below it in Open-Meteo.
   They are two models.
 - The asset `ECMWF/ERA5_LAND/DAILY_AGGR` has the mean of each wind component of a day, not the largest wind speed.
+- Checked 2026-11-26 with live requests: the two wind bands give the direction of the wind. `chispa fetch weather`
+  also saves a file `wind/<year>/<month>.npz`: for each block of 6 hours (UTC), the mean of the wind to the east and
+  to the north, and the mean speed, in km/h. One day is one request. 2018 to October 2026 are 432 MB.
+  At 18 cells for 2023, the direction of a block was in 45 degrees of the hourly wind of Open-Meteo (`era5`) for 25 446
+  of 26 280 blocks, in a check outside the repository. The median difference was 4.0 degrees. The mean speed was
+  7.46 km/h against 8.41 km/h.
+- Checked 2026-11-26 with a live request: the newest image was 2026-11-20 23:00 UTC. `chispa fetch weather` also saves
+  the complete days of a month in progress, in a file with a name that ends in `.part`. Each fetch makes that file
+  again, and it does not go to the bucket. The 20 days of November 2026 needed 28 seconds.
 - `UNVERIFIED`: the terms of the product (Copernicus). Do a check before we publish a copy of the files.
 
 ### 8.22 ANA river level at Ladário
