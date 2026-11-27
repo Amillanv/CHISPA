@@ -242,6 +242,10 @@ def test_a_live_forecast_loads_only_the_trees_for_its_inputs(tmp_path, monkeypat
     forecast_model.save_trees({("new_ground", 12): "trees"}, {("new_ground", 12): ("a",)}, "mark")
     found = forecast_model.load_trees()
     assert (found["trees"], found["models"]) == ("mark", {("new_ground", 12): "trees"})
+    # A second fit replaces the file in one step: the folder has the file and no part of one.
+    forecast_model.save_trees({("new_ground", 12): "new"}, {("new_ground", 12): ("a",)}, "mark 2")
+    assert forecast_model.load_trees()["trees"] == "mark 2"
+    assert [path.name for path in tmp_path.iterdir()] == ["trees.pkl"]
     # The code of the inputs changes: the saved trees are for other inputs, and they are not loaded.
     monkeypatch.setattr(forecast_model, "inputs_mark", lambda: "other inputs")
     assert forecast_model.load_trees() is None

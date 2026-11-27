@@ -86,8 +86,13 @@ def inputs_mark() -> str:
 def save_trees(models: dict, names: dict, trees: str) -> None:
     """Save the trees of each question with their input names. `trees` is the mark of the fit."""
     saved = {"inputs": inputs_mark(), "trees": trees, "models": models, "names": names}
-    config.FORECAST_MODELS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    config.FORECAST_MODELS_PATH.write_bytes(pickle.dumps(saved))
+    path = config.FORECAST_MODELS_PATH
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # An update can load the trees at the moment of a fit. It must not read a part of the file,
+    # and a fit that stops must not lose the trees that exist: the name changes last.
+    part = path.with_name(path.name + ".part")
+    part.write_bytes(pickle.dumps(saved))
+    part.replace(path)
 
 
 def load_trees() -> dict | None:
