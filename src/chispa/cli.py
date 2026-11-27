@@ -293,5 +293,4 @@ def run_update() -> None:
     if status["late_at"] is None or now > datetime.fromisoformat(status["late_at"]):
         newest = status["complete_pass_at"] or "no pass"
         print(f"live: LATE. The newest pass with no failure: {newest}. Do a check of the poller.")
-    if new:  # No new detection: no new look.
-        checks.run_new_forecasts(now)
+    checks.run_new_forecasts(datetime.now(UTC))

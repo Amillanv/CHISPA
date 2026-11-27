@@ -141,9 +141,7 @@ def newest_fronts(pixels: dict, in_biome: np.ndarray, since: float) -> list[dict
     found = []
     if not len(pixels["seconds"]):
         return found
-    for a, b, look in steps.each_look(pixels):
-        if pixels["seconds"][a] < since:
-            continue
+    for a, b, look in steps.each_look(pixels, since):
         places = steps.places(pixels, (a, b), look)
         keep = steps.counted(places, in_biome)
         if keep.any():
@@ -169,7 +167,8 @@ def front_rows(saved: dict, places: dict, inputs: dict, windows: dict) -> list[d
     """Return one object for each front: its place, its size, and its chances for each window.
 
     A window has its limits, and the chance of new ground, of large growth, and of a new pixel in
-    each sector. A front with no inputs has no chance: the trees have no score for such a front.
+    each sector. A front with no inputs has its windows with no chance, and the reason: the trees
+    have no score for such a front.
     """
     chance, usable = {}, forecast.has_inputs(inputs)
     for key, model in saved["models"].items():
@@ -183,7 +182,8 @@ def front_rows(saved: dict, places: dict, inputs: dict, windows: dict) -> list[d
         one = {name: round(float(places[name][front]), 4) for name in ("lat", "lon")}
         one["pixels"] = int(places["pixels"][front])
         if not usable[front]:
-            one |= dict.fromkeys((f"hours_{hours}" for hours in windows), None)
+            nothing = dict.fromkeys(("new_ground", "large_growth", "sectors"))
+            one |= {f"hours_{hours}": limits | nothing for hours, limits in windows.items()}
             found.append(one | {"no_forecast": NO_INPUTS})
             continue
         for hours, limits in windows.items():
@@ -226,14 +226,16 @@ def front_events(store: sqlite3.Connection, pixels: dict, one: dict) -> list[lis
 def look_forecast(
     one: dict, pixels: dict, layers: front_inputs.Layers, saved: dict, now: datetime
 ) -> dict:
-    """Return the object of one look: its time, the time of now, and the forecast of each front."""
+    """Return the object of one look: its time, the time to which it has pixels, and the forecast
+    of each front. The object has the minimum of a large growth: a later reader needs the value
+    of the day of the forecast."""
     keep = one["keep"]
     inputs = front_inputs.look_inputs(pixels, one["bounds"], one["look"], layers)
     places = {name: values[keep] for name, values in one["places"].items()}
     kept = {name: values[keep] for name, values in inputs.items()}
     look_at = _look_at(one)
-    times = {"look_at": look_at.isoformat(timespec="minutes")}
-    times["made_at"] = now.isoformat(timespec="minutes")
+    times = {"look_at": look_at.isoformat(timespec="minutes"), "pixels_to": to_text(now)}
+    times["large_growth_pixels"] = config.FRONT_LARGE_PIXELS
     return times | {"fronts": front_rows(saved, places, kept, open_windows(look_at, now))}
 
 
@@ -256,11 +258,13 @@ def live_looks(
     answer has only the looks that are new in that folder, and this does not fit the trees:
     the answer is None if the saved trees are not those of now.
     """
-    grid = pantanal_grid()
-    in_biome = border.rasterize(border.read_rings(raw_dir / "border" / "pantanal.geojson"), grid)
     store = sqlite3.connect(store_path)
     pixels = pixels_at(store, now)
     since = (now - timedelta(hours=config.FORECAST_LIVE_HOURS)).timestamp()
+    if not (pixels["seconds"] >= since).any():  # No new pixel: an update gets its answer quickly.
+        return []
+    grid = pantanal_grid()
+    in_biome = border.rasterize(border.read_rings(raw_dir / "border" / "pantanal.geojson"), grid)
     looks = newest_fronts(pixels, in_biome, since)
     if only_new:
         looks = [one for one in looks if _is_new(one, only_new)]

@@ -158,10 +158,8 @@ def run_forecast(test_run: bool, live: bool) -> None:
     if live:
         now = datetime.now(UTC)
         looks = forecast_live.live_looks(config.STORE_PATH, config.RAW_DIR, now)
-        forecast_files.save(looks, config.FORECAST_LIVE_DIR)
-        answer = {"made_at": now.isoformat(timespec="minutes"), "looks": looks}
-        answer |= {"hours": config.FORECAST_LIVE_HOURS, "large_pixels": config.FRONT_LARGE_PIXELS}
-        print(json.dumps(answer, indent=2))
+        forecast_files.save(looks, config.FORECAST_LIVE_DIR, datetime.now(UTC))
+        print(json.dumps({"hours": config.FORECAST_LIVE_HOURS, "looks": looks}, indent=2))
         return
     tables = forecast_tables(config.STORE_PATH, config.RAW_DIR, test_run)
     for year, of_year in tables.items():
@@ -175,14 +173,15 @@ def run_new_forecasts(now: datetime) -> None:
     folder = config.FORECAST_LIVE_DIR
     try:
         looks = forecast_live.live_looks(config.STORE_PATH, config.RAW_DIR, now, folder)
-    except (RuntimeError, OSError) as error:
-        # A layer or the weather is absent. The next update does this step again.
+    except (RuntimeError, OSError, ValueError) as error:
+        # A layer or the weather is absent or not complete. The next update does this step again.
         print(f"forecast: no forecast. {error}")
         return
     if looks is None:
         print("forecast: the saved trees are not those of now. Run `chispa forecast --live`.")
         return
-    print(f"forecast: {len(forecast_files.save(looks, folder))} new files.")
+    made = forecast_files.save(looks, folder, datetime.now(UTC))
+    print(f"forecast: {len(made)} new files.")
 
 
 def run_flames(year: int, project: Callable[[], str]) -> None:

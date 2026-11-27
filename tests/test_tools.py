@@ -87,8 +87,8 @@ def test_event_record_has_the_forecast_of_the_fronts_of_the_event(store, tmp_pat
     window = {"from": (look + timedelta(hours=6)).isoformat(), "new_ground": 0.3}
     window |= {"to": (look + timedelta(hours=18)).isoformat(), "sectors": {"north": 0.1}}
     front = {"lat": -17.5, "lon": -57.5, "pixels": 4, "events": [event_id], "hours_12": window}
-    found = {"look_at": look.isoformat(), "made_at": made.isoformat(), "fronts": [front]}
-    forecast_files.save([found], tmp_path / "forecasts")
+    found = {"look_at": look.isoformat(), "large_growth_pixels": 10, "fronts": [front]}
+    forecast_files.save([found], tmp_path / "forecasts", made)
     # At 4 hours the forecast did not exist. At 6 hours the record has it.
     assert tools.event_record(event_id, as_of=T0 + timedelta(hours=4))["forecast"] is None
     forecast = tools.event_record(event_id, as_of=T0 + timedelta(hours=6))["forecast"]
