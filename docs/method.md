@@ -2572,7 +2572,7 @@ The store has the detections of the whole box, and an alert can be outside the b
 forecast: the trees learn from the fronts of the biome, and each score is for those fronts (section 11.26,
 rule 3). The owner asked on 2026-11-27 for a test of the trees on the fronts in Brazil outside the biome.
 `chispa forecast --outside` makes the tables `forecast_outside` and `forecast_direction_outside`
-(`evaluation/forecast_outside.py`).
+(`evaluation/forecast_outside.py`) of 2019 to 2024. With `--test-run` it also makes those of 2025 and 2026.
 
 1. A front is in Brazil if its centre is in a cell with a land cover class: the land cover map has Brazil only
    (`docs/sources.md` section 8.14). A front in a different country has no maps: it is not in this test.
@@ -2679,8 +2679,9 @@ A growth forecast is for a front of VIIRS pixels (section 11.26). An alert that 
 pixel: it has no front and no forecast. In 2025, 264 of 699 such first alerts had a front 24 hours later, and in
 2026, 257 of 512 (table `front_alerts`). The owner asked on 2026-11-27 for the chance that such an alert gets a
 front. `chispa forecast --front-chance` makes the tables `front_chance`, `front_chance_bands` and
-`front_chance_weights` (`evaluation/front_chance.py`). No field of the event record has this chance: a new field
-needs the agreement of the owner (section 12.1).
+`front_chance_weights` (`evaluation/front_chance.py`) of 2019 to 2024. With `--test-run` it also makes those of
+2025 and 2026. No field of the event record has this chance: a new field needs the agreement of the owner
+(section 12.1).
 
 1. A row is an alert in the biome at moment 0: one pass gap after its first detection was available
    (section 11.15). The alert is the event as it was then (`moments.py`). It is a row if each detection of
