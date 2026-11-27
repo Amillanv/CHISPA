@@ -300,6 +300,92 @@ GROWTH_SPEED_MIN_H = 6.0
 # The limits of the classes of the time between two passes, in hours.
 GROWTH_HOUR_CLASSES = (0.0, 2.0, 6.0, 18.0, 24.5)
 
+# --- Fronts ---
+
+# The values of this part are first values. A probe on 2019 to 2023 used them (2026-11-26), and
+# no result set them. With a link of 1000 m or of 2000 m, 2023 had 6843 or 5160 fronts, not 5859.
+
+# The years of this part. The owner agreed on 2026-11-26: the rules come from 2019 to 2024, with
+# one year left out in turn, and 2025 and 2026 score them one time (`docs/method.md` 7.4).
+FRONT_YEARS = (2019, 2020, 2021, 2022, 2023, 2024)
+FRONT_TEST_YEARS = (2025, 2026)
+# A front counts only if its look starts before this time. 2026 was in progress on the day of the
+# test: the weather was complete to 2026-11-20, and the masks and the later looks to 2026-11-22.
+FRONT_TEST_END = datetime(2026, 11, 21, tzinfo=UTC)
+
+# A look is the VIIRS detections with no gap in time longer than this: the passes of the two or
+# three satellites of one afternoon or of one night.
+LOOK_GAP = timedelta(hours=3)
+# Pixels of one look are one front if a chain of pixels links them, each not farther than this
+# from the next, in metres. A VIIRS pixel is 375 m to 800 m wide.
+FRONT_LINK_M = 1500.0
+# A front has this many pixels or more. The first test (2026-11-26) had 3: then most first
+# alerts had no front (`docs/method.md` section 11.26). The owner agreed to 1 on 2026-11-27.
+FRONT_MIN_PIXELS = 1
+# A front with fewer pixels than this is a small front. One or two pixels show no side of a
+# fire: thus a small front has its own rows in each table, and the trees learn from all fronts.
+FRONT_SMALL_BELOW = 3
+# The windows of the label: for each number of hours, the later looks from and to these hours
+# after the start of a look. The 12 hours window holds the next look. The 24 hours window holds two.
+FRONT_WINDOWS_H = {12: (6, 18), 24: (6, 30)}
+# A new pixel belongs to a front if it is not farther than this from a pixel of the front, in
+# metres, for each window. A new pixel that is farther is a different fire.
+FRONT_REACH_M = {12: 5000.0, 24: 8000.0}
+# The number of equal sectors of the compass for the direction of the new pixels of a front.
+FRONT_SECTORS = 8
+# A look is a day look if it starts in these hours (UTC): 10 to 17 local time. A fire is not the
+# same by day and by night, thus each table gives the two apart.
+FRONT_DAY_HOURS_UTC = (14, 21)
+# GOES says if a place was visible at a later look: the scan nearest to the time of that look,
+# not farther than this many hours, that is not in the block-out zone of the sun.
+FRONT_MASK_HOURS = 2
+# A front with no pixel at a later look was not visible there if GOES gave no answer for this
+# share of its pixels or more.
+FRONT_HIDDEN_SHARE = 0.5
+
+# The ground ahead of a front in a sector: positions past the edge of the front at these
+# distances in metres, and at these angles from the centre line of the sector in degrees.
+FRONT_AHEAD_M = (500.0, 1000.0, 2000.0, 3000.0, 5000.0)
+FRONT_AHEAD_TURNS_DEG = (-15.0, 0.0, 15.0)
+# The weather before a look: the mean of this many days before its day, and the rain of these days.
+FRONT_WEATHER_DAYS = 3
+FRONT_RAIN_DAYS = (7, 30)
+# The wind before a look: the mean of this many blocks of 6 hours before the block of its end.
+FRONT_WIND_BLOCKS = 2
+
+# A front has large growth with this many new pixels or more in a window.
+FRONT_LARGE_PIXELS = 10
+# The direction of the new pixels of a front is compared only for this many new pixels or more.
+FRONT_DIRECTION_PIXELS = 3
+# The gradient-boosted trees of the forecast. One training year that the trees do not train on
+# gives the largest number of leaves and the number of trees. The other values are first values
+# of a probe (2026-11-26): the learning rate, the smallest leaf and the penalty.
+FORECAST_LEAVES = (8, 31)
+FORECAST_MAX_TREES = 400
+FORECAST_RATE = 0.06
+FORECAST_MIN_LEAF = 40
+FORECAST_PENALTY = 1.0
+# The table of the inputs gives this many inputs with the largest effect, for each question.
+FORECAST_EFFECTS = 8
+# The limits of the bands of a stated chance, for the table of a stated chance against what came.
+FORECAST_BANDS = (0.05, 0.1, 0.2, 0.35, 0.5, 0.7)
+# The sector table counts the new pixels in this many most likely sectors of a front.
+FORECAST_TOP_SECTORS = (1, 2, 3)
+# The delays after a first alert, in hours, at which we count the alerts that have a front.
+FRONT_ALERT_DELAYS_H = (0.5, 3, 6, 12, 24, 48)
+
+# A pixel of Sentinel-2 is hot if its band B12 has this reflectance or more, and this factor times
+# the band B8A or more: cloud and bare ground are bright in the two bands. First values, not a
+# published rule: a probe of 2026-11-26 used them on 20 fronts of 2023.
+SENTINEL2_HOT_B12 = 0.5
+SENTINEL2_HOT_FACTOR = 2.0
+# An image shows flames on new ground for a front with this many new hot pixels or more.
+# 10 pixels of 20 m are 0.4 hectares.
+FLAMES_MIN_HOT = 10
+# An image with no new hot pixel says "no flames on new ground" only if this share of the box
+# of the front, or more, has no cloud.
+FLAMES_MIN_CLEAR = 0.8
+
 # --- Visibility ---
 
 # A fire has a low examined share if GOES examined its place in less than this share of its scans.
@@ -453,6 +539,9 @@ RISK_TEST_MIN_LARGE = 30
 
 # --- Paths and downloads ---
 
+# The id of an event starts with its year: a year has this many ids (`cli.run_fuse`).
+EVENT_IDS_OF_A_YEAR = 10_000_000
+
 DATA_DIR = Path("data")
 RAW_DIR = DATA_DIR / "raw"
 STORE_PATH = DATA_DIR / "chispa.sqlite"
@@ -464,6 +553,14 @@ RESULTS_DIR = Path("results")
 
 # The pictures of the image check. Earth Engine can make them again, thus they are not raw files.
 IMAGE_DIR = DATA_DIR / "images"
+
+# The trees of the development years for the live growth forecast. `chispa forecast --live` makes
+# the file again when the first part of this file changes.
+FORECAST_MODELS_PATH = DATA_DIR / "forecast_models.pkl"
+# One file for each look with a live forecast. A later run can score them against what came.
+FORECAST_LIVE_DIR = DATA_DIR / "forecasts"
+# The live forecast is for the fronts of the looks that started in this many hours before now.
+FORECAST_LIVE_HOURS = 24
 
 # Seconds between two requests, to stay far below the limit of the API.
 FIRMS_PAUSE_S = 1.0
