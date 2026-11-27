@@ -2175,7 +2175,9 @@ trees, as the event record loads the model of the confidence.
 - The store has only the pixels that were available at the time of the run. A forecast from one satellite of a
   look is not the forecast of the complete look.
 - An alert with no front gets no forecast. In 2025 and 2026, 1690 of 3052 first alerts had a front of 1 pixel
-  or more 0.5 hours after the alert (section 11.30).
+  or more 0.5 hours after the alert (section 11.30). Section 11.34 has a test of the chance that an alert of
+  GOES only gets a front.
+- A front outside the biome gets no forecast: the stated chances of the trees were too high there (section 11.33).
 - For a front of 1 or 2 pixels, the sectors are not a direction: they were not better than the wind in the test
   (section 11.30). The answer gives the number of pixels of each front.
 - In the first months of a year, the annual map of the burned ground of the year before is not on disk: a front
@@ -2673,8 +2675,8 @@ needs the agreement of the owner (section 12.1).
 1. A row is an alert in the biome at moment 0: one pass gap after its first detection was available
    (section 11.15). The alert is the event as it was then (`moments.py`). It is a row if each detection of
    its event at that moment is a GOES detection.
-2. The answer of a row is yes if its event has a front at moment 24, 24 hours after the first detection
-   (`config.py`): a VIIRS pixel of FIRMS that was available then (section 11.26, rule 10).
+2. The answer of a row is yes if its event has a front at moment 24: 24 hours after its first detection was
+   available (`config.py`). A front is a VIIRS pixel of FIRMS that was available then (section 11.26, rule 10).
 3. The inputs are those of the growth risk at moment 0 (section 11.22), without the ground that burned
    before: an alert before 1 July does not have the map of the year before (section 11.31). There are 30:
    the inputs of the confidence without the calendar and the fire power, the first hours, and the late weather.
@@ -2733,6 +2735,8 @@ in a useful sequence. A percentage for a person also needs statement 3. The owne
 gets a field. A negative result is a valid result.
 
 - The limit of 0.75 in statement 2 is a choice from the development years.
+- The years of this part are those of the growth forecast (section 7.4, rule 2): the rules from 2019 to 2024,
+  and one score on 2025 and 2026. This choice waits for the answer of the owner.
 - A front at moment 24 says that VIIRS saw the fire of the event in 24 hours. It does not say that the
   fire is large, and no front does not say that the fire stopped: cloud hides a fire from VIIRS.
 - The time when a VIIRS pixel was available is an estimate for the years from the archive (`config.py`).
