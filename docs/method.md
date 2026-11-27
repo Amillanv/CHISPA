@@ -2129,7 +2129,8 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
 (section 7.3): the owner agreed to that field on 2026-11-27.
 The modules of this path (`fronts.py`, `front_inputs.py`, `forecast_model.py`, `forecast_live.py` and
 `forecast_files.py`) import no module of the evaluation: a test does a check of that. They load the saved
-trees, as the event record loads the model of the confidence.
+trees, as the event record loads the model of the confidence. The rule is for the modules of the path:
+`cli.py` imports each command, and thus the evaluation also.
 
 1. The fronts are those of the looks that started in the last hours (`config.py`), with the minimum size and their
    centre in the biome (section 11.26, rules 1 to 3). A year in progress has no end here. Only the pixels
@@ -2519,10 +2520,12 @@ section 11.31. The owner asked for this command on 2026-11-27.
 3. A look has a score only if the store of now has the same look: the same pixels, and no more. If a pixel of
    the look came after the file, the look was not complete before its first window (section 11.26, rule 11).
    The table counts the fronts of the looks that are the same (`same_look`).
-4. A window has an answer when the store has the live data to 6 hours after its end: the hours in which a look
-   must be complete (`config.py`). The pixels of the last pass of a window come some hours after the pass.
-   The time of the data is the newest pass of the poller that read each source with no failure (`polls.py`),
-   not the time of the clock: after a stop of a source, "no pixel" must not become "no new ground".
+4. A window has an answer when the poller has a pass that read each source with no failure (`polls.py`) in a
+   span of time. The span starts 6 hours after the end of the window: the hours in which a look must be
+   complete (`config.py`), because the pixels of the last pass of a window come some hours after the pass.
+   The span ends one read-back of the poller (`config.py`, 4 days) after the start of the window: a later pass
+   does not get the pixels and the masks of the window. The time of the clock is not sufficient: after a stop
+   of a source, "no pixel" must not become "no new ground".
    The command stops if a FIRMS log on disk has a row that the store did not read.
 5. The answer of a front comes from the rules 5 to 8 of section 11.26. The masks are those of the live poller:
    each scan that it recorded.
@@ -2780,9 +2783,11 @@ The result of the test (the same tables of 2025 and 2026, 2026-11-27): the four 
 
 - Statement 1: the model has the highest AUC in each year. The number of detections is a better baseline than
   in the development years: 0.7186 and 0.6837, against a mean of 0.5989.
-- The hour alone has 0.6240 and 0.5590: the model is not only a clock for the next VIIRS pass. This baseline
-  came after the test (rule 5). The run for it read the two years a second time, and each other number of
-  the tables stayed the same.
+- The hour alone has 0.6240 and 0.5590: the model is above a regression with only the hour. The hour is not
+  the real opportunity of a VIIRS view: the pass times, the swath and the cloud are not in that baseline, and
+  a baseline with them is not made. Thus we do not know how much of the sequence is the fire and how much is
+  the view. This baseline came after the test (rule 5). The run for it read the two years a second time, and
+  each other number of the tables stayed the same.
 - Statement 2: the mean AUC of the two years is 0.79575.
 - Statement 3: 486 alerts had a front, and the chances expected 433.1: 1.12. For one year: 1.14 and 1.11.
   The stated chances are too low by approximately one part in ten.
