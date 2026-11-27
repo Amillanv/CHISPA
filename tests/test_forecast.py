@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from chispa.evaluation import forecast
+from chispa.evaluation import forecast, forecast_run
 
 
 @pytest.fixture(autouse=True)
@@ -114,3 +114,17 @@ def test_the_trees_learn_a_simple_rule_and_give_the_same_answer_each_time():
     second = forecast.fit_trees(values, label, years).predict_proba(values)[:, 1]
     assert ((first > 0.5) == (label > 0)).mean() > 0.95
     assert first.tolist() == second.tolist()
+
+
+def test_the_regression_reads_the_training_mean_for_an_absent_value():
+    # 300 rows of three years. The label is 1 if the first input is more than 0. The second
+    # input has no value in each seventh row: a look before the map of the year before.
+    values = np.random.default_rng(2).normal(size=(300, 2))
+    label, years = (values[:, 0] > 0).astype(float), np.repeat([2019, 2020, 2021], 100)
+    values[::7, 1] = np.nan
+    mean = float(np.nanmean(values[:, 1]))
+    held = {"x": np.array([[1.0, np.nan], [1.0, mean]]), "names": ("first", "second")}
+    chances, _ = forecast_run._models({"x": values, "y": label, "years": years}, held)
+    assert np.isfinite(chances["regression"]).all() and np.isfinite(chances["trees"]).all()
+    # The row with no value gets the chance of the row with the mean.
+    assert chances["regression"][0] == chances["regression"][1]

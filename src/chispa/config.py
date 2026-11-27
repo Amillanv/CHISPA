@@ -347,6 +347,13 @@ FRONT_HIDDEN_SHARE = 0.5
 # distances in metres, and at these angles from the centre line of the sector in degrees.
 FRONT_AHEAD_M = (500.0, 1000.0, 2000.0, 3000.0, 5000.0)
 FRONT_AHEAD_TURNS_DEG = (-15.0, 0.0, 15.0)
+# The annual map of the burned ground of a year comes in April to July of the next year
+# (`docs/sources.md` section 8.5). A look before this month has no map of the year before: its
+# inputs from that map have no value. A live forecast has the same rule.
+FRONT_LAST_YEAR_FROM_MONTH = 7
+# A front gets the land cover of this many years before its year. We have no checked day for the
+# map of the year before, and this map exists at each look.
+FRONT_COVER_YEARS_BEFORE = 2
 # The weather before a look: the mean of this many days before its day, and the rain of these days.
 FRONT_WEATHER_DAYS = 3
 FRONT_RAIN_DAYS = (7, 30)

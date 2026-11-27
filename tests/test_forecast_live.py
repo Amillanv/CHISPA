@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from chispa import checks, fronts
-from chispa.evaluation import forecast_live
+from chispa.evaluation import forecast_live, forecast_trees
 from chispa.evaluation.front_inputs import Layers
 from chispa.grid import pantanal_grid
 from chispa.store import open_store, to_text
@@ -100,10 +100,10 @@ def test_the_mark_of_the_saved_trees_changes_with_a_training_detection(tmp_path,
         row = (number, "firms", "viirs", "NOAA20", when, when, LAT, LON, 375.0, 5.0, "nominal", 1)
         store.execute(insert, row)
         store.commit()
-        return forecast_live._stamp(tmp_path / "store.sqlite")
+        return forecast_trees.mark(tmp_path / "store.sqlite")
 
     first = add(1, "2023-09-01T05:00:00+00:00")
-    assert forecast_live._stamp(tmp_path / "store.sqlite") == first
+    assert forecast_trees.mark(tmp_path / "store.sqlite") == first
     # A detection of a year that the trees do not learn from changes nothing.
     assert add(2, "2026-11-25T17:00:00+00:00") == first
     # One more detection of a development year: the saved trees are not those of this store.
@@ -113,7 +113,7 @@ def test_the_mark_of_the_saved_trees_changes_with_a_training_detection(tmp_path,
     store.execute("UPDATE detections SET frp_mw = 9.0 WHERE id = 1")
     store.execute("UPDATE detections SET frp_mw = 1.0 WHERE id = 3")
     store.commit()
-    assert forecast_live._stamp(tmp_path / "store.sqlite") != second
+    assert forecast_trees.mark(tmp_path / "store.sqlite") != second
 
 
 def test_saved_trees_with_other_inputs_stop_the_forecast(monkeypatch):
@@ -187,14 +187,11 @@ def test_the_live_forecast_has_only_the_pixels_that_were_available(tmp_path):
         row = (number, "firms", "viirs", "NOAA20", when, had, *place, 375.0, 5.0, "nominal", 1)
         store.execute("INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
     at = datetime.fromtimestamp(START, UTC)
-    assert len(forecast_live.pixels_at(store, at + timedelta(hours=4))["seconds"]) == 1
-    assert len(forecast_live.pixels_at(store, at + timedelta(hours=7))["seconds"]) == 2
-    # Before the first pixel was available, no pixel and no look.
-    early = forecast_live.pixels_at(store, at + timedelta(hours=1))
-    grid = pantanal_grid()
-    assert (
-        forecast_live.newest_fronts(early, np.ones((grid.height, grid.width), dtype=bool), 0) == []
-    )
+    assert len(forecast_live.pixels_at(store, 2023, at + timedelta(hours=4))["seconds"]) == 1
+    assert len(forecast_live.pixels_at(store, 2023, at + timedelta(hours=7))["seconds"]) == 2
+    # Before the first pixel was available, we had no pixel of the year.
+    assert forecast_live.pixels_at(store, 2023, at + timedelta(hours=1)) is None
+    assert forecast_live.pixels_at(store, 2024, at + timedelta(hours=7)) is None
 
 
 def test_the_step_of_the_update_says_why_it_made_no_forecast(monkeypatch, capsys):
@@ -235,3 +232,32 @@ def test_the_next_update_makes_the_forecast_that_the_weather_stopped(tmp_path, m
     checks.run_new_forecasts(datetime(2026, 11, 25, 21, 5, tzinfo=UTC))
     assert capsys.readouterr().out == "forecast: 1 new files.\n"
     assert len(list(tmp_path.glob("2026-11-25T1719_*.json"))) == 1
+
+
+def test_on_1_january_the_live_forecast_has_the_looks_of_31_december(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.FORECAST_LIVE_HOURS", 24)
+    grid = pantanal_grid()
+    in_biome = np.ones((grid.height, grid.width), dtype=bool)
+    monkeypatch.setattr(forecast_live, "_biome", lambda raw_dir: in_biome)
+    store = open_store(tmp_path / "store.sqlite")
+    insert = "INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    # Three pixels of one front at 17:00 on 31 December 2026, available 3 hours later.
+    times = ("2026-12-31T17:00:00+00:00", "2026-12-31T20:00:00+00:00")
+    for number in (1, 2, 3):
+        place = (LAT, LON + number * 400 * EAST)
+        row = (number, "firms", "viirs", "NOAA20", *times, *place, 375.0, 5.0, "nominal", 1)
+        store.execute(insert, row)
+    # At 02:00 on 1 January the new year has no pixel, and the look of 31 December is 9 hours old.
+    found = forecast_live.recent_looks(store, tmp_path, datetime(2027, 1, 1, 2, tzinfo=UTC))
+    assert [one["places"]["pixels"].tolist() for _, one in found] == [[3]]
+    # A front of four pixels of the new year comes at 05:00. The two looks are in the last 24 hours.
+    times = ("2027-01-01T05:00:00+00:00", "2027-01-01T07:00:00+00:00")
+    for number in (4, 5, 6, 7):
+        place = (LAT, LON + number * 400 * EAST)
+        row = (number, "firms", "viirs", "NOAA20", *times, *place, 375.0, 5.0, "nominal", 1)
+        store.execute(insert, row)
+    found = forecast_live.recent_looks(store, tmp_path, datetime(2027, 1, 1, 8, tzinfo=UTC))
+    assert [one["places"]["pixels"].tolist() for _, one in found] == [[3], [4]]
+    # At 18:00 the look of 31 December is older than 24 hours.
+    found = forecast_live.recent_looks(store, tmp_path, datetime(2027, 1, 1, 18, tzinfo=UTC))
+    assert [one["places"]["pixels"].tolist() for _, one in found] == [[4]]

@@ -2006,7 +2006,8 @@ training years by 4 percent.
 - The maps of the year before are inputs. Early in a year, a live forecast does not have the annual map of the
   year before, and the live command stops (section 11.29). The scores have the fronts of those months, with that
   map. A check outside the repository (2026-11-27): 601 of the 2675 rows of 2025 and 2026 at 12 hours are before
-  1 May, and 8704 of the 81 947 rows of 2019 to 2024. No score exists with the maps of the time.
+  1 May, and 8704 of the 81 947 rows of 2019 to 2024. Section 11.31 has the rule for those months, and the
+  scores with the maps of the time.
 - A Brier skill score of more than 0 says that the chances are better than one number for all fronts. It does not
   say that the level of the chances is correct. The bands of rule 8 and the counts of section 11.30 measure the level.
 - The weather is ERA5-Land, which is 6 days late. A live forecast must read the weather before the look from a second source.
@@ -2129,11 +2130,13 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
 1. The fronts are those of the looks that started in the last hours (`config.py`), with the minimum size and their
    centre in the biome (section 11.26, rules 1 to 3). A year in progress has no end here. Only the pixels
    that were available at the time of the run count.
-2. The trees are `trees` of section 11.30, from the rows of all development years. A file holds them. The command
+2. The trees are those of section 11.31, from the rows of all development years. A file holds them
+   (`evaluation/forecast_trees.py`). The command
    fits them again when one of these changes: the first part of `config.py`, the code that makes the rows and the
    trees, the version of scikit-learn, or a detection of the development years in the store: the file has a hash
    of those detections. It does not read the raw layers: a raw file does not change (`docs/sources.md` section 8.7).
-3. The inputs are those of section 11.28, rule 3. The weather comes from ERA5-Land to its last day on disk.
+3. The inputs are those of section 11.28, rule 3, with the maps of section 11.31. The weather comes from
+   ERA5-Land to its last day on disk.
    The later days come from Open-Meteo, with the model IFS, for the weather cell of each front.
 4. The answer of the command is JSON: one object for each look, with the time of the look, the time to which it
    has pixels (`pixels_to`), the minimum of a large growth on that day, and each front.
@@ -2167,9 +2170,9 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
   or more 0.5 hours after the alert (section 11.30).
 - For a front of 1 or 2 pixels, the sectors are not a direction: they were not better than the wind in the test
   (section 11.30). The answer gives the number of pixels of each front.
-- In the first months of a year, the annual map of the burned ground of the year before is not on disk: the
-  command stops with an instruction. The weather has no such stop: December can be a month in progress.
-  The command reads the pixels of one year: on 1 January, a look of 31 December is not in its answer.
+- In the first months of a year, the annual map of the burned ground of the year before is not on disk: a front
+  has no value for its inputs from that map, and it gets its forecast (section 11.31). On 1 January the
+  command reads the looks of the two years. December can be a month in progress in the weather.
 - A window can start before the run: the 12 hours window starts 6 hours after the look. The answer gives its
   limits. The test scored each forecast as made before its windows (section 11.26, rule 11).
 - The trees have rows and scores only for the fronts at a place that GOES examined later (section 11.30, rule 1).
@@ -2342,6 +2345,142 @@ of 3 pixels or more of 2019 to 2024 and the recorded weather:
   fronts of the test years, that is approximately 6 fronts at each time. The test cannot show a gain of that size.
 - We do not know the cause of the weak sign. The wind is a model value for a cell of 9 km or more, as the mean
   of 6 hours. A wind with more detail is a different part, with its own hypothesis.
+
+### 11.31 The inputs of the time
+
+The test of section 11.28 gave each front the annual map of the burned ground of the year before, also in the
+months when that map did not exist (section 11.28, limits). The live command stopped in those months.
+The owner agreed on 2026-11-27 to a forecast for those months, and to new trees that learn from the inputs that a
+look can have. `chispa forecast` makes the tables.
+
+1. A look before 1 July (`config.py`) has no value for the two inputs from the annual map of the year before: the
+   burned share on the front, and ahead of it in each sector. The map of a year comes in April to July of the next
+   year (`docs/sources.md` section 8.5). From 1 July a look has those inputs, if the map is on disk.
+2. A front gets the land cover of two years before, or the newest map on disk if that is older. We have no
+   checked day for the land cover map of a year: the map of two years before exists at each look.
+3. The rules 1 and 2 are for each row: the rows that the trees learn from, the rows of a test, and a live
+   forecast. The trees read an absent value as absent. The regression gets the mean of the training rows.
+4. A live forecast reads the looks of two years when its last hours have 1 January. A look has the known pixels
+   of its year only (section 11.26, rule 4).
+5. The table `forecast_periods` gives, for the fronts of 3 pixels or more, the fronts before 1 July and the
+   other fronts apart, with persistence and the wind for the same fronts.
+
+Two probes outside the repository came first (2026-11-27). They had 2019 to 2024, and for each year the trees of
+the other years with the complete maps:
+
+- For the 5283 fronts of 3 pixels or more before 1 June, the mean AUC of new ground at 12 hours was 0.7754 with
+  the map of the year before, 0.7765 with no value, and 0.7772 with the map of two years before in its place.
+  The direction was in 45 degrees for 254, 255 and 256 of 471 fronts. Thus no value has no cost.
+- The land cover of two years before had a small cost for all fronts of 2020 to 2024: 0.8284 against 0.8294
+  at 12 hours, lower in 4 of 5 years.
+
+The result of the development years (tables `forecast`, `forecast_direction` and `forecast_periods` of 2019 to
+2024, 2026-11-27). Each year has the trees of the five other years. Each AUC is the mean of the six years.
+"Trees before" has the value of section 11.30, with the complete maps.
+
+| Fronts | Question | Hours | Rows | With the answer yes | Persistence | Regression | Trees | Trees before |
+|---|---|---|---|---|---|---|---|---|
+| 3 or more | New ground | 12 | 46 043 | 11 015 | 0.6905 | 0.8044 | 0.8264 | 0.8278 |
+| 3 or more | New ground | 24 | 38 682 | 15 557 | 0.6828 | 0.7831 | 0.8062 | 0.8075 |
+| 3 or more | Sector | 12 | 368 344 | 25 664 | 0.6217 | 0.8390 | 0.8646 | 0.8654 |
+| 3 or more | Sector | 24 | 309 456 | 42 616 | 0.6191 | 0.8256 | 0.8401 | 0.8403 |
+| 1 or 2 | New ground | 12 | 35 904 | 2733 | 0.5274 | 0.7996 | 0.8260 | 0.8273 |
+| 1 or 2 | New ground | 24 | 29 627 | 4770 | 0.5317 | 0.7059 | 0.7445 | 0.7471 |
+
+| Fronts | Hours | Fronts with a direction | Trees in 45 degrees | Trees before | Regression | Wind before the look |
+|---|---|---|---|---|---|---|
+| 3 or more | 12 | 7698 | 4577 | 4581 | 4113 | 2615 |
+| 3 or more | 24 | 12 160 | 6947 | 6929 | 6729 | 3575 |
+| 1 or 2 | 12 | 1525 | 715 | 725 | 667 | 512 |
+| 1 or 2 | 24 | 2877 | 1210 | 1222 | 1180 | 850 |
+
+The fronts of 3 pixels or more before 1 July, and the other fronts (table `forecast_periods`):
+
+| Hours | Fronts | Rows | With new ground | Expected | AUC of the trees | AUC of persistence | Trees in 45 degrees | Wind |
+|---|---|---|---|---|---|---|---|---|
+| 12 | Before 1 July | 7818 | 1347 | 1282.2 | 0.7784 | 0.6330 | 490 of 857 | 299 |
+| 12 | From 1 July | 38 225 | 9668 | 9816.1 | 0.8245 | 0.6918 | 4087 of 6841 | 2316 |
+| 24 | Before 1 July | 6382 | 1996 | 1917.8 | 0.7487 | 0.6166 | 744 of 1451 | 414 |
+| 24 | From 1 July | 32 300 | 13 561 | 13 611.2 | 0.8057 | 0.6895 | 6203 of 10 709 | 3161 |
+
+- The new trees are near the trees of section 11.30. The mean AUC of new ground is lower by 0.0014 at 12 hours
+  and by 0.0013 at 24 hours, and the direction is the same.
+- The trees have a higher AUC than persistence and than the regression in each year, for each row of the first
+  table. Their Brier skill score is more than 0 in each cell of year, question, hours and size.
+- The stated chances hold. For the fronts of 3 pixels or more they expect 11 098.4 fronts with new ground at
+  12 hours, and 11 015 had it. At 24 hours: 15 528.9 and 15 557.
+- Before 1 July the forecast is weaker than in the other months: these are the fires of the wet months.
+  The trees are above persistence in 6 of 6 years. The lowest year is 2021: 0.6688 at 12 hours, with 34 fronts
+  with new ground of 517.
+
+The hypothesis, written on 2026-11-27 before the run on 2025 and 2026. The numbers above were known.
+The test years get the trees of 2019 to 2024, one time.
+
+1. For the fronts of 3 pixels or more before 1 July, the mean AUC of the trees for new ground of the two years is
+   higher than that of persistence, at 12 and at 24 hours.
+2. For all fronts of 3 pixels or more, the mean AUC of the trees for new ground of the two years is not lower than
+   that of section 11.30 by more than 0.01. Those means are 0.8447 at 12 hours and 0.79155 at 24 hours.
+3. For the fronts of 3 pixels or more, with the two years together, the direction of the trees is in 45 degrees for
+   more fronts than the wind before the look, at 12 and at 24 hours.
+4. For the fronts of 3 pixels or more, with the two years together, observed to expected for new ground is from 0.8
+   to 1.25, at 12 and at 24 hours. In section 11.30 it was 0.87 and 0.83.
+5. For the small fronts, the trees have a higher AUC for new ground than persistence in each test year, at 12 and
+   at 24 hours.
+
+The rules 1 to 4 stay with each result: they are what a live forecast has. The result says how good the forecast
+is with them. A negative result is a valid result.
+
+- This is a third score of the fronts of 3 pixels or more of 2025 and 2026, and a second score of their small
+  fronts. The trees are new, and the answers were read before.
+- 1 July is one day for each year. The map of 2025 was in Earth Engine on 2026-04-09, and that of 2024 on
+  2025-05-21 or before (`docs/sources.md` section 8.5).
+- We have no checked day for the land cover map. `UNVERIFIED`: a year comes in the second half of the next year.
+- The fronts of 2019 need the land cover of 2017: `chispa fetch landcover --year 2017`. It is not in the bucket.
+- The limits of sections 11.26 to 11.30 apply. The forecast has satellite sources only.
+
+The result of the test (the same tables of 2025 and 2026, 2026-11-27): the statements 2, 3, 4 and 5 are true.
+Statement 1 is true at 12 hours and false at 24 hours. Each cell has the value of 2025, then the value of 2026.
+
+| Fronts | Hours | Rows | With new ground | Persistence | Regression | Trees | Trees of section 11.30 |
+|---|---|---|---|---|---|---|---|
+| 3 or more | 12 | 630, 560 | 101, 129 | 0.7069, 0.6528 | 0.8599, 0.7827 | 0.8706, 0.8179 | 0.8705, 0.8189 |
+| 3 or more | 24 | 478, 420 | 127, 162 | 0.7159, 0.6422 | 0.7890, 0.7357 | 0.8111, 0.7675 | 0.8166, 0.7665 |
+| 1 or 2 | 12 | 801, 684 | 44, 46 | 0.5081, 0.4915 | 0.7830, 0.7995 | 0.8060, 0.8034 | 0.8106, 0.8112 |
+| 1 or 2 | 24 | 590, 526 | 55, 72 | 0.4477, 0.4501 | 0.6815, 0.6784 | 0.7328, 0.7462 | 0.7478, 0.7435 |
+
+The fronts of 3 pixels or more before 1 July (table `forecast_periods`):
+
+| Hours | Year | Rows | With new ground | Expected | AUC of the trees | AUC of persistence | Trees in 45 degrees | Wind |
+|---|---|---|---|---|---|---|---|---|
+| 12 | 2025 | 100 | 4 | 8.7 | 0.8672 | 0.8893 | 1 of 1 | 1 |
+| 12 | 2026 | 211 | 58 | 48.7 | 0.8639 | 0.7180 | 21 of 38 | 16 |
+| 24 | 2025 | 64 | 6 | 11.4 | 0.7098 | 0.8448 | 1 of 4 | 0 |
+| 24 | 2026 | 161 | 61 | 58.5 | 0.8361 | 0.7025 | 24 of 49 | 13 |
+
+- Statement 1: at 12 hours the mean AUC of the trees before 1 July is 0.8656, and that of persistence is 0.8036.
+  At 24 hours it is 0.77295 against 0.77365: false by 0.0007.
+- The two years are not the same. 2025 has 4 and 6 fronts with new ground before 1 July, and persistence is
+  higher there. 2026 has 58 and 61, and the trees are higher by 0.1459 and by 0.1336.
+  The mean of the two years gives a year with 6 such fronts the weight of a year with 61.
+- Statement 2: the mean AUC for all fronts of 3 pixels or more is lower than that of section 11.30 by 0.0005 at
+  12 hours, and by 0.0023 at 24 hours. Thus the inputs of the time have almost no cost.
+- Statement 3: the trees are in 45 degrees for 79 of 157 fronts at 12 hours, and the wind for 66. At 24 hours: 97
+  and 62 of 226. The regression has 77 and 110: at 24 hours it is ahead of the trees, as in section 11.30.
+- Statement 4: the trees expected 267.3 fronts with new ground at 12 hours, and 230 had it: 0.86. At 24 hours:
+  348.3 and 289, 0.83. The stated chances were too high in 2025: 128.9 and 101, then 172.6 and 127.
+- Statement 5: for a small front, the trees are above persistence in each year. The direction of a small front
+  is in 45 degrees for 27 of 52 fronts at 12 hours, and the wind for 26. At 24 hours: 24 and 32 of 81.
+  Thus the forecast has no direction for a small front, as in section 11.30.
+- For the three questions, the trees have a higher AUC than persistence in 24 of 24 cells of year, question, hours
+  and size, and than the regression in 23. The other cell is large growth at 12 hours for the small fronts of 2026.
+  The Brier skill score of the trees is 0.0258 to 0.3191.
+- By stated chance, for the fronts of 3 pixels or more at 12 hours: 35 of the 48 fronts with 0.7 or more had new
+  ground, and 6 of the 275 fronts below 0.05. The three most likely sectors had 2281 of the 3409 new pixels.
+- The forecast of the months before 1 July has a test on one year with many fronts with new ground, 2026.
+  2025 has too few for an answer.
+- The rules stay: a live forecast gives each front of each month its forecast. The trees of now are those of
+  this section. The numbers of sections 11.28 and 11.30 are those of their runs.
+- The result has satellite sources only.
 
 ## 12. Agent and MCP rules
 
