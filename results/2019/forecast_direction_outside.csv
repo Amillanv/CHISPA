@@ -1,0 +1,5 @@
+size,hours,fronts,regression_in_45,regression_in_45_of_them,trees_in_45,trees_in_45_of_them,wind_in_45,fronts_with_persistence,persistence_in_45
+3 or more,12,365,181,122,199,138,121,244,93
+1 or 2,12,120,49,18,52,18,48,48,14
+3 or more,24,695,332,201,326,203,193,430,165
+1 or 2,24,305,123,34,113,30,97,99,23
