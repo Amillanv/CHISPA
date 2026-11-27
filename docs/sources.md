@@ -225,6 +225,11 @@ Checked 2026-11-26 with live requests, for the weather of a live growth forecast
   5.25 and 4.98 kPa (0.94). The correlation of the rain of 7 days was 0.65. September is a dry month:
   a month with much rain is not checked.
 
+- `UNVERIFIED`, read by a research agent on the pages of Open-Meteo on 2026-11-27: the Previous Runs API
+  (`previous-runs-api.open-meteo.com`) gives the value that a model predicted 24 hours before each hour
+  (`_previous_day1`), and to 7 days before, for most models from January 2024. The Historical Forecast API joins
+  the first hours of each run: it is near the weather that came, not a forecast with a lead time.
+
 ### 8.5 MapBiomas Fogo
 
 Checked 2026-11-19 against the MapBiomas pages, the method document for Collection 5.1 and Alencar et al. 2022.

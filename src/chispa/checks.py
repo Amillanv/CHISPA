@@ -5,6 +5,7 @@ which has the commands that get data, make the store and make the events.
 `project` gives the Earth Engine project only when a command needs it.
 """
 
+import json
 from collections.abc import Callable
 from datetime import UTC, datetime
 
@@ -156,13 +157,12 @@ def run_forecast(test_run: bool, live: bool) -> None:
     A live run makes no table: it gives the forecast of the fronts of the newest looks.
     """
     if live:
-        rows = forecast_live.live_rows(config.STORE_PATH, config.RAW_DIR, datetime.now(UTC))
-        files = forecast_live.save(rows, config.FORECAST_LIVE_DIR)
-        for row in rows:
-            print(forecast_live.text(row))
-        hours = config.FORECAST_LIVE_HOURS
-        print(f"forecast: {len(rows)} fronts in the biome in the last {hours} hours.", end=" ")
-        print(f"{len(files)} new files in {config.FORECAST_LIVE_DIR}. Satellite sources only.")
+        now = datetime.now(UTC)
+        looks = forecast_live.live_looks(config.STORE_PATH, config.RAW_DIR, now)
+        forecast_live.save(looks, config.FORECAST_LIVE_DIR)
+        answer = {"made_at": now.isoformat(timespec="minutes"), "looks": looks}
+        answer |= {"hours": config.FORECAST_LIVE_HOURS, "large_pixels": config.FRONT_LARGE_PIXELS}
+        print(json.dumps(answer, indent=2))
         return
     tables = forecast_tables(config.STORE_PATH, config.RAW_DIR, test_run)
     for year, of_year in tables.items():
