@@ -1,20 +1,20 @@
-"""The saved trees of the live growth forecast: the trees of all development years.
+"""The fit of the saved trees of the live growth forecast: the trees of all development years.
 
-A live forecast needs the trees at once, and a fit needs some minutes. This module fits them
-one time and saves them in a file with a mark of what made them. When the configuration, the
-code, the library or a detection of the development years changes, the mark is not that of the
-file, and the trees must be fitted again. `docs/method.md` section 11.29 gives the rule.
+A live forecast loads its trees from a file (`forecast_model.py`). This module fits them from
+the rows of all development years with their answers, and it saves them with a mark of what
+made them: the configuration, the code, the library and the detections of those years in the
+store. The command `chispa forecast --trees` runs it: some minutes.
+`docs/method.md` section 11.29 gives the rule.
 """
 
 import hashlib
-import pickle
 import sqlite3
 from pathlib import Path
 
 import sklearn
 
-from chispa import config, fronts
-from chispa.evaluation import forecast, forecast_run, front_inputs
+from chispa import config, forecast_model, front_inputs, fronts
+from chispa.evaluation import forecast, forecast_run
 from chispa.evaluation import fronts as steps
 from chispa.evaluation.report import config_hash
 from chispa.grid import pantanal_grid
@@ -32,49 +32,33 @@ def mark(store_path: Path) -> str:
     trees, the version of scikit-learn, and the detections of the development years in the store.
 
     A raw file does not change (`docs/sources.md` section 8.7), thus the mark does not read the
-    raw layers. After a new download of a layer of a development year, delete the saved file.
+    raw layers. A forecast file has this mark: a later score can group the files by their trees.
     """
-    modules = (fronts, steps, front_inputs, forecast, forecast_run)
+    modules = (fronts, front_inputs, forecast_model, steps, forecast, forecast_run)
     # This module has the fit of the saved trees: its code is also in the mark.
     code = "".join(Path(file).read_text() for file in (*(m.__file__ for m in modules), __file__))
     years = (f"{min(config.FRONT_YEARS)}-01-01", f"{max(config.FRONT_YEARS) + 1}-01-01")
     found = hashlib.sha256(f"{code}{sklearn.__version__}".encode())
     store = sqlite3.connect(store_path)
-    for row in store.execute(TRAINING, (fronts.SENSOR_FAMILY, steps.SOURCE, *years)):
+    for row in store.execute(TRAINING, (fronts.SENSOR_FAMILY, fronts.SOURCE, *years)):
         found.update(repr(row).encode())
     return config_hash() + found.hexdigest()[:12]
 
 
-def current(store_path: Path) -> dict | None:
-    """Return the saved trees if their mark is the mark of now. None: they must be fitted again."""
-    path = config.FORECAST_MODELS_PATH
-    if path.exists():
-        saved = pickle.loads(path.read_bytes())
-        if saved["config"] == mark(store_path):
-            return saved
-    return None
-
-
-def fitted(store_path: Path, raw_dir: Path) -> dict:
-    """Return the trees of each question and their input names, from all development years.
-
-    A saved file gives them, if the configuration, the code and the detections that made it
-    are those of now. If not, this fits the trees again and saves them: some minutes.
-    """
-    saved = current(store_path)
-    if saved is not None:
-        return saved
-    path, years = config.FORECAST_MODELS_PATH, config.FRONT_YEARS
+def fit(store_path: Path, raw_dir: Path) -> str:
+    """Fit the trees of each question from all development years, save them, and return their
+    mark. A live forecast loads the saved file."""
+    years = config.FRONT_YEARS
     rings = border.read_rings(raw_dir / "border" / "pantanal.geojson")
     in_biome = border.rasterize(rings, pantanal_grid())
     cases = forecast_run.year_cases(
         {year: forecast.year_rows(year, store_path, raw_dir, in_biome) for year in years}
     )
-    saved = {"config": mark(store_path), "models": {}, "names": {}}
+    models, names = {}, {}
     for key, case in cases[years[0]].items():
         train = forecast_run.training(cases, years, key)
-        saved["models"][key] = forecast.fit_trees(train["x"], train["y"], train["years"])
-        saved["names"][key] = case["names"]
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(pickle.dumps(saved))
-    return saved
+        models[key] = forecast_model.fit_trees(train["x"], train["y"], train["years"])
+        names[key] = case["names"]
+    trees = mark(store_path)
+    forecast_model.save_trees(models, names, trees)
+    return trees

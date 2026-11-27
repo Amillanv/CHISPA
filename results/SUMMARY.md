@@ -171,7 +171,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2019 front_alerts
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | delay_h | alerts | with_front | share | with_any_front | goes_first | goes_first_with_front | goes_first_with_any_front | viirs_first | viirs_first_with_front | viirs_first_with_any_front |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -184,7 +184,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2019 front_steps
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -197,7 +197,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2019 front_steps_small
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -700,7 +700,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2020 front_alerts
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | delay_h | alerts | with_front | share | with_any_front | goes_first | goes_first_with_front | goes_first_with_any_front | viirs_first | viirs_first_with_front | viirs_first_with_any_front |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -713,7 +713,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2020 front_steps
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -726,7 +726,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2020 front_steps_small
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1367,7 +1367,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2021 front_alerts
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | delay_h | alerts | with_front | share | with_any_front | goes_first | goes_first_with_front | goes_first_with_any_front | viirs_first | viirs_first_with_front | viirs_first_with_any_front |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -1380,7 +1380,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2021 front_steps
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1393,7 +1393,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2021 front_steps_small
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -2122,7 +2122,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2022 front_alerts
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | delay_h | alerts | with_front | share | with_any_front | goes_first | goes_first_with_front | goes_first_with_any_front | viirs_first | viirs_first_with_front | viirs_first_with_any_front |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -2135,7 +2135,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2022 front_steps
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -2148,7 +2148,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2022 front_steps_small
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -3301,7 +3301,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2023 front_alerts
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | delay_h | alerts | with_front | share | with_any_front | goes_first | goes_first_with_front | goes_first_with_any_front | viirs_first | viirs_first_with_front | viirs_first_with_any_front |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -3323,7 +3323,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2023 front_steps
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -3336,7 +3336,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2023 front_steps_small
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -4412,7 +4412,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2024 front_alerts
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | delay_h | alerts | with_front | share | with_any_front | goes_first | goes_first_with_front | goes_first_with_any_front | viirs_first | viirs_first_with_front | viirs_first_with_any_front |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -4434,7 +4434,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2024 front_steps
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -4447,7 +4447,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2024 front_steps_small
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -5558,7 +5558,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2025 front_alerts
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | delay_h | alerts | with_front | share | with_any_front | goes_first | goes_first_with_front | goes_first_with_any_front | viirs_first | viirs_first_with_front | viirs_first_with_any_front |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -5571,7 +5571,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2025 front_steps
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -5584,7 +5584,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2025 front_steps_small
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -6520,7 +6520,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2026 front_alerts
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | delay_h | alerts | with_front | share | with_any_front | goes_first | goes_first_with_front | goes_first_with_any_front | viirs_first | viirs_first_with_front | viirs_first_with_any_front |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -6533,7 +6533,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2026 front_steps
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -6546,7 +6546,7 @@ Configuration `df8ac8bde25f`, run on 2026-11-27.
 
 ### 2026 front_steps_small
 
-Configuration `df8ac8bde25f`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | looks | fronts | new_ground | front_again | clear_no_fire | not_visible | new_ground_share | new_ground_not_examined | front_again_not_examined | look_complete_h_median | fronts_with_10_new_pixels | distance_m_median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|

@@ -1,6 +1,6 @@
 """The files of the live growth forecast: one file for each look, and the forecast of one event.
 
-`evaluation/forecast_live.py` makes a forecast for the fronts of a new look. This module saves
+`forecast_live.py` makes a forecast for the fronts of a new look. This module saves
 each forecast as a file that does not change, and it gives the event record the forecast of one
 event from those files. Thus the record only reads a file: it fits no trees and it gets no
 weather. `docs/method.md` section 11.29 gives the rules.

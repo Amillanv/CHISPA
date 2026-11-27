@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 
-from chispa import confidence, config
+from chispa import confidence, config, forecast_model
 from chispa.evaluation import forecast, forecast_say
 from chispa.grid import pantanal_grid
 from chispa.sources import border
@@ -33,7 +33,7 @@ def year_cases(rows: dict[int, dict]) -> dict[int, dict]:
     return {
         year: {
             (question, hours): forecast.case(of_year, question, hours)
-            for question in forecast.QUESTIONS
+            for question in forecast_model.QUESTIONS
             for hours in config.FRONT_WINDOWS_H
         }
         for year, of_year in rows.items()
@@ -46,7 +46,7 @@ def _models(train: dict, held: dict) -> tuple[dict[str, np.ndarray], object]:
     The trees read an absent value as absent. The regression cannot: it gets the mean of the
     training rows in its place.
     """
-    trees = forecast.fit_trees(train["x"], train["y"], train["years"])
+    trees = forecast_model.fit_trees(train["x"], train["y"], train["years"])
     mean = np.nanmean(train["x"], axis=0)
     filled = [np.where(np.isnan(table), mean, table) for table in (train["x"], held["x"])]
     regression = confidence.fit(filled[0], train["y"], held["names"])
@@ -93,7 +93,7 @@ def year_tables(rows: dict, cases: dict, year: int, training_years: tuple[int, .
     tables = {name: [] for name in TABLES}
     for hours in config.FRONT_WINDOWS_H:
         trees = {}
-        for question in forecast.QUESTIONS:
+        for question in forecast_model.QUESTIONS:
             key = (question, hours)
             train, held = training(cases, training_years, key), cases[year][key]
             chances, model = _models(train, held)

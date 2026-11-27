@@ -6,9 +6,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from chispa import checks, fronts
-from chispa.evaluation import forecast_live, forecast_trees
-from chispa.evaluation.front_inputs import Layers
+from chispa import forecast_live, forecast_model, fronts
+from chispa.evaluation import forecast_trees
+from chispa.front_inputs import Layers
 from chispa.grid import pantanal_grid
 from chispa.store import open_store, to_text
 
@@ -194,7 +194,7 @@ def test_the_live_forecast_has_only_the_pixels_that_were_available(tmp_path):
     assert forecast_live.pixels_at(store, 2024, at + timedelta(hours=7)) is None
 
 
-def test_the_step_of_the_update_says_why_it_made_no_forecast(monkeypatch, capsys):
+def test_the_step_of_the_update_says_why_it_made_no_forecast(tmp_path, monkeypatch):
     now = datetime(2027, 1, 2, tzinfo=UTC)
 
     def no_map(*arguments):
@@ -202,18 +202,16 @@ def test_the_step_of_the_update_says_why_it_made_no_forecast(monkeypatch, capsys
 
     # A layer is absent: the update does not stop, and the text says what to do.
     monkeypatch.setattr(forecast_live, "live_looks", no_map)
-    checks.run_new_forecasts(now)
-    assert capsys.readouterr().out == (
-        "forecast: no forecast. Run `chispa fetch burned --year 2026` first.\n"
-    )
-    # The saved trees are not those of now: the step fits no trees, and it says so.
+    line = forecast_live.update(tmp_path / "store.sqlite", tmp_path, now)
+    assert line == "forecast: no forecast. Run `chispa fetch burned --year 2026` first."
+    # No saved trees are those of now: the step fits no trees, and it says so.
     monkeypatch.setattr(forecast_live, "live_looks", lambda *arguments: None)
-    checks.run_new_forecasts(now)
-    assert "the saved trees are not those of now" in capsys.readouterr().out
+    line = forecast_live.update(tmp_path / "store.sqlite", tmp_path, now)
+    assert "the saved trees are not those of now" in line and "chispa forecast --trees" in line
 
 
-def test_the_next_update_makes_the_forecast_that_the_weather_stopped(tmp_path, monkeypatch, capsys):
-    monkeypatch.setattr("chispa.config.FORECAST_LIVE_DIR", tmp_path)
+def test_the_next_update_makes_the_forecast_that_the_weather_stopped(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.FORECAST_LIVE_DIR", tmp_path / "forecasts")
     front = {"lat": LAT, "lon": LON, "pixels": 4, "events": [7]}
     look = {"look_at": "2026-11-25T17:19+00:00", "large_growth_pixels": 10, "fronts": [front]}
     answers = [OSError("Open-Meteo gave no answer."), [look]]
@@ -226,12 +224,27 @@ def test_the_next_update_makes_the_forecast_that_the_weather_stopped(tmp_path, m
 
     monkeypatch.setattr(forecast_live, "live_looks", live)
     # The weather does not come in the first update. The second update has no new detection.
-    checks.run_new_forecasts(datetime(2026, 11, 25, 21, 0, tzinfo=UTC))
-    assert capsys.readouterr().out == "forecast: no forecast. Open-Meteo gave no answer.\n"
-    assert list(tmp_path.iterdir()) == []
-    checks.run_new_forecasts(datetime(2026, 11, 25, 21, 5, tzinfo=UTC))
-    assert capsys.readouterr().out == "forecast: 1 new files.\n"
-    assert len(list(tmp_path.glob("2026-11-25T1719_*.json"))) == 1
+    first = forecast_live.update(
+        tmp_path / "store.sqlite", tmp_path, datetime(2026, 11, 25, 21, tzinfo=UTC)
+    )
+    assert first == "forecast: no forecast. Open-Meteo gave no answer."
+    assert not (tmp_path / "forecasts").exists()
+    second = forecast_live.update(
+        tmp_path / "store.sqlite", tmp_path, datetime(2026, 11, 25, 21, 5, tzinfo=UTC)
+    )
+    assert second == "forecast: 1 new files."
+    assert len(list((tmp_path / "forecasts").glob("2026-11-25T1719_*.json"))) == 1
+
+
+def test_a_live_forecast_loads_only_the_trees_for_its_inputs(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.FORECAST_MODELS_PATH", tmp_path / "trees.pkl")
+    assert forecast_model.load_trees() is None  # No file: no trees.
+    forecast_model.save_trees({("new_ground", 12): "trees"}, {("new_ground", 12): ("a",)}, "mark")
+    found = forecast_model.load_trees()
+    assert (found["trees"], found["models"]) == ("mark", {("new_ground", 12): "trees"})
+    # The code of the inputs changes: the saved trees are for other inputs, and they are not loaded.
+    monkeypatch.setattr(forecast_model, "inputs_mark", lambda: "other inputs")
+    assert forecast_model.load_trees() is None
 
 
 def test_on_1_january_the_live_forecast_has_the_looks_of_31_december(tmp_path, monkeypatch):

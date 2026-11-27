@@ -75,12 +75,12 @@ def check_front(look: fronts.Look, front: int, place: dict, answers: dict) -> di
 
 def measure(year: int, store_path: Path, raw_dir: Path, path: Path) -> None:
     """Find the image of each front of one year, and save one row for each front with an image."""
-    pixels = steps.load_pixels(sqlite3.connect(store_path), year)
+    pixels = fronts.load_pixels(sqlite3.connect(store_path), year)
     masks = steps.open_masks(raw_dir, year)
     rings = border.read_rings(raw_dir / "border" / "pantanal.geojson")
     in_biome, rows = border.rasterize(rings, pantanal_grid()), []
     with ThreadPoolExecutor(max_workers=8) as workers:
-        for a, b, look in steps.each_look(pixels):
+        for a, b, look in fronts.each_look(pixels):
             answers = steps.look_rows(pixels, (a, b), look, masks)
             place = {"start": pixels["seconds"][a], "lat": pixels["lat"][a:b]}
             place["lon"] = pixels["lon"][a:b]

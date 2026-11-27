@@ -1950,8 +1950,9 @@ The numbers are of the run of 2026-11-27: rule 9 took out 2 fronts. 2249 of the 
 ### 11.28 The growth forecast
 
 A forecast for a front says, at the time of its look, what the next 12 and 24 hours bring: new ground or not,
-large growth or not, and in which sectors. `evaluation/front_inputs.py` makes the inputs, and `evaluation/forecast.py`
-makes the models and the tables. The command `chispa forecast` makes the tables of 2019 to 2024.
+large growth or not, and in which sectors. `front_inputs.py` makes the inputs, `forecast_model.py` has the trees,
+and `evaluation/forecast.py` makes the rows with their answers and the tables. The command `chispa forecast` makes
+the tables of 2019 to 2024.
 With `--test-run` it also makes those of 2025 and 2026.
 
 The rules:
@@ -2007,7 +2008,7 @@ training years by 4 percent.
   year before, and the live command stops (section 11.29). The scores have the fronts of those months, with that
   map. A check outside the repository (2026-11-27): 601 of the 2675 rows of 2025 and 2026 at 12 hours are before
   1 May, and 8704 of the 81 947 rows of 2019 to 2024. Section 11.31 has the rule for those months, and the
-  scores with the maps of the time.
+  scores with a calendar rule for the maps.
 - A Brier skill score of more than 0 says that the chances are better than one number for all fronts. It does not
   say that the level of the chances is correct. The bands of rule 8 and the counts of section 11.30 measure the level.
 - The weather is ERA5-Land, which is 6 days late. A live forecast must read the weather before the look from a second source.
@@ -2123,18 +2124,23 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
 
 ### 11.29 The live growth forecast
 
-`evaluation/forecast_live.py` makes the forecast of section 11.28 for the fronts that burn now. The command
+`forecast_live.py` makes the forecast of section 11.28 for the fronts that burn now. The command
 `chispa forecast --live` gives it, and `chispa update` makes it for each new look. The event record has it
 (section 7.3): the owner agreed to that field on 2026-11-27.
+The modules of this path (`fronts.py`, `front_inputs.py`, `forecast_model.py`, `forecast_live.py` and
+`forecast_files.py`) import no module of the evaluation: a test does a check of that. They load the saved
+trees, as the event record loads the model of the confidence.
 
 1. The fronts are those of the looks that started in the last hours (`config.py`), with the minimum size and their
    centre in the biome (section 11.26, rules 1 to 3). A year in progress has no end here. Only the pixels
    that were available at the time of the run count.
-2. The trees are those of section 11.31, from the rows of all development years. A file holds them
-   (`evaluation/forecast_trees.py`). The command
-   fits them again when one of these changes: the first part of `config.py`, the code that makes the rows and the
-   trees, the version of scikit-learn, or a detection of the development years in the store: the file has a hash
-   of those detections. It does not read the raw layers: a raw file does not change (`docs/sources.md` section 8.7).
+2. The trees are those of section 11.31, from the rows of all development years. The command
+   `chispa forecast --trees` fits them and saves them in a file (`evaluation/forecast_trees.py`): some minutes.
+   A live forecast loads the file, and it fits no trees. It uses the trees only if they are for the inputs of
+   now: the first part of `config.py`, the code of the fronts, of the inputs and of the model, and the version of
+   scikit-learn. If not, it gives no forecast and says which command to run.
+   The file also has a mark of its fit, with a hash of the detections of the development years in the store.
+   After a change of those detections, or of the code of the answers, a person runs the command again.
 3. The inputs are those of section 11.28, rule 3, with the maps of section 11.31. The weather comes from
    ERA5-Land to its last day on disk.
    The later days come from Open-Meteo, with the model IFS, for the weather cell of each front.
@@ -2405,7 +2411,7 @@ The fronts of 3 pixels or more before 1 July, and the other fronts (table `forec
 | 24 | From 1 July | 32 300 | 13 561 | 13 611.2 | 0.8057 | 0.6895 | 6203 of 10 709 | 3161 |
 
 - The new trees are near the trees of section 11.30. The mean AUC of new ground is lower by 0.0014 at 12 hours
-  and by 0.0013 at 24 hours, and the direction is the same.
+  and by 0.0013 at 24 hours. The counts of the direction are near: 4577 against 4581, and 6947 against 6929.
 - The trees have a higher AUC than persistence and than the regression in each year, for each row of the first
   table. Their Brier skill score is more than 0 in each cell of year, question, hours and size.
 - The sum of the stated chances is near the count, for the six years together. For the fronts of 3 pixels or
@@ -2488,8 +2494,12 @@ The fronts of 3 pixels or more before 1 July (table `forecast_periods`):
   ground, and 6 of the 275 fronts below 0.05. The three most likely sectors had 2281 of the 3409 new pixels.
 - The forecast of the months before 1 July has a test on one year with many fronts with new ground, 2026.
   2025 has too few for an answer.
-- The rules stay: a live forecast gives each front of each month its forecast. The trees of now are those of
-  this section. The numbers of sections 11.28 and 11.30 are those of their runs.
+- The rules stay: the calendar does not stop a live forecast now. A front must have its other inputs
+  (section 11.29, rule 4). The trees of now are those of this section. The numbers of sections 11.28 and 11.30
+  are those of their runs.
+- A live forecast from 1 July with no map of the year before on disk has inputs that no test had: each row of a
+  test from 1 July has that map.
+- The next independent test is the saved files of the live forecast, and the fronts after 2026-11-20.
 - The result has satellite sources only.
 
 ## 12. Agent and MCP rules

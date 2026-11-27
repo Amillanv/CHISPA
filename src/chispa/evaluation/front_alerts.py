@@ -15,7 +15,6 @@ from pathlib import Path
 import numpy as np
 
 from chispa import config, fronts
-from chispa.evaluation.fronts import SOURCE
 from chispa.evaluation.report import share
 from chispa.grid import pantanal_grid
 from chispa.issued import Replay
@@ -101,7 +100,7 @@ def table(year: int, store_path: Path, raw_dir: Path) -> list[dict]:
     end = datetime(year + 1, 1, 1, tzinfo=UTC).timestamp()
     end = min(end - max(config.FRONT_ALERT_DELAYS_H) * 3600, config.FRONT_TEST_END.timestamp())
     alerts = [row for row in alerts if row[1] < end]
-    found = store.execute(PIXELS, (fronts.SENSOR_FAMILY, SOURCE, *span)).fetchall()
+    found = store.execute(PIXELS, (fronts.SENSOR_FAMILY, fronts.SOURCE, *span)).fetchall()
     pixels = np.array(found, dtype=float).reshape(-1, 5)
     sizes = front_sizes(alerts, pixels, [tuple(row) for row in store.execute(MERGES)])
     family = np.array([row[2] for row in alerts])
