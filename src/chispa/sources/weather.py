@@ -9,7 +9,7 @@ It is a record of the past, not a forecast: a day is in the product some days af
 """
 
 from calendar import monthrange
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import ee
@@ -167,16 +167,30 @@ def read_part(raw_dir: Path, month: date) -> tuple[dict[str, np.ndarray], np.nda
     return {name: saved[name] for name in MEASURES}, np.load(wind)["wind"]
 
 
-def read_wind(raw_dir: Path, first: date, last: date) -> np.ndarray:
-    """Return the wind of the blocks from the day `first` to the day `last`, in time sequence:
-    blocks, the parts of `WIND`, rows and columns. The files of each month must be on disk."""
-    found, year, month = [], first.year, first.month
-    while (year, month) <= (last.year, last.month):
-        path = raw_dir / "wind" / str(year) / f"{month:02d}.npz"
-        if not path.exists():
-            raise RuntimeError(f"Run `chispa fetch weather --year {year}` first.")
-        found.append(np.load(path)["wind"])
-        year, month = (year, month + 1) if month < 12 else (year + 1, 1)
-    each_day = 24 // BLOCK_HOURS
-    start = (first - date(first.year, first.month, 1)).days * each_day
-    return np.concatenate(found)[start : start + ((last - first).days + 1) * each_day]
+def read_newest(raw_dir: Path, first: date, limit: date) -> tuple[dict, np.ndarray]:
+    """Return each measure of each day, and the wind of each block, from the month of `first`
+    to the newest day on disk, and not past the month of `limit`.
+
+    It reads each complete month in sequence, then the complete days of a month in progress.
+    The first month can be the month in progress: a forecast of January needs December.
+    """
+    days: dict[str, list] = {name: [] for name in MEASURES}
+    wind, month = [], first.replace(day=1)
+    while month <= limit:
+        folders = [raw_dir / kind / str(month.year) for kind in ("weather", "wind")]
+        paths = [folder / f"{month.month:02d}.npz" for folder in folders]
+        found = None
+        if all(path.exists() for path in paths):
+            found = np.load(paths[0]), np.load(paths[1])["wind"]
+        found = found or read_part(raw_dir, month)
+        if found is None:
+            break
+        for name in MEASURES:
+            days[name].append(found[0][name])
+        wind.append(found[1])
+        if not paths[0].exists():
+            break
+        month = (month.replace(day=28) + timedelta(days=4)).replace(day=1)
+    if not wind:
+        raise RuntimeError(f"Run `chispa fetch weather --year {first.year}` first.")
+    return {name: np.concatenate(parts) for name, parts in days.items()}, np.concatenate(wind)

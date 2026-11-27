@@ -41,29 +41,53 @@ def test_month_with_no_file_says_what_to_do():
         weather.read_days(SAMPLES, date(2018, 2, 20), date(2018, 3, 2))
 
 
-def test_wind_blocks_of_two_months_are_one_series():
-    wind = weather.read_wind(SAMPLES, date(2018, 1, 31), date(2018, 2, 1))
-    assert wind.shape == (8, 3, 2, 2)  # Two days of four blocks, the three parts, four cells.
+def test_the_newest_weather_has_each_complete_month_in_sequence():
+    days, wind = weather.read_newest(SAMPLES, date(2018, 1, 1), date(2019, 1, 31))
+    # January and February 2018 are on disk: 59 days, with four blocks of wind for each day.
+    assert days["rain_mm"].shape == (59, 2, 2) and wind.shape == (236, 3, 2, 2)
     # The first block of 31 January and of 1 February at the first cell, as the product gave them:
     # to the east, to the north and the mean speed, in km/h.
-    assert [round(float(value), 3) for value in wind[0, :, 0, 0]] == [-0.769, -4.188, 4.377]
-    assert [round(float(value), 3) for value in wind[4, :, 0, 0]] == [-1.792, -2.557, 3.165]
+    assert [round(float(value), 3) for value in wind[120, :, 0, 0]] == [-0.769, -4.188, 4.377]
+    assert [round(float(value), 3) for value in wind[124, :, 0, 0]] == [-1.792, -2.557, 3.165]
+    assert [round(float(value), 3) for value in days["rain_mm"][30:33, 0, 0]] == [
+        7.173,
+        12.453,
+        12.382,
+    ]
 
 
-def test_wind_month_with_no_file_says_what_to_do():
+def test_the_newest_weather_stops_at_the_limit_month():
+    days, wind = weather.read_newest(SAMPLES, date(2018, 1, 1), date(2018, 1, 31))
+    assert days["rain_mm"].shape == (31, 2, 2) and wind.shape == (124, 3, 2, 2)
+
+
+def test_no_weather_file_from_the_first_month_says_what_to_do():
     with pytest.raises(RuntimeError, match="chispa fetch weather --year 2019"):
-        weather.read_wind(SAMPLES, date(2019, 1, 1), date(2019, 1, 2))
+        weather.read_newest(SAMPLES, date(2019, 1, 1), date(2019, 1, 31))
+
+
+def save_part(folder, kind: str, month: str, days: int) -> None:
+    """Save the first days of a real month file as a month in progress."""
+    saved = np.load(SAMPLES / kind / "2018" / f"{month}.npz")
+    count = days if kind == "weather" else days * 24 // weather.BLOCK_HOURS
+    (folder / kind / "2018").mkdir(parents=True, exist_ok=True)
+    with (folder / kind / "2018" / f"{month}.npz.part").open("wb") as file:
+        np.savez_compressed(file, **{name: saved[name][:count] for name in saved.files})
+
+
+def test_the_first_month_can_be_the_month_in_progress(tmp_path):
+    # In the first days of a year, December is not complete: 3 days of it are on disk.
+    for kind in ("weather", "wind"):
+        save_part(tmp_path, kind, "01", 3)
+    days, wind = weather.read_newest(tmp_path, date(2018, 1, 1), date(2019, 1, 31))
+    assert days["rain_mm"].shape == (3, 2, 2) and wind.shape == (12, 3, 2, 2)
+    assert round(float(days["wind_kmh"][0, 0, 0]), 3) == 11.098
 
 
 def test_month_in_progress_gives_its_complete_days(tmp_path):
     # The first three days of the real file of February 2018, saved as a month in progress.
     for kind in ("weather", "wind"):
-        saved = np.load(SAMPLES / kind / "2018" / "02.npz")
-        count = 3 if kind == "weather" else 3 * 24 // weather.BLOCK_HOURS
-        folder = tmp_path / kind / "2018"
-        folder.mkdir(parents=True)
-        with (folder / "02.npz.part").open("wb") as file:
-            np.savez_compressed(file, **{name: saved[name][:count] for name in saved.files})
+        save_part(tmp_path, kind, "02", 3)
     days, wind = weather.read_part(tmp_path, date(2018, 2, 1))
     assert days["rain_mm"].shape == (3, 2, 2) and wind.shape[:2] == (12, 3)
     # 1 and 2 February at the first cell, as the product gave them.

@@ -55,11 +55,13 @@ def matrix(inputs: dict, by_sector: bool) -> tuple[np.ndarray, tuple[str, ...]]:
 def case(rows: dict, question: str, hours: int) -> dict:
     """Return the rows of one question for one year: the inputs, the label and the baselines.
 
-    A front that was not visible in the window, or that has no weather on disk, is not a row.
+    A front that was not visible in the window is not a row. A front that has no weather on
+    disk, or no pixel with a fire power, is also not a row.
     `fronts` is True for each front of the year that is a row.
     """
     answers, inputs = rows["answers"], rows["inputs"]
-    fronts_in = (answers[f"answer_{hours}"] != steps.HIDDEN) & ~np.isnan(inputs["past_vpd"])
+    known = ~np.isnan(inputs["past_vpd"]) & ~np.isnan(inputs["log_frp_mean"])
+    fronts_in = (answers[f"answer_{hours}"] != steps.HIDDEN) & known
     use, new = fronts_in, answers[f"new_{hours}"]
     if question == "sector":
         use = np.repeat(fronts_in, config.FRONT_SECTORS)

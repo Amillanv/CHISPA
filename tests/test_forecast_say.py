@@ -49,21 +49,34 @@ def test_the_most_likely_sectors_count_the_new_pixels_of_a_front():
     assert row["sector_by_chance"] == round(3 / 16, 4)
 
 
-def test_the_first_look_of_a_fire_has_its_scores_apart():
+def test_the_first_look_of_a_fire_and_the_examined_places_have_their_scores_apart():
     # Fronts 1 and 2 are a first look. Front 1 gets 3 new pixels to the east, and the forecast
     # says east. Front 3 gets 4 new pixels to the north, and the forecast says south.
+    # GOES examined the place of the fronts 1, 2 and 4, and not that of the front 3.
     rows = {
         "inputs": {"first_look": np.array([True, True, False, False])},
         "answers": {
             "new_12": np.array([3, 0, 4, 0]),
             "direction_deg_12": np.array([90.0, np.nan, 0.0, np.nan]),
+            "examined_12": np.array([True, True, False, True]),
         },
     }
     sector = np.zeros((4, 8))
     sector[0, 2], sector[2, 4] = 0.5, 0.5
     trees = {"new_ground": np.array([0.8, 0.2, 0.3, 0.6]), "sector": sector.ravel()}
-    first, other = forecast_say.first_look_rows(rows, 12, np.ones(4, dtype=bool), trees)
+    found = forecast_say.group_rows(rows, 12, np.ones(4, dtype=bool), trees)
+    first, other = found["forecast_first_look"]
     assert (first["fronts"], first["rows"], first["new_ground"]) == ("first look", 2, 1)
     assert (first["auc_trees"], first["fronts_with_direction"], first["trees_in_45"]) == (1.0, 1, 1)
     assert (other["rows"], other["new_ground"], other["auc_trees"]) == (2, 1, 0.0)
     assert (other["fronts_with_direction"], other["trees_in_45"]) == (1, 0)
+    # The stated chances of the first two fronts expect 0.8 + 0.2 = 1 front with new ground.
+    assert first["chance_sum"] == 1.0
+    seen, dark = found["forecast_examined"]
+    assert (seen["fronts"], seen["rows"], seen["new_ground"], seen["chance_sum"]) == (
+        "examined",
+        3,
+        1,
+        1.6,
+    )
+    assert (dark["fronts"], dark["rows"], dark["new_ground"]) == ("not examined", 1, 1)

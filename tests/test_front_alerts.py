@@ -1,12 +1,14 @@
 """Tests of the first alerts that have a front, with cases small enough for paper."""
 
-from datetime import timedelta
+import sqlite3
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import pytest
 
 from chispa import fronts
 from chispa.evaluation import front_alerts
+from chispa.store import open_store, to_text
 
 LAT, LON = -19.0, -57.0
 EAST = 1 / (111_320 * np.cos(np.deg2rad(19.0)))  # One metre east in degrees, at the box centre.
@@ -59,3 +61,34 @@ def test_the_pixels_of_a_second_event_count_only_after_the_merge():
     merges = [(ALERT + 5 * HOUR, 2, 1)]
     flags = front_alerts.front_flags([(1, ALERT)], pixels, merges)
     assert flags.tolist() == [[False, False, True]]
+
+
+def add(store: sqlite3.Connection, number: int, issued: int, row: tuple) -> None:
+    """Add one detection (family, hours after the alert time, metres north) of an issued id."""
+    family, hours, north_m = row
+    when = to_text(datetime.fromtimestamp(ALERT + hours * HOUR, UTC))
+    place = (LAT + north_m / 110_574, LON)
+    values = (number, "firms", family, "any", when, when, *place, 375.0, 5.0, "nominal", 1)
+    store.execute("INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
+    # After a merge, the event of the detection is the event 1. Its issued id stays.
+    store.execute("INSERT INTO memberships VALUES (?, 1, 'MEDIUM', ?)", (number, issued))
+
+
+def test_a_first_alert_is_an_event_as_it_was_issued(tmp_path):
+    # The id 1 starts with one GOES pixel, and gets a VIIRS pixel 2 km to the north 3 hours later.
+    # The id 2 starts with two VIIRS pixels one hour later. A merge puts it into the event 1.
+    store = open_store(tmp_path / "store.sqlite")
+    rows = [
+        (1, ("abi", 0, 0.0)),
+        (1, ("viirs", 3, 2000.0)),
+        (2, ("viirs", 1, 0.0)),
+        (2, ("viirs", 1, 1000.0)),
+    ]
+    for number, (issued, row) in enumerate(rows, start=1):
+        add(store, number, issued, row)
+    first, second = sorted(store.execute(front_alerts.ALERTS, (0, 10)).fetchall())
+    # Each issued id is one alert, with the time, the family and the place of its first moment.
+    assert (first[0], first[1], first[2]) == (1, ALERT, "abi")
+    assert (round(first[3], 6), first[4]) == (LAT, LON)
+    assert (second[0], second[1], second[2]) == (2, ALERT + HOUR, "viirs")
+    assert round(second[3], 6) == round(LAT + 500 / 110_574, 6)

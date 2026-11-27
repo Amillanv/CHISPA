@@ -60,28 +60,43 @@ def sector_row(answers: dict, hours: int, use: np.ndarray, chance: np.ndarray) -
     return row
 
 
-def first_look_rows(rows: dict, hours: int, use: np.ndarray, trees: dict) -> list[dict]:
-    """Return the scores of the trees for the first look of a fire, and for the other fronts.
+def _score(hours: int, name: str, part: np.ndarray, found: dict) -> dict:
+    """Return the scores of the trees for the fronts of `part`. `chance_sum` is the number of
+    fronts with new ground that the stated chances expect."""
+    new, chance = found["new"][part], found["chance"][part]
+    many = part & (found["new"] >= config.FRONT_DIRECTION_PIXELS)
+    return {
+        "hours": hours,
+        "fronts": name,
+        "rows": int(part.sum()),
+        "new_ground": int((new > 0).sum()),
+        "chance_sum": round(float(chance.sum()), 1),
+        "auc_trees": separation(chance, (new > 0).astype(float)),
+        "fronts_with_direction": int(many.sum()),
+        "trees_in_45": forecast.in_45(found["guess"], found["truth"], many),
+    }
 
-    A front is the first look of a fire if each of its pixels is farther than the largest reach
-    from each pixel that we knew before. `trees` has the chances of each question.
+
+def group_rows(rows: dict, hours: int, use: np.ndarray, trees: dict) -> dict[str, list[dict]]:
+    """Return the scores of the trees for two splits of the fronts with a row.
+
+    `forecast_first_look`: a front is the first look of a fire if each of its pixels is farther
+    than the largest reach from each pixel that we knew before.
+    `forecast_examined`: GOES examined the place of a front at each time of the window, or not.
+    A front at a place that GOES did not examine has a row only because a later pixel came: that
+    group depends on the answer. The group that GOES examined does not.
+    `trees` has the chances of each question.
     """
-    first = rows["inputs"]["first_look"][use]
-    new = rows["answers"][f"new_{hours}"][use]
-    truth = rows["answers"][f"direction_deg_{hours}"][use]
-    guess = forecast.directions(trees["sector"])
-    table = []
-    for name, part in (("first look", first), ("other", ~first)):
-        many = part & (new >= config.FRONT_DIRECTION_PIXELS)
-        table.append(
-            {
-                "hours": hours,
-                "fronts": name,
-                "rows": int(part.sum()),
-                "new_ground": int((new[part] > 0).sum()),
-                "auc_trees": separation(trees["new_ground"][part], (new[part] > 0).astype(float)),
-                "fronts_with_direction": int(many.sum()),
-                "trees_in_45": forecast.in_45(guess, truth, many),
-            }
-        )
-    return table
+    answers = rows["answers"]
+    found = {"new": answers[f"new_{hours}"][use], "chance": trees["new_ground"]}
+    found["truth"] = answers[f"direction_deg_{hours}"][use]
+    found["guess"] = forecast.directions(trees["sector"])
+    first, seen = rows["inputs"]["first_look"][use], answers[f"examined_{hours}"][use]
+    splits = {
+        "forecast_first_look": (("first look", first), ("other", ~first)),
+        "forecast_examined": (("examined", seen), ("not examined", ~seen)),
+    }
+    return {
+        table: [_score(hours, name, part, found) for name, part in parts]
+        for table, parts in splits.items()
+    }

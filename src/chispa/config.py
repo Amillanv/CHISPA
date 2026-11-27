@@ -535,6 +535,9 @@ RISK_TEST_MIN_LARGE = 30
 
 # --- Paths and downloads ---
 
+# The id of an event starts with its year: a year has this many ids (`cli.run_fuse`).
+EVENT_IDS_OF_A_YEAR = 10_000_000
+
 DATA_DIR = Path("data")
 RAW_DIR = DATA_DIR / "raw"
 STORE_PATH = DATA_DIR / "chispa.sqlite"

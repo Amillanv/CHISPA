@@ -1,7 +1,7 @@
-hours,looks,fronts,new_ground,front_again,clear_no_fire,not_visible,new_ground_share,fronts_with_10_new_pixels,distance_m_median
-12,day,503,79,88,233,103,0.1975,25,1572.62
-12,night,252,74,73,66,39,0.3474,30,1664.9
-12,all,755,153,161,299,142,0.2496,55,1652.59
-24,day,503,150,78,120,155,0.431,64,2101.47
-24,night,252,99,39,47,67,0.5351,49,1797.99
-24,all,755,249,117,167,222,0.4672,113,1981.98
+hours,looks,fronts,new_ground,front_again,clear_no_fire,not_visible,new_ground_share,new_ground_not_examined,front_again_not_examined,look_complete_h_median,fronts_with_10_new_pixels,distance_m_median
+12,day,503,79,88,233,103,0.1975,14,14,4.68,25,1572.62
+12,night,252,74,73,66,39,0.3474,10,15,4.67,30,1664.9
+12,all,755,153,161,299,142,0.2496,24,29,4.68,55,1652.59
+24,day,503,150,78,120,155,0.431,51,19,4.68,64,2101.47
+24,night,252,99,39,47,67,0.5351,36,7,4.67,49,1797.99
+24,all,755,249,117,167,222,0.4672,87,26,4.68,113,1981.98

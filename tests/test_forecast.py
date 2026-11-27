@@ -31,6 +31,7 @@ def rows_of_three_fronts() -> dict:
     answers["sectors_12"] = np.concatenate([12 * one_sector(2), np.zeros((2, 8))])
     inputs = {"log_pixels": np.array([1.0, 2.0, 3.0]), "past_vpd": np.array([4.0, 4.0, np.nan])}
     inputs |= {"log_came": np.array([0.7, 0.0, 0.0]), "log_fresh": np.zeros(3)}
+    inputs["log_frp_mean"] = np.full(3, 2.0)
     inputs |= {"came_share_s": np.zeros((3, 8)), "past_wind_toward_s": np.ones((3, 8))}
     return {"answers": answers, "inputs": inputs | {"came_direction_deg": np.full(3, np.nan)}}
 
@@ -40,6 +41,12 @@ def test_a_front_that_was_not_visible_or_has_no_weather_is_not_a_row():
     assert found["fronts"].tolist() == [True, False, False]
     assert (found["y"].tolist(), found["persistence"].tolist()) == ([1.0], [0.7])
     assert "came_direction_deg" not in found["names"] and "came_share_s" not in found["names"]
+
+
+def test_a_front_with_no_fire_power_is_not_a_row():
+    rows = rows_of_three_fronts()
+    rows["inputs"]["log_frp_mean"] = np.array([np.nan, 2.0, 2.0])
+    assert forecast.case(rows, "new_ground", 12)["fronts"].tolist() == [False, False, False]
 
 
 def test_large_growth_needs_the_minimum_number_of_new_pixels(monkeypatch):

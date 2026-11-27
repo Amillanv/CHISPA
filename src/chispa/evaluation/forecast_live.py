@@ -8,6 +8,7 @@ A later run can score those files against what came: they are data that no model
 `docs/method.md` section 11.29 gives the rules.
 """
 
+import hashlib
 import json
 import pickle
 import sqlite3
@@ -32,13 +33,20 @@ WHERE d.sensor_family = ? AND d.source = ? AND d.observed_at >= ? AND d.observed
 """
 
 
+def _stamp() -> str:
+    """Return a hash of the configuration and of the code that makes the rows and the trees."""
+    modules = (fronts, steps, front_inputs, forecast)
+    code = "".join(Path(module.__file__).read_text() for module in modules)
+    return config_hash() + hashlib.sha256(code.encode()).hexdigest()[:12]
+
+
 def saved_models(store_path: Path, raw_dir: Path, in_biome: np.ndarray) -> dict:
     """Return the trees of each question and their input names, from all development years.
 
-    A saved file gives them, if the configuration that made it is the configuration of now.
+    A saved file gives them, if the configuration and the code that made it are those of now.
     If not, this fits the trees again and saves them: some minutes.
     """
-    path, stamp = config.FORECAST_MODELS_PATH, config_hash()
+    path, stamp = config.FORECAST_MODELS_PATH, _stamp()
     if path.exists():
         saved = pickle.loads(path.read_bytes())
         if saved["config"] == stamp:
@@ -194,19 +202,24 @@ def live_looks(store_path: Path, raw_dir: Path, now: datetime) -> list[dict]:
 
 
 def save(looks: list[dict], folder: Path) -> list[Path]:
-    """Save the forecast of each look in its file, and return the files that are new or changed.
+    """Save the forecast of each look as a new file, and return the new files.
 
-    A look can get more pixels when a second satellite comes. Then its fronts have more pixels,
-    and the newer forecast replaces the file. If not, the file stays as we first made it.
+    The name of a file has the time of the look and the time of the run, and a file never
+    changes: the first forecast of a look stays as we gave it. A look gets a newer file only
+    when it has more pixels than in its newest file: a second satellite came.
     """
     written = []
     for look in looks:
-        path = folder / f"{look['look_at'][:16].replace(':', '')}.json"
-        if path.exists():
-            before = sum(front["pixels"] for front in json.loads(path.read_text())["fronts"])
-            if before >= sum(front["pixels"] for front in look["fronts"]):
+        name = look["look_at"][:16].replace(":", "")
+        before = sorted(folder.glob(f"{name}_*.json"))
+        pixels = sum(front["pixels"] for front in look["fronts"])
+        if before:
+            newest = json.loads(before[-1].read_text())["fronts"]
+            if sum(front["pixels"] for front in newest) >= pixels:
                 continue
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(look, indent=1))
-        written.append(path)
+        path = folder / f"{name}_{look['made_at'][:16].replace(':', '')}.json"
+        if not path.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(look, indent=1))
+            written.append(path)
     return written

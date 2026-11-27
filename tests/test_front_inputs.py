@@ -38,6 +38,17 @@ def test_the_shape_gives_the_reach_to_each_sector_and_the_hot_side():
     assert inputs["heat_km_s"][0, WEST] == pytest.approx(-0.2)
 
 
+def test_a_pixel_with_no_fire_power_is_not_a_pixel_with_a_power_of_zero():
+    look = fronts.make_look(ROW, np.empty((0, 2)))
+    inputs, _, _ = front_inputs.shape_inputs(look, np.array([5.0, np.nan, 7.0]))
+    # The mean of the two pixels with a value is 6 MW. With a power of 0 it is 4 MW.
+    assert inputs["log_frp_mean"][0] == pytest.approx(np.log1p(6.0))
+    assert inputs["log_frp_max"][0] == pytest.approx(np.log1p(7.0))
+    none, _, _ = front_inputs.shape_inputs(look, np.full(3, np.nan))
+    assert np.isnan(none["log_frp_mean"][0]) and np.isnan(none["heat_km_s"][0]).all()
+    assert none["log_pixels"][0] == pytest.approx(np.log1p(3))
+
+
 def test_the_pixels_on_new_ground_say_how_the_front_came():
     # One known pixel. The look has a pixel on it, two pixels to the east past the floor,
     # and one pixel 30 km away: a new fire.
