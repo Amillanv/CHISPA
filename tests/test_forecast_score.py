@@ -10,7 +10,7 @@ from scipy.spatial import cKDTree
 from chispa import forecast_files, fronts
 from chispa.evaluation import forecast_score
 from chispa.evaluation import fronts as steps
-from chispa.store import open_store, to_text
+from chispa.store import open_store, save_log_size, to_text
 
 LAT, LON = -19.0, -57.0
 EAST = 1 / (111_320 * np.cos(np.deg2rad(19.0)))  # One metre east in degrees, at the box centre.
@@ -182,10 +182,39 @@ def test_the_summary_scores_only_the_fronts_that_goes_examined():
     assert (small["fronts"], small["examined"], small["auc_trees"]) == (0, 0, None)
 
 
+def test_the_live_data_ends_with_the_newest_pass_that_read_each_source(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.LIVE_START", datetime(2023, 1, 1, tzinfo=UTC))
+    monkeypatch.setattr("chispa.config.LIVE_PASS_END_FROM", datetime(2023, 1, 1, tzinfo=UTC))
+    monkeypatch.setattr("chispa.config.LIVE_POLL_LATE", timedelta(minutes=15))
+    store = open_store(tmp_path / "store.sqlite")
+    now = LOOK + timedelta(hours=30)
+    # No pass of the poller: the store has no live data that we know of.
+    assert forecast_score.data_to(store, tmp_path, now) is None
+    # A pass at 05:00 read each source. In the pass at 05:05, FIRMS failed.
+    polls = tmp_path / "live" / "polls" / "2023-09-02.csv"
+    polls.parent.mkdir(parents=True)
+    rows = ["polled_at,source,item,result,new_rows"]
+    for minute, result in ((0, "ok"), (5, "HTTP 500")):
+        at = f"2023-09-02T05:{minute:02d}:00+00:00"
+        rows += [f"{at},firms,VIIRS_NOAA20_NRT,{result},0", f"{at},pass,end,ok,0"]
+    polls.write_text("\n".join(rows) + "\n")
+    assert forecast_score.data_to(store, tmp_path, now) == datetime(2023, 9, 2, 5, 0, tzinfo=UTC)
+    # A FIRMS log on disk has a row that the store did not read: the answers can be wrong.
+    log = tmp_path / "live" / "firms" / "VIIRS_NOAA20_NRT" / "2023-09-02.csv"
+    log.parent.mkdir(parents=True)
+    log.write_text("one row\n")
+    with pytest.raises(RuntimeError, match="Run `chispa update`"):
+        forecast_score.data_to(store, tmp_path, now)
+    save_log_size(store, "live/firms/VIIRS_NOAA20_NRT/2023-09-02.csv", log.stat().st_size)
+    assert forecast_score.data_to(store, tmp_path, now) == datetime(2023, 9, 2, 5, 0, tzinfo=UTC)
+
+
 def test_the_command_saves_the_rows_and_gives_the_table_of_each_year(tmp_path, monkeypatch):
     monkeypatch.setattr("chispa.config.FORECAST_LIVE_DIR", tmp_path / "forecasts")
     monkeypatch.setattr("chispa.config.RESULTS_DIR", tmp_path / "results")
     monkeypatch.setattr(steps, "masks_in", lambda raw_dir: masks_of())
+    # The store has the live data to the time of the run.
+    monkeypatch.setattr(forecast_score, "data_to", lambda store, raw_dir, now: now)
     store_of(tmp_path, FRONT + NEW).close()
     forecast_files.save([saved_of()], tmp_path / "forecasts", LOOK + timedelta(hours=3.5))
     path = tmp_path / "store.sqlite"

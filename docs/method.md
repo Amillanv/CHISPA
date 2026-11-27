@@ -2519,8 +2519,11 @@ section 11.31. The owner asked for this command on 2026-11-27.
 3. A look has a score only if the store of now has the same look: the same pixels, and no more. If a pixel of
    the look came after the file, the look was not complete before its first window (section 11.26, rule 11).
    The table counts the fronts of the looks that are the same (`same_look`).
-4. A window has an answer 6 hours after its end: the hours in which a look must be complete (`config.py`).
-   The pixels of the last pass of a window come some hours after the pass.
+4. A window has an answer when the store has the live data to 6 hours after its end: the hours in which a look
+   must be complete (`config.py`). The pixels of the last pass of a window come some hours after the pass.
+   The time of the data is the newest pass of the poller that read each source with no failure (`polls.py`),
+   not the time of the clock: after a stop of a source, "no pixel" must not become "no new ground".
+   The command stops if a FIRMS log on disk has a row that the store did not read.
 5. The answer of a front comes from the rules 5 to 8 of section 11.26. The masks are those of the live poller:
    each scan that it recorded.
 6. A front has a score if it has a chance, and if GOES examined its place at each time of the window
@@ -2554,6 +2557,8 @@ A negative result is a valid result.
 - One table can have the files of trees with different marks. The file of the fronts has the mark of each row.
 - The table has no wind: the count of the direction has no baseline.
 - The wait of rule 4 is not a measured delay. The delay report of the live logs is not made (`PLAN.md`).
+- Rule 3 compares the number of the pixels of a look, and the centre and the size of each front. It does not
+  compare each pixel: a file does not have its pixels.
 - The limits of sections 11.26 to 11.31 apply. The score has satellite sources only.
 
 ### 11.33 The fronts in Brazil outside the biome
@@ -2684,21 +2689,24 @@ needs the agreement of the owner (section 12.1).
    2024) gets the model of the five other years. 2025 and 2026 get the model of the six years, one time.
 5. The baselines are the confidence at moment 0 (section 11.15) and the number of detections.
    The Brier skill score compares the chance with one number: the share of the training rows with a front.
-6. Moment 24 must be in the year, and before the end of a year in progress (section 11.26, rule 9).
+   A third baseline came after the review of pull request 48, and after the test: a regression with only
+   the hour of the first detection. It is not a part of the hypothesis.
+6. Moment 0 must be 24 hours or more before the end of the year, and before the end of a year in progress
+   (section 11.26, rule 9). This is stricter than moment 24 by one pass gap.
    The day of moment 0 must have its weather on disk. For 2026 the weather files are complete to
    October: its rows end on 2026-10-31.
 
 The result of the development years (table `front_chance` of 2019 to 2024, 2026-11-27). "Expected" is the sum
 of the stated chances.
 
-| Year | Alerts | With a front | Expected | AUC of the model | AUC of the confidence | AUC of the detections | Brier skill |
-|---|---|---|---|---|---|---|---|
-| 2019 | 707 | 412 | 328.4 | 0.8348 | 0.6619 | 0.5930 | 0.4562 |
-| 2020 | 2328 | 624 | 724.4 | 0.8627 | 0.6186 | 0.5691 | 0.4091 |
-| 2021 | 1046 | 463 | 404.5 | 0.8667 | 0.6128 | 0.6129 | 0.4345 |
-| 2022 | 971 | 418 | 380.5 | 0.7316 | 0.4903 | 0.6133 | 0.1642 |
-| 2023 | 4709 | 895 | 1191.2 | 0.7965 | 0.6067 | 0.5803 | 0.3176 |
-| 2024 | 3513 | 1064 | 1016.2 | 0.8380 | 0.6789 | 0.6246 | 0.3334 |
+| Year | Alerts | With a front | Expected | AUC of the model | AUC of the confidence | AUC of the detections | AUC of the hour | Brier skill |
+|---|---|---|---|---|---|---|---|---|
+| 2019 | 707 | 412 | 328.4 | 0.8348 | 0.6619 | 0.5930 | 0.7363 | 0.4562 |
+| 2020 | 2328 | 624 | 724.4 | 0.8627 | 0.6186 | 0.5691 | 0.8209 | 0.4091 |
+| 2021 | 1046 | 463 | 404.5 | 0.8667 | 0.6128 | 0.6129 | 0.7804 | 0.4345 |
+| 2022 | 971 | 418 | 380.5 | 0.7316 | 0.4903 | 0.6133 | 0.6269 | 0.1642 |
+| 2023 | 4709 | 895 | 1191.2 | 0.7965 | 0.6067 | 0.5803 | 0.6033 | 0.3176 |
+| 2024 | 3513 | 1064 | 1016.2 | 0.8380 | 0.6789 | 0.6246 | 0.6493 | 0.3334 |
 
 By stated chance, for the six years together (table `front_chance_bands`):
 
@@ -2714,6 +2722,8 @@ By stated chance, for the six years together (table `front_chance_bands`):
 
 - The model has a higher AUC than the two baselines in 6 of 6 years. The mean AUC of the six years is 0.8217,
   against 0.6115 for the confidence and 0.5989 for the number of detections.
+- The hour alone has a mean AUC of 0.7029, and the model is above it in 6 of 6 years. In 2019 to 2021 the hour
+  gives most of the sequence: 0.7363, 0.8209 and 0.7804. In 2022 to 2024 it gives less: 0.6033 to 0.6493.
 - The share of the alerts with a front changes with the year: 895 of 4709 in 2023, and 412 of 707 in 2019.
   The stated chances follow that only in part: observed to expected for one year is 0.75 to 1.25. For the six
   years together it is 3876 to 4045.2.
@@ -2736,11 +2746,15 @@ gets a field. A negative result is a valid result.
 
 - The limit of 0.75 in statement 2 is a choice from the development years.
 - The years of this part are those of the growth forecast (section 7.4, rule 2): the rules from 2019 to 2024,
-  and one score on 2025 and 2026. This choice waits for the answer of the owner.
+  and one score on 2025 and 2026. This choice waits for the answer of the owner. The owner asked for this part
+  on 2026-11-27 and was not there for the choice of the years. If the owner does not agree, the run on 2025 and
+  2026 is a first look, and not the test of the part.
 - A front at moment 24 says that VIIRS saw the fire of the event in 24 hours. It does not say that the
   fire is large, and no front does not say that the fire stopped: cloud hides a fire from VIIRS.
 - The time when a VIIRS pixel was available is an estimate for the years from the archive (`config.py`).
-- The land cover is that of the year before, as for the confidence. Section 11.31 uses two years before.
+- The land cover is that of the year before, as for the confidence. An alert of the first months of a year
+  did not have that map: section 11.31 uses two years before. Thus this test has a land cover that is newer
+  than some alerts had. A run with the calendar of section 11.31 is not made: it is a second analysis.
 - The rows are fewer than the alerts of the table `front_alerts`. An alert that merged with an older event
   before moment 0 is not a row, and an alert that got a detection of a different sensor in that time is not one.
 - The number of the alerts that only GOES started changes with the year: 1002 in 2022 and 5824 in 2023 (table
@@ -2749,10 +2763,10 @@ gets a field. A negative result is a valid result.
 
 The result of the test (the same tables of 2025 and 2026, 2026-11-27): the four statements are true.
 
-| Year | Alerts | With a front | Expected | AUC of the model | AUC of the confidence | AUC of the detections | Brier skill |
-|---|---|---|---|---|---|---|---|
-| 2025 | 693 | 263 | 231.4 | 0.8254 | 0.6418 | 0.7186 | 0.3124 |
-| 2026 | 440 | 223 | 201.7 | 0.7661 | 0.6394 | 0.6837 | 0.2930 |
+| Year | Alerts | With a front | Expected | AUC of the model | AUC of the confidence | AUC of the detections | AUC of the hour | Brier skill |
+|---|---|---|---|---|---|---|---|---|
+| 2025 | 693 | 263 | 231.4 | 0.8254 | 0.6418 | 0.7186 | 0.6240 | 0.3124 |
+| 2026 | 440 | 223 | 201.7 | 0.7661 | 0.6394 | 0.6837 | 0.5590 | 0.2930 |
 
 | Stated chance | Alerts of the two years | With a front |
 |---|---|---|
@@ -2766,6 +2780,9 @@ The result of the test (the same tables of 2025 and 2026, 2026-11-27): the four 
 
 - Statement 1: the model has the highest AUC in each year. The number of detections is a better baseline than
   in the development years: 0.7186 and 0.6837, against a mean of 0.5989.
+- The hour alone has 0.6240 and 0.5590: the model is not only a clock for the next VIIRS pass. This baseline
+  came after the test (rule 5). The run for it read the two years a second time, and each other number of
+  the tables stayed the same.
 - Statement 2: the mean AUC of the two years is 0.79575.
 - Statement 3: 486 alerts had a front, and the chances expected 433.1: 1.12. For one year: 1.14 and 1.11.
   The stated chances are too low by approximately one part in ten.

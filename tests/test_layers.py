@@ -1,12 +1,13 @@
 """A test of the rule that the live path of the growth forecast does not import the evaluation."""
 
 import ast
+import subprocess
+import sys
 from pathlib import Path
 
 SRC = Path(__file__).parent.parent / "src" / "chispa"
 LIVE = ("fronts", "front_inputs", "forecast_model", "forecast_live", "forecast_files", "record")
-# `evaluation/report.py` gives the hash of the configuration. It reads no answer.
-PERMITTED = {"chispa.evaluation.report", "chispa.evaluation.report.config_hash"}
+LIVE += ("config_hash",)
 
 
 def imports_of(path: Path) -> set[str]:
@@ -23,4 +24,13 @@ def imports_of(path: Path) -> set[str]:
 def test_the_live_forecast_imports_no_module_of_the_evaluation():
     for name in LIVE:
         used = {module for module in imports_of(SRC / f"{name}.py") if "evaluation" in module}
-        assert used <= PERMITTED, (name, sorted(used - PERMITTED))
+        assert not used, (name, sorted(used))
+
+
+def test_the_live_forecast_and_the_record_load_with_the_evaluation_blocked():
+    # A module that the live path imports can import the evaluation. Only a real import of the
+    # live path, in a new process that cannot import the evaluation, shows that.
+    code = "import sys; sys.modules['chispa.evaluation'] = None; "
+    code += "import chispa.forecast_live, chispa.record"
+    done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)
+    assert done.returncode == 0, done.stderr[-500:]

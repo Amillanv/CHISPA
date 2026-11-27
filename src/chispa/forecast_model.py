@@ -17,7 +17,7 @@ import sklearn
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from chispa import config, front_inputs, fronts
-from chispa.evaluation.report import config_hash
+from chispa.config_hash import config_hash
 
 QUESTIONS = ("new_ground", "large_growth", "sector")
 # For the baselines and the tables: they are not inputs.
