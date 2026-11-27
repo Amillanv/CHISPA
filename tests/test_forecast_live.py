@@ -73,8 +73,10 @@ def test_a_front_with_no_fire_power_gets_no_chance(monkeypatch):
     windows = {24: {"from": "a", "to": "c"}}
     first, second = forecast_live.front_rows(*two_fronts([1.0, np.nan]), windows)
     assert first["hours_24"]["new_ground"] == 0.13 and "no_forecast" not in first
-    assert second["hours_24"] is None and second["no_forecast"] == forecast_live.NO_INPUTS
-    assert second["pixels"] == 4
+    assert second["no_forecast"] == forecast_live.NO_INPUTS and second["pixels"] == 4
+    # The window keeps its limits, thus a reader knows when it ends.
+    nothing = {"new_ground": None, "large_growth": None, "sectors": None}
+    assert second["hours_24"] == {"from": "a", "to": "c"} | nothing
 
 
 def test_a_window_that_ended_gets_no_forecast():
@@ -211,3 +213,25 @@ def test_the_step_of_the_update_says_why_it_made_no_forecast(monkeypatch, capsys
     monkeypatch.setattr(forecast_live, "live_looks", lambda *arguments: None)
     checks.run_new_forecasts(now)
     assert "the saved trees are not those of now" in capsys.readouterr().out
+
+
+def test_the_next_update_makes_the_forecast_that_the_weather_stopped(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr("chispa.config.FORECAST_LIVE_DIR", tmp_path)
+    front = {"lat": LAT, "lon": LON, "pixels": 4, "events": [7]}
+    look = {"look_at": "2026-11-25T17:19+00:00", "large_growth_pixels": 10, "fronts": [front]}
+    answers = [OSError("Open-Meteo gave no answer."), [look]]
+
+    def live(*arguments):
+        found = answers.pop(0)
+        if isinstance(found, OSError):
+            raise found
+        return found
+
+    monkeypatch.setattr(forecast_live, "live_looks", live)
+    # The weather does not come in the first update. The second update has no new detection.
+    checks.run_new_forecasts(datetime(2026, 11, 25, 21, 0, tzinfo=UTC))
+    assert capsys.readouterr().out == "forecast: no forecast. Open-Meteo gave no answer.\n"
+    assert list(tmp_path.iterdir()) == []
+    checks.run_new_forecasts(datetime(2026, 11, 25, 21, 5, tzinfo=UTC))
+    assert capsys.readouterr().out == "forecast: 1 new files.\n"
+    assert len(list(tmp_path.glob("2026-11-25T1719_*.json"))) == 1

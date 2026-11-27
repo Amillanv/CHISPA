@@ -2135,23 +2135,27 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
    of those detections. It does not read the raw layers: a raw file does not change (`docs/sources.md` section 8.7).
 3. The inputs are those of section 11.28, rule 3. The weather comes from ERA5-Land to its last day on disk.
    The later days come from Open-Meteo, with the model IFS, for the weather cell of each front.
-4. The answer of the command is JSON: one object for each look, with the time of the look, the time of the run,
-   and each front. A front has its centre, its number of pixels, and the ids of the events of its pixels as we
+4. The answer of the command is JSON: one object for each look, with the time of the look, the time to which it
+   has pixels (`pixels_to`), the minimum of a large growth on that day, and each front.
+   A front has its centre, its number of pixels, and the ids of the events of its pixels as we
    issued them: an alert is for an event, and this list joins a front to its alerts. An issued id does not change
    when two events merge. For each window, a front has the limits of the window as
    UTC times, and the chance of new ground, of large growth, and of a new pixel in each of the 8 sectors. It has no
    distance and no speed. A window that ended before the run gets no forecast. A front with no weather before
-   its look, or with no pixel with a fire power, gets no chance: the trees have no row and no score for it.
-5. Each look gets its object as a file in `data/forecasts` (`forecast_files.py`). The name has the time of the
-   look and the time of the run, and a file does not change. A look can get more pixels when a second satellite
-   comes: then it gets a second file, and the first forecast stays as we gave it.
-6. `chispa update` makes the file of each new look as its last step, when the update has a new detection. It does
-   not fit the trees: if the saved trees are not those of now, it says so, and `chispa forecast --live` fits them.
+   its look, or with no pixel with a fire power, has its windows with no chance, and the reason: the trees have
+   no row and no score for it.
+5. Each look gets its object as a file in `data/forecasts` (`forecast_files.py`). A file has `made_at`: the time
+   when it was complete, which is later than `pixels_to`. Its name has the time of the look and that time, and a
+   file does not change. A look gets a second file when a forecast has more pixels, because a second satellite
+   came, or more fronts with a chance. The first forecast stays as we gave it.
+6. `chispa update` makes the file of each new look as its last step, in each update. It does not fit the trees:
+   if the saved trees are not those of now, it says so, and `chispa forecast --live` fits them.
    If a layer or the weather is absent, it says so, and the next update does the step again.
 7. The field `forecast` of the event record is the forecast of the newest look that has a front of the event. It
-   comes from the newest file of that look that was made at or before the as-of time. A front is a front of the
-   event if one of its ids is an issued id of the event at that time (`issued.py`). The field has only the windows
-   that are open at the as-of time. A front of 1 or 2 pixels has no sectors (section 11.30, statement 5).
+   comes from the newest file of that look that was complete at or before the as-of time. A front is a front of
+   the event if one of its ids is an issued id of the event at that time (`issued.py`). The field has only the
+   windows that are open at the as-of time, and the minimum of a large growth that the file has.
+   A front of 1 or 2 pixels has no sectors (section 11.30, statement 5).
 
 - A live forecast has no answer at its time. The files of rule 5 are data that no model has read: a later command
   can score them against what came. That command does not exist.
