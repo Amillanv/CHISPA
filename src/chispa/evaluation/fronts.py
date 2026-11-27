@@ -37,7 +37,12 @@ def open_masks(raw_dir: Path, year: int) -> Masks:
     folder = raw_dir / "goes_mask"
     if year < datetime.now(UTC).year and not (folder / str(year) / f"{year}-12-31.npz").exists():
         raise RuntimeError(f"Run `chispa fetch goes_mask --year {year}` first.")
-    place = np.load(folder / "grid.npz")
+    return masks_in(raw_dir)
+
+
+def masks_in(raw_dir: Path) -> Masks:
+    """Return the masks below a folder: the fetched masks, or those that the poller recorded."""
+    place = np.load(raw_dir / "goes_mask" / "grid.npz")
     return Masks(raw_dir, cKDTree(fronts.metres(place["lat"].ravel(), place["lon"].ravel())), {})
 
 

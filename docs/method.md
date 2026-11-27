@@ -2168,8 +2168,8 @@ trees, as the event record loads the model of the confidence.
    windows that are open at the as-of time, and the minimum of a large growth that the file has.
    A front of 1 or 2 pixels has no sectors (section 11.30, statement 5).
 
-- A live forecast has no answer at its time. The files of rule 5 are data that no model has read: a later command
-  can score them against what came. That command does not exist.
+- A live forecast has no answer at its time. The files of rule 5 are data that no model has read:
+  `chispa forecast --score` scores them against what came (section 11.32).
 - IFS is not ERA5-Land. On the fronts of September 2024, the two gave almost the same forecast (`docs/sources.md`
   section 8.4). A month with much rain is not checked.
 - The store has only the pixels that were available at the time of the run. A forecast from one satellite of a
@@ -2499,8 +2499,60 @@ The fronts of 3 pixels or more before 1 July (table `forecast_periods`):
   are those of their runs.
 - A live forecast from 1 July with no map of the year before on disk has inputs that no test had: each row of a
   test from 1 July has that map.
-- The next independent test is the saved files of the live forecast, and the fronts after 2026-11-20.
+- The next independent test is the saved files of the live forecast (section 11.32), and the fronts after
+  2026-11-20.
 - The result has satellite sources only.
+
+### 11.32 The score of the saved live forecasts
+
+A file of section 11.29 is a forecast that we gave before its answer existed. The command
+`chispa forecast --score` gives each front of those files its answer, and it scores the stated chances
+(`evaluation/forecast_score.py`). No model has read these fronts: each look is after the end of the test of
+section 11.31. The owner asked for this command on 2026-11-27.
+
+1. The forecast of a look is its newest file that was complete before the first window starts. A look with only
+   later files has no score. The longest window must end in the year of the look (section 11.26, rule 9).
+2. The command makes the look again as the file saw it, with the pixels that were available at `pixels_to`.
+   The later pixels are those of the store of now, from the start of the first window.
+3. A look has a score only if the store of now has the same look: the same pixels, and no more. If a pixel of
+   the look came after the file, the look was not complete before its first window (section 11.26, rule 11).
+   The table counts the fronts of the looks that are the same (`same_look`).
+4. A window has an answer 6 hours after its end: the hours in which a look must be complete (`config.py`).
+   The pixels of the last pass of a window come some hours after the pass.
+5. The answer of a front comes from the rules 5 to 8 of section 11.26. The masks are those of the live poller:
+   each scan that it recorded.
+6. A front has a score if it has a chance, and if GOES examined its place at each time of the window
+   (section 11.30, rule 1).
+7. The table `forecast_live` has one row for each window and each size of front: the looks, the fronts, the
+   fronts with a score, those with new ground, the sum of the stated chances, the AUC of the trees and of
+   persistence, and the direction of the fronts with 3 new pixels or more. An AUC needs a front with new ground
+   and a front with none. The file `results/<year>/forecast_live/fronts.csv` has one row for each front and
+   each window, with the mark of its trees.
+8. Each run makes the table of a year again from all files of that year. A run with no answer makes no table.
+
+The hypothesis, written on 2026-11-27 before a window of a saved forecast had an answer. The first files are of
+the look of 2026-11-27 16:41 UTC. The statements are for the table of a year, at the first run in which 100 or
+more fronts of 3 pixels or more have a score at 12 hours. Before that count, the table is a count in progress:
+it does not answer the hypothesis.
+
+1. For the fronts of 3 pixels or more, the AUC of the trees for new ground is higher than that of persistence,
+   at 12 and at 24 hours.
+2. For the fronts of 3 pixels or more, observed to expected for new ground is from 0.8 to 1.25, at 12 and at
+   24 hours.
+
+A negative result is a valid result.
+
+- 100 fronts are few. In the test of section 11.31, 230 of the 1190 fronts of 3 pixels or more had new ground
+  at 12 hours. At that share, 100 fronts give approximately 19 with new ground: statement 2 can be false by
+  chance.
+- A look has a file only if the computer with the store ran `chispa update` before the first window. A look
+  with no file has no score, and the table does not count it.
+- The masks of the poller have each scan, and the test had one scan of each hour (section 11.26). The limit in
+  time from a scan to its moment is the same.
+- One table can have the files of trees with different marks. The file of the fronts has the mark of each row.
+- The table has no wind: the count of the direction has no baseline.
+- The wait of rule 4 is not a measured delay. The delay report of the live logs is not made (`PLAN.md`).
+- The limits of sections 11.26 to 11.31 apply. The score has satellite sources only.
 
 ## 12. Agent and MCP rules
 
