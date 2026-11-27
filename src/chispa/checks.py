@@ -9,7 +9,7 @@ import json
 from collections.abc import Callable
 from datetime import UTC, datetime
 
-from chispa import config
+from chispa import config, forecast_files
 from chispa.evaluation import (
     advance,
     burn,
@@ -158,16 +158,30 @@ def run_forecast(test_run: bool, live: bool) -> None:
     if live:
         now = datetime.now(UTC)
         looks = forecast_live.live_looks(config.STORE_PATH, config.RAW_DIR, now)
-        forecast_live.save(looks, config.FORECAST_LIVE_DIR)
-        answer = {"made_at": now.isoformat(timespec="minutes"), "looks": looks}
-        answer |= {"hours": config.FORECAST_LIVE_HOURS, "large_pixels": config.FRONT_LARGE_PIXELS}
-        print(json.dumps(answer, indent=2))
+        forecast_files.save(looks, config.FORECAST_LIVE_DIR, datetime.now(UTC))
+        print(json.dumps({"hours": config.FORECAST_LIVE_HOURS, "looks": looks}, indent=2))
         return
     tables = forecast_tables(config.STORE_PATH, config.RAW_DIR, test_run)
     for year, of_year in tables.items():
         write_tables(of_year, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
     print(f"{min(tables)} to {max(tables)}: see results/SUMMARY.md, tables {', '.join(of_year)}.")
+
+
+def run_new_forecasts(now: datetime) -> None:
+    """Make the forecast file of each new look: the step of `chispa update`. It fits no trees."""
+    folder = config.FORECAST_LIVE_DIR
+    try:
+        looks = forecast_live.live_looks(config.STORE_PATH, config.RAW_DIR, now, folder)
+    except (RuntimeError, OSError, ValueError) as error:
+        # A layer or the weather is absent or not complete. The next update does this step again.
+        print(f"forecast: no forecast. {error}")
+        return
+    if looks is None:
+        print("forecast: the saved trees are not those of now. Run `chispa forecast --live`.")
+        return
+    made = forecast_files.save(looks, folder, datetime.now(UTC))
+    print(f"forecast: {len(made)} new files.")
 
 
 def run_flames(year: int, project: Callable[[], str]) -> None:
