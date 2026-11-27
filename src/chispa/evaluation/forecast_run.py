@@ -15,7 +15,7 @@ from chispa.grid import pantanal_grid
 from chispa.sources import border
 
 TABLES = ("forecast", "forecast_direction", "forecast_inputs")
-TABLES += ("forecast_chances", "forecast_sectors", "forecast_first_look")
+TABLES += ("forecast_chances", "forecast_sectors", "forecast_first_look", "forecast_examined")
 
 
 def training(cases: dict, years: tuple[int, ...], key: tuple[str, int]) -> dict:
@@ -62,7 +62,8 @@ def year_tables(rows: dict, cases: dict, year: int, training_years: tuple[int, .
         tables["forecast_sectors"].append(
             forecast_say.sector_row(answers, hours, use, trees["sector"])
         )
-        tables["forecast_first_look"] += forecast_say.first_look_rows(rows[year], hours, use, trees)
+        for name, found in forecast_say.group_rows(rows[year], hours, use, trees).items():
+            tables[name] += found
     return tables
 
 

@@ -23,7 +23,8 @@ SOURCE = "firms"  # One product for each pass. INPE gives the same passes from a
 ANSWERS = ("new_ground", "front_again", "clear_no_fire", "not_visible")
 HIDDEN = ANSWERS.index("not_visible")
 PIXEL_QUERY = """
-SELECT CAST(strftime('%s', observed_at) AS INTEGER), lat, lon, frp_mw, platform
+SELECT CAST(strftime('%s', observed_at) AS INTEGER), lat, lon, frp_mw, platform,
+       CAST(strftime('%s', available_at) AS INTEGER)
 FROM detections
 WHERE sensor_family = ? AND source = ? AND observed_at >= ? AND observed_at < ?
 ORDER BY 1
@@ -45,10 +46,11 @@ def load_pixels(store: sqlite3.Connection, year: int) -> dict[str, np.ndarray]:
     rows = store.execute(PIXEL_QUERY, arguments).fetchall()
     if not rows:
         raise RuntimeError(f"The store has no VIIRS detection of {year}. Run `chispa build`.")
-    seconds, lat, lon, power, platform = zip(*rows, strict=True)
+    seconds, lat, lon, power, platform, available = zip(*rows, strict=True)
     seconds, lat, lon = np.array(seconds, dtype=float), np.array(lat), np.array(lon)
     return {
         "seconds": seconds,
+        "available": np.array(available, dtype=float),
         "lat": lat,
         "lon": lon,
         "frp_mw": np.array([np.nan if value is None else value for value in power]),
@@ -113,10 +115,16 @@ def examined(masks: Masks, at: float) -> np.ndarray:
 
 
 def places(pixels: dict, bounds: tuple[int, int], look: fronts.Look) -> dict[str, np.ndarray]:
-    """Return the start of the look, and the size and the centre of each front of the look."""
+    """Return the start of the look, and the size and the centre of each front of the look.
+
+    `complete_h` is the time from the start of the look to the moment when its last pixel was
+    available: a forecast from the complete look cannot be earlier.
+    """
     a, b = bounds
     size = np.bincount(look.labels, minlength=look.labels.max() + 1)
     rows = {"start": np.full(len(size), pixels["seconds"][a]), "pixels": size}
+    complete_h = (pixels["available"][a:b].max() - pixels["seconds"][a]) / 3600
+    rows["complete_h"] = np.full(len(size), complete_h)
     for name in ("lat", "lon"):
         rows[name] = np.bincount(look.labels, pixels[name][a:b], minlength=len(size)) / size
     return rows
@@ -127,18 +135,22 @@ def look_rows(pixels: dict, bounds: tuple[int, int], look: fronts.Look, masks: M
 
     A window of 24 hours has two times: 12 and 24 hours after the middle of the look. At each
     time the front was visible if it has a pixel again there, or if GOES examined its place.
+    `examined` says only if GOES examined the place at each time: it does not read a later pixel.
     """
     a, b = bounds
     seconds, rows = pixels["seconds"], places(pixels, bounds, look)
     size, count = rows["pixels"], len(rows["pixels"])
     cells = masks.tree.query(look.points)[1]
     middle, before, hidden_before = float(np.median(seconds[a:b])), np.zeros(count), False
+    seen = np.ones(count, dtype=bool)
     for hours, (low, high) in config.FRONT_WINDOWS_H.items():
         first = max(np.searchsorted(seconds, seconds[a] + low * 3600, side="right"), b)
         last = np.searchsorted(seconds, seconds[a] + high * 3600, side="right")
         found = fronts.answers(look, pixels["points"][first:last], config.FRONT_REACH_M[hours])
         dark = ~examined(masks, middle + hours * 3600)[cells]
         dark_share = np.bincount(look.labels, dark, minlength=count) / size
+        seen = seen & (dark_share < config.FRONT_HIDDEN_SHARE)
+        rows[f"examined_{hours}"] = seen
         hidden = ((found["again"] - before) == 0) & (dark_share >= config.FRONT_HIDDEN_SHARE)
         hidden_before = hidden | hidden_before
         choices = [found["new"] > 0, hidden_before, found["again"] > 0]
@@ -166,9 +178,18 @@ def counted(rows: dict, in_biome: np.ndarray) -> np.ndarray:
 
 
 def kept(rows: dict, in_biome: np.ndarray) -> np.ndarray:
-    """Return True for each front of a look that counts in a result: the minimum size, in the
-    biome, and a look that starts before the end of the test year in progress (`config.py`)."""
-    return counted(rows, in_biome) & (rows["start"] < config.FRONT_TEST_END.timestamp())
+    """Return True for each front of a look that counts in a result.
+
+    It has the minimum size and its centre in the biome. Its look was complete before the first
+    window starts. Its longest window ends in the year of the look, because the later pixels are
+    those of that year, and before the end of the test year in progress (`config.py`).
+    """
+    first = min(low for low, _ in config.FRONT_WINDOWS_H.values())
+    longest = max(high for _, high in config.FRONT_WINDOWS_H.values())
+    year = datetime.fromtimestamp(float(rows["start"][0]), UTC).year
+    end = datetime(year + 1, 1, 1, tzinfo=UTC).timestamp() - longest * 3600
+    end = min(end, config.FRONT_TEST_END.timestamp())
+    return counted(rows, in_biome) & (rows["start"] < end) & (rows["complete_h"] <= first)
 
 
 def is_day_look(start: np.ndarray) -> np.ndarray:
@@ -181,7 +202,8 @@ def is_day_look(start: np.ndarray) -> np.ndarray:
 def step_table(rows: dict[str, np.ndarray]) -> list[dict]:
     """Return the answers of the fronts for each window, for the day looks and the night looks.
 
-    The share of the fronts with new ground is of the fronts that were visible.
+    The share of the fronts with new ground is of the fronts that were visible. The two counts
+    "not examined" are the fronts that have an answer only because a later pixel came.
     """
     day = is_day_look(rows["start"])
     table = []
@@ -192,6 +214,10 @@ def step_table(rows: dict[str, np.ndarray]) -> list[dict]:
             row = {"hours": hours, "looks": label, "fronts": int(part.sum())}
             row |= dict(zip(ANSWERS, counts, strict=True))
             row["new_ground_share"] = share(counts[0], int(part.sum()) - counts[HIDDEN])
+            dark = part & ~rows[f"examined_{hours}"]
+            row["new_ground_not_examined"] = int((dark & (answer == 0)).sum())
+            row["front_again_not_examined"] = int((dark & (answer == 1)).sum())
+            row["look_complete_h_median"] = percentile(rows["complete_h"][part], 50)
             row["fronts_with_10_new_pixels"] = int((part & (new >= 10)).sum())
             row["distance_m_median"] = percentile(rows[f"distance_m_{hours}"][part & (new > 0)], 50)
             table.append(row)

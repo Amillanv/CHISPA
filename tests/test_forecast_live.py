@@ -74,14 +74,16 @@ def test_saved_trees_with_other_inputs_stop_the_forecast(monkeypatch):
         forecast_live.front_rows(saved, places, {"log_pixels": np.array([2.3])})
 
 
-def test_a_look_keeps_its_first_file_until_it_has_more_pixels(tmp_path):
-    first = forecast_live.save([look_of(9, "first")], tmp_path)
-    assert [path.name for path in first] == ["2026-11-22T1634.json"]
-    # The same look again, with the same pixels: the file stays. With more pixels: a new file.
-    assert forecast_live.save([look_of(9, "second")], tmp_path) == []
-    assert json.loads(first[0].read_text())["made_at"] == "first"
-    assert forecast_live.save([look_of(12, "third")], tmp_path) == first
-    assert json.loads(first[0].read_text())["made_at"] == "third"
+def test_the_first_forecast_of_a_look_stays_when_a_newer_one_comes(tmp_path):
+    first = forecast_live.save([look_of(9, "2026-11-22T20:00+00:00")], tmp_path)
+    assert [path.name for path in first] == ["2026-11-22T1634_2026-11-22T2000.json"]
+    # The same look again with the same pixels: no new file.
+    assert forecast_live.save([look_of(9, "2026-11-22T20:05+00:00")], tmp_path) == []
+    # A second satellite gave more pixels: a new file, and the first file stays as it was.
+    second = forecast_live.save([look_of(12, "2026-11-22T21:00+00:00")], tmp_path)
+    assert [path.name for path in second] == ["2026-11-22T1634_2026-11-22T2100.json"]
+    assert json.loads(first[0].read_text())["fronts"][0]["pixels"] == 9
+    assert forecast_live.save([look_of(12, "2026-11-22T21:05+00:00")], tmp_path) == []
 
 
 def test_only_the_looks_from_the_start_time_give_fronts():
@@ -90,7 +92,7 @@ def test_only_the_looks_from_the_start_time_give_fronts():
     lon = LON + np.tile([0.0, 400.0, 800.0], 2) * EAST
     lat = np.full(6, LAT)
     pixels = {"seconds": seconds, "lat": lat, "lon": lon, "points": fronts.metres(lat, lon)}
-    pixels["look"] = fronts.looks(seconds)
+    pixels |= {"look": fronts.looks(seconds), "available": seconds + 3 * HOUR}
     grid = pantanal_grid()
     in_biome = np.ones((grid.height, grid.width), dtype=bool)
     found = forecast_live.newest_fronts(pixels, in_biome, START + HOUR)

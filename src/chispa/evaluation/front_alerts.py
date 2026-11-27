@@ -2,11 +2,14 @@
 
 The growth forecast is for a front: the minimum number of linked VIIRS pixels of one look. A first
 alert frequently has less: one GOES pixel, or one VIIRS pixel. This module counts, for the first
-alerts of a year in the biome, how many have a front at each delay. It uses only the detections
-that the event of the alert had at that moment. `docs/method.md` section 11.26 gives the rule.
+alerts of a year in the biome, how many have a front at each delay. A first alert is an event as
+we issued it: its first detection, at its position of that moment, before a later merge.
+It uses only the detections that the event of the alert had at each moment.
+`docs/method.md` section 11.26 gives the rule.
 """
 
 import sqlite3
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -14,15 +17,25 @@ import numpy as np
 from chispa import config, fronts
 from chispa.evaluation.fronts import SOURCE
 from chispa.evaluation.report import share
-from chispa.fusion import LEVELS
 from chispa.grid import pantanal_grid
 from chispa.issued import Replay
 from chispa.sources import border
 
+# One row for each issued id of a year: the time when its first detection was available, the
+# sensor families of the detections of that time, and their mean position. An event that a later
+# merge absorbed had its own first alert, and an event can start above the lowest level: thus
+# the table of alerts, which has the events of the end of the year, does not give this.
 ALERTS = """
-SELECT a.event_id, CAST(strftime('%s', a.at) AS INTEGER), a.families, e.lat, e.lon
-FROM alerts a JOIN events e ON e.id = a.event_id
-WHERE a.level = ? AND a.at >= ? AND a.at < ?
+WITH first AS (
+  SELECT m.issued_id AS id, MIN(d.available_at) AS at
+  FROM memberships m JOIN detections d ON d.id = m.detection_id
+  WHERE m.issued_id >= ? AND m.issued_id < ? GROUP BY m.issued_id
+)
+SELECT first.id, CAST(strftime('%s', first.at) AS INTEGER),
+       GROUP_CONCAT(DISTINCT d.sensor_family), AVG(d.lat), AVG(d.lon)
+FROM first JOIN memberships m ON m.issued_id = first.id
+JOIN detections d ON d.id = m.detection_id AND d.available_at = first.at
+GROUP BY first.id
 """
 PIXELS = """
 SELECT m.issued_id, CAST(strftime('%s', d.observed_at) AS INTEGER),
@@ -49,7 +62,7 @@ def has_front(observed: np.ndarray, points: np.ndarray) -> bool:
 def front_flags(alerts: list[tuple], pixels: np.ndarray, merges: list[tuple]) -> np.ndarray:
     """Return, for each alert and each delay, True if the event of the alert had a front then.
 
-    An alert is (event id, time in seconds). `pixels` has (issued id, observed, available, lat,
+    An alert is (issued id, time in seconds). `pixels` has (issued id, observed, available, lat,
     lon) for each VIIRS pixel, in the sequence of the issued ids. At a moment, an event has the
     pixels of its issued ids of that moment (`issued.py`) that were available.
     """
@@ -72,7 +85,7 @@ def front_flags(alerts: list[tuple], pixels: np.ndarray, merges: list[tuple]) ->
 
 
 def in_biome_alerts(alerts: list[tuple], raw_dir: Path) -> list[tuple]:
-    """Return the alerts with the centre of their event in the biome border."""
+    """Return the alerts with their position of the first moment in the biome border."""
     grid = pantanal_grid()
     inside = border.rasterize(border.read_rings(raw_dir / "border" / "pantanal.geojson"), grid)
     lat, lon = np.array([row[3] for row in alerts]), np.array([row[4] for row in alerts])
@@ -84,9 +97,12 @@ def table(year: int, store_path: Path, raw_dir: Path) -> list[dict]:
     """Return the table `front_alerts` of one year: one row for each delay after the alert."""
     store = sqlite3.connect(store_path)
     span = (f"{year}-01-01", f"{year + 1}-01-01")
-    alerts = in_biome_alerts(store.execute(ALERTS, (LEVELS[0], *span)).fetchall(), raw_dir)
-    # A year in progress has an end: a later alert does not have its 48 hours yet.
-    alerts = [row for row in alerts if row[1] < config.FRONT_TEST_END.timestamp()]
+    ids = (year * config.EVENT_IDS_OF_A_YEAR, (year + 1) * config.EVENT_IDS_OF_A_YEAR)
+    alerts = in_biome_alerts(store.execute(ALERTS, ids).fetchall(), raw_dir)
+    # An alert needs its longest delay in the year, and before the end of a year in progress.
+    end = datetime(year + 1, 1, 1, tzinfo=UTC).timestamp()
+    end = min(end - max(config.FRONT_ALERT_DELAYS_H) * 3600, config.FRONT_TEST_END.timestamp())
+    alerts = [row for row in alerts if row[1] < end]
     found = store.execute(PIXELS, (fronts.SENSOR_FAMILY, SOURCE, *span)).fetchall()
     pixels = np.array(found, dtype=float).reshape(-1, 5)
     flags = front_flags(alerts, pixels, [tuple(row) for row in store.execute(MERGES)])

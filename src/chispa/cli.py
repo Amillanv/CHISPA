@@ -236,9 +236,9 @@ def run_fuse(year: int) -> None:
     store = open_store(config.STORE_PATH)
     start, end = datetime(year, 1, 1, tzinfo=UTC), datetime(year + 1, 1, 1, tzinfo=UTC)
     # An event id is the year, then a number. Thus the ids of two years do not collide.
-    first_id = year * 10_000_000
+    first_id = year * config.EVENT_IDS_OF_A_YEAR
     fusion = fuse(read_detections(store, start, end), first_id)
-    replace_fusion(store, (first_id, first_id + 10_000_000), fusion)
+    replace_fusion(store, (first_id, first_id + config.EVENT_IDS_OF_A_YEAR), fusion)
     events, _, memberships, merges = fusion
     levels = {level: sum(event.level == level for event in events) for level in LEVELS}
     issued = len(events) + len(merges)

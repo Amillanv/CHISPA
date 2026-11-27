@@ -7,7 +7,7 @@ inputs for each front of a look. An input for a sector has a name that ends with
 """
 
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import numpy as np
@@ -39,24 +39,15 @@ class Layers:
 
 
 def load_layers(raw_dir: Path, year: int) -> Layers:
-    """Return the layers of one year. The weather ends with the last complete month on disk,
-    or with the last complete day of a month in progress."""
+    """Return the layers of one year. The weather starts in December of the year before. It ends
+    with the last complete month on disk, or with the last complete day of a month in progress."""
     to_group = np.zeros(256, dtype=int)
     for number, name in enumerate(config.COVER_GROUPS, start=1):
         to_group[list(config.COVER_GROUPS[name])] = number
     cover = to_group[landcover.read_year(min(year - 1, config.LANDCOVER_LAST_YEAR), raw_dir)]
     before = np.maximum(burned.read_year(year - 2, raw_dir), burned.read_year(year - 3, raw_dir))
-    first, last = date(year - 1, 12, 1), date(year, 1, 31)
-    while last < date(year + 1, 1, 31):
-        month = last + timedelta(days=1)
-        if not (raw_dir / "wind" / str(month.year) / f"{month.month:02d}.npz").exists():
-            break
-        last = (month.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
-    days, wind = weather.read_days(raw_dir, first, last), weather.read_wind(raw_dir, first, last)
-    more = weather.read_part(raw_dir, last + timedelta(days=1))
-    if more is not None and last < date(year + 1, 1, 31):
-        days = {name: np.concatenate([days[name], more[0][name]]) for name in days}
-        wind = np.concatenate([wind, more[1]])
+    first = date(year - 1, 12, 1)
+    days, wind = weather.read_newest(raw_dir, first, date(year + 1, 1, 31))
     return Layers(cover, (burned.read_year(year - 1, raw_dir), before), first, days, wind)
 
 
@@ -74,11 +65,17 @@ def _by_sector(owner: np.ndarray, lines: np.ndarray, count: int) -> np.ndarray:
 
 def shape_inputs(look: fronts.Look, power: np.ndarray) -> tuple[dict, np.ndarray, np.ndarray]:
     """Return the inputs of the size, the fire power and the shape of each front, with the centre
-    of each front and its reach from the centre to each sector, in metres."""
+    of each front and its reach from the centre to each sector, in metres.
+
+    A pixel with no fire power is not a pixel with a power of 0: the power inputs of a front come
+    from its pixels with a value. A front with no such pixel has no value for them.
+    """
     labels, count = look.labels, look.labels.max() + 1
     size = np.bincount(labels, minlength=count)
-    total = np.bincount(labels, power, minlength=count)
-    largest = np.zeros(count)
+    known = ~np.isnan(power)
+    power = np.where(known, power, 0.0)
+    measured, total = (np.bincount(labels, values, minlength=count) for values in (known, power))
+    largest, none = np.zeros(count), measured == 0
     np.maximum.at(largest, labels, power)
     centre = (
         np.column_stack([np.bincount(labels, look.points[:, i]) for i in (0, 1)]) / size[:, None]
@@ -87,14 +84,15 @@ def shape_inputs(look: fronts.Look, power: np.ndarray) -> tuple[dict, np.ndarray
     reach = np.zeros((count, config.FRONT_SECTORS))
     np.maximum.at(reach, labels, offset @ units().T)
     hot = np.column_stack([np.bincount(labels, offset[:, i] * power) for i in (0, 1)])
+    # Where the fire power is, from the centre of the front: the hot side of a front.
+    heat = (hot / np.maximum(total, 1e-9)[:, None]) @ units().T / 1000
     inputs = {
         "log_pixels": np.log1p(size),
-        "log_frp_mean": np.log1p(total / size),
-        "log_frp_max": np.log1p(largest),
+        "log_frp_mean": np.where(none, np.nan, np.log1p(total / np.maximum(measured, 1))),
+        "log_frp_max": np.where(none, np.nan, np.log1p(largest)),
         "log_span": np.log1p(reach.max(axis=1)),
         "reach_km_s": reach / 1000,
-        # Where the fire power is, from the centre of the front: the hot side of a front.
-        "heat_km_s": (hot / np.maximum(total, 1e-9)[:, None]) @ units().T / 1000,
+        "heat_km_s": np.where(none[:, None], np.nan, heat),
     }
     return inputs, centre, reach
 
@@ -234,7 +232,7 @@ def look_inputs(pixels: dict, bounds: tuple[int, int], look: fronts.Look, layers
     """Return the inputs of each front of a look."""
     a, b = bounds
     count = look.labels.max() + 1
-    inputs, centre, reach = shape_inputs(look, np.nan_to_num(pixels["frp_mw"][a:b]))
+    inputs, centre, reach = shape_inputs(look, pixels["frp_mw"][a:b])
     inputs["day_look"] = np.full(count, float(is_day_look(pixels["seconds"][a : a + 1])[0]))
     # The share of the pixels of a front that had fire at the look before: the fire stays active.
     first = np.searchsorted(pixels["look"], pixels["look"][a] - 1)
