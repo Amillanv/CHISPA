@@ -52,7 +52,7 @@ All the work follows eight stages. Each stage gives one part of the alert, and e
 
 ## Status
 
-- `chispa build` gets the raw files from a public bucket and makes a SQLite store. The bucket has the raw files of 2019 to 2025 for the detections and the mapped fires: 7.65 million detections. FIRMS has no GOES row before 2022-08-09: the years before it have GOES detections only from INPE. The files of 2026 are not in the bucket: `chispa fetch` gets them. `chispa fuse` groups the detections of one year into events with a confidence level. `chispa evaluate` compares them with the mapped fires.
+- `chispa build` gets the raw files from a public bucket and makes a SQLite store. The bucket has the raw files of 2019 to 2025 for the detections and the mapped fires: 7.65 million detections. FIRMS has no GOES row before 2022-08-09: the years before it have GOES detections only from INPE. The detections of 2026 are not in the bucket: `chispa fetch` gets them. `chispa fuse` groups the detections of one year into events with a confidence level. `chispa evaluate` compares them with the mapped fires.
 - `chispa poll` does one pass of the live poller: it records each new detection with the time of the pass. It needs a FIRMS key. `chispa update` puts the live logs into the store and makes the events of the year again.
 - `tools.py` answers questions about the alerts and the results at a given time. [docs/method.md](docs/method.md) section 12.1 lists the tools, and section 7.3 gives the event record.
 - `chispa serve` starts the dashboard on this computer. It shows the events at an as-of time, live or as a replay. It only calls the tools. Section 12.6 of the method gives its rules. The map needs a MapTiler key in `.env` (`MAPTILER_KEY`).
