@@ -84,7 +84,9 @@ def measure(year: int, store_path: Path, raw_dir: Path, path: Path) -> None:
             answers = steps.look_rows(pixels, (a, b), look, masks)
             place = {"start": pixels["seconds"][a], "lat": pixels["lat"][a:b]}
             place["lon"] = pixels["lon"][a:b]
-            chosen = np.nonzero(steps.kept(answers, in_biome))[0]
+            # The check is for the fronts that are not small: a small front has no side.
+            large = answers["pixels"] >= config.FRONT_SMALL_BELOW
+            chosen = np.nonzero(steps.kept(answers, in_biome) & large)[0]
             check = partial(check_front, look, place=place, answers=answers)
             rows += [row for row in workers.map(check, chosen) if row is not None]
     burn.write(path, rows)

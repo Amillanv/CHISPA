@@ -56,8 +56,7 @@ def run_table(name: str, year: int) -> None:
     elif name == "growth":
         tables = {"growth_steps": step_rows(*arguments)}
     elif name == "fronts":
-        tables = {"front_steps": fronts.step_rows(*arguments)}
-        tables["front_alerts"] = front_alerts.table(*arguments)
+        tables = fronts.step_tables(*arguments) | {"front_alerts": front_alerts.table(*arguments)}
     else:
         tables = {
             "visibility": visibility(*arguments),

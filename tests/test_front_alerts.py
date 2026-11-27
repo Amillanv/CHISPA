@@ -34,33 +34,34 @@ def points_of(east_m: list[float]) -> np.ndarray:
     return fronts.metres(np.full(len(east_m), LAT), LON + np.array(east_m) * EAST)
 
 
-def test_two_pixels_are_not_a_front_and_three_linked_pixels_are():
+def test_the_largest_front_has_the_pixels_that_a_chain_links():
     seen = np.full(3, ALERT)
-    assert not front_alerts.has_front(seen[:2], points_of([0.0, 400.0]))
-    assert front_alerts.has_front(seen, points_of([0.0, 400.0, 800.0]))
+    assert front_alerts.largest_front(seen[:0], points_of([])) == 0
+    assert front_alerts.largest_front(seen[:2], points_of([0.0, 400.0])) == 2
+    assert front_alerts.largest_front(seen, points_of([0.0, 400.0, 800.0])) == 3
     # The third pixel is 5 km from the others: no chain links the three.
-    assert not front_alerts.has_front(seen, points_of([0.0, 400.0, 5400.0]))
+    assert front_alerts.largest_front(seen, points_of([0.0, 400.0, 5400.0])) == 2
 
 
 def test_only_the_newest_look_counts():
     # Three linked pixels in the first look, and one pixel in a look 12 hours later.
     seen = np.array([ALERT, ALERT, ALERT, ALERT + 12 * HOUR])
-    assert not front_alerts.has_front(seen, points_of([0.0, 400.0, 800.0, 1200.0]))
+    assert front_alerts.largest_front(seen, points_of([0.0, 400.0, 800.0, 1200.0])) == 1
 
 
 def test_a_front_counts_from_the_time_its_pixels_were_available():
     # GOES gave the alert. A VIIRS pass of one hour before it was available 2 hours after it.
     pixels = pixels_of([(1, ALERT - HOUR, ALERT + 2 * HOUR, east) for east in (0.0, 400.0, 800.0)])
-    flags = front_alerts.front_flags([(1, ALERT)], pixels, [])
-    assert flags.tolist() == [[False, True, True]]
+    sizes = front_alerts.front_sizes([(1, ALERT)], pixels, [])
+    assert sizes.tolist() == [[0, 3, 3]]
 
 
 def test_the_pixels_of_a_second_event_count_only_after_the_merge():
     # The event 2 has a front from the start. The event 1 absorbs it 5 hours after the alert.
     pixels = pixels_of([(2, ALERT, ALERT + 0.1 * HOUR, east) for east in (0.0, 400.0, 800.0)])
     merges = [(ALERT + 5 * HOUR, 2, 1)]
-    flags = front_alerts.front_flags([(1, ALERT)], pixels, merges)
-    assert flags.tolist() == [[False, False, True]]
+    sizes = front_alerts.front_sizes([(1, ALERT)], pixels, merges)
+    assert sizes.tolist() == [[0, 0, 3]]
 
 
 def add(store: sqlite3.Connection, number: int, issued: int, row: tuple) -> None:

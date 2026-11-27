@@ -225,10 +225,39 @@ Checked 2026-11-26 with live requests, for the weather of a live growth forecast
   5.25 and 4.98 kPa (0.94). The correlation of the rain of 7 days was 0.65. September is a dry month:
   a month with much rain is not checked.
 
-- `UNVERIFIED`, read by a research agent on the pages of Open-Meteo on 2026-11-27: the Previous Runs API
-  (`previous-runs-api.open-meteo.com`) gives the value that a model predicted 24 hours before each hour
-  (`_previous_day1`), and to 7 days before, for most models from January 2024. The Historical Forecast API joins
-  the first hours of each run: it is near the weather that came, not a forecast with a lead time.
+Checked 2026-11-27 with live requests, for the weather forecast that we had at a look (`docs/method.md` section 11.30):
+
+- The Previous Runs API (`previous-runs-api.open-meteo.com/v1/forecast`) gives, with the end `_previous_day1` or
+  `_previous_day2` on the name of a field, the value that a model predicted 1 day or 2 days before each hour.
+- With the model `ecmwf_ifs025`, the five fields of `sources/openmeteo.py` had a value for each hour of 2025-01-03,
+  2025-03-01, 2025-06-15, 2025-09-01, 2026-09-01 and 2026-11-19, for the two leads. For 2024-02-10 the dew point had
+  no value, and 2023-09-01 had no value. The model `ecmwf_ifs` (9 km) had no such value for 2025-09-01.
+- The cells of `ecmwf_ifs025` are 0.25 degrees: a request for 18.00 S, 57.00 W gave that position.
+- The fronts of 2025 and 2026 need 585 requests of 3 days, with 2732 positions in all: the files of
+  `data/raw/openmeteo_previous`.
+- An answer has the headers `X-RateLimit-Cost`, `X-RateLimit-Limit` and `X-RateLimit-Window`. A request of 3 days
+  with the 10 fields cost 1 call for each position: 21 calls for 21 positions. The limit was 600 calls in 60 seconds.
+- A request to this address can get no answer. In the first four runs of the test, a request got no answer in
+  120 seconds after 32 to 35 answers. The same request, 11 seconds later, got its answer in 0.7 seconds.
+  A pause of 2 seconds between two requests did not prevent this. A connection can also drop.
+  We do not know the cause.
+- Thus `sources/openmeteo.py` waits 30 seconds for an answer, then sends the request again (`config.py`).
+  With that, 24 of 432 requests got no answer, and each of their 408 files came.
+- With `ecmwf_ifs025`, the fields `dew_point_2m`, `relative_humidity_2m` and `vapour_pressure_deficit` of 1 day
+  before had no value from 2026-04-17 15:00 to 2026-04-22 23:00 UTC, at 18.00 S, 57.00 W: 129 hours. The temperature
+  had its values, and those fields of 2 days before had theirs. The model `ecmwf_ifs` (9 km) had each value.
+- In the 585 files, no other field has an hour with no value. 8 files and 21 of the 2732 positions have that hole.
+  `sources/openmeteo.py` keeps such an hour as no value: the dryness of its day is absent.
+- The owner agreed on 2026-11-27 to a copy of the 585 files in the bucket (`openmeteo_previous/`). Its file
+  `README.txt` has the terms: CC BY 4.0, with credit to Open-Meteo.
+- A check outside the repository: 17 of the 1680 fronts of 2026 have the first day after their look in those days.
+  At 12 hours, 5 of them are in the 560 rows of the fronts of 3 pixels or more, and 5 in the 684 rows of the small
+  fronts. None of them had new ground at 12 hours. At 24 hours, 1 had new ground.
+- The forecast API (`api.open-meteo.com/v1/forecast`) with `models=ecmwf_ifs` gave each hour of the five fields from
+  40 days before the request to 8 days after it (09:46 UTC). The archive API refused an end date after the day of
+  the request. The growth forecast does not use the hours after a look (`docs/method.md` section 11.30).
+- `UNVERIFIED`, read on the page of that API: the Historical Forecast API joins the first hours of each run. It is
+  near the weather that came, not a forecast with a lead time.
 
 ### 8.5 MapBiomas Fogo
 
@@ -251,7 +280,8 @@ Checked 2026-11-19 against the MapBiomas pages, the method document for Collecti
 - Above the quota, the project is in restricted mode until the first day of the next month, at midnight Pacific Time.
   Requests continue, with fewer in parallel and fewer workers. The page gives no number for these limits.
 - On 2026-11-26 a run of `chispa flames` got the warning that our project is in restricted mode. The wind download of
-  2018 to 2026 and two runs of `chispa flames` came before it. The tier of our project is not checked.
+  2018 to 2026 and two runs of `chispa flames` came before it. The owner raised the tier of the project on
+  2026-11-27: a request on that day gave no warning.
 - Licence: CC BY 4.0. Cite Alencar et al. 2022, Remote Sensing 14(11), 2510.
 
 What we store, from the download of 2026-11-20:

@@ -1817,7 +1817,8 @@ fronts, and `evaluation/fronts.py` gives each front its answers. The command `ch
   No result set them. 2019 to 2022 have two VIIRS satellites, and the later years have three.
 - The answers have satellite sources only.
 
-The result (table `front_steps` of each year, 2026-11-27, with the rules 9, 11 and 12 from the review of pull request 45):
+The result (table `front_steps` of each year, 2026-11-27, with the rules 9, 11 and 12 from the review of pull request 45).
+The table has the fronts of 3 pixels or more. `front_steps_small` has the fronts of 1 or 2 pixels (section 11.30, rule 2).
 
 | Year | Hours | Fronts | New ground | The front again | Clear, no fire | Not visible | New ground, not examined | The front again, not examined |
 |---|---|---|---|---|---|---|---|---|
@@ -1850,7 +1851,8 @@ The result (table `front_steps` of each year, 2026-11-27, with the rules 9, 11 a
   pixel (`config.py`). The first window starts at 6 hours.
 - The years are not the same size: 2020 has 21 068 fronts and 2022 has 1904.
 
-The first alerts with a front (table `front_alerts` of each year, 2026-11-27, rule 10):
+The first alerts with a front of 3 pixels or more (table `front_alerts` of each year, 2026-11-27, rule 10).
+The column `with_any_front` of that table counts a front of 1 pixel or more (section 11.30):
 
 | Year | First alerts in the biome | With a front at 0.5 hours | At 6 hours | At 24 hours | Alerts that only GOES started | Of them with a front at 0.5 hours |
 |---|---|---|---|---|---|---|
@@ -1906,12 +1908,13 @@ If statement 1 or 2 is false, the answer of a front does not show what the fire 
 - The check has a part of the fronts: one day in five, and only a box that one image holds.
 
 The result of the first run (table `front_flames` of 2023, 2026-11-26): the three statements are true.
-1137 of the 5858 fronts had an image. The image was approximately 10 hours after a night look, and 21 hours after a day look.
+The numbers are of the run of 2026-11-27, with rule 9 of section 11.26: it took out 8 fronts, none with flames.
+1129 of the 5843 fronts had an image. The image was approximately 10 hours after a night look, and 21 hours after a day look.
 
 | Check | Fronts with flames on new ground | Of them "new ground" | Fronts with no flames, clear box | Of those "new ground" | Directions in 45 degrees |
 |---|---|---|---|---|---|
 | 12 hours, 495 fronts of night looks | 54 | 51 | 166 | 42 | 39 of 51 |
-| 24 hours, 642 fronts of day looks | 132 | 127 | 208 | 30 | 111 of 127 |
+| 24 hours, 634 fronts of day looks | 132 | 127 | 208 | 30 | 111 of 127 |
 
 - Statement 1: 51 of 54 and 127 of 132 fronts with flames on new ground have the answer "new ground". Of the other 8,
   5 were not visible for VIIRS.
@@ -1922,21 +1925,21 @@ The result of the first run (table `front_flames` of 2023, 2026-11-26): the thre
   This is a count of two answers that are not the same. It is not a limit of the error of the answer "new ground".
 - The median distance was 2339 m for VIIRS and 1362 m for the flames at 12 hours, and 2100 m and 1494 m at 24 hours.
   The image is earlier than the last look, and a VIIRS pixel is wide. This supports the rule that a front has no speed.
-- 22 and 36 fronts had 1 to 9 new hot pixels: they are in no group. 253 and 266 had no new hot pixel in a box with cloud.
+- 22 and 36 fronts had 1 to 9 new hot pixels: they are in no group. 253 and 258 had no new hot pixel in a box with cloud.
 - This is one year, with the largest fires of November.
 
 The second year is 2024. Its hypothesis is the same three statements for the fronts of 2024, written on 2026-11-26
 before its run. No rule and no value changed after the result of 2023.
 
 The result of the second year (table `front_flames` of 2024, 2026-11-26): the three statements are true.
-2251 of the 11 511 fronts had an image.
+The numbers are of the run of 2026-11-27: rule 9 took out 2 fronts. 2249 of the 11 506 fronts had an image.
 
 | Check | Fronts with flames on new ground | Of them "new ground" | Fronts with no flames, clear box | Of those "new ground" | Directions in 45 degrees |
 |---|---|---|---|---|---|
-| 12 hours, 939 fronts of night looks | 104 | 84 | 539 | 135 | 75 of 84 |
+| 12 hours, 937 fronts of night looks | 104 | 84 | 537 | 134 | 75 of 84 |
 | 24 hours, 1312 fronts of day looks | 256 | 235 | 585 | 98 | 218 of 235 |
 
-- Statement 2: the share is 0.8077 against 0.2505 for 12 hours, and 0.918 against 0.1675 for 24 hours.
+- Statement 2: the share is 0.8077 against 0.2495 for 12 hours, and 0.918 against 0.1675 for 24 hours.
 - 20 and 21 fronts with flames on new ground had a different answer. 10 and 7 of them were not visible for VIIRS.
 - 6 and 7 of them had the answer "clear, no fire": GOES examined the place, and VIIRS gave no pixel. In 2023 this
   was 0 and 1 fronts. Thus an answer "clear, no fire" can be wrong. `results/2024/front_flames/fronts.csv` has each front.
@@ -2004,7 +2007,8 @@ training years by 4 percent.
 - The forecast has satellite sources only.
 
 The numbers of this section are of the run of 2026-11-27, with the rules 9, 11 and 12 of section 11.26 and rule 1
-of this section, from the review of pull request 45. The first run was on 2026-11-26, and the commit `adff491` has
+of this section, from the review of pull request 45. The commit `4717599` has the tables of that run: the tables of
+now have the rows and the models of section 11.30. The first run was on 2026-11-26, and the commit `adff491` has
 its numbers. The corrections took out the fronts of the last 30 hours of a year. No statement changed. The largest
 change of an AUC or of a Brier skill score in the 48 rows of the table `forecast` was 0.0072.
 
@@ -2116,7 +2120,7 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
 
 1. The fronts are those of the looks that started in the last hours (`config.py`), with the minimum size and their
    centre in the biome (section 11.26, rules 1 to 3). A year in progress has no end here.
-2. The trees are those of all development years, as in the test of section 11.28. A file holds them. The command
+2. The trees are `trees` of section 11.30, from the rows of all development years. A file holds them. The command
    fits them again when the first part of `config.py` changes, or the code that makes the rows and the trees.
 3. The inputs are those of section 11.28, rule 3. The weather comes from ERA5-Land to its last day on disk.
    The later days come from Open-Meteo, with the model IFS, for the weather cell of each front.
@@ -2134,11 +2138,166 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
   section 8.4). A month with much rain is not checked.
 - The store has only the pixels that were available at the time of the run. A forecast from one satellite of a
   look is not the forecast of the complete look.
-- Most first alerts have no front, and get no forecast (section 11.26, table `front_alerts`).
+- An alert with no front gets no forecast. In 2025 and 2026, 1690 of 3052 first alerts had a front of 1 pixel
+  or more 0.5 hours after the alert (section 11.30).
+- For a front of 1 or 2 pixels, the sectors are not a direction: they were not better than the wind in the test
+  (section 11.30). The answer gives the number of pixels of each front.
 - In the first months of a year, the annual map of the burned ground of the year before is not on disk: the
   command stops with an instruction. The weather has no such stop: December can be a month in progress.
 - The command has no schedule: a person starts it.
 - The forecast has satellite sources only.
+
+### 11.30 The second model: the examined fronts, the weather after the look, and the small fronts
+
+Three things asked for a second model. The review of pull request 45 found that the rows of section 11.28 depend
+on the answer (section 11.26, rule 12). The owner asked for a forecast of the weather as an input. Most first
+alerts have no front of 3 pixels (section 11.26, table `front_alerts`). The owner agreed on 2026-11-27 to the
+three changes together, and to one more score of 2025 and 2026. `chispa forecast` makes the tables.
+
+1. A row is a front at a place that GOES examined at each time of the window. It has the weather before its look
+   and after it on disk, and a pixel with a fire power. A front at a place that GOES did not examine is not a row,
+   with a later pixel or with none.
+2. A front has 1 pixel or more (`config.py`). A small front has 1 or 2 pixels. The trees learn from all fronts.
+   Each table gives the fronts of 3 pixels or more and the small fronts apart.
+3. Two sets of trees learn from the same rows. `trees` has the inputs of section 11.28, rule 3. `ahead` has them
+   and the weather after the look.
+4. The weather after the look is in blocks of 6 hours, from the block after that of the start of the look. For 12
+   and for 24 hours: how much of the wind goes to each sector, its mean speed and its largest speed. For the UTC day
+   of the first block, and for the day after it: the largest wind, dryness and temperature, and the rain.
+5. `ahead` gets the recorded weather (ERA5-Land). No forecast can be better: this is the best case. `forecast` is
+   the same trees with a forecast in the place of the recorded weather: the value that the IFS model predicted
+   24 hours before each hour, and 48 hours before for the day after, from Open-Meteo (`docs/sources.md` section 8.4,
+   `evaluation/forecast_weather.py`). A forecast that we get at the look is not older than that.
+   Only the test years have `forecast`. An hour with no value in the forecast stays with no value: the measure of
+   its day is absent, and the trees read an absent value. We wrote this on 2026-11-27 before a score: a first run
+   stopped on such an hour (`docs/sources.md` section 8.4).
+6. The years are those of section 11.28, rule 6. The test years get the trees of 2019 to 2024, one time.
+7. The model that stays, written before the run on the test years. If the statements 1 and 2 of the hypothesis are
+   true, `ahead` replaces `trees`, and the live forecast gives it a forecast of the weather. If one is false,
+   `trees` stays, with the rows and the fronts of the rules 1 and 2. A negative result is a valid result.
+
+The result of the development years (tables `forecast` and `forecast_direction` of 2019 to 2024, 2026-11-27).
+Each year has the models of the five other years. Each AUC is the mean of the six years.
+
+| Fronts | Question | Hours | Rows | With the answer yes | Persistence | Regression | `trees` | `ahead` |
+|---|---|---|---|---|---|---|---|---|
+| 3 or more | New ground | 12 | 46 043 | 11 015 | 0.6905 | 0.8059 | 0.8278 | 0.8304 |
+| 3 or more | New ground | 24 | 38 682 | 15 557 | 0.6828 | 0.7864 | 0.8075 | 0.8106 |
+| 3 or more | Sector | 12 | 368 344 | 25 664 | 0.6217 | 0.8394 | 0.8654 | 0.8715 |
+| 3 or more | Sector | 24 | 309 456 | 42 616 | 0.6191 | 0.8263 | 0.8403 | 0.8455 |
+| 1 or 2 | New ground | 12 | 35 904 | 2733 | 0.5274 | 0.8010 | 0.8273 | 0.8291 |
+| 1 or 2 | New ground | 24 | 29 627 | 4770 | 0.5317 | 0.7106 | 0.7471 | 0.7526 |
+
+| Fronts | Hours | Fronts with a direction | `trees` in 45 degrees | `ahead` | Wind before the look |
+|---|---|---|---|---|---|
+| 3 or more | 12 | 7698 | 4581 | 4864 | 2615 |
+| 3 or more | 24 | 12 160 | 6929 | 7252 | 3575 |
+| 1 or 2 | 12 | 1525 | 725 | 757 | 512 |
+| 1 or 2 | 24 | 2877 | 1222 | 1272 | 850 |
+
+- With the recorded weather after the look, the direction is better in 6 of 6 years for the fronts of 3 pixels or
+  more, at 12 and at 24 hours. The gain in the AUC of new ground is 0.003.
+- The stated chances of `trees` now hold at 24 hours. For the fronts of 3 pixels or more they expect 15 696 fronts
+  with new ground, and 15 557 had it. At 12 hours: 11 157 and 11 015. For one year, observed to expected is 0.89 to 1.08.
+- A small front has new ground less frequently: 2733 of 35 904 at 12 hours. The AUC of `trees` for it is 0.79 to
+  0.85 in a year at 12 hours, and 0.69 to 0.80 at 24 hours. The chances expect 2792 and 4900 fronts with new ground,
+  and 2733 and 4770 had it. For one year, observed to expected is 0.76 to 1.21.
+- A small front has a direction less frequently, and a weaker one: `trees` is in 45 degrees for 725 of 1525.
+- With a front of 1 pixel or more, 5676 of 15 670 first alerts of 2023 and 2024 have a front at 0.5 hours.
+  With 3 pixels or more it is 1436. Of the alerts that only GOES started, 411 have one.
+
+The hypothesis, written on 2026-11-27 before the run on 2025 and 2026. The numbers of 2019 to 2024 above were known.
+For the fronts of 3 pixels or more, with the two test years together:
+
+1. The direction of `forecast` is in 45 degrees for more fronts than the direction of `trees`, at 12 and at 24 hours.
+2. For new ground, the mean AUC of `forecast` of the two years is not lower than that of `trees` by more than 0.01,
+   at 12 and at 24 hours.
+3. The stated chances of new ground hold: observed to expected is from 0.8 to 1.25 for `trees` and for `forecast`,
+   at 12 and at 24 hours.
+
+For the small fronts, which no model has read:
+
+4. For new ground, `trees` has a higher AUC than persistence in each test year, at 12 and at 24 hours. Its Brier
+   skill score is more than 0 in each cell.
+5. The direction of `trees` is in 45 degrees for more fronts than the wind before the look, at 12 and at 24 hours,
+   with the two years together. Chance is 25 percent.
+
+- This is a second score of the fronts of 3 pixels or more of 2025 and 2026. The first test read their answers.
+  The three changes came from the review, from the owner and from 2019 to 2024. One number of the test years was
+  known before the change of rule 1: 289 fronts with new ground for 379 expected at 24 hours (section 11.28).
+- No number of the small fronts of the test years was known.
+- The forecast is of the IFS model with cells of 0.25 degrees. A live forecast can use the model of 9 km, which
+  has no forecast of the past before 2026. The two are not the same model run.
+- The forecast of 24 hours before is older than the forecast that we can get at a look. Thus `forecast` is a
+  cautious estimate, and `ahead` is the best case.
+- The limits of sections 11.26 to 11.28 apply. The forecast has satellite sources only.
+
+The result of the test (the same tables of 2025 and 2026, 2026-11-27): the statements 2, 3 and 4 are true, and the
+statements 1 and 5 are false. By rule 7, `trees` stays: the forecast does not get the weather after the look.
+The models are those of 2019 to 2024. Each cell of the first table has the value of 2025, then the value of 2026.
+
+| Fronts | Hours | Rows | With new ground | Persistence | Regression | `trees` | `ahead` | `forecast` |
+|---|---|---|---|---|---|---|---|---|
+| 3 or more | 12 | 630, 560 | 101, 129 | 0.7069, 0.6528 | 0.8603, 0.7823 | 0.8705, 0.8189 | 0.8642, 0.8228 | 0.8576, 0.8250 |
+| 3 or more | 24 | 478, 420 | 127, 162 | 0.7159, 0.6422 | 0.7945, 0.7372 | 0.8166, 0.7665 | 0.8152, 0.7750 | 0.8036, 0.7709 |
+| 1 or 2 | 12 | 801, 684 | 44, 46 | 0.5081, 0.4915 | 0.7797, 0.7937 | 0.8106, 0.8112 | 0.8130, 0.8255 | 0.8009, 0.8254 |
+| 1 or 2 | 24 | 590, 526 | 55, 72 | 0.4477, 0.4501 | 0.6867, 0.6753 | 0.7478, 0.7435 | 0.7547, 0.7609 | 0.7505, 0.7412 |
+
+The direction, as the sum of the two years:
+
+| Fronts | Hours | Fronts with a direction | `trees` in 45 degrees | `ahead` | `forecast` | Regression | Wind before the look |
+|---|---|---|---|---|---|---|---|
+| 3 or more | 12 | 157 | 80 | 80 | 78 | 77 | 66 |
+| 3 or more | 24 | 226 | 97 | 104 | 102 | 111 | 62 |
+| 1 or 2 | 12 | 52 | 25 | 26 | 24 | 18 | 26 |
+| 1 or 2 | 24 | 81 | 27 | 29 | 30 | 22 | 32 |
+
+- Statement 1 is false. At 12 hours `forecast` is in 45 degrees for 78 of 157 fronts, and `trees` for 80.
+  At 24 hours it is 102 against 97 of 226.
+- The recorded weather gave no gain at 12 hours: `ahead` has 80 of 157. In the development years it had 4864
+  against 4581 of 7698.
+- Statement 2 is true: the mean AUC of `forecast` is lower than that of `trees` by 0.003 at 12 hours, and by 0.004
+  at 24 hours.
+- Statement 3 is true. `trees` expected 265.5 fronts with new ground at 12 hours, and 230 had it. At 24 hours:
+  347.3 and 289. `forecast` expected 262.5 and 348.1. Observed to expected is 0.83 to 0.88.
+- The stated chances were too high in 2025. For `trees`, 126.6 fronts were expected at 12 hours and 101 had new
+  ground. At 24 hours: 170.2 and 127.
+- Statement 4 is true. For a small front, the Brier skill score of `trees` is 0.0970 to 0.1323 in the four cells.
+  The chances expected 92.0 fronts with new ground at 12 hours, and 90 had it. At 24 hours: 159.9 and 127, which
+  is too high.
+- Statement 5 is false. For a small front, `trees` is in 45 degrees for 25 of 52 fronts at 12 hours, and the wind
+  for 26. At 24 hours: 27 and 32 of 81. Thus the forecast has no direction for a small front.
+- For the fronts of 3 pixels or more at 24 hours, the regression has the best direction: 111 of 226 fronts.
+- For the three questions, `trees` has a higher AUC than the regression and than persistence in 24 of 24 cells of
+  year, question, hours and size. Its Brier skill score is 0.0563 to 0.3160 in those cells.
+- The fronts of 3 pixels or more by stated chance (table `forecast_chances`): at 12 hours, 34 of the 46 fronts with
+  0.7 or more had new ground, and 6 of the 306 fronts below 0.05. At 24 hours: 103 of 144, and 3 of 112 below 0.1.
+- The three most likely sectors had 2324 of the 3409 new pixels at 12 hours (table `forecast_sectors`).
+- With a front of 1 pixel or more, 1690 of the 3052 first alerts of 2025 and 2026 have a front at 0.5 hours.
+  With 3 pixels or more it is 242. Of the 1211 alerts that only GOES started, 31 have one.
+- The test years are small. The difference between `forecast` and `trees` is 2 fronts of 157, and 5 of 226.
+  The result does not show that the weather after the look has no use. It shows no gain that supports a second
+  source of weather in the live forecast.
+- 17 fronts of 2026 have no dryness of the first day in `forecast` (rule 5, `docs/sources.md` section 8.4).
+- The run needs the 585 answers of Open-Meteo in `data/raw/openmeteo_previous`. The bucket has them.
+- The result has satellite sources only.
+
+Why the weather after the look gave no gain. This is a check outside the repository on 2026-11-27, with the fronts
+of 3 pixels or more of 2019 to 2024 and the recorded weather:
+
+- The error of the forecast is not the cause. `ahead` has the weather that came, and it gave no gain at 12 hours.
+  The wind of the forecast is in 45 degrees of the recorded wind for 3278 of the 3719 fronts of 2025 and 2026.
+- The wind after a look is near the wind before it: in 45 degrees for 6009 of the 7698 fronts with a direction at
+  12 hours. `trees` has the wind before the look. Thus the wind after the look is not much new data.
+- The recorded wind of the next 12 hours is a weak sign of the direction. It is in 45 degrees of the direction of
+  the new pixels for 3132 of 7698 fronts. The wind before the look has 2615, and `trees` has 4581.
+- A faster wind is not a better sign: 927 of 2566 fronts in the third with the slowest wind, and 1083 of 2565 in
+  the third with the fastest wind. The mean wind after a look is 8.9 km/h.
+- A front with a direction has new pixels in 2.84 of the 8 sectors as a mean. Its growth is not one line.
+- The gain of the development years is 283 of 7698 fronts at 12 hours, and 323 of 12 160 at 24 hours. For the
+  fronts of the test years, that is approximately 6 fronts at each time. The test cannot show a gain of that size.
+- We do not know the cause of the weak sign. The wind is a model value for a cell of 9 km or more, as the mean
+  of 6 hours. A wind with more detail is a different part, with its own hypothesis.
 
 ## 12. Agent and MCP rules
 

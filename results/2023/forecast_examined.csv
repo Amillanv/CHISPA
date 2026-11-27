@@ -1,5 +1,0 @@
-hours,fronts,rows,new_ground,chance_sum,auc_trees,fronts_with_direction,trees_in_45
-12,examined,4187,1153,1140.5,0.8279,846,498
-12,not examined,592,213,200.0,0.7673,141,90
-24,examined,3142,1385,1421.0,0.8186,1145,647
-24,not examined,1240,882,696.6,0.7802,644,355

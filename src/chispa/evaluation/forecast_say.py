@@ -77,26 +77,19 @@ def _score(hours: int, name: str, part: np.ndarray, found: dict) -> dict:
     }
 
 
-def group_rows(rows: dict, hours: int, use: np.ndarray, trees: dict) -> dict[str, list[dict]]:
-    """Return the scores of the trees for two splits of the fronts with a row.
+def first_look_rows(rows: dict, hours: int, use: np.ndarray, trees: dict) -> list[dict]:
+    """Return the scores of the trees for the first look of a fire, and for the other fronts.
 
-    `forecast_first_look`: a front is the first look of a fire if each of its pixels is farther
-    than the largest reach from each pixel that we knew before.
-    `forecast_examined`: GOES examined the place of a front at each time of the window, or not.
-    A front at a place that GOES did not examine has a row only because a later pixel came: that
-    group depends on the answer. The group that GOES examined does not.
-    `trees` has the chances of each question.
+    A front is the first look of a fire if each of its pixels is farther than the largest reach
+    from each pixel that we knew before. `use` is True for each front with a row, and `trees`
+    has the chances of the questions for those fronts.
     """
     answers = rows["answers"]
     found = {"new": answers[f"new_{hours}"][use], "chance": trees["new_ground"]}
     found["truth"] = answers[f"direction_deg_{hours}"][use]
     found["guess"] = forecast.directions(trees["sector"])
-    first, seen = rows["inputs"]["first_look"][use], answers[f"examined_{hours}"][use]
-    splits = {
-        "forecast_first_look": (("first look", first), ("other", ~first)),
-        "forecast_examined": (("examined", seen), ("not examined", ~seen)),
-    }
-    return {
-        table: [_score(hours, name, part, found) for name, part in parts]
-        for table, parts in splits.items()
-    }
+    first = rows["inputs"]["first_look"][use]
+    return [
+        _score(hours, name, part, found)
+        for name, part in (("first look", first), ("other", ~first))
+    ]

@@ -1,5 +1,5 @@
 hours,fronts,rows,new_ground,chance_sum,auc_trees,fronts_with_direction,trees_in_45
-12,first look,95,13,12.2,0.8424,8,4
-12,other,7789,1955,2019.3,0.8108,1296,761
-24,first look,81,30,24.2,0.8059,20,8
-24,other,7215,3432,3527.5,0.7813,2562,1345
+12,first look,90,9,8.7,0.8203,6,4
+12,other,7365,1769,1816.5,0.8196,1184,678
+24,first look,72,21,15.6,0.7666,15,4
+24,other,6151,2555,2694.2,0.7807,1975,1049
