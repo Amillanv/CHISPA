@@ -83,6 +83,17 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 | 3 or more | 24 | 1990 | 1016 | 703 | 1055 | 740 | 536 | 1397 | 641 |
 | 1 or 2 | 24 | 609 | 230 | 74 | 242 | 75 | 191 | 208 | 59 |
 
+### 2019 forecast_direction_outside
+
+Configuration `af9e040fd8d0`, run on 2026-11-27.
+
+| size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|---|
+| 3 or more | 12 | 365 | 181 | 122 | 199 | 138 | 121 | 244 | 93 |
+| 1 or 2 | 12 | 120 | 49 | 18 | 52 | 18 | 48 | 48 | 14 |
+| 3 or more | 24 | 695 | 332 | 201 | 326 | 203 | 193 | 430 | 165 |
+| 1 or 2 | 24 | 305 | 123 | 34 | 113 | 30 | 97 | 99 | 23 |
+
 ### 2019 forecast_first_look
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
@@ -148,6 +159,25 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 | sector | 24 | prev_share | 0.009 |
 | sector | 24 | ahead_pasture_s | 0.0049 |
 | sector | 24 | log_older_behind_s | 0.0046 |
+
+### 2019 forecast_outside
+
+Configuration `af9e040fd8d0`, run on 2026-11-27.
+
+| question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 3 or more | 3211 | 666 | 0.617 |  | 0.7332 | 0.7582 | 0.4809 | 672.8 | 0.1518 |
+| new_ground | 12 | 1 or 2 | 4493 | 295 | 0.4467 |  | 0.6924 | 0.7424 | 0.1983 | 341.5 | 0.0559 |
+| large_growth | 12 | 3 or more | 3211 | 154 | 0.7137 |  | 0.8042 | 0.8168 | 0.2858 | 227.8 | 0.1361 |
+| large_growth | 12 | 1 or 2 | 4493 | 35 | 0.4993 |  | 0.7968 | 0.8172 | 0.0584 | 74.6 | 0.007 |
+| sector | 12 | 3 or more | 25688 | 1279 | 0.5821 | 0.5484 | 0.7806 | 0.8032 | 0.232 | 1317.7 | 0.1005 |
+| sector | 12 | 1 or 2 | 35944 | 455 | 0.4959 | 0.5759 | 0.748 | 0.7927 | 0.0767 | 478.5 | 0.0347 |
+| new_ground | 24 | 3 or more | 2740 | 1070 | 0.5934 |  | 0.7107 | 0.745 | 0.653 | 1072.1 | 0.174 |
+| new_ground | 24 | 1 or 2 | 3589 | 623 | 0.4569 |  | 0.607 | 0.6773 | 0.308 | 619.6 | 0.063 |
+| large_growth | 24 | 3 or more | 2740 | 361 | 0.6657 |  | 0.7644 | 0.7803 | 0.4198 | 458.2 | 0.1774 |
+| large_growth | 24 | 1 or 2 | 3589 | 94 | 0.4859 |  | 0.7003 | 0.7542 | 0.1024 | 185.0 | 0.0145 |
+| sector | 24 | 3 or more | 21920 | 2421 | 0.5711 | 0.5194 | 0.7603 | 0.7814 | 0.3524 | 2385.7 | 0.1378 |
+| sector | 24 | 1 or 2 | 28712 | 1061 | 0.4975 | 0.5113 | 0.6819 | 0.7394 | 0.1139 | 948.9 | 0.0375 |
 
 ### 2019 forecast_periods
 
@@ -612,6 +642,17 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 | 3 or more | 24 | 4613 | 2690 | 1507 | 2751 | 1567 | 1339 | 2677 | 1365 |
 | 1 or 2 | 24 | 1022 | 443 | 70 | 449 | 82 | 271 | 237 | 69 |
 
+### 2020 forecast_direction_outside
+
+Configuration `af9e040fd8d0`, run on 2026-11-27.
+
+| size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|---|
+| 3 or more | 12 | 529 | 275 | 196 | 297 | 213 | 178 | 385 | 147 |
+| 1 or 2 | 12 | 121 | 46 | 12 | 46 | 13 | 42 | 36 | 16 |
+| 3 or more | 24 | 944 | 508 | 339 | 505 | 337 | 285 | 625 | 272 |
+| 1 or 2 | 24 | 304 | 118 | 38 | 130 | 47 | 90 | 98 | 33 |
+
 ### 2020 forecast_first_look
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
@@ -677,6 +718,25 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 | sector | 24 | older_near_share_s | 0.0079 |
 | sector | 24 | log_frp_mean | 0.0067 |
 | sector | 24 | prev_share | 0.0064 |
+
+### 2020 forecast_outside
+
+Configuration `af9e040fd8d0`, run on 2026-11-27.
+
+| question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 3 or more | 3831 | 842 | 0.6501 |  | 0.7874 | 0.7999 | 0.5502 | 846.0 | 0.2199 |
+| new_ground | 12 | 1 or 2 | 5474 | 278 | 0.4728 |  | 0.7734 | 0.786 | 0.2014 | 368.7 | 0.0757 |
+| large_growth | 12 | 3 or more | 3831 | 251 | 0.746 |  | 0.848 | 0.8364 | 0.2941 | 310.4 | 0.1292 |
+| large_growth | 12 | 1 or 2 | 5474 | 38 | 0.5005 |  | 0.8846 | 0.9069 | 0.0956 | 76.1 | 0.0449 |
+| sector | 12 | 3 or more | 30648 | 1747 | 0.599 | 0.5605 | 0.8261 | 0.8436 | 0.2922 | 1745.1 | 0.1431 |
+| sector | 12 | 1 or 2 | 43792 | 430 | 0.4989 | 0.5295 | 0.8137 | 0.8284 | 0.0744 | 498.2 | 0.0373 |
+| new_ground | 24 | 3 or more | 3399 | 1297 | 0.6211 |  | 0.7726 | 0.7969 | 0.7143 | 1303.5 | 0.2623 |
+| new_ground | 24 | 1 or 2 | 4708 | 664 | 0.4732 |  | 0.6858 | 0.7212 | 0.3183 | 754.3 | 0.0933 |
+| large_growth | 24 | 3 or more | 3399 | 548 | 0.689 |  | 0.8277 | 0.8352 | 0.522 | 610.6 | 0.2605 |
+| large_growth | 24 | 1 or 2 | 4708 | 101 | 0.4727 |  | 0.7963 | 0.8131 | 0.1025 | 208.3 | 0.047 |
+| sector | 24 | 3 or more | 27192 | 3197 | 0.5897 | 0.5294 | 0.819 | 0.8303 | 0.4494 | 3107.5 | 0.2116 |
+| sector | 24 | 1 or 2 | 37664 | 1056 | 0.5018 | 0.5076 | 0.742 | 0.7639 | 0.1082 | 1119.6 | 0.0457 |
 
 ### 2020 forecast_periods
 
@@ -1279,6 +1339,17 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 | 3 or more | 24 | 1536 | 787 | 572 | 845 | 610 | 435 | 1076 | 517 |
 | 1 or 2 | 24 | 447 | 189 | 51 | 190 | 49 | 137 | 134 | 48 |
 
+### 2021 forecast_direction_outside
+
+Configuration `af9e040fd8d0`, run on 2026-11-27.
+
+| size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|---|
+| 3 or more | 12 | 412 | 226 | 155 | 242 | 172 | 176 | 294 | 125 |
+| 1 or 2 | 12 | 110 | 49 | 14 | 53 | 17 | 36 | 36 | 16 |
+| 3 or more | 24 | 705 | 385 | 247 | 382 | 245 | 241 | 450 | 199 |
+| 1 or 2 | 24 | 227 | 106 | 29 | 98 | 26 | 66 | 70 | 22 |
+
 ### 2021 forecast_first_look
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
@@ -1344,6 +1415,25 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 | sector | 24 | log_older_near | 0.0056 |
 | sector | 24 | older_near_share_s | 0.0054 |
 | sector | 24 | prev_share | 0.0053 |
+
+### 2021 forecast_outside
+
+Configuration `af9e040fd8d0`, run on 2026-11-27.
+
+| question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 3 or more | 3278 | 662 | 0.6586 |  | 0.7642 | 0.7822 | 0.5046 | 678.3 | 0.1908 |
+| new_ground | 12 | 1 or 2 | 4976 | 251 | 0.475 |  | 0.7314 | 0.7375 | 0.1803 | 333.3 | 0.0562 |
+| large_growth | 12 | 3 or more | 3278 | 190 | 0.7294 |  | 0.8301 | 0.8313 | 0.2754 | 232.5 | 0.1223 |
+| large_growth | 12 | 1 or 2 | 4976 | 41 | 0.4509 |  | 0.861 | 0.8516 | 0.0502 | 70.6 | 0.0119 |
+| sector | 12 | 3 or more | 26224 | 1368 | 0.6054 | 0.6015 | 0.8199 | 0.8407 | 0.2799 | 1356.0 | 0.1378 |
+| sector | 12 | 1 or 2 | 39808 | 415 | 0.5012 | 0.5617 | 0.7919 | 0.8181 | 0.0989 | 441.2 | 0.0525 |
+| new_ground | 24 | 3 or more | 2762 | 960 | 0.634 |  | 0.7594 | 0.7903 | 0.6896 | 1006.8 | 0.2575 |
+| new_ground | 24 | 1 or 2 | 4041 | 502 | 0.4851 |  | 0.6498 | 0.6843 | 0.2632 | 619.8 | 0.0593 |
+| large_growth | 24 | 3 or more | 2762 | 411 | 0.7059 |  | 0.8392 | 0.8524 | 0.5235 | 442.0 | 0.2628 |
+| large_growth | 24 | 1 or 2 | 4041 | 82 | 0.4338 |  | 0.8257 | 0.8531 | 0.1457 | 154.2 | 0.0696 |
+| sector | 24 | 3 or more | 22096 | 2441 | 0.593 | 0.5506 | 0.8202 | 0.8375 | 0.446 | 2297.1 | 0.2191 |
+| sector | 24 | 1 or 2 | 32328 | 833 | 0.496 | 0.5352 | 0.7301 | 0.7603 | 0.135 | 896.1 | 0.0606 |
 
 ### 2021 forecast_periods
 
@@ -2034,6 +2124,17 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 | 3 or more | 24 | 207 | 88 | 58 | 85 | 55 | 58 | 139 | 48 |
 | 1 or 2 | 24 | 88 | 20 | 6 | 26 | 8 | 33 | 39 | 5 |
 
+### 2022 forecast_direction_outside
+
+Configuration `af9e040fd8d0`, run on 2026-11-27.
+
+| size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|---|
+| 3 or more | 12 | 34 | 22 | 16 | 13 | 8 | 10 | 24 | 12 |
+| 1 or 2 | 12 | 28 | 8 | 1 | 13 | 6 | 7 | 9 | 1 |
+| 3 or more | 24 | 73 | 36 | 25 | 33 | 20 | 21 | 49 | 21 |
+| 1 or 2 | 24 | 88 | 18 | 6 | 21 | 10 | 28 | 36 | 11 |
+
 ### 2022 forecast_first_look
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
@@ -2099,6 +2200,25 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 | sector | 24 | log_frp_mean | 0.01 |
 | sector | 24 | log_pixels | 0.0097 |
 | sector | 24 | prev_share | 0.0069 |
+
+### 2022 forecast_outside
+
+Configuration `af9e040fd8d0`, run on 2026-11-27.
+
+| question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 3 or more | 1491 | 80 | 0.594 |  | 0.7067 | 0.7156 | 0.1742 | 146.9 | 0.3705 |
+| new_ground | 12 | 1 or 2 | 3973 | 106 | 0.4986 |  | 0.6416 | 0.6629 | 0.0673 | 199.0 | 0.0376 |
+| large_growth | 12 | 3 or more | 1491 | 4 | 0.6558 |  | 0.8512 | 0.8509 | 0.022 | 36.1 | 0.5952 |
+| large_growth | 12 | 1 or 2 | 3973 | 4 | 0.5759 |  | 0.7722 | 0.756 | 0.0045 | 40.2 | -0.0043 |
+| sector | 12 | 3 or more | 11928 | 117 | 0.5611 | 0.5519 | 0.7441 | 0.7589 | 0.058 | 216.5 | 0.2561 |
+| sector | 12 | 1 or 2 | 31784 | 129 | 0.5113 | 0.5142 | 0.6424 | 0.6923 | 0.0145 | 225.3 | 0.0268 |
+| new_ground | 24 | 3 or more | 1230 | 149 | 0.5823 |  | 0.6604 | 0.6668 | 0.2884 | 272.5 | 0.3867 |
+| new_ground | 24 | 1 or 2 | 3213 | 263 | 0.526 |  | 0.5766 | 0.6181 | 0.1268 | 418.4 | 0.0426 |
+| large_growth | 24 | 3 or more | 1230 | 23 | 0.5849 |  | 0.8818 | 0.9307 | 0.2277 | 83.4 | 0.6157 |
+| large_growth | 24 | 1 or 2 | 3213 | 11 | 0.4318 |  | 0.7649 | 0.8145 | 0.0125 | 95.1 | 0.1222 |
+| sector | 24 | 3 or more | 9840 | 234 | 0.5427 | 0.5238 | 0.7172 | 0.7355 | 0.1112 | 432.5 | 0.3576 |
+| sector | 24 | 1 or 2 | 25704 | 330 | 0.5137 | 0.5046 | 0.5975 | 0.6412 | 0.0251 | 518.0 | 0.0384 |
 
 ### 2022 forecast_periods
 
@@ -3213,6 +3333,17 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 | 3 or more | 24 | 1145 | 619 | 361 | 646 | 376 | 383 | 683 | 308 |
 | 1 or 2 | 24 | 263 | 103 | 28 | 103 | 26 | 92 | 79 | 23 |
 
+### 2023 forecast_direction_outside
+
+Configuration `af9e040fd8d0`, run on 2026-11-27.
+
+| size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|---|
+| 3 or more | 12 | 146 | 58 | 37 | 65 | 39 | 47 | 95 | 31 |
+| 1 or 2 | 12 | 63 | 24 | 9 | 29 | 13 | 25 | 24 | 8 |
+| 3 or more | 24 | 280 | 105 | 59 | 105 | 63 | 94 | 161 | 57 |
+| 1 or 2 | 24 | 142 | 43 | 23 | 43 | 19 | 41 | 60 | 23 |
+
 ### 2023 forecast_first_look
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
@@ -3278,6 +3409,25 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 | sector | 24 | log_older_near | 0.0059 |
 | sector | 24 | log_frp_mean | 0.0052 |
 | sector | 24 | ahead_pasture_s | 0.0047 |
+
+### 2023 forecast_outside
+
+Configuration `af9e040fd8d0`, run on 2026-11-27.
+
+| question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 3 or more | 2378 | 247 | 0.633 |  | 0.7598 | 0.8021 | 0.3794 | 334.5 | 0.2672 |
+| new_ground | 12 | 1 or 2 | 3689 | 130 | 0.4462 |  | 0.6911 | 0.7431 | 0.1412 | 219.2 | 0.0322 |
+| large_growth | 12 | 3 or more | 2378 | 62 | 0.6946 |  | 0.8195 | 0.8542 | 0.1985 | 104.1 | 0.1752 |
+| large_growth | 12 | 1 or 2 | 3689 | 24 | 0.4496 |  | 0.7419 | 0.7739 | 0.0279 | 47.0 | -0.0195 |
+| sector | 12 | 3 or more | 19024 | 459 | 0.5658 | 0.5777 | 0.8172 | 0.8498 | 0.1565 | 641.3 | 0.1267 |
+| sector | 12 | 1 or 2 | 29512 | 209 | 0.5019 | 0.5596 | 0.7544 | 0.7951 | 0.0751 | 337.5 | 0.032 |
+| new_ground | 24 | 3 or more | 1868 | 418 | 0.5871 |  | 0.7107 | 0.7734 | 0.5215 | 481.6 | 0.3018 |
+| new_ground | 24 | 1 or 2 | 2979 | 310 | 0.4746 |  | 0.6159 | 0.6844 | 0.2235 | 420.7 | 0.0631 |
+| large_growth | 24 | 3 or more | 1868 | 137 | 0.6392 |  | 0.7768 | 0.802 | 0.3102 | 189.0 | 0.267 |
+| large_growth | 24 | 1 or 2 | 2979 | 51 | 0.5203 |  | 0.7829 | 0.8188 | 0.0777 | 104.6 | 0.0395 |
+| sector | 24 | 3 or more | 14944 | 824 | 0.5619 | 0.5446 | 0.7774 | 0.8043 | 0.2584 | 1001.2 | 0.203 |
+| sector | 24 | 1 or 2 | 23832 | 492 | 0.5055 | 0.5144 | 0.6918 | 0.7327 | 0.0848 | 619.7 | 0.0416 |
 
 ### 2023 forecast_periods
 
@@ -4324,6 +4474,17 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 | 3 or more | 24 | 2669 | 1529 | 954 | 1565 | 975 | 824 | 1648 | 865 |
 | 1 or 2 | 24 | 448 | 195 | 39 | 200 | 48 | 126 | 104 | 35 |
 
+### 2024 forecast_direction_outside
+
+Configuration `af9e040fd8d0`, run on 2026-11-27.
+
+| size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
+|---|---|---|---|---|---|---|---|---|---|
+| 3 or more | 12 | 713 | 407 | 280 | 421 | 296 | 273 | 508 | 236 |
+| 1 or 2 | 12 | 107 | 54 | 17 | 52 | 14 | 31 | 35 | 12 |
+| 3 or more | 24 | 1165 | 658 | 380 | 678 | 398 | 375 | 707 | 320 |
+| 1 or 2 | 24 | 262 | 109 | 37 | 100 | 28 | 75 | 85 | 23 |
+
 ### 2024 forecast_first_look
 
 Configuration `af9e040fd8d0`, run on 2026-11-27.
@@ -4389,6 +4550,25 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 | sector | 24 | older_near_share_s | 0.0065 |
 | sector | 24 | prev_share | 0.0053 |
 | sector | 24 | log_older_behind_s | 0.0044 |
+
+### 2024 forecast_outside
+
+Configuration `af9e040fd8d0`, run on 2026-11-27.
+
+| question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| new_ground | 12 | 3 or more | 4678 | 1034 | 0.6869 |  | 0.7738 | 0.803 | 0.5634 | 992.4 | 0.2227 |
+| new_ground | 12 | 1 or 2 | 4344 | 200 | 0.4753 |  | 0.7052 | 0.7233 | 0.1474 | 267.5 | 0.0339 |
+| large_growth | 12 | 3 or more | 4678 | 404 | 0.7558 |  | 0.8279 | 0.8408 | 0.3738 | 338.6 | 0.1743 |
+| large_growth | 12 | 1 or 2 | 4344 | 38 | 0.4232 |  | 0.7586 | 0.7643 | 0.0794 | 46.6 | 0.0257 |
+| sector | 12 | 3 or more | 37424 | 2217 | 0.6285 | 0.5762 | 0.8307 | 0.8507 | 0.3274 | 2049.5 | 0.1634 |
+| sector | 12 | 1 or 2 | 34752 | 310 | 0.5018 | 0.5625 | 0.7606 | 0.7811 | 0.0693 | 342.7 | 0.0369 |
+| new_ground | 24 | 3 or more | 3997 | 1488 | 0.6393 |  | 0.7687 | 0.7996 | 0.7133 | 1509.8 | 0.265 |
+| new_ground | 24 | 1 or 2 | 3504 | 473 | 0.4845 |  | 0.6366 | 0.6843 | 0.2578 | 511.7 | 0.0563 |
+| large_growth | 24 | 3 or more | 3997 | 772 | 0.6958 |  | 0.8127 | 0.8315 | 0.5737 | 664.1 | 0.2494 |
+| large_growth | 24 | 1 or 2 | 3504 | 117 | 0.4761 |  | 0.7041 | 0.7681 | 0.1226 | 107.0 | 0.046 |
+| sector | 24 | 3 or more | 31976 | 3864 | 0.6048 | 0.5292 | 0.8262 | 0.8415 | 0.4713 | 3608.9 | 0.2272 |
+| sector | 24 | 1 or 2 | 28032 | 786 | 0.5031 | 0.5434 | 0.7023 | 0.7433 | 0.1062 | 709.3 | 0.0415 |
 
 ### 2024 forecast_periods
 

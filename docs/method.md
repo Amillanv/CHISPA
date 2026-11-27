@@ -2554,6 +2554,84 @@ A negative result is a valid result.
 - The wait of rule 4 is not a measured delay. The delay report of the live logs is not made (`PLAN.md`).
 - The limits of sections 11.26 to 11.31 apply. The score has satellite sources only.
 
+### 11.33 The fronts in Brazil outside the biome
+
+The store has the detections of the whole box, and an alert can be outside the biome border. Its fronts have no
+forecast: the trees learn from the fronts of the biome, and each score is for those fronts (section 11.26,
+rule 3). The owner asked on 2026-11-27 for a test of the trees on the fronts in Brazil outside the biome.
+`chispa forecast --outside` makes the tables `forecast_outside` and `forecast_direction_outside`
+(`evaluation/forecast_outside.py`).
+
+1. A front is in Brazil if its centre is in a cell with a land cover class: the land cover map has Brazil only
+   (`docs/sources.md` section 8.14). A front in a different country has no maps: it is not in this test.
+2. The fronts of this section are in Brazil, and their centre is not in the biome border. Each other rule of the
+   fronts, of their answers and of their inputs is that of sections 11.26 to 11.31.
+3. The trees are those of section 11.31: a year gets the trees of the biome fronts of the other development
+   years. No tree reads a front outside the biome. The regression and the baselines also come from the biome.
+
+The result of the development years (tables `forecast_outside` and `forecast_direction_outside` of 2019 to 2024,
+2026-11-27). Each AUC is the mean of the six years. "Expected" is the sum of the stated chances of the trees.
+
+| Fronts | Question | Hours | Rows | With the answer yes | Expected | Persistence | Regression | Trees | Trees in the biome |
+|---|---|---|---|---|---|---|---|---|---|
+| 3 or more | New ground | 12 | 18 867 | 3531 | 3670.9 | 0.6399 | 0.7542 | 0.7768 | 0.8264 |
+| 3 or more | New ground | 24 | 15 996 | 5382 | 5646.3 | 0.6095 | 0.7304 | 0.7620 | 0.8062 |
+| 3 or more | Large growth | 12 | 18 867 | 1065 | 1249.5 | 0.7159 | 0.8302 | 0.8384 | 0.8651 |
+| 3 or more | Large growth | 24 | 15 996 | 2252 | 2447.3 | 0.6634 | 0.8171 | 0.8387 | 0.8406 |
+| 1 or 2 | New ground | 12 | 26 949 | 1260 | 1729.2 | 0.4691 | 0.7058 | 0.7325 | 0.8260 |
+| 1 or 2 | New ground | 24 | 22 034 | 2835 | 3344.5 | 0.4834 | 0.6286 | 0.6783 | 0.7445 |
+
+| Fronts | Hours | Fronts with a direction | Trees in 45 degrees | Regression | Wind before the look |
+|---|---|---|---|---|---|
+| 3 or more | 12 | 2199 | 1237 | 1169 | 805 |
+| 3 or more | 24 | 3862 | 2029 | 2024 | 1209 |
+| 1 or 2 | 12 | 549 | 245 | 230 | 189 |
+| 1 or 2 | 24 | 1328 | 505 | 517 | 397 |
+
+- For new ground and for the sectors, the trees have a higher AUC than persistence and than the regression in
+  6 of 6 years, for each size and each window.
+- The AUC is lower than in the biome: by 0.0496 at 12 hours and by 0.0442 at 24 hours, for the fronts of
+  3 pixels or more. The lowest year is 2022: 0.7156 and 0.6668.
+- The stated chances are near the count for the six years together, and not for each year. For the fronts of
+  3 pixels or more, observed to expected for new ground is 0.54 to 1.04 for one year at 12 hours, and 0.55 to
+  1.00 at 24 hours. In 2022 the trees expected 146.9 fronts with new ground at 12 hours, and 80 had it. In 2023:
+  334.5 and 247. In the biome, one year had 0.88 to 1.12 (section 11.31).
+- For the small fronts the stated chances are too high: observed to expected is 0.73 at 12 hours and 0.85 at
+  24 hours, and 0.53 to 0.86 for one year at 12 hours.
+- The chance of a large growth is too high: for the fronts of 3 pixels or more, observed to expected for one
+  year is 0.11 to 1.19 at 12 hours. For the small fronts, 180 had a large growth of 355.1 expected.
+
+The hypothesis, written on 2026-11-27 before the run on 2025 and 2026. The numbers above were known. No command
+read an answer of a front outside the biome of those two years. The test years get the trees of 2019 to 2024,
+one time.
+
+1. For the fronts of 3 pixels or more, the trees have a higher AUC for new ground than persistence in each test
+   year, at 12 and at 24 hours.
+2. For the fronts of 3 pixels or more, the mean AUC of the trees for new ground of the two years is not lower
+   than that of the biome fronts by more than 0.10. Those means are 0.84425 at 12 hours and 0.7893 at 24 hours
+   (section 11.31).
+3. For the fronts of 3 pixels or more, with the two years together, observed to expected for new ground is from
+   0.8 to 1.25, at 12 and at 24 hours.
+4. For the fronts of 3 pixels or more, with the two years together, the direction of the trees is in 45 degrees
+   for more fronts than the wind before the look, at 12 and at 24 hours.
+5. For the small fronts, the trees have a higher AUC for new ground than persistence in each test year, at 12
+   and at 24 hours.
+
+What follows from the result, written before it. If the statements 1 to 4 are true, a live forecast can give a
+front of 3 pixels or more outside the biome its chance of new ground and its sectors, with a mark that it is
+outside the biome. A small front outside the biome gets a chance only if statement 5 is true and its observed to
+expected for new ground is in the range of statement 3: in the development years it was not, at 12 hours.
+No statement is for the chance of a large growth: an alert must not give it for a front outside the biome.
+A negative result is a valid result.
+
+- The limit of 0.10 in statement 2 comes from the development years: no two of them have a larger mean
+  difference. It is a choice.
+- The maps end at the border of Brazil. For a front near that border, the ground ahead in a different country has
+  no land cover group and no burned ground in the inputs. A front of the biome near the border has the same limit.
+- The Brier skill score in the table `forecast_outside` compares the trees with the share of the biome fronts
+  of the training years, not with a share of the fronts outside.
+- The limits of sections 11.26 to 11.31 apply. The result has satellite sources only.
+
 ## 12. Agent and MCP rules
 
 ### 12.1 Tools

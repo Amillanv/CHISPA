@@ -5,19 +5,16 @@ which has the commands that get data, make the store and make the events.
 `project` gives the Earth Engine project only when a command needs it.
 """
 
-import json
 from collections.abc import Callable
 from datetime import UTC, datetime
 
-from chispa import config, forecast_files, forecast_live
+from chispa import config
 from chispa.evaluation import (
     advance,
     burn,
     candidates,
     curve,
     flames,
-    forecast_score,
-    forecast_trees,
     front_alerts,
     fronts,
     images,
@@ -27,7 +24,6 @@ from chispa.evaluation import (
 from chispa.evaluation.confidence import confidence_tables
 from chispa.evaluation.confidence_curve import curve_tables
 from chispa.evaluation.events import events_with_a_match
-from chispa.evaluation.forecast_run import forecast_tables
 from chispa.evaluation.growth import step_rows
 from chispa.evaluation.report import write_summary, write_tables
 from chispa.evaluation.risk_run import risk_tables
@@ -147,41 +143,6 @@ def run_advance(year: int, project: Callable[[], str]) -> None:
     write_tables({"advance_check": advance.table(burn.read(path))}, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
     print(f"{year}: {len(targets)} events. See results/SUMMARY.md, table advance_check.")
-
-
-def run_forecast(test_run: bool, live: bool, trees: bool, score: bool) -> None:
-    """Make the growth forecast tables of each development year, in one run.
-
-    The numbers of a year come from models of the other years. A test run also makes the tables
-    of the test years, one time, from the models of all development years.
-    A live run makes no table: it gives the forecast of the fronts of the newest looks.
-    `trees`: fit the trees of all development years, and save them for the live forecast.
-    `score`: make the table of the saved live forecasts against what came, and no other table.
-    """
-    if trees:
-        mark = forecast_trees.fit(config.STORE_PATH, config.RAW_DIR)
-        print(f"forecast: the saved trees have the mark {mark}.")
-        return
-    if live:
-        now = datetime.now(UTC)
-        looks = forecast_live.live_looks(config.STORE_PATH, config.RAW_DIR, now)
-        if looks is None:
-            raise SystemExit(
-                "No saved trees are those of now. Run `chispa forecast --trees` first."
-            )
-        forecast_files.save(looks, config.FORECAST_LIVE_DIR, datetime.now(UTC))
-        print(json.dumps({"hours": config.FORECAST_LIVE_HOURS, "looks": looks}, indent=2))
-        return
-    if score:
-        tables = forecast_score.score_tables(config.STORE_PATH, config.RAW_DIR, datetime.now(UTC))
-    else:
-        tables = forecast_tables(config.STORE_PATH, config.RAW_DIR, test_run)
-    if not tables:
-        raise SystemExit("No window of a saved forecast has an answer now. Try again later.")
-    for year, of_year in tables.items():
-        write_tables(of_year, year, config.RESULTS_DIR)
-    write_summary(config.RESULTS_DIR)
-    print(f"{min(tables)} to {max(tables)}: see results/SUMMARY.md, tables {', '.join(of_year)}.")
 
 
 def run_flames(year: int, project: Callable[[], str]) -> None:
