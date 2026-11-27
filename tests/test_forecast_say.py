@@ -92,7 +92,7 @@ def test_the_fronts_before_the_map_of_last_year_have_their_scores_apart(monkeypa
     # Persistence has the fronts of May in the reverse sequence, and those of August correct.
     trees["persistence"] = np.array([0.0, 1.0, 2.0, 1.0])
     before, after = forecast_say.period_rows(rows, 12, np.ones(4, dtype=bool), trees)
-    assert (before["fronts"], before["rows"], before["new_ground"]) == ("before the map", 2, 1)
+    assert (before["fronts"], before["rows"], before["new_ground"]) == ("before 1 July", 2, 1)
     assert (before["auc_trees"], before["auc_persistence"]) == (1.0, 0.0)
     assert (before["fronts_with_direction"], before["trees_in_45"], before["wind_in_45"]) == (
         1,
@@ -100,7 +100,7 @@ def test_the_fronts_before_the_map_of_last_year_have_their_scores_apart(monkeypa
         0,
     )
     assert (after["fronts"], after["auc_trees"], after["auc_persistence"]) == (
-        "with the map",
+        "from 1 July",
         0.0,
         1.0,
     )

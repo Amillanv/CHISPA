@@ -44,10 +44,12 @@ class Layers:
 def load_layers(raw_dir: Path, year: int) -> Layers:
     """Return the layers of one year, as a look of that year can have them.
 
-    The land cover is the map of some years before (`config.py`), or the newest map on disk if
-    that is older. The burned map of the year before has no value if it is not on disk. The
-    weather starts in December of the year before. It ends with the last complete month on disk,
-    or with the last complete day of a month in progress.
+    The land cover is the map of some years before (`config.py`), or of the last year that
+    the map has if that is older. In a year in progress, the burned map of the year before can
+    be absent from the disk: then it has no value. A year of the past must have that map, thus
+    two computers make the same trees. The weather starts in December of the year before. It
+    ends with the last complete month on disk, or with the last complete day of a month in
+    progress.
     """
     to_group = np.zeros(256, dtype=int)
     for number, name in enumerate(config.COVER_GROUPS, start=1):
@@ -56,7 +58,8 @@ def load_layers(raw_dir: Path, year: int) -> Layers:
     cover = to_group[landcover.read_year(cover_year, raw_dir)]
     before = np.maximum(burned.read_year(year - 2, raw_dir), burned.read_year(year - 3, raw_dir))
     last = np.full(before.shape, np.nan, dtype=np.float32)
-    if (raw_dir / "burned" / f"{year - 1}.npz").exists():
+    on_disk = (raw_dir / "burned" / f"{year - 1}.npz").exists()
+    if on_disk or year < datetime.now(UTC).year:  # If absent, the read stops with an instruction.
         last = burned.read_year(year - 1, raw_dir)
     first = date(year - 1, 12, 1)
     days, wind = weather.read_newest(raw_dir, first, date(year + 1, 1, 31))
