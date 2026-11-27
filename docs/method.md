@@ -2517,9 +2517,10 @@ section 11.31. The owner asked for this command on 2026-11-27.
    later files has no score. The longest window must end in the year of the look (section 11.26, rule 9).
 2. The command makes the look again as the file saw it, with the pixels that were available at `pixels_to`.
    The later pixels are those of the store of now, from the start of the first window.
-3. A look has a score only if the store of now has the same look: the same pixels, and no more. If a pixel of
-   the look came after the file, the look was not complete before its first window (section 11.26, rule 11).
-   The table counts the fronts of the looks that are the same (`same_look`).
+3. A look has a score only if the store of now has the same look, by three signs: its first pixel is in the
+   minute of the look of the file, it has the same number of pixels, and each front of the file is there with
+   the same centre and the same size. If a pixel of the look came after the file, the look was not complete
+   before its first window (section 11.26, rule 11). The table counts the fronts of such looks (`same_look`).
 4. A window has an answer when the poller has a pass that read each source with no failure (`polls.py`) in a
    span of time. The span starts 6 hours after the end of the window: the hours in which a look must be
    complete (`config.py`), because the pixels of the last pass of a window come some hours after the pass.
@@ -2535,7 +2536,8 @@ section 11.31. The owner asked for this command on 2026-11-27.
    fronts with a score, those with new ground, the sum of the stated chances, the AUC of the trees and of
    persistence, and the direction of the fronts with 3 new pixels or more. An AUC needs a front with new ground
    and a front with none. The file `results/<year>/forecast_live/fronts.csv` has one row for each front and
-   each window, with the mark of its trees.
+   each window, with the mark of its trees. A direction has one decimal there, and the count of 45 degrees
+   uses that value.
 8. Each run makes the table of a year again from all files of that year. A run with no answer makes no table.
 
 The hypothesis, written on 2026-11-27 before a window of a saved forecast had an answer. The first files are of
@@ -2691,6 +2693,7 @@ needs the agreement of the owner (section 12.1).
 4. The model is a logistic regression (`confidence.py`), as for the growth risk. A development year (2019 to
    2024) gets the model of the five other years. 2025 and 2026 get the model of the six years, one time.
 5. The baselines are the confidence at moment 0 (section 11.15) and the number of detections.
+   The model of the confidence comes from 2023: in 2023 this baseline has the rows that it learned from.
    The Brier skill score compares the chance with one number: the share of the training rows with a front.
    A third baseline came after the review of pull request 48, and after the test: a regression with only
    the hour of the first detection. It is not a part of the hypothesis.
