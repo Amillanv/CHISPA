@@ -121,38 +121,3 @@ def test_a_look_after_the_last_day_of_the_weather_has_no_weather():
     start = datetime(2023, 3, 1, 5, 0, tzinfo=UTC).timestamp()
     inputs = front_inputs.weather_inputs(layers_of(40), centre, start, start + 600)
     assert np.isnan(inputs["past_vpd"][0]) and np.isnan(inputs["past_wind_toward_s"]).all()
-
-
-def test_the_weather_after_a_look_has_the_next_blocks_and_the_next_two_days(monkeypatch):
-    monkeypatch.setattr("chispa.config.FRONT_WINDOWS_H", {12: (6, 18), 24: (6, 30)})
-    layers = layers_of(40)
-    # The look starts at 17:00 on 5 January: day 35, block 2 of that day. The blocks after it are
-    # 18:00 to 24:00 of 5 January, then the three first blocks of 6 January.
-    first = 35 * 4 + 3
-    layers.wind[first, :, :, :] = np.array([0.0, 20.0, 20.0])[
-        :, None, None
-    ]  # 20 km/h to the north.
-    layers.days["rain_mm"][36] = 5.0  # Rain on 6 January, the day after the day of the first block.
-    centre = fronts.metres(np.array([-19.0]), np.array([-57.0]))
-    start = datetime(2023, 1, 5, 17, 0, tzinfo=UTC).timestamp()
-    inputs = front_inputs.next_inputs(layers, layers.days, centre, start)
-    # 12 hours: one block to the north at 20 km/h and one to the east at 10 km/h.
-    toward = inputs["next_toward_12_s"][0]
-    assert (toward[NORTH], toward[EAST], toward[SOUTH]) == pytest.approx((10.0, 5.0, -10.0))
-    assert (inputs["next_speed_12"][0], inputs["next_speed_max_12"][0]) == (15.0, 20.0)
-    # 24 hours: one block of the four is the block to the north.
-    assert inputs["next_toward_24_s"][0][NORTH] == pytest.approx(5.0)
-    assert (inputs["next_speed_24"][0], inputs["next_speed_max_24"][0]) == (12.5, 20.0)
-    assert inputs["next_today_rain"][0] == pytest.approx(np.log1p(2.0))
-    assert inputs["next_tomorrow_rain"][0] == pytest.approx(np.log1p(5.0))
-    assert (inputs["next_today_vpd"][0], inputs["next_tomorrow_temp"][0]) == (3.0, 30.0)
-
-
-def test_a_look_with_no_weather_after_it_has_no_value_for_that_weather(monkeypatch):
-    monkeypatch.setattr("chispa.config.FRONT_WINDOWS_H", {12: (6, 18), 24: (6, 30)})
-    layers = layers_of(40)  # The weather ends on 9 January.
-    centre = fronts.metres(np.array([-19.0]), np.array([-57.0]))
-    start = datetime(2023, 1, 9, 17, 0, tzinfo=UTC).timestamp()
-    inputs = front_inputs.next_inputs(layers, layers.days, centre, start)
-    assert np.isnan(inputs["next_tomorrow_rain"][0]) and np.isnan(inputs["next_speed_24"][0])
-    assert np.isnan(inputs["next_toward_12_s"]).all()

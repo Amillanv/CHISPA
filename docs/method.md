@@ -2152,11 +2152,16 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
 Three things asked for a second model. The review of pull request 45 found that the rows of section 11.28 depend
 on the answer (section 11.26, rule 12). The owner asked for a forecast of the weather as an input. Most first
 alerts have no front of 3 pixels (section 11.26, table `front_alerts`). The owner agreed on 2026-11-27 to the
-three changes together, and to one more score of 2025 and 2026. `chispa forecast` makes the tables.
+three changes together, and to one more score of 2025 and 2026. `chispa forecast` makes the tables of `trees`.
+
+The weather after the look gave no gain, and the owner decided on 2026-11-27 to remove its code. The commit
+`39b6a49` has that code, and the tables with the columns of `ahead` and `forecast`: the numbers of the two in this
+section are from those tables. The tables of now have the same rows, and the same numbers for each other model.
 
 1. A row is a front at a place that GOES examined at each time of the window. It has the weather before its look
    and after it on disk, and a pixel with a fire power. A front at a place that GOES did not examine is not a row,
-   with a later pixel or with none.
+   with a later pixel or with none. The weather after the look took out no row in the eight years: the code of
+   now does not ask for it.
 2. A front has 1 pixel or more (`config.py`). A small front has 1 or 2 pixels. The trees learn from all fronts.
    Each table gives the fronts of 3 pixels or more and the small fronts apart.
 3. Two sets of trees learn from the same rows. `trees` has the inputs of section 11.28, rule 3. `ahead` has them
@@ -2167,7 +2172,7 @@ three changes together, and to one more score of 2025 and 2026. `chispa forecast
 5. `ahead` gets the recorded weather (ERA5-Land). No forecast can be better: this is the best case. `forecast` is
    the same trees with a forecast in the place of the recorded weather: the value that the IFS model predicted
    24 hours before each hour, and 48 hours before for the day after, from Open-Meteo (`docs/sources.md` section 8.4,
-   `evaluation/forecast_weather.py`). A forecast that we get at the look is not older than that.
+   `evaluation/forecast_weather.py` of that commit). A forecast that we get at the look is not older than that.
    Only the test years have `forecast`. An hour with no value in the forecast stays with no value: the measure of
    its day is absent, and the trees read an absent value. We wrote this on 2026-11-27 before a score: a first run
    stopped on such an hour (`docs/sources.md` section 8.4).
@@ -2279,7 +2284,7 @@ The direction, as the sum of the two years:
   The result does not show that the weather after the look has no use. It shows no gain that supports a second
   source of weather in the live forecast.
 - 17 fronts of 2026 have no dryness of the first day in `forecast` (rule 5, `docs/sources.md` section 8.4).
-- The run needs the 585 answers of Open-Meteo in `data/raw/openmeteo_previous`. The bucket has them.
+- The run of that commit needs the 585 answers of Open-Meteo in `data/raw/openmeteo_previous`. The bucket has them.
 - The result has satellite sources only.
 
 Why the weather after the look gave no gain. This is a check outside the repository on 2026-11-27, with the fronts

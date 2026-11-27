@@ -36,7 +36,6 @@ def rows_of_three_fronts() -> dict:
     inputs |= {"log_came": np.array([0.7, 0.0, 0.0]), "log_fresh": np.zeros(3)}
     inputs["log_frp_mean"] = np.full(3, 2.0)
     inputs |= {"came_share_s": np.zeros((3, 8)), "past_wind_toward_s": np.ones((3, 8))}
-    inputs |= {"next_tomorrow_rain": np.zeros(3), "next_toward_12_s": np.full((3, 8), 2.0)}
     return {"answers": answers, "inputs": inputs | {"came_direction_deg": np.full(3, np.nan)}}
 
 
@@ -46,20 +45,6 @@ def test_a_row_is_a_front_at_a_place_that_goes_examined_with_its_weather():
     assert found["fronts"].tolist() == [True, False, False]
     assert (found["y"].tolist(), found["persistence"].tolist()) == ([1.0], [0.7])
     assert "came_direction_deg" not in found["names"] and "came_share_s" not in found["names"]
-
-
-def test_a_front_with_no_weather_after_its_look_is_not_a_row():
-    rows = rows_of_three_fronts()
-    rows["inputs"]["next_tomorrow_rain"] = np.array([np.nan, 0.0, 0.0])
-    assert forecast.case(rows, "new_ground", 12)["fronts"].tolist() == [False, False, False]
-
-
-def test_only_the_trees_with_the_weather_after_the_look_read_it():
-    found = forecast.case(rows_of_three_fronts(), "sector", 12)
-    assert "next_tomorrow_rain" not in found["names"] and "next_toward_12_s" not in found["names"]
-    # The two inputs of the weather after the look are two more columns.
-    assert found["x_ahead"].shape == (8, len(found["names"]) + 2)
-    assert found["x_ahead"][:, -1].tolist() == [2.0] * 8
 
 
 def test_a_row_of_a_small_front_has_its_mark(monkeypatch):

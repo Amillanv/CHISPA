@@ -367,9 +367,6 @@ FORECAST_MIN_LEAF = 40
 FORECAST_PENALTY = 1.0
 # The table of the inputs gives this many inputs with the largest effect, for each question.
 FORECAST_EFFECTS = 8
-# The cells of the IFS model in the forecasts of the past of Open-Meteo, in degrees
-# (`sources/openmeteo.py`). A front gets the forecast of the cell with the nearest centre.
-FORECAST_WEATHER_DEG = 0.25
 # The limits of the bands of a stated chance, for the table of a stated chance against what came.
 FORECAST_BANDS = (0.05, 0.1, 0.2, 0.35, 0.5, 0.7)
 # The sector table counts the new pixels in this many most likely sectors of a front.
@@ -567,14 +564,6 @@ FORECAST_LIVE_HOURS = 24
 
 # Seconds between two requests, to stay far below the limit of the API.
 FIRMS_PAUSE_S = 1.0
-
-# A request for the forecasts of the past of Open-Meteo can get no answer. It waits this many
-# seconds, then we send it again: this many requests at most (`docs/sources.md` section 8.4).
-OPENMETEO_WAIT_S = 30
-OPENMETEO_TRIES = 4
-# Seconds between two such requests. A request costs one call for each position, and the limit
-# is 600 calls each minute: the pause keeps a run below it.
-OPENMETEO_PAUSE_S = 2.0
 
 # The side of a download tile in pixels. Earth Engine limits the size of one request.
 SCAR_TILE_PX = 2048

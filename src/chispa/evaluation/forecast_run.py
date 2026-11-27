@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 
 from chispa import confidence, config
-from chispa.evaluation import forecast, forecast_say, forecast_weather
+from chispa.evaluation import forecast, forecast_say
 from chispa.grid import pantanal_grid
 from chispa.sources import border
 
@@ -18,7 +18,7 @@ TABLES = ("forecast", "forecast_direction", "forecast_inputs")
 TABLES += ("forecast_chances", "forecast_sectors", "forecast_first_look")
 # The name of each size of front in a table, and True for the small fronts (`config.py`).
 SIZES = {"3 or more": False, "1 or 2": True}
-JOINED = ("x", "x_ahead", "y", "small")
+JOINED = ("x", "y", "small")
 
 
 def training(cases: dict, years: tuple[int, ...], key: tuple[str, int]) -> dict:
@@ -41,19 +41,11 @@ def year_cases(rows: dict[int, dict]) -> dict[int, dict]:
 
 
 def _models(train: dict, held: dict) -> tuple[dict[str, np.ndarray], object]:
-    """Return the chances of each model for the held rows, and the trees.
-
-    `trees` has the inputs that we know at the look. `ahead` also has the weather after the look.
-    `forecast` is `ahead` with a forecast of that weather in the place of the recorded weather.
-    """
+    """Return the chances of the regression and of the trees for the held rows, and the trees."""
     trees = forecast.fit_trees(train["x"], train["y"], train["years"])
-    ahead = forecast.fit_trees(train["x_ahead"], train["y"], train["years"])
     regression = confidence.fit(train["x"], train["y"], held["names"])
     chances = {"regression": confidence.probability(regression, held["x"])}
     chances["trees"] = trees.predict_proba(held["x"])[:, 1]
-    chances["ahead"] = ahead.predict_proba(held["x_ahead"])[:, 1]
-    if "x_forecast" in held:
-        chances["forecast"] = ahead.predict_proba(held["x_forecast"])[:, 1]
     return chances, trees
 
 
@@ -116,9 +108,6 @@ def forecast_tables(store_path: Path, raw_dir: Path, test_run: bool) -> dict[int
     years = config.FRONT_YEARS + (config.FRONT_TEST_YEARS if test_run else ())
     rows = {year: forecast.year_rows(year, store_path, raw_dir, in_biome) for year in years}
     del in_biome
-    for year in config.FRONT_TEST_YEARS if test_run else ():
-        # The test years also get the weather forecast that we had at each look.
-        rows[year]["forecast"] = forecast_weather.year_inputs(year, rows[year]["answers"], raw_dir)
     cases = year_cases(rows)
     tables = {}
     for year in years:
