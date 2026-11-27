@@ -35,7 +35,8 @@ def mark(store_path: Path) -> str:
     raw layers. After a new download of a layer of a development year, delete the saved file.
     """
     modules = (fronts, steps, front_inputs, forecast, forecast_run)
-    code = "".join(Path(module.__file__).read_text() for module in modules)
+    # This module has the fit of the saved trees: its code is also in the mark.
+    code = "".join(Path(file).read_text() for file in (*(m.__file__ for m in modules), __file__))
     years = (f"{min(config.FRONT_YEARS)}-01-01", f"{max(config.FRONT_YEARS) + 1}-01-01")
     found = hashlib.sha256(f"{code}{sklearn.__version__}".encode())
     store = sqlite3.connect(store_path)
