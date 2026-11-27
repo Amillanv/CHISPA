@@ -22,6 +22,7 @@ from chispa.evaluation.risk import average_precision
 QUESTIONS = ("new_ground", "large_growth", "sector")
 # For the baselines and the tables: they are not inputs.
 HELPERS = ("came_direction_deg", "wind_direction_deg", "first_look")
+NEXT = "next_"  # The names of the weather after the look start with this (`front_inputs.py`).
 
 
 def year_rows(year: int, store_path: Path, raw_dir: Path, in_biome: np.ndarray) -> dict:
@@ -41,12 +42,16 @@ def year_rows(year: int, store_path: Path, raw_dir: Path, in_biome: np.ndarray) 
     }
 
 
-def matrix(inputs: dict, by_sector: bool) -> tuple[np.ndarray, tuple[str, ...]]:
-    """Return one row of inputs for each front, or for each sector of each front, and the names."""
-    front = [name for name in inputs if not name.endswith("_s") and name not in HELPERS]
+def matrix(inputs: dict, by_sector: bool, ahead: bool = False) -> tuple[np.ndarray, tuple]:
+    """Return one row of inputs for each front, or for each sector of each front, and the names.
+
+    `ahead`: with the weather after the look, for the trees that read it.
+    """
+    names = [name for name in inputs if ahead or not name.startswith(NEXT)]
+    front = [name for name in names if not name.endswith("_s") and name not in HELPERS]
     if not by_sector:
         return np.column_stack([inputs[name] for name in front]), tuple(front)
-    sector = [name for name in inputs if name.endswith("_s")]
+    sector = [name for name in names if name.endswith("_s")]
     columns = [np.repeat(inputs[name], config.FRONT_SECTORS) for name in front]
     columns += [inputs[name].ravel() for name in sector]
     return np.column_stack(columns), tuple(front + sector)
@@ -55,16 +60,20 @@ def matrix(inputs: dict, by_sector: bool) -> tuple[np.ndarray, tuple[str, ...]]:
 def case(rows: dict, question: str, hours: int) -> dict:
     """Return the rows of one question for one year: the inputs, the label and the baselines.
 
-    A front that was not visible in the window is not a row. A front that has no weather on
-    disk, or no pixel with a fire power, is also not a row.
-    `fronts` is True for each front of the year that is a row.
+    A row is a front at a place that GOES examined at each time of the window: that does not
+    depend on the answer. A front that has no weather on disk, before the look or after it, or
+    no pixel with a fire power, is not a row. `fronts` is True for each front of the year that
+    is a row, and `small` is True for each row of a small front.
     """
     answers, inputs = rows["answers"], rows["inputs"]
     known = ~np.isnan(inputs["past_vpd"]) & ~np.isnan(inputs["log_frp_mean"])
-    fronts_in = (answers[f"answer_{hours}"] != steps.HIDDEN) & known
+    known &= ~np.isnan(inputs[f"{NEXT}tomorrow_rain"])
+    fronts_in = answers[f"examined_{hours}"] & known
+    small = answers["pixels"] < config.FRONT_SMALL_BELOW
     use, new = fronts_in, answers[f"new_{hours}"]
     if question == "sector":
         use = np.repeat(fronts_in, config.FRONT_SECTORS)
+        small = np.repeat(small, config.FRONT_SECTORS)
         label = (answers[f"sectors_{hours}"] > 0).ravel()
         base = {"persistence": inputs["came_share_s"].ravel()}
         base["wind"] = inputs["past_wind_toward_s"].ravel()
@@ -73,6 +82,9 @@ def case(rows: dict, question: str, hours: int) -> dict:
         label, base = new >= least, {"persistence": inputs["log_came"] + inputs["log_fresh"]}
     table, names = matrix(inputs, question == "sector")
     found = {"x": table[use], "y": label[use].astype(float), "names": names, "fronts": fronts_in}
+    found |= {"x_ahead": matrix(inputs, question == "sector", True)[0][use], "small": small[use]}
+    if "forecast" in rows:  # The same inputs, with a forecast of the weather after the look.
+        found["x_forecast"] = matrix(inputs | rows["forecast"], question == "sector", True)[0][use]
     return found | {name: values[use] for name, values in base.items()}
 
 
@@ -109,8 +121,9 @@ def fit_trees(table: np.ndarray, label: np.ndarray, years: np.ndarray):
 def scores(held: dict, chances: dict[str, np.ndarray], training_share: float) -> dict:
     """Return the scores of one question for the rows of one year.
 
-    The Brier skill score compares the trees with the share of the training years: more than 0
-    says that the probability is better than that one number.
+    The Brier skill score compares a model with the share of the training years: more than 0
+    says that the probability is better than that one number. `expected` is the sum of the
+    stated chances of a model: the number of rows with the answer yes that the model expects.
     """
     label = held["y"]
     row = {"rows": len(label), "positive": int(label.sum())}
@@ -119,10 +132,12 @@ def scores(held: dict, chances: dict[str, np.ndarray], training_share: float) ->
     for name, chance in chances.items():
         row[f"auc_{name}"] = separation(chance, label)
     row["average_precision_trees"] = average_precision(chances["trees"], label > 0)
-    brier = float(np.mean((chances["trees"] - label) ** 2))
     alone = float(np.mean((training_share - label) ** 2))
-    row |= {"brier_share": round(alone, 4), "brier_trees": round(brier, 4)}
-    return row | {"brier_skill": round(1 - brier / alone, 4) if alone else None}
+    for name in (name for name in chances if name != "regression"):
+        brier = float(np.mean((chances[name] - label) ** 2))
+        row[f"expected_{name}"] = round(float(chances[name].sum()), 1)
+        row[f"brier_skill_{name}"] = round(1 - brier / alone, 4) if alone else None
+    return row
 
 
 def in_45(guess: np.ndarray, truth: np.ndarray, part: np.ndarray) -> int:
@@ -140,16 +155,18 @@ def directions(chance: np.ndarray) -> np.ndarray:
     return np.degrees(np.arctan2(mean[:, 1], mean[:, 0])) % 360
 
 
-def direction_row(rows: dict, hours: int, held: dict, chances: dict[str, np.ndarray]) -> dict:
+def direction_row(rows: dict, held: dict, chances: dict[str, np.ndarray], group: tuple) -> dict:
     """Return how frequently each direction is in 45 degrees of the direction of the new pixels.
 
     The direction of a model is the mean of the sector directions, with the probability of each
     sector as its weight. Persistence has a direction only for a front with pixels on new ground.
+    `group` has the hours of the window, and True for the small fronts or False for the others.
     """
-    answers, inputs = rows["answers"], rows["inputs"]
+    answers, inputs, (hours, small) = rows["answers"], rows["inputs"], group
     fronts_in = held["fronts"]
     truth = answers[f"direction_deg_{hours}"][fronts_in]
     many = answers[f"new_{hours}"][fronts_in] >= config.FRONT_DIRECTION_PIXELS
+    many &= (answers["pixels"][fronts_in] < config.FRONT_SMALL_BELOW) == small
     before = inputs["came_direction_deg"][fronts_in]
     has = many & ~np.isnan(before)
     row = {"hours": hours, "fronts": int(many.sum())}

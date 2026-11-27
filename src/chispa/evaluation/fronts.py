@@ -224,9 +224,16 @@ def step_table(rows: dict[str, np.ndarray]) -> list[dict]:
     return table
 
 
-def step_rows(year: int, store_path: Path, raw_dir: Path) -> list[dict]:
-    """Return the table `front_steps` of one year."""
+def step_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, list[dict]]:
+    """Return the tables of the answers of one year: `front_steps` for the fronts that are not
+    small, and `front_steps_small` for the small fronts (`config.py`)."""
     store = sqlite3.connect(store_path)
     rings = border.read_rings(raw_dir / "border" / "pantanal.geojson")
     in_biome = border.rasterize(rings, pantanal_grid())
-    return step_table(front_rows(load_pixels(store, year), open_masks(raw_dir, year), in_biome))
+    rows = front_rows(load_pixels(store, year), open_masks(raw_dir, year), in_biome)
+    small = rows["pixels"] < config.FRONT_SMALL_BELOW
+    parts = {"front_steps": ~small, "front_steps_small": small}
+    return {
+        name: step_table({key: values[part] for key, values in rows.items()})
+        for name, part in parts.items()
+    }

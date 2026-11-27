@@ -10,20 +10,22 @@ from pathlib import Path
 import numpy as np
 
 from chispa import confidence, config
-from chispa.evaluation import forecast, forecast_say
+from chispa.evaluation import forecast, forecast_say, forecast_weather
 from chispa.grid import pantanal_grid
 from chispa.sources import border
 
 TABLES = ("forecast", "forecast_direction", "forecast_inputs")
-TABLES += ("forecast_chances", "forecast_sectors", "forecast_first_look", "forecast_examined")
+TABLES += ("forecast_chances", "forecast_sectors", "forecast_first_look")
+# The name of each size of front in a table, and True for the small fronts (`config.py`).
+SIZES = {"3 or more": False, "1 or 2": True}
+JOINED = ("x", "x_ahead", "y", "small")
 
 
 def training(cases: dict, years: tuple[int, ...], key: tuple[str, int]) -> dict:
     """Return the rows of one question from the training years, with the year of each row."""
-    table = np.concatenate([cases[year][key]["x"] for year in years])
-    label = np.concatenate([cases[year][key]["y"] for year in years])
+    found = {name: np.concatenate([cases[year][key][name] for year in years]) for name in JOINED}
     of_row = np.concatenate([np.full(len(cases[year][key]["y"]), year) for year in years])
-    return {"x": table, "y": label, "years": of_row}
+    return found | {"years": of_row}
 
 
 def year_cases(rows: dict[int, dict]) -> dict[int, dict]:
@@ -38,6 +40,50 @@ def year_cases(rows: dict[int, dict]) -> dict[int, dict]:
     }
 
 
+def _models(train: dict, held: dict) -> tuple[dict[str, np.ndarray], object]:
+    """Return the chances of each model for the held rows, and the trees.
+
+    `trees` has the inputs that we know at the look. `ahead` also has the weather after the look.
+    `forecast` is `ahead` with a forecast of that weather in the place of the recorded weather.
+    """
+    trees = forecast.fit_trees(train["x"], train["y"], train["years"])
+    ahead = forecast.fit_trees(train["x_ahead"], train["y"], train["years"])
+    regression = confidence.fit(train["x"], train["y"], held["names"])
+    chances = {"regression": confidence.probability(regression, held["x"])}
+    chances["trees"] = trees.predict_proba(held["x"])[:, 1]
+    chances["ahead"] = ahead.predict_proba(held["x_ahead"])[:, 1]
+    if "x_forecast" in held:
+        chances["forecast"] = ahead.predict_proba(held["x_forecast"])[:, 1]
+    return chances, trees
+
+
+def _scores(key: tuple[str, int], train: dict, held: dict, chances: dict) -> list[dict]:
+    """Return the scores of one question, for each size of front."""
+    found = []
+    for size, small in SIZES.items():
+        part, share = held["small"] == small, float(train["y"][train["small"] == small].mean())
+        rows = {name: held[name][part] for name in ("y", "persistence", "wind") if name in held}
+        of_size = {name: chance[part] for name, chance in chances.items()}
+        row = {"question": key[0], "hours": key[1], "size": size}
+        found.append(row | forecast.scores(rows, of_size, share))
+    return found
+
+
+def _counts(of_year: dict, hours: int, held: dict, trees: dict) -> dict[str, list[dict]]:
+    """Return the tables of what the trees say, for the fronts that are not small.
+
+    `held` has the rows of the sector question. `trees` has the chances of each question.
+    """
+    large = ~held["small"][:: config.FRONT_SECTORS]
+    use = held["fronts"].copy()
+    use[use] = large
+    chances = {"new_ground": trees["new_ground"][large]}
+    chances["sector"] = trees["sector"].reshape(-1, config.FRONT_SECTORS)[large].ravel()
+    sectors = forecast_say.sector_row(of_year["answers"], hours, use, chances["sector"])
+    first = forecast_say.first_look_rows(of_year, hours, use, chances)
+    return {"forecast_sectors": [sectors], "forecast_first_look": first}
+
+
 def year_tables(rows: dict, cases: dict, year: int, training_years: tuple[int, ...]) -> dict:
     """Return the tables of one year, from models that did not read that year."""
     tables = {name: [] for name in TABLES}
@@ -46,23 +92,19 @@ def year_tables(rows: dict, cases: dict, year: int, training_years: tuple[int, .
         for question in forecast.QUESTIONS:
             key = (question, hours)
             train, held = training(cases, training_years, key), cases[year][key]
-            model = forecast.fit_trees(train["x"], train["y"], train["years"])
-            regression = confidence.fit(train["x"], train["y"], held["names"])
-            chances = {"regression": confidence.probability(regression, held["x"])}
-            chances["trees"] = trees[question] = model.predict_proba(held["x"])[:, 1]
-            found = forecast.scores(held, chances, float(train["y"].mean()))
-            tables["forecast"].append({"question": question, "hours": hours} | found)
+            chances, model = _models(train, held)
+            trees[question] = chances["trees"]
+            tables["forecast"] += _scores(key, train, held, chances)
             tables["forecast_inputs"] += forecast.effect_rows(model, held, key)
-            tables["forecast_chances"] += forecast_say.chance_rows(key, trees[question], held["y"])
-            if question == "sector":
-                row = forecast.direction_row(rows[year], hours, held, chances)
-                tables["forecast_direction"].append(row)
+            large = ~held["small"]
+            tables["forecast_chances"] += forecast_say.chance_rows(
+                key, chances["trees"][large], held["y"][large]
+            )
+            for size, small in SIZES.items() if question == "sector" else ():
+                row = forecast.direction_row(rows[year], held, chances, (hours, small))
+                tables["forecast_direction"].append({"size": size} | row)
         # The rows of the three questions of one window are the same fronts.
-        use, answers = held["fronts"], rows[year]["answers"]
-        tables["forecast_sectors"].append(
-            forecast_say.sector_row(answers, hours, use, trees["sector"])
-        )
-        for name, found in forecast_say.group_rows(rows[year], hours, use, trees).items():
+        for name, found in _counts(rows[year], hours, held, trees).items():
             tables[name] += found
     return tables
 
@@ -74,6 +116,9 @@ def forecast_tables(store_path: Path, raw_dir: Path, test_run: bool) -> dict[int
     years = config.FRONT_YEARS + (config.FRONT_TEST_YEARS if test_run else ())
     rows = {year: forecast.year_rows(year, store_path, raw_dir, in_biome) for year in years}
     del in_biome
+    for year in config.FRONT_TEST_YEARS if test_run else ():
+        # The test years also get the weather forecast that we had at each look.
+        rows[year]["forecast"] = forecast_weather.year_inputs(year, rows[year]["answers"], raw_dir)
     cases = year_cases(rows)
     tables = {}
     for year in years:

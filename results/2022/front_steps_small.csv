@@ -1,0 +1,7 @@
+hours,looks,fronts,new_ground,front_again,clear_no_fire,not_visible,new_ground_share,new_ground_not_examined,front_again_not_examined,look_complete_h_median,fronts_with_10_new_pixels,distance_m_median
+12,day,1798,43,135,1118,502,0.0332,8,17,4.68,4,1719.72
+12,night,889,59,148,518,164,0.0814,5,15,4.67,10,2161.31
+12,all,2687,102,283,1636,666,0.0505,13,32,4.68,14,1918.09
+24,day,1798,146,191,755,706,0.1337,43,16,4.68,19,2401.53
+24,night,889,84,182,320,303,0.1433,21,13,4.67,19,2269.74
+24,all,2687,230,373,1075,1009,0.1371,64,29,4.68,38,2333.83
