@@ -90,19 +90,24 @@ def in_biome_alerts(alerts: list[tuple], raw_dir: Path) -> list[tuple]:
     return [row for row, one in zip(alerts, keep, strict=True) if one]
 
 
+def load(store: sqlite3.Connection, year: int) -> tuple[np.ndarray, list[tuple]]:
+    """Return the VIIRS pixels of one year with the issued id of each, and each merge."""
+    span = (f"{year}-01-01", f"{year + 1}-01-01")
+    found = store.execute(PIXELS, (fronts.SENSOR_FAMILY, fronts.SOURCE, *span)).fetchall()
+    merges = [tuple(row) for row in store.execute(MERGES)]
+    return np.array(found, dtype=float).reshape(-1, 5), merges
+
+
 def table(year: int, store_path: Path, raw_dir: Path) -> list[dict]:
     """Return the table `front_alerts` of one year: one row for each delay after the alert."""
     store = sqlite3.connect(store_path)
-    span = (f"{year}-01-01", f"{year + 1}-01-01")
     ids = (year * config.EVENT_IDS_OF_A_YEAR, (year + 1) * config.EVENT_IDS_OF_A_YEAR)
     alerts = in_biome_alerts(store.execute(ALERTS, ids).fetchall(), raw_dir)
     # An alert needs its longest delay in the year, and before the end of a year in progress.
     end = datetime(year + 1, 1, 1, tzinfo=UTC).timestamp()
     end = min(end - max(config.FRONT_ALERT_DELAYS_H) * 3600, config.FRONT_TEST_END.timestamp())
     alerts = [row for row in alerts if row[1] < end]
-    found = store.execute(PIXELS, (fronts.SENSOR_FAMILY, fronts.SOURCE, *span)).fetchall()
-    pixels = np.array(found, dtype=float).reshape(-1, 5)
-    sizes = front_sizes(alerts, pixels, [tuple(row) for row in store.execute(MERGES)])
+    sizes = front_sizes(alerts, *load(store, year))
     family = np.array([row[2] for row in alerts])
     rows = []
     for column, delay in enumerate(config.FRONT_ALERT_DELAYS_H):

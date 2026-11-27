@@ -8,7 +8,7 @@ import json
 from datetime import UTC, datetime
 
 from chispa import config, forecast_files, forecast_live
-from chispa.evaluation import forecast_outside, forecast_score, forecast_trees
+from chispa.evaluation import forecast_outside, forecast_score, forecast_trees, front_chance
 from chispa.evaluation.forecast_run import forecast_tables
 from chispa.evaluation.report import write_summary, write_tables
 
@@ -18,6 +18,7 @@ ACTIONS = {
     "trees": "Fit and save the live trees.",
     "score": "Score the saved live forecasts.",
     "outside": "Score the trees on the fronts in Brazil outside the biome.",
+    "front-chance": "Score the chance of a front for the alerts that only GOES started.",
 }
 
 
@@ -39,6 +40,7 @@ def run(action: str | None, test_run: bool) -> None:
     `trees` fits the trees of all development years, and saves them for the live forecast.
     `live` makes no table: it gives the forecast of the fronts of the newest looks.
     `score` makes the table of the saved live forecasts against what came.
+    `front-chance` makes the tables of the chance of a front for an alert that only GOES started.
     """
     arguments = (config.STORE_PATH, config.RAW_DIR)
     if action == "trees":
@@ -51,6 +53,8 @@ def run(action: str | None, test_run: bool) -> None:
         tables = forecast_score.score_tables(*arguments, datetime.now(UTC))
     elif action == "outside":
         tables = forecast_outside.outside_tables(*arguments, test_run)
+    elif action == "front-chance":
+        tables = front_chance.chance_tables(*arguments, test_run)
     else:
         tables = forecast_tables(*arguments, test_run)
     if not tables:

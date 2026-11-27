@@ -2632,6 +2632,88 @@ A negative result is a valid result.
   of the training years, not with a share of the fronts outside.
 - The limits of sections 11.26 to 11.31 apply. The result has satellite sources only.
 
+### 11.34 The chance of a front for an alert that only GOES started
+
+A growth forecast is for a front of VIIRS pixels (section 11.26). An alert that only GOES started has no VIIRS
+pixel: it has no front and no forecast. In 2025, 264 of 699 such first alerts had a front 24 hours later, and in
+2026, 257 of 512 (table `front_alerts`). The owner asked on 2026-11-27 for the chance that such an alert gets a
+front. `chispa forecast --front-chance` makes the tables `front_chance`, `front_chance_bands` and
+`front_chance_weights` (`evaluation/front_chance.py`). No field of the event record has this chance: a new field
+needs the agreement of the owner (section 12.1).
+
+1. A row is an alert in the biome at moment 0: one pass gap after its first detection was available
+   (section 11.15). The alert is the event as it was then (`moments.py`). It is a row if each detection of
+   its event at that moment is a GOES detection.
+2. The answer of a row is yes if its event has a front at moment 24, 24 hours after the first detection
+   (`config.py`): a VIIRS pixel of FIRMS that was available then (section 11.26, rule 10).
+3. The inputs are those of the growth risk at moment 0 (section 11.22), without the ground that burned
+   before: an alert before 1 July does not have the map of the year before (section 11.31). There are 30:
+   the inputs of the confidence without the calendar and the fire power, the first hours, and the late weather.
+4. The model is a logistic regression (`confidence.py`), as for the growth risk. A development year (2019 to
+   2024) gets the model of the five other years. 2025 and 2026 get the model of the six years, one time.
+5. The baselines are the confidence at moment 0 (section 11.15) and the number of detections.
+   The Brier skill score compares the chance with one number: the share of the training rows with a front.
+6. Moment 24 must be in the year, and before the end of a year in progress (section 11.26, rule 9).
+   The day of moment 0 must have its weather on disk. For 2026 the weather files are complete to
+   October: its rows end on 2026-10-31.
+
+The result of the development years (table `front_chance` of 2019 to 2024, 2026-11-27). "Expected" is the sum
+of the stated chances.
+
+| Year | Alerts | With a front | Expected | AUC of the model | AUC of the confidence | AUC of the detections | Brier skill |
+|---|---|---|---|---|---|---|---|
+| 2019 | 707 | 412 | 328.4 | 0.8348 | 0.6619 | 0.5930 | 0.4562 |
+| 2020 | 2328 | 624 | 724.4 | 0.8627 | 0.6186 | 0.5691 | 0.4091 |
+| 2021 | 1046 | 463 | 404.5 | 0.8667 | 0.6128 | 0.6129 | 0.4345 |
+| 2022 | 971 | 418 | 380.5 | 0.7316 | 0.4903 | 0.6133 | 0.1642 |
+| 2023 | 4709 | 895 | 1191.2 | 0.7965 | 0.6067 | 0.5803 | 0.3176 |
+| 2024 | 3513 | 1064 | 1016.2 | 0.8380 | 0.6789 | 0.6246 | 0.3334 |
+
+By stated chance, for the six years together (table `front_chance_bands`):
+
+| Stated chance | Alerts | With a front |
+|---|---|---|
+| Below 0.05 | 636 | 26 |
+| 0.05 to 0.1 | 2341 | 162 |
+| 0.1 to 0.2 | 3624 | 421 |
+| 0.2 to 0.35 | 2572 | 614 |
+| 0.35 to 0.5 | 1304 | 563 |
+| 0.5 to 0.7 | 1138 | 752 |
+| 0.7 or more | 1659 | 1338 |
+
+- The model has a higher AUC than the two baselines in 6 of 6 years. The mean AUC of the six years is 0.8217,
+  against 0.6115 for the confidence and 0.5989 for the number of detections.
+- The share of the alerts with a front changes with the year: 895 of 4709 in 2023, and 412 of 707 in 2019.
+  The stated chances follow that only in part: observed to expected for one year is 0.75 to 1.25. For the six
+  years together it is 3876 to 4045.2.
+- The inputs with the largest weights are the hour of the first detection, the rain of the 30 days before, the
+  dryness of the air, and the detections near the place in the days before (table `front_chance_weights`).
+  The hour says how near the next VIIRS pass is. A weight is not a cause: the weather inputs go together.
+
+The hypothesis, written on 2026-11-27 before the run on 2025 and 2026. The numbers above were known, and the
+counts of the table `front_alerts` of the two years. The test years get the model of 2019 to 2024, one time.
+
+1. In each test year, the model has a higher AUC than the confidence and than the number of detections.
+2. The mean AUC of the model of the two years is 0.75 or more. No two development years have a lower mean
+   than 0.7641.
+3. With the two years together, observed to expected is from 0.8 to 1.25.
+4. In each test year, the Brier skill score of the model is more than 0.
+
+What follows from the result, written before it. If the statements 1 and 2 are true, the chance puts the alerts
+in a useful sequence. A percentage for a person also needs statement 3. The owner decides if the event record
+gets a field. A negative result is a valid result.
+
+- The limit of 0.75 in statement 2 is a choice from the development years.
+- A front at moment 24 says that VIIRS saw the fire of the event in 24 hours. It does not say that the
+  fire is large, and no front does not say that the fire stopped: cloud hides a fire from VIIRS.
+- The time when a VIIRS pixel was available is an estimate for the years from the archive (`config.py`).
+- The land cover is that of the year before, as for the confidence. Section 11.31 uses two years before.
+- The rows are fewer than the alerts of the table `front_alerts`. An alert that merged with an older event
+  before moment 0 is not a row, and an alert that got a detection of a different sensor in that time is not one.
+- The number of the alerts that only GOES started changes with the year: 1002 in 2022 and 5824 in 2023 (table
+  `front_alerts`). `UNVERIFIED`: we did not examine the cause, or why 2023 has the lowest share with a front.
+- The result has satellite sources only.
+
 ## 12. Agent and MCP rules
 
 ### 12.1 Tools
