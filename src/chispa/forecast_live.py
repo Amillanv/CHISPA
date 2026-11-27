@@ -2,6 +2,7 @@
 
 The evaluation scores the forecast on recorded years. This module makes the forecast of the
 newest looks: the same fronts, the same inputs and the same trees, with no answer yet.
+It loads the saved trees, and it imports no module of the evaluation.
 ERA5-Land is some days late, thus the weather of the newest days comes from Open-Meteo.
 The forecast of each look is one JSON object. `forecast_files.py` saves it in a file with the
 time when we made it, and the event record reads that file.
@@ -16,9 +17,7 @@ from pathlib import Path
 
 import numpy as np
 
-from chispa import config, forecast_files, fronts
-from chispa.evaluation import forecast, forecast_trees, front_inputs
-from chispa.evaluation import fronts as steps
+from chispa import config, forecast_files, forecast_model, front_inputs, fronts
 from chispa.grid import pantanal_grid
 from chispa.sources import border, openmeteo, weather
 from chispa.store import to_text
@@ -81,10 +80,10 @@ def pixels_at(store: sqlite3.Connection, year: int, now: datetime) -> dict | Non
 
     None: we had no pixel of that year. On 1 January that is the usual state of the new year.
     """
-    span = (fronts.SENSOR_FAMILY, steps.SOURCE, f"{year}-01-01", f"{year + 1}-01-01", to_text(now))
+    span = (fronts.SENSOR_FAMILY, fronts.SOURCE, f"{year}-01-01", f"{year + 1}-01-01", to_text(now))
     if store.execute(ANY_PIXEL, span).fetchone() is None:
         return None
-    pixels = steps.load_pixels(store, year)
+    pixels = fronts.load_pixels(store, year)
     had = pixels["available"] <= now.timestamp()
     pixels = {name: values[had] for name, values in pixels.items()}
     # A look is a group of the pixels that we had: make the groups again.
@@ -94,9 +93,9 @@ def pixels_at(store: sqlite3.Connection, year: int, now: datetime) -> dict | Non
 def newest_fronts(pixels: dict, in_biome: np.ndarray, since: float) -> list[dict]:
     """Return the looks that started at or after the time `since` and have a front that counts."""
     found = []
-    for a, b, look in steps.each_look(pixels, since):
-        places = steps.places(pixels, (a, b), look)
-        keep = steps.counted(places, in_biome)
+    for a, b, look in fronts.each_look(pixels, since):
+        places = fronts.places(pixels, (a, b), look)
+        keep = fronts.counted(places, in_biome)
         if keep.any():
             found.append({"bounds": (a, b), "look": look, "places": places, "keep": keep})
     return found
@@ -123,9 +122,9 @@ def front_rows(saved: dict, places: dict, inputs: dict, windows: dict) -> list[d
     each sector. A front with no inputs has its windows with no chance, and the reason: the trees
     have no score for such a front.
     """
-    chance, usable = {}, forecast.has_inputs(inputs)
+    chance, usable = {}, forecast_model.has_inputs(inputs)
     for key, model in saved["models"].items():
-        table, names = forecast.matrix(inputs, key[0] == "sector")
+        table, names = forecast_model.matrix(inputs, key[0] == "sector")
         if names != saved["names"][key]:
             path = config.FORECAST_MODELS_PATH
             raise RuntimeError(f"Delete {path}: its inputs are not the inputs of now.")
@@ -164,7 +163,7 @@ def front_events(store: sqlite3.Connection, pixels: dict, one: dict) -> list[lis
     span = [
         to_text(datetime.fromtimestamp(float(pixels["seconds"][row]), UTC)) for row in (a, b - 1)
     ]
-    rows = store.execute(EVENTS, (fronts.SENSOR_FAMILY, steps.SOURCE, *span)).fetchall()
+    rows = store.execute(EVENTS, (fronts.SENSOR_FAMILY, fronts.SOURCE, *span)).fetchall()
     events = {int(front): set() for front in np.nonzero(one["keep"])[0]}
     if rows:
         lat, lon, ids = (np.array(column) for column in zip(*rows, strict=True))
@@ -188,7 +187,7 @@ def look_forecast(
     kept = {name: values[keep] for name, values in inputs.items()}
     look_at = _look_at(one)
     times = {"look_at": look_at.isoformat(timespec="minutes"), "pixels_to": to_text(now)}
-    times |= {"large_growth_pixels": config.FRONT_LARGE_PIXELS, "trees": saved["config"]}
+    times |= {"large_growth_pixels": config.FRONT_LARGE_PIXELS, "trees": saved["trees"]}
     return times | {"fronts": front_rows(saved, places, kept, open_windows(look_at, now))}
 
 
@@ -237,8 +236,8 @@ def live_looks(
     time of now, and the forecast of each front. No front: an empty list.
 
     `only_new` is the folder of the forecast files, for the step of `chispa update`. Then the
-    answer has only the looks that are new in that folder, and this does not fit the trees:
-    the answer is None if the saved trees are not those of now.
+    answer has only the looks that are new in that folder. The answer is None if no saved trees
+    are those of now: this does not fit trees (`forecast_model.py`).
     """
     store = sqlite3.connect(store_path)
     looks = recent_looks(store, raw_dir, now)
@@ -246,8 +245,7 @@ def live_looks(
         looks = [(pixels, one) for pixels, one in looks if _is_new(one, only_new)]
     if not looks:
         return []
-    trees = forecast_trees.current if only_new else forecast_trees.fitted
-    saved = trees(store_path) if only_new else trees(store_path, raw_dir)
+    saved = forecast_model.load_trees()
     if saved is None:
         return None
     found = []
@@ -260,3 +258,19 @@ def live_looks(
                 front["events"] = events
             found.append(made)
     return found
+
+
+def update(store_path: Path, raw_dir: Path, now: datetime) -> str:
+    """Make the forecast file of each new look, and return one line for `chispa update`.
+
+    A layer or the weather can be absent or not complete. Then the line says so: the update is
+    complete with no forecast, and the next update does this step again.
+    """
+    folder = config.FORECAST_LIVE_DIR
+    try:
+        looks = live_looks(store_path, raw_dir, now, folder)
+    except (RuntimeError, OSError, ValueError) as error:
+        return f"forecast: no forecast. {error}"
+    if looks is None:
+        return "forecast: the saved trees are not those of now. Run `chispa forecast --trees`."
+    return f"forecast: {len(forecast_files.save(looks, folder, datetime.now(UTC)))} new files."
