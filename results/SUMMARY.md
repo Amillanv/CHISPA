@@ -6,7 +6,7 @@ Code makes this file. Do not edit it by hand.
 
 ### 2019 forecast
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -25,7 +25,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2019 forecast_chances
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -74,7 +74,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2019 forecast_direction
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -85,7 +85,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2019 forecast_first_look
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 |
 |---|---|---|---|---|---|---|---|
@@ -96,7 +96,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2019 forecast_inputs
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | input | auc_decrease |
 |---|---|---|---|
@@ -151,18 +151,18 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2019 forecast_periods
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 | auc_persistence | wind_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
-| 12 | before the map | 947 | 161 | 164.4 | 0.8368 | 108 | 60 | 0.6929 | 44 |
-| 12 | with the map | 6508 | 1617 | 1612.7 | 0.816 | 1082 | 628 | 0.6625 | 338 |
-| 24 | before the map | 675 | 205 | 234.6 | 0.771 | 144 | 67 | 0.6604 | 42 |
-| 24 | with the map | 5548 | 2371 | 2471.2 | 0.778 | 1846 | 988 | 0.6661 | 494 |
+| 12 | before 1 July | 947 | 161 | 164.4 | 0.8368 | 108 | 60 | 0.6929 | 44 |
+| 12 | from 1 July | 6508 | 1617 | 1612.7 | 0.816 | 1082 | 628 | 0.6625 | 338 |
+| 24 | before 1 July | 675 | 205 | 234.6 | 0.771 | 144 | 67 | 0.6604 | 42 |
+| 24 | from 1 July | 5548 | 2371 | 2471.2 | 0.778 | 1846 | 988 | 0.6661 | 494 |
 
 ### 2019 forecast_sectors
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
 |---|---|---|---|---|---|---|---|---|---|
@@ -535,7 +535,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2020 forecast
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -554,7 +554,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2020 forecast_chances
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -603,7 +603,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2020 forecast_direction
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -614,7 +614,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2020 forecast_first_look
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 |
 |---|---|---|---|---|---|---|---|
@@ -625,7 +625,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2020 forecast_inputs
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | input | auc_decrease |
 |---|---|---|---|
@@ -680,18 +680,18 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2020 forecast_periods
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 | auc_persistence | wind_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
-| 12 | before the map | 2798 | 434 | 447.4 | 0.8116 | 238 | 138 | 0.6197 | 83 |
-| 12 | with the map | 15472 | 3495 | 3848.9 | 0.8322 | 2380 | 1471 | 0.7129 | 809 |
-| 24 | before the map | 2281 | 699 | 676.5 | 0.7672 | 473 | 233 | 0.5949 | 139 |
-| 24 | with the map | 13821 | 5411 | 5624.8 | 0.8203 | 4140 | 2518 | 0.6958 | 1200 |
+| 12 | before 1 July | 2798 | 434 | 447.4 | 0.8116 | 238 | 138 | 0.6197 | 83 |
+| 12 | from 1 July | 15472 | 3495 | 3848.9 | 0.8322 | 2380 | 1471 | 0.7129 | 809 |
+| 24 | before 1 July | 2281 | 699 | 676.5 | 0.7672 | 473 | 233 | 0.5949 | 139 |
+| 24 | from 1 July | 13821 | 5411 | 5624.8 | 0.8203 | 4140 | 2518 | 0.6958 | 1200 |
 
 ### 2020 forecast_sectors
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1202,7 +1202,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2021 forecast
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1221,7 +1221,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2021 forecast_chances
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -1270,7 +1270,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2021 forecast_direction
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1281,7 +1281,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2021 forecast_first_look
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 |
 |---|---|---|---|---|---|---|---|
@@ -1292,7 +1292,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2021 forecast_inputs
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | input | auc_decrease |
 |---|---|---|---|
@@ -1347,18 +1347,18 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2021 forecast_periods
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 | auc_persistence | wind_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
-| 12 | before the map | 517 | 34 | 49.1 | 0.6688 | 18 | 4 | 0.5723 | 6 |
-| 12 | with the map | 4739 | 1471 | 1421.8 | 0.817 | 1065 | 615 | 0.7131 | 339 |
-| 24 | before the map | 429 | 63 | 94.2 | 0.6455 | 29 | 11 | 0.5697 | 12 |
-| 24 | with the map | 3776 | 1894 | 1828.0 | 0.7901 | 1507 | 834 | 0.7066 | 423 |
+| 12 | before 1 July | 517 | 34 | 49.1 | 0.6688 | 18 | 4 | 0.5723 | 6 |
+| 12 | from 1 July | 4739 | 1471 | 1421.8 | 0.817 | 1065 | 615 | 0.7131 | 339 |
+| 24 | before 1 July | 429 | 63 | 94.2 | 0.6455 | 29 | 11 | 0.5697 | 12 |
+| 24 | from 1 July | 3776 | 1894 | 1828.0 | 0.7901 | 1507 | 834 | 0.7066 | 423 |
 
 ### 2021 forecast_sectors
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1957,7 +1957,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2022 forecast
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1976,7 +1976,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2022 forecast_chances
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -2025,7 +2025,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2022 forecast_direction
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -2036,7 +2036,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2022 forecast_first_look
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 |
 |---|---|---|---|---|---|---|---|
@@ -2047,7 +2047,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2022 forecast_inputs
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | input | auc_decrease |
 |---|---|---|---|
@@ -2102,18 +2102,18 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2022 forecast_periods
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 | auc_persistence | wind_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
-| 12 | before the map | 495 | 60 | 62.9 | 0.7963 | 40 | 21 | 0.6785 | 10 |
-| 12 | with the map | 917 | 158 | 184.8 | 0.8114 | 94 | 49 | 0.6373 | 32 |
-| 24 | before the map | 389 | 84 | 96.2 | 0.7683 | 58 | 26 | 0.6517 | 15 |
-| 24 | with the map | 705 | 217 | 253.4 | 0.7959 | 149 | 59 | 0.6618 | 43 |
+| 12 | before 1 July | 495 | 60 | 62.9 | 0.7963 | 40 | 21 | 0.6785 | 10 |
+| 12 | from 1 July | 917 | 158 | 184.8 | 0.8114 | 94 | 49 | 0.6373 | 32 |
+| 24 | before 1 July | 389 | 84 | 96.2 | 0.7683 | 58 | 26 | 0.6517 | 15 |
+| 24 | from 1 July | 705 | 217 | 253.4 | 0.7959 | 149 | 59 | 0.6618 | 43 |
 
 ### 2022 forecast_sectors
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
 |---|---|---|---|---|---|---|---|---|---|
@@ -3136,7 +3136,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2023 forecast
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -3155,7 +3155,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2023 forecast_chances
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -3204,7 +3204,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2023 forecast_direction
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -3215,7 +3215,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2023 forecast_first_look
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 |
 |---|---|---|---|---|---|---|---|
@@ -3226,7 +3226,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2023 forecast_inputs
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | input | auc_decrease |
 |---|---|---|---|
@@ -3281,18 +3281,18 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2023 forecast_periods
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 | auc_persistence | wind_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
-| 12 | before the map | 263 | 17 | 26.9 | 0.7229 | 9 | 3 | 0.5072 | 3 |
-| 12 | with the map | 3924 | 1136 | 1105.6 | 0.823 | 837 | 492 | 0.6834 | 307 |
-| 24 | before the map | 213 | 25 | 38.7 | 0.7213 | 17 | 6 | 0.5304 | 5 |
-| 24 | with the map | 2929 | 1360 | 1272.3 | 0.8116 | 1128 | 640 | 0.6816 | 378 |
+| 12 | before 1 July | 263 | 17 | 26.9 | 0.7229 | 9 | 3 | 0.5072 | 3 |
+| 12 | from 1 July | 3924 | 1136 | 1105.6 | 0.823 | 837 | 492 | 0.6834 | 307 |
+| 24 | before 1 July | 213 | 25 | 38.7 | 0.7213 | 17 | 6 | 0.5304 | 5 |
+| 24 | from 1 July | 2929 | 1360 | 1272.3 | 0.8116 | 1128 | 640 | 0.6816 | 378 |
 
 ### 2023 forecast_sectors
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
 |---|---|---|---|---|---|---|---|---|---|
@@ -4247,7 +4247,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2024 forecast
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -4266,7 +4266,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2024 forecast_chances
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -4315,7 +4315,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2024 forecast_direction
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -4326,7 +4326,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2024 forecast_first_look
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 |
 |---|---|---|---|---|---|---|---|
@@ -4337,7 +4337,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2024 forecast_inputs
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | input | auc_decrease |
 |---|---|---|---|
@@ -4392,18 +4392,18 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2024 forecast_periods
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 | auc_persistence | wind_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
-| 12 | before the map | 2798 | 641 | 531.5 | 0.8338 | 444 | 264 | 0.7274 | 153 |
-| 12 | with the map | 6665 | 1791 | 1642.3 | 0.8473 | 1383 | 832 | 0.7418 | 491 |
-| 24 | before the map | 2395 | 920 | 777.6 | 0.8187 | 730 | 401 | 0.6927 | 201 |
-| 24 | with the map | 5521 | 2308 | 2161.5 | 0.8384 | 1939 | 1164 | 0.7251 | 623 |
+| 12 | before 1 July | 2798 | 641 | 531.5 | 0.8338 | 444 | 264 | 0.7274 | 153 |
+| 12 | from 1 July | 6665 | 1791 | 1642.3 | 0.8473 | 1383 | 832 | 0.7418 | 491 |
+| 24 | before 1 July | 2395 | 920 | 777.6 | 0.8187 | 730 | 401 | 0.6927 | 201 |
+| 24 | from 1 July | 5521 | 2308 | 2161.5 | 0.8384 | 1939 | 1164 | 0.7251 | 623 |
 
 ### 2024 forecast_sectors
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
 |---|---|---|---|---|---|---|---|---|---|
@@ -5393,7 +5393,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 forecast
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -5412,7 +5412,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2025 forecast_chances
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -5461,7 +5461,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2025 forecast_direction
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -5472,7 +5472,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2025 forecast_first_look
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 |
 |---|---|---|---|---|---|---|---|
@@ -5483,7 +5483,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2025 forecast_inputs
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | input | auc_decrease |
 |---|---|---|---|
@@ -5538,18 +5538,18 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2025 forecast_periods
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 | auc_persistence | wind_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
-| 12 | before the map | 100 | 4 | 8.7 | 0.8672 | 1 | 1 | 0.8893 | 1 |
-| 12 | with the map | 530 | 97 | 120.2 | 0.861 | 71 | 40 | 0.6965 | 33 |
-| 24 | before the map | 64 | 6 | 11.4 | 0.7098 | 4 | 1 | 0.8448 | 0 |
-| 24 | with the map | 414 | 121 | 161.1 | 0.8039 | 93 | 45 | 0.707 | 33 |
+| 12 | before 1 July | 100 | 4 | 8.7 | 0.8672 | 1 | 1 | 0.8893 | 1 |
+| 12 | from 1 July | 530 | 97 | 120.2 | 0.861 | 71 | 40 | 0.6965 | 33 |
+| 24 | before 1 July | 64 | 6 | 11.4 | 0.7098 | 4 | 1 | 0.8448 | 0 |
+| 24 | from 1 July | 414 | 121 | 161.1 | 0.8039 | 93 | 45 | 0.707 | 33 |
 
 ### 2025 forecast_sectors
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
 |---|---|---|---|---|---|---|---|---|---|
@@ -6355,7 +6355,7 @@ Configuration `e06a03177d61`, run on 2026-11-24.
 
 ### 2026 forecast
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | size | rows | positive | auc_persistence | auc_wind | auc_regression | auc_trees | average_precision_trees | expected_trees | brier_skill_trees |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -6374,7 +6374,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2026 forecast_chances
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -6423,7 +6423,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2026 forecast_direction
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | size | hours | fronts | regression_in_45 | regression_in_45_of_them | trees_in_45 | trees_in_45_of_them | wind_in_45 | fronts_with_persistence | persistence_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -6434,7 +6434,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2026 forecast_first_look
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 |
 |---|---|---|---|---|---|---|---|
@@ -6445,7 +6445,7 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2026 forecast_inputs
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | question | hours | input | auc_decrease |
 |---|---|---|---|
@@ -6500,18 +6500,18 @@ Configuration `3148014deb04`, run on 2026-11-27.
 
 ### 2026 forecast_periods
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | rows | new_ground | chance_sum | auc_trees | fronts_with_direction | trees_in_45 | auc_persistence | wind_in_45 |
 |---|---|---|---|---|---|---|---|---|---|
-| 12 | before the map | 211 | 58 | 48.7 | 0.8639 | 38 | 21 | 0.718 | 16 |
-| 12 | with the map | 349 | 71 | 89.7 | 0.7976 | 47 | 17 | 0.6057 | 16 |
-| 24 | before the map | 161 | 61 | 58.5 | 0.8361 | 49 | 24 | 0.7025 | 13 |
-| 24 | with the map | 259 | 101 | 117.3 | 0.7272 | 80 | 27 | 0.6031 | 16 |
+| 12 | before 1 July | 211 | 58 | 48.7 | 0.8639 | 38 | 21 | 0.718 | 16 |
+| 12 | from 1 July | 349 | 71 | 89.7 | 0.7976 | 47 | 17 | 0.6057 | 16 |
+| 24 | before 1 July | 161 | 61 | 58.5 | 0.8361 | 49 | 24 | 0.7025 | 13 |
+| 24 | from 1 July | 259 | 101 | 117.3 | 0.7272 | 80 | 27 | 0.6031 | 16 |
 
 ### 2026 forecast_sectors
 
-Configuration `3148014deb04`, run on 2026-11-27.
+Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 | hours | fronts | new_pixels | sector_by_chance | top_1_fronts | top_1_pixels | top_2_fronts | top_2_pixels | top_3_fronts | top_3_pixels |
 |---|---|---|---|---|---|---|---|---|---|

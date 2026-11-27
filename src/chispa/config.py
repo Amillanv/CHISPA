@@ -351,8 +351,8 @@ FRONT_AHEAD_TURNS_DEG = (-15.0, 0.0, 15.0)
 # (`docs/sources.md` section 8.5). A look before this month has no map of the year before: its
 # inputs from that map have no value. A live forecast has the same rule.
 FRONT_LAST_YEAR_FROM_MONTH = 7
-# A front gets the land cover of this many years before its year. We have no checked day for the
-# map of the year before, and this map exists at each look.
+# A front gets the land cover of this many years before its year. We have no checked day for
+# the map of a year. UNVERIFIED: we assume that the map of two years before exists at each look.
 FRONT_COVER_YEARS_BEFORE = 2
 # The weather before a look: the mean of this many days before its day, and the rain of these days.
 FRONT_WEATHER_DAYS = 3

@@ -2357,22 +2357,26 @@ look can have. `chispa forecast` makes the tables.
 
 1. A look before 1 July (`config.py`) has no value for the two inputs from the annual map of the year before: the
    burned share on the front, and ahead of it in each sector. The map of a year comes in April to July of the next
-   year (`docs/sources.md` section 8.5). From 1 July a look has those inputs, if the map is on disk.
-2. A front gets the land cover of two years before, or the newest map on disk if that is older. We have no
-   checked day for the land cover map of a year: the map of two years before exists at each look.
+   year (`docs/sources.md` section 8.5). From 1 July a look has those inputs. In a year in progress the map can
+   be absent from the disk: then they have no value. A year of the past must have its map on disk.
+2. A front gets the land cover of two years before, or of the last year that the map has (`config.py`) if that
+   is older. We have no checked day for the land cover map of a year. `UNVERIFIED`: we assume that the map of two
+   years before exists at each look.
 3. The rules 1 and 2 are for each row: the rows that the trees learn from, the rows of a test, and a live
    forecast. The trees read an absent value as absent. The regression gets the mean of the training rows.
 4. A live forecast reads the looks of two years when its last hours have 1 January. A look has the known pixels
    of its year only (section 11.26, rule 4).
 5. The table `forecast_periods` gives, for the fronts of 3 pixels or more, the fronts before 1 July and the
-   other fronts apart, with persistence and the wind for the same fronts.
+   other fronts apart, with persistence and the wind for the same fronts. The calendar makes the two groups,
+   not the map on disk.
 
 Two probes outside the repository came first (2026-11-27). They had 2019 to 2024, and for each year the trees of
 the other years with the complete maps:
 
 - For the 5283 fronts of 3 pixels or more before 1 June, the mean AUC of new ground at 12 hours was 0.7754 with
   the map of the year before, 0.7765 with no value, and 0.7772 with the map of two years before in its place.
-  The direction was in 45 degrees for 254, 255 and 256 of 471 fronts. Thus no value has no cost.
+  The direction was in 45 degrees for 254, 255 and 256 of 471 fronts. Thus the probe found no cost of no
+  value: the differences are 0.0011 in the AUC and 1 front.
 - The land cover of two years before had a small cost for all fronts of 2020 to 2024: 0.8284 against 0.8294
   at 12 hours, lower in 4 of 5 years.
 
@@ -2409,8 +2413,10 @@ The fronts of 3 pixels or more before 1 July, and the other fronts (table `forec
   and by 0.0013 at 24 hours, and the direction is the same.
 - The trees have a higher AUC than persistence and than the regression in each year, for each row of the first
   table. Their Brier skill score is more than 0 in each cell of year, question, hours and size.
-- The stated chances hold. For the fronts of 3 pixels or more they expect 11 098.4 fronts with new ground at
-  12 hours, and 11 015 had it. At 24 hours: 15 528.9 and 15 557.
+- The stated chances hold for the six years together. For the fronts of 3 pixels or more they expect 11 098.4
+  fronts with new ground at 12 hours, and 11 015 had it. At 24 hours: 15 528.9 and 15 557.
+  For one year, observed to expected is 0.88 to 1.12 at 12 hours, and 0.86 to 1.10 at 24 hours. For the small
+  fronts it is 0.74 to 1.20, and 0.73 to 1.19.
 - Before 1 July the forecast is weaker than in the other months: these are the fires of the wet months.
   The trees are above persistence in 6 of 6 years. The lowest year is 2021: 0.6688 at 12 hours, with 34 fronts
   with new ground of 517.
@@ -2437,6 +2443,8 @@ is with them. A negative result is a valid result.
 - 1 July is one day for each year. The map of 2025 was in Earth Engine on 2026-04-09, and that of 2024 on
   2025-05-21 or before (`docs/sources.md` section 8.5).
 - We have no checked day for the land cover map. `UNVERIFIED`: a year comes in the second half of the next year.
+- Each map is that of the collection that we read in 2026. A look of the past had an older collection of the
+  same year, which can have other values. We did not measure that difference.
 - The fronts of 2019 need the land cover of 2017: `chispa fetch landcover --year 2017`. It is not in the bucket.
 - The limits of sections 11.26 to 11.30 apply. The forecast has satellite sources only.
 
@@ -2465,7 +2473,9 @@ The fronts of 3 pixels or more before 1 July (table `forecast_periods`):
   higher there. 2026 has 58 and 61, and the trees are higher by 0.1459 and by 0.1336.
   The mean of the two years gives a year with 6 such fronts the weight of a year with 61.
 - Statement 2: the mean AUC for all fronts of 3 pixels or more is lower than that of section 11.30 by 0.0005 at
-  12 hours, and by 0.0023 at 24 hours. Thus the inputs of the time have almost no cost.
+  12 hours, and by 0.0023 at 24 hours. For the small fronts it is lower by 0.0062 at 12 and at 24 hours.
+  One cell of year, question, hours and size changed by -0.0085 to +0.0051 for the fronts of 3 pixels or
+  more, and by -0.0150 to +0.0233 for the small fronts.
 - Statement 3: the trees are in 45 degrees for 79 of 157 fronts at 12 hours, and the wind for 66. At 24 hours: 97
   and 62 of 226. The regression has 77 and 110: at 24 hours it is ahead of the trees, as in section 11.30.
 - Statement 4: the trees expected 267.3 fronts with new ground at 12 hours, and 230 had it: 0.86. At 24 hours:
