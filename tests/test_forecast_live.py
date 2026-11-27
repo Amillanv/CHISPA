@@ -48,30 +48,80 @@ def look_of(pixels: int, made_at: str) -> dict:
     return {"look_at": "2026-11-22T16:34+00:00", "made_at": made_at, "fronts": [front]}
 
 
-def test_a_front_has_its_place_and_the_chances_of_each_window(monkeypatch):
-    monkeypatch.setattr("chispa.config.FRONT_SECTORS", 8)
+def two_fronts(power: list[float]) -> tuple[dict, dict, dict]:
+    """Two fronts with their inputs, and saved models that give a fixed chance for each question."""
     places = {"lat": np.array([-16.82, -17.35]), "lon": np.array([-55.02, -57.24])}
     places["pixels"] = np.array([9, 4])
-    inputs = {"log_pixels": np.log1p(places["pixels"]), "reach_km_s": np.zeros((2, 8))}
+    inputs = {"log_pixels": np.log1p(places["pixels"]), "past_vpd": np.array([2.0, 2.0])}
+    inputs |= {"log_frp_mean": np.array(power), "reach_km_s": np.zeros((2, 8))}
     chances = {"new_ground": 0.13, "large_growth": 0.03, "sector": 0.05}
     keys = [(question, hours) for question in chances for hours in (12, 24)]
     saved = {"models": {key: Fixed(chances[key[0]]) for key in keys}, "names": {}}
+    front = ("log_pixels", "past_vpd", "log_frp_mean")
     for key in keys:
-        saved["names"][key] = (
-            ("log_pixels", "reach_km_s") if key[0] == "sector" else ("log_pixels",)
-        )
-    first, second = forecast_live.front_rows(saved, places, inputs)
+        saved["names"][key] = (*front, "reach_km_s") if key[0] == "sector" else front
+    return saved, places, inputs
+
+
+def test_a_front_has_its_place_and_the_chances_of_each_window(monkeypatch):
+    monkeypatch.setattr("chispa.config.FRONT_SECTORS", 8)
+    windows = {12: {"from": "a", "to": "b"}, 24: {"from": "a", "to": "c"}}
+    first, second = forecast_live.front_rows(*two_fronts([1.0, 1.0]), windows)
     assert (first["lat"], first["lon"], first["pixels"]) == (-16.82, -55.02, 9)
     assert second["pixels"] == 4 and set(first) == {"lat", "lon", "pixels", "hours_12", "hours_24"}
     assert first["hours_24"]["new_ground"] == 0.13 and first["hours_24"]["large_growth"] == 0.03
     assert first["hours_12"]["sectors"] == dict.fromkeys(forecast_live.SECTORS, 0.05)
+    assert (first["hours_12"]["to"], first["hours_24"]["to"]) == ("b", "c")
+
+
+def test_a_front_with_no_fire_power_gets_no_chance(monkeypatch):
+    monkeypatch.setattr("chispa.config.FRONT_SECTORS", 8)
+    # The trees did not learn from a front with no fire power, and they have no score for it.
+    windows = {24: {"from": "a", "to": "c"}}
+    first, second = forecast_live.front_rows(*two_fronts([1.0, np.nan]), windows)
+    assert first["hours_24"]["new_ground"] == 0.13 and "no_forecast" not in first
+    assert second["hours_24"] is None and second["no_forecast"] == forecast_live.NO_INPUTS
+    assert second["pixels"] == 4
+
+
+def test_a_window_that_ended_gets_no_forecast():
+    look_at = datetime(2026, 11, 25, 17, 0, tzinfo=UTC)
+    # 5 hours after the look: the two windows are open. The 12 hours window is 6 to 18 hours.
+    early = forecast_live.open_windows(look_at, look_at + timedelta(hours=5))
+    assert early[12] == {"from": "2026-11-25T23:00+00:00", "to": "2026-11-26T11:00+00:00"}
+    assert early[24] == {"from": "2026-11-25T23:00+00:00", "to": "2026-11-26T23:00+00:00"}
+    # 10 hours after the look, the window of 12 hours is in progress: it stays, with its limits.
+    assert set(forecast_live.open_windows(look_at, look_at + timedelta(hours=10))) == {12, 24}
+    # 18 hours after the look, the window of 12 hours ended.
+    assert set(forecast_live.open_windows(look_at, look_at + timedelta(hours=18))) == {24}
+
+
+def test_the_mark_of_the_saved_trees_changes_with_a_training_detection(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.FRONT_YEARS", (2023,))
+    store = open_store(tmp_path / "store.sqlite")
+    insert = "INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+
+    def add(number: int, when: str) -> str:
+        row = (number, "firms", "viirs", "NOAA20", when, when, LAT, LON, 375.0, 5.0, "nominal", 1)
+        store.execute(insert, row)
+        store.commit()
+        return forecast_live._stamp(tmp_path / "store.sqlite")
+
+    first = add(1, "2023-09-01T05:00:00+00:00")
+    assert forecast_live._stamp(tmp_path / "store.sqlite") == first
+    # A detection of a year that the trees do not learn from changes nothing.
+    assert add(2, "2026-11-25T17:00:00+00:00") == first
+    # One more detection of a development year: the saved trees are not those of this store.
+    assert add(3, "2023-09-01T17:00:00+00:00") != first
 
 
 def test_saved_trees_with_other_inputs_stop_the_forecast(monkeypatch):
     places = {"lat": np.array([-16.82]), "lon": np.array([-55.02]), "pixels": np.array([9])}
     saved = {"models": {("new_ground", 12): Fixed(0.1)}, "names": {("new_ground", 12): ("old",)}}
+    inputs = {"log_pixels": np.array([2.3]), "past_vpd": np.array([2.0])}
+    inputs["log_frp_mean"] = np.array([1.0])
     with pytest.raises(RuntimeError, match="its inputs are not the inputs of now"):
-        forecast_live.front_rows(saved, places, {"log_pixels": np.array([2.3])})
+        forecast_live.front_rows(saved, places, inputs, {12: {}})
 
 
 def test_the_first_forecast_of_a_look_stays_when_a_newer_one_comes(tmp_path):

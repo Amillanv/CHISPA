@@ -17,6 +17,7 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
+import sklearn
 
 from chispa import config, fronts
 from chispa.evaluation import forecast, forecast_run, front_inputs
@@ -31,22 +32,37 @@ EVENTS = """
 SELECT d.lat, d.lon, m.event_id FROM detections d JOIN memberships m ON m.detection_id = d.id
 WHERE d.sensor_family = ? AND d.source = ? AND d.observed_at >= ? AND d.observed_at <= ?
 """
+# One row that changes when a detection of the development years changes in the store.
+TRAINING = """
+SELECT COUNT(*), TOTAL(lat), TOTAL(lon), TOTAL(frp_mw), MAX(available_at) FROM detections
+WHERE sensor_family = ? AND source = ? AND observed_at >= ? AND observed_at < ?
+"""
+NO_INPUTS = "no weather before the look, or no pixel with a fire power"
 
 
-def _stamp() -> str:
-    """Return a hash of the configuration and of the code that makes the rows and the trees."""
-    modules = (fronts, steps, front_inputs, forecast)
+def _stamp(store_path: Path) -> str:
+    """Return a mark of what makes the trees: the configuration, the code of the rows and of the
+    trees, the version of scikit-learn, and the detections of the development years in the store.
+
+    A raw file does not change (`docs/sources.md` section 8.7), thus the mark does not read the
+    raw layers. After a new download of a layer of a development year, delete the saved file.
+    """
+    modules = (fronts, steps, front_inputs, forecast, forecast_run)
     code = "".join(Path(module.__file__).read_text() for module in modules)
-    return config_hash() + hashlib.sha256(code.encode()).hexdigest()[:12]
+    years = (f"{min(config.FRONT_YEARS)}-01-01", f"{max(config.FRONT_YEARS) + 1}-01-01")
+    store = sqlite3.connect(store_path)
+    data = store.execute(TRAINING, (fronts.SENSOR_FAMILY, steps.SOURCE, *years)).fetchone()
+    made_from = f"{code}{sklearn.__version__}{data}"
+    return config_hash() + hashlib.sha256(made_from.encode()).hexdigest()[:12]
 
 
 def saved_models(store_path: Path, raw_dir: Path, in_biome: np.ndarray) -> dict:
     """Return the trees of each question and their input names, from all development years.
 
-    A saved file gives them, if the configuration and the code that made it are those of now.
-    If not, this fits the trees again and saves them: some minutes.
+    A saved file gives them, if the configuration, the code and the detections that made it
+    are those of now. If not, this fits the trees again and saves them: some minutes.
     """
-    path, stamp = config.FORECAST_MODELS_PATH, _stamp()
+    path, stamp = config.FORECAST_MODELS_PATH, _stamp(store_path)
     if path.exists():
         saved = pickle.loads(path.read_bytes())
         if saved["config"] == stamp:
@@ -114,12 +130,27 @@ def newest_fronts(pixels: dict, in_biome: np.ndarray, since: float) -> list[dict
     return found
 
 
-def front_rows(saved: dict, places: dict, inputs: dict) -> list[dict]:
+def open_windows(look_at: datetime, now: datetime) -> dict[int, dict[str, str]]:
+    """Return the limits of each window of a look that has not ended at the time of now.
+
+    A window is from and to some hours after the start of the look (`config.py`). A window that
+    ended is in the past: it gets no forecast.
+    """
+    found = {}
+    for hours, (low, high) in config.FRONT_WINDOWS_H.items():
+        if look_at + timedelta(hours=high) > now:
+            limits = {"from": look_at + timedelta(hours=low), "to": look_at + timedelta(hours=high)}
+            found[hours] = {name: at.isoformat(timespec="minutes") for name, at in limits.items()}
+    return found
+
+
+def front_rows(saved: dict, places: dict, inputs: dict, windows: dict) -> list[dict]:
     """Return one object for each front: its place, its size, and its chances for each window.
 
-    A window has the chance of new ground, of large growth, and of a new pixel in each sector.
+    A window has its limits, and the chance of new ground, of large growth, and of a new pixel in
+    each sector. A front with no inputs has no chance: the trees have no score for such a front.
     """
-    chance = {}
+    chance, usable = {}, forecast.has_inputs(inputs)
     for key, model in saved["models"].items():
         table, names = forecast.matrix(inputs, key[0] == "sector")
         if names != saved["names"][key]:
@@ -130,9 +161,13 @@ def front_rows(saved: dict, places: dict, inputs: dict) -> list[dict]:
     for front in range(len(places["pixels"])):
         one = {name: round(float(places[name][front]), 4) for name in ("lat", "lon")}
         one["pixels"] = int(places["pixels"][front])
-        for hours in config.FRONT_WINDOWS_H:
+        if not usable[front]:
+            one |= dict.fromkeys((f"hours_{hours}" for hours in windows), None)
+            found.append(one | {"no_forecast": NO_INPUTS})
+            continue
+        for hours, limits in windows.items():
             sectors = chance[("sector", hours)].reshape(-1, config.FRONT_SECTORS)[front]
-            one[f"hours_{hours}"] = {
+            one[f"hours_{hours}"] = limits | {
                 "new_ground": round(float(chance[("new_ground", hours)][front]), 4),
                 "large_growth": round(float(chance[("large_growth", hours)][front]), 4),
                 "sectors": {
@@ -194,7 +229,7 @@ def live_looks(store_path: Path, raw_dir: Path, now: datetime) -> list[dict]:
         look_at = datetime.fromtimestamp(float(places["start"][0]), UTC)
         times = {"look_at": look_at.isoformat(timespec="minutes")}
         times["made_at"] = now.isoformat(timespec="minutes")
-        rows = front_rows(saved, places, kept)
+        rows = front_rows(saved, places, kept, open_windows(look_at, now))
         for front, events in zip(rows, front_events(store, pixels, one), strict=True):
             front["events"] = events
         found.append(times | {"fronts": rows})

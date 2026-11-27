@@ -52,6 +52,12 @@ def matrix(inputs: dict, by_sector: bool) -> tuple[np.ndarray, tuple[str, ...]]:
     return np.column_stack(columns), tuple(front + sector)
 
 
+def has_inputs(inputs: dict) -> np.ndarray:
+    """Return True for each front with the inputs that a row needs: the weather before its look
+    on disk, and a pixel with a fire power. The trees have no row and no score for the others."""
+    return ~np.isnan(inputs["past_vpd"]) & ~np.isnan(inputs["log_frp_mean"])
+
+
 def case(rows: dict, question: str, hours: int) -> dict:
     """Return the rows of one question for one year: the inputs, the label and the baselines.
 
@@ -61,8 +67,7 @@ def case(rows: dict, question: str, hours: int) -> dict:
     True for each row of a small front.
     """
     answers, inputs = rows["answers"], rows["inputs"]
-    known = ~np.isnan(inputs["past_vpd"]) & ~np.isnan(inputs["log_frp_mean"])
-    fronts_in = answers[f"examined_{hours}"] & known
+    fronts_in = answers[f"examined_{hours}"] & has_inputs(inputs)
     small = answers["pixels"] < config.FRONT_SMALL_BELOW
     use, new = fronts_in, answers[f"new_{hours}"]
     if question == "sector":
