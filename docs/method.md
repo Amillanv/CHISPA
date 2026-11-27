@@ -2539,6 +2539,7 @@ section 11.31. The owner asked for this command on 2026-11-27.
    each window, with the mark of its trees. A direction has one decimal there, and the count of 45 degrees
    uses that value.
 8. Each run makes the table of a year again from all files of that year. A run with no answer makes no table.
+   The table of the run that answers the hypothesis must go into git with that run: a later run replaces it.
 
 The hypothesis, written on 2026-11-27 before a window of a saved forecast had an answer. The first files are of
 the look of 2026-11-27 16:41 UTC. The statements are for the table of a year, at the first run in which 100 or
@@ -2758,6 +2759,8 @@ gets a field. A negative result is a valid result.
   and one score on 2025 and 2026. This choice waits for the answer of the owner. The owner asked for this part
   on 2026-11-27 and was not there for the choice of the years. If the owner does not agree, the run on 2025 and
   2026 is a first look, and not the test of the part.
+- The event of an alert can get its VIIRS pixel by a merge with a fire near it: the answer is for the event,
+  not for the place of the first GOES detection. We did not count how many answers come from a merge.
 - A front at moment 24 says that VIIRS saw the fire of the event in 24 hours. It does not say that the
   fire is large, and no front does not say that the fire stopped: cloud hides a fire from VIIRS.
 - The time when a VIIRS pixel was available is an estimate for the years from the archive (`config.py`).
