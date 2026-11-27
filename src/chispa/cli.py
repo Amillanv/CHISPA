@@ -87,6 +87,7 @@ def main(arguments: list[str] | None = None) -> None:
     forecast.add_argument("--test-run", action="store_true", help="Also score the test years.")
     forecast.add_argument("--live", action="store_true", help="Forecast the newest fronts.")
     forecast.add_argument("--trees", action="store_true", help="Fit and save the live trees.")
+    forecast.add_argument("--score", action="store_true", help="Score the saved live forecasts.")
     poll = commands.add_parser("poll", help="Do one pass of the live poller: record the new rows.")
     since = "Read back the GOES scans and the INPE files to this UTC time, to fill a hole: "
     since += "2026-11-20T00:00:00+00:00. It does not change the FIRMS request."
@@ -122,7 +123,7 @@ def main(arguments: list[str] | None = None) -> None:
     elif chosen.command == "risk":
         checks.run_risk(chosen.test_run)
     elif chosen.command == "forecast":
-        checks.run_forecast(chosen.test_run, chosen.live, chosen.trees)
+        checks.run_forecast(chosen.test_run, chosen.live, chosen.trees, chosen.score)
     elif chosen.command == "images":
         checks.run_images(chosen.year, lambda: read_setting("EE_PROJECT"), chosen.look)
     elif chosen.command == "poll":

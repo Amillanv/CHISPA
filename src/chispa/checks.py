@@ -16,6 +16,7 @@ from chispa.evaluation import (
     candidates,
     curve,
     flames,
+    forecast_score,
     forecast_trees,
     front_alerts,
     fronts,
@@ -148,13 +149,14 @@ def run_advance(year: int, project: Callable[[], str]) -> None:
     print(f"{year}: {len(targets)} events. See results/SUMMARY.md, table advance_check.")
 
 
-def run_forecast(test_run: bool, live: bool, trees: bool) -> None:
+def run_forecast(test_run: bool, live: bool, trees: bool, score: bool) -> None:
     """Make the growth forecast tables of each development year, in one run.
 
     The numbers of a year come from models of the other years. A test run also makes the tables
     of the test years, one time, from the models of all development years.
     A live run makes no table: it gives the forecast of the fronts of the newest looks.
     `trees`: fit the trees of all development years, and save them for the live forecast.
+    `score`: make the table of the saved live forecasts against what came, and no other table.
     """
     if trees:
         mark = forecast_trees.fit(config.STORE_PATH, config.RAW_DIR)
@@ -170,7 +172,12 @@ def run_forecast(test_run: bool, live: bool, trees: bool) -> None:
         forecast_files.save(looks, config.FORECAST_LIVE_DIR, datetime.now(UTC))
         print(json.dumps({"hours": config.FORECAST_LIVE_HOURS, "looks": looks}, indent=2))
         return
-    tables = forecast_tables(config.STORE_PATH, config.RAW_DIR, test_run)
+    if score:
+        tables = forecast_score.score_tables(config.STORE_PATH, config.RAW_DIR, datetime.now(UTC))
+    else:
+        tables = forecast_tables(config.STORE_PATH, config.RAW_DIR, test_run)
+    if not tables:
+        raise SystemExit("No window of a saved forecast has an answer now. Try again later.")
     for year, of_year in tables.items():
         write_tables(of_year, year, config.RESULTS_DIR)
     write_summary(config.RESULTS_DIR)
