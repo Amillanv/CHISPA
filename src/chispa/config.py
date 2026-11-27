@@ -561,10 +561,10 @@ RESULTS_DIR = Path("results")
 # The pictures of the image check. Earth Engine can make them again, thus they are not raw files.
 IMAGE_DIR = DATA_DIR / "images"
 
-# The trees of the development years for the live growth forecast. `chispa forecast --live` makes
-# the file again when the first part of this file changes.
+# The trees of the development years for the live growth forecast. `chispa forecast --trees` makes
+# the file. Run it again when the first part of this file changes.
 FORECAST_MODELS_PATH = DATA_DIR / "forecast_models.pkl"
-# One file for each look with a live forecast. A later run can score them against what came.
+# One file for each look with a live forecast. `chispa forecast --score` scores the files.
 FORECAST_LIVE_DIR = DATA_DIR / "forecasts"
 # The live forecast is for the fronts of the looks that started in this many hours before now.
 FORECAST_LIVE_HOURS = 24

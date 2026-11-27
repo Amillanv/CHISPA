@@ -2160,7 +2160,7 @@ trees, as the event record loads the model of the confidence.
    came, or more fronts with a chance, or other trees. The first forecast stays as we gave it.
    `chispa update` makes a new file only for more pixels: after a new fit, `chispa forecast --live` makes it.
 6. `chispa update` makes the file of each new look as its last step, in each update. It does not fit the trees:
-   if the saved trees are not those of now, it says so, and `chispa forecast --live` fits them.
+   if the saved trees are not those of now, it says so, and `chispa forecast --trees` fits them.
    If a layer or the weather is absent, it says so, and the next update does the step again.
 7. The field `forecast` of the event record is the forecast of the newest look that has a front of the event. It
    comes from the newest file of that look that was complete at or before the as-of time. A front is a front of
