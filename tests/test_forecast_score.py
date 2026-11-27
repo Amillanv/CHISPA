@@ -31,6 +31,10 @@ def fixed_values(monkeypatch):
     monkeypatch.setattr("chispa.config.FRONT_DIRECTION_PIXELS", 3)
     monkeypatch.setattr("chispa.config.FRONT_SECTORS", 8)
     monkeypatch.setattr("chispa.config.ADVANCE_SAME_DEG", 45.0)
+    monkeypatch.setattr("chispa.config.LIVE_START", datetime(2023, 1, 1, tzinfo=UTC))
+    monkeypatch.setattr("chispa.config.LIVE_PASS_END_FROM", datetime(2023, 1, 1, tzinfo=UTC))
+    monkeypatch.setattr("chispa.config.LIVE_POLL_LATE", timedelta(minutes=15))
+    monkeypatch.setattr("chispa.config.LIVE_LOOKBACK", timedelta(days=4))
 
 
 def store_of(tmp_path, pixels: list[tuple[float, float, float]]):
@@ -119,8 +123,8 @@ def test_the_forecast_of_a_look_is_its_newest_file_before_the_first_window(tmp_p
         look = saved_of(pixels) | {"look_at": look_at.isoformat(timespec="minutes")}
         forecast_files.save([look], tmp_path, look_at + timedelta(hours=hours))
 
-    # The first window starts 6 hours after the look. The file of 7 hours is too late.
-    for pixels, hours in ((3, 3.5), (5, 4.5), (7, 7.0)):
+    # The first window starts 6 hours after the look. A file of that moment or later is too late.
+    for pixels, hours in ((3, 3.5), (5, 4.5), (6, 6.0), (7, 7.0)):
         save(LOOK, pixels, hours)
     # A look with only a late file, and a look of 31 December: its windows end in the next year.
     save(LOOK + timedelta(hours=12), 3, 6.5)
@@ -131,26 +135,62 @@ def test_the_forecast_of_a_look_is_its_newest_file_before_the_first_window(tmp_p
     ]
 
 
-def test_a_window_has_a_row_6_hours_after_its_end(tmp_path):
+def poller(raw_dir, passes: list[tuple[float, str]]) -> None:
+    """Write the poll log: (hours after the look, the result of FIRMS) for each pass."""
+    days: dict[str, list[str]] = {}
+    for hours, result in passes:
+        at = (LOOK + timedelta(hours=hours)).isoformat()
+        rows = days.setdefault(at[:10], ["polled_at,source,item,result,new_rows"])
+        rows += [f"{at},firms,VIIRS_NOAA20_NRT,{result},0", f"{at},pass,end,ok,0"]
+    folder = raw_dir / "live" / "polls"
+    folder.mkdir(parents=True, exist_ok=True)
+    for day, rows in days.items():
+        (folder / f"{day}.csv").write_text("\n".join(rows) + "\n")
+
+
+def test_a_window_has_an_answer_only_if_a_pass_of_the_poller_can_give_it(tmp_path):
+    # The window of 12 hours is from 6 to 18 hours after the look. Its answer needs a pass with
+    # no failure from 24 hours after the look, to 4 days after the start of the window.
+    window, late = saved_of()["fronts"][0]["hours_12"], LOOK + timedelta(hours=200)
+    assert not forecast_score.answered(tmp_path, window, late)  # The poller has no pass.
+    poller(tmp_path / "early", [(23, "ok")])
+    assert not forecast_score.answered(tmp_path / "early", window, late)
+    poller(tmp_path / "failed", [(23, "ok"), (24, "HTTP 500")])
+    assert not forecast_score.answered(tmp_path / "failed", window, late)
+    poller(tmp_path / "read", [(23, "ok"), (24, "ok")])
+    assert forecast_score.answered(tmp_path / "read", window, late)
+    # Half an hour before that pass, the answer is not there.
+    assert not forecast_score.answered(tmp_path / "read", window, LOOK + timedelta(hours=23.5))
+    # A stop of the poller: the next pass is 103 hours after the look. The read-back of 4 days
+    # from that pass starts after the start of the window: its pixels are lost.
+    poller(tmp_path / "stop", [(23, "ok"), (103, "ok")])
+    assert not forecast_score.answered(tmp_path / "stop", window, late)
+    poller(tmp_path / "back", [(23, "ok"), (101, "ok")])
+    assert forecast_score.answered(tmp_path / "back", window, late)
+
+
+def test_a_window_has_a_row_when_it_has_an_answer(tmp_path):
     store = store_of(tmp_path, FRONT + NEW)
     saved = saved_of()
     answers = forecast_score.front_answers(saved, forecast_score.as_seen(store, saved), masks_of())
-    # The window of 12 hours ends at 23:00. At 04:00 the last pixels can be absent.
-    assert forecast_score.front_table(saved, answers, LOOK + timedelta(hours=23)) == []
-    (row,) = forecast_score.front_table(saved, answers, LOOK + timedelta(hours=24))
+    poller(tmp_path, [(hours, "ok") for hours in range(41)])  # One pass each hour.
+
+    def table(forecast: dict, came: dict | None, hours: float) -> list[dict]:
+        return forecast_score.front_table(forecast, came, tmp_path, LOOK + timedelta(hours=hours))
+
+    # The window of 12 hours ends 18 hours after the look. 5 hours later is too early.
+    assert table(saved, answers, 23) == []
+    (row,) = table(saved, answers, 24)
     assert (row["hours"], row["pixels"], row["new_ground"], row["trees"]) == (12, 3, 0.4, "mark")
     assert (row["same_look"], row["examined"], row["answer"]) == (True, True, "new_ground")
     assert (row["new_pixels"], row["forecast_direction_deg"], row["direction_deg"]) == (3, 90, 90)
     # 36 hours after the look, the window of 24 hours has its row also.
-    both = forecast_score.front_table(saved, answers, LOOK + timedelta(hours=36))
-    assert [one["hours"] for one in both] == [12, 24]
+    assert [one["hours"] for one in table(saved, answers, 36)] == [12, 24]
     # A look with no answers has its rows, with no answer in them.
-    (row,) = forecast_score.front_table(saved, None, LOOK + timedelta(hours=24))
+    (row,) = table(saved, None, 24)
     assert (row["same_look"], row["examined"], row["answer"]) == (False, None, None)
     # A front with no chance has no row.
-    assert (
-        forecast_score.front_table(saved_of(chance=None), answers, LOOK + timedelta(hours=36)) == []
-    )
+    assert table(saved_of(chance=None), answers, 36) == []
 
 
 def row_of(chance: float, new: int, persistence: float, examined: bool | None = True) -> dict:
@@ -182,39 +222,24 @@ def test_the_summary_scores_only_the_fronts_that_goes_examined():
     assert (small["fronts"], small["examined"], small["auc_trees"]) == (0, 0, None)
 
 
-def test_the_live_data_ends_with_the_newest_pass_that_read_each_source(tmp_path, monkeypatch):
-    monkeypatch.setattr("chispa.config.LIVE_START", datetime(2023, 1, 1, tzinfo=UTC))
-    monkeypatch.setattr("chispa.config.LIVE_PASS_END_FROM", datetime(2023, 1, 1, tzinfo=UTC))
-    monkeypatch.setattr("chispa.config.LIVE_POLL_LATE", timedelta(minutes=15))
+def test_the_command_stops_if_the_store_did_not_read_each_row_of_a_firms_log(tmp_path):
     store = open_store(tmp_path / "store.sqlite")
-    now = LOOK + timedelta(hours=30)
-    # No pass of the poller: the store has no live data that we know of.
-    assert forecast_score.data_to(store, tmp_path, now) is None
-    # A pass at 05:00 read each source. In the pass at 05:05, FIRMS failed.
-    polls = tmp_path / "live" / "polls" / "2023-09-02.csv"
-    polls.parent.mkdir(parents=True)
-    rows = ["polled_at,source,item,result,new_rows"]
-    for minute, result in ((0, "ok"), (5, "HTTP 500")):
-        at = f"2023-09-02T05:{minute:02d}:00+00:00"
-        rows += [f"{at},firms,VIIRS_NOAA20_NRT,{result},0", f"{at},pass,end,ok,0"]
-    polls.write_text("\n".join(rows) + "\n")
-    assert forecast_score.data_to(store, tmp_path, now) == datetime(2023, 9, 2, 5, 0, tzinfo=UTC)
-    # A FIRMS log on disk has a row that the store did not read: the answers can be wrong.
+    forecast_score.check_store(store, tmp_path)  # No log on disk: nothing to read.
     log = tmp_path / "live" / "firms" / "VIIRS_NOAA20_NRT" / "2023-09-02.csv"
     log.parent.mkdir(parents=True)
     log.write_text("one row\n")
+    # The log has a row that the store did not read: the answers can be wrong.
     with pytest.raises(RuntimeError, match="Run `chispa update`"):
-        forecast_score.data_to(store, tmp_path, now)
+        forecast_score.check_store(store, tmp_path)
     save_log_size(store, "live/firms/VIIRS_NOAA20_NRT/2023-09-02.csv", log.stat().st_size)
-    assert forecast_score.data_to(store, tmp_path, now) == datetime(2023, 9, 2, 5, 0, tzinfo=UTC)
+    forecast_score.check_store(store, tmp_path)
 
 
 def test_the_command_saves_the_rows_and_gives_the_table_of_each_year(tmp_path, monkeypatch):
     monkeypatch.setattr("chispa.config.FORECAST_LIVE_DIR", tmp_path / "forecasts")
     monkeypatch.setattr("chispa.config.RESULTS_DIR", tmp_path / "results")
     monkeypatch.setattr(steps, "masks_in", lambda raw_dir: masks_of())
-    # The store has the live data to the time of the run.
-    monkeypatch.setattr(forecast_score, "data_to", lambda store, raw_dir, now: now)
+    poller(tmp_path, [(hours, "ok") for hours in range(41)])  # One pass each hour.
     store_of(tmp_path, FRONT + NEW).close()
     forecast_files.save([saved_of()], tmp_path / "forecasts", LOOK + timedelta(hours=3.5))
     path = tmp_path / "store.sqlite"

@@ -32,21 +32,32 @@ def _hours() -> tuple[int, int]:
     return min(low for low, _ in windows), max(high for _, high in windows)
 
 
-def data_to(store: sqlite3.Connection, raw_dir: Path, now: datetime) -> datetime | None:
-    """Return the time to which the store has the live data. None: the poller has no such pass.
+def check_store(store: sqlite3.Connection, raw_dir: Path) -> None:
+    """Stop if a FIRMS log on disk has a row that the store did not read.
 
-    It is the newest pass of the poller that read each source with no failure (`polls.py`).
-    The time of the clock is not sufficient: after a stop of a source, the later pixels of a
-    window come late, and "no pixel" must not become "no new ground". The store must also have
-    each row of the FIRMS logs on disk: if not, this stops and says what to do.
+    The answers come from the pixels of the store: a pixel that is only in a log is not in them.
     """
     read = read_log_sizes(store)
     for source, path in live_logs(raw_dir):
         name = path.relative_to(raw_dir).as_posix()
         if source == "firms" and read.get(name) != path.stat().st_size:
             raise RuntimeError(f"The store does not have each row of {name}. Run `chispa update`.")
-    at = polls.status(raw_dir, now)["complete_pass_at"]
-    return datetime.fromisoformat(at) if at else None
+
+
+def answered(raw_dir: Path, window: dict, now: datetime) -> bool:
+    """Return True if the live data can give the answer of one window of a saved forecast.
+
+    The poller must have a pass that read each source with no failure (`polls.py`) in a span of
+    time. The span starts some hours after the end of the window: the hours in which a look must
+    be complete (`config.py`), because the pixels of its last pass come late. The span ends one
+    read-back of the poller after the start of the window: a later pass does not get the pixels
+    and the masks of the window. The time of the clock is not sufficient: after a stop of a
+    source, "no pixel" must not become "no new ground".
+    """
+    first = datetime.fromisoformat(window["to"]) + timedelta(hours=_hours()[0])
+    last = min(now, datetime.fromisoformat(window["from"]) + config.LIVE_LOOKBACK)
+    at = polls.status(raw_dir, last)["complete_pass_at"] if first <= last else None
+    return at is not None and datetime.fromisoformat(at) >= first
 
 
 def issued(folder: Path, year: int) -> list[dict]:
@@ -62,7 +73,7 @@ def issued(folder: Path, year: int) -> list[dict]:
     for path in sorted(folder.glob(f"{year}-*.json")):
         saved = json.loads(path.read_text())
         look_at = datetime.fromisoformat(saved["look_at"])
-        in_time = datetime.fromisoformat(saved["made_at"]) <= look_at + timedelta(hours=first)
+        in_time = datetime.fromisoformat(saved["made_at"]) < look_at + timedelta(hours=first)
         if in_time and (look_at + timedelta(hours=longest)).year == year:
             found[saved["look_at"]] = saved  # The files are in the sequence of their times.
     return list(found.values())
@@ -131,21 +142,21 @@ def _came(answers: dict | None, hours: int, number: int) -> dict:
     }
 
 
-def front_table(saved: dict, answers: dict | None, known: datetime) -> list[dict]:
+def front_table(saved: dict, answers: dict | None, raw_dir: Path, now: datetime) -> list[dict]:
     """Return one row for each front and each window of a saved forecast that has an answer.
 
-    `known` is the time to which the store has the live data (`data_to`). A window has an answer
-    if that time is some hours after its end: the hours in which a look must be complete
-    (`config.py`), because the pixels of the last pass of the window come late. A front with no
-    chance has no row. `same_look` is False if the look has no answers (`as_seen`).
+    A window has an answer if the live data can give it at the time of now (`answered`). A front
+    with no chance has no row. `same_look` is False if the look has no answers (`as_seen`).
     """
-    table, wait = [], timedelta(hours=_hours()[0])
+    table, has = [], {}
     for number, front in enumerate(saved["fronts"]):
         for hours in config.FRONT_WINDOWS_H:
             window = front.get(f"hours_{hours}")
             if window is None or window["new_ground"] is None:
                 continue
-            if datetime.fromisoformat(window["to"]) + wait > known:
+            if hours not in has:  # The fronts of one file have the same windows.
+                has[hours] = answered(raw_dir, window, now)
+            if not has[hours]:
                 continue
             guess = forecast.directions(np.array(list(window["sectors"].values()))[None])[0]
             row = {name: saved[name] for name in ("look_at", "made_at")}
@@ -198,16 +209,14 @@ def score_tables(store_path: Path, raw_dir: Path, now: datetime) -> dict[int, di
     year. The masks are those of the live poller: each scan that it recorded.
     """
     store, folder, tables = sqlite3.connect(store_path), config.FORECAST_LIVE_DIR, {}
-    known = data_to(store, raw_dir, now)
-    if known is None:
-        return {}
+    check_store(store, raw_dir)
     masks = steps.masks_in(raw_dir / "live")
     for year in sorted({int(path.name[:4]) for path in folder.glob("*.json")}):
         table = []
         for saved in issued(folder, year):
             seen = as_seen(store, saved)
             answers = front_answers(saved, seen, masks) if seen else None
-            table += front_table(saved, answers, known)
+            table += front_table(saved, answers, raw_dir, now)
         if table:
             burn.write(config.RESULTS_DIR / str(year) / "forecast_live" / "fronts.csv", table)
             tables[year] = {"forecast_live": summary(table)}
