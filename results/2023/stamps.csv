@@ -16,6 +16,16 @@ configurations,652c3a3f5e8f,2026-11-26
 events,652c3a3f5e8f,2026-11-26
 fire_events,652c3a3f5e8f,2026-11-26
 fire_sizes,652c3a3f5e8f,2026-11-26
+forecast,df8ac8bde25f,2026-11-27
+forecast_chances,df8ac8bde25f,2026-11-27
+forecast_direction,df8ac8bde25f,2026-11-27
+forecast_first_look,df8ac8bde25f,2026-11-27
+forecast_inputs,df8ac8bde25f,2026-11-27
+forecast_sectors,df8ac8bde25f,2026-11-27
+front_alerts,df8ac8bde25f,2026-11-27
+front_flames,df8ac8bde25f,2026-11-27
+front_steps,df8ac8bde25f,2026-11-27
+front_steps_small,df8ac8bde25f,2026-11-27
 growth_steps,a84ef20c2e1b,2026-11-23
 merge_gain,652c3a3f5e8f,2026-11-26
 risk,652c3a3f5e8f,2026-11-26

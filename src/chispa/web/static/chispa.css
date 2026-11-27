@@ -88,7 +88,8 @@ button { cursor: pointer; }
 .mode .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--fg-4); }
 .mode.live .dot { background: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); animation: breathe 2.4s ease-in-out infinite; }
 .mode.live { color: var(--fg-1); }
-.reading { display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 7px; padding: 0 14px; border-left: 1px solid var(--hair); }
+.reading { display: flex; flex-direction: row; justify-content: center; align-items: center; padding: 0 14px; border-left: 1px solid var(--hair); }
+.reading.lag {gap: 7px}
 .reading.zone {padding: 5px;}
 .reading .label { font-size: 8.5px; white-space: nowrap;}
 .reading .mono { font-size: 12.5px; color: var(--fg-1); white-space: nowrap; }

@@ -3,11 +3,13 @@
 Wind, rain and dry air are the usual causes of a fire that grows, and the share of the alerts
 that become large changes with the year. ERA5-Land is a record of the weather of each hour on
 a grid of approximately 11 km. We save four measures of each day on that grid.
+A second file has the wind with its direction, for each block of 6 hours: a fire front goes
+where the wind goes, and the largest speed of a day does not say where that is.
 It is a record of the past, not a forecast: a day is in the product some days after it.
 """
 
 from calendar import monthrange
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import ee
@@ -22,6 +24,11 @@ ASSET = "ECMWF/ERA5_LAND/HOURLY"
 # A day is a UTC day.
 MEASURES = ("wind_kmh", "vpd_kpa", "temp_c", "rain_mm")
 NO_VALUE = -9999.0  # A cell of water has no value in the product.
+# The wind of a block: where the air goes, to the east and to the north, and its mean speed.
+# The two parts are means of the hours: a wind that turns in a block gives a short arrow.
+WIND = ("east_kmh", "north_kmh", "speed_kmh")
+BLOCK_HOURS = 6  # A UTC day has four blocks. The first starts at 00:00.
+PART = ".part"  # The end of the name of the file of a month in progress (`bucket.source_files`).
 
 
 def weather_grid() -> Grid:
@@ -36,8 +43,8 @@ def weather_grid() -> Grid:
 def download_year(year: int, project: str, raw_dir: Path) -> list[Path]:
     """Save one file for each complete month of one year and return the paths.
 
-    A file has one layer for each day of the month, for each measure. A month is complete
-    if the product has its last hour: a month in progress gets no file.
+    A file has one layer for each day of the month, for each measure. A day is complete if the
+    product has its last hour. A month in progress gets a file with its complete days.
     """
     ee.Initialize(project=project)
     recent = ee.ImageCollection(ASSET).filterDate(f"{year}-01-01", f"{year + 1}-01-01")
@@ -45,15 +52,36 @@ def download_year(year: int, project: str, raw_dir: Path) -> list[Path]:
     paths = []
     for month in range(1, 13):
         days = monthrange(year, month)[1]
-        if f"{year}-{month:02d}-{days:02d} 23" > newest:
+        complete = sum(f"{year}-{month:02d}-{day:02d} 23" <= newest for day in range(1, days + 1))
+        if complete:
+            paths += _save_month(raw_dir, date(year, month, complete), complete == days)
+        if complete < days:
             break
-        path = raw_dir / "weather" / str(year) / f"{month:02d}.npz"
+    return paths
+
+
+def _save_month(raw_dir: Path, last: date, complete: bool) -> list[Path]:
+    """Save the measures file and the wind file of one month, to the day `last`.
+
+    The file of a month in progress has a name that ends in `.part`: it is not a raw file yet,
+    and it does not go to the bucket. Each fetch makes it again. Return the complete files.
+    """
+    paths = []
+    for kind, get in (("weather", _get_day), ("wind", _get_wind)):
+        path = raw_dir / kind / str(last.year) / f"{last.month:02d}.npz"
+        part = path.with_name(path.name + PART)
         if not path.exists():
-            layers = [_get_day(date(year, month, day)) for day in range(1, days + 1)]
+            layers = [get(last.replace(day=day)) for day in range(1, last.day + 1)]
+            if kind == "wind":
+                stacked = {"wind": np.concatenate(layers)}
+            else:
+                stacked = {name: np.stack([layer[name] for layer in layers]) for name in MEASURES}
             path.parent.mkdir(parents=True, exist_ok=True)
-            stacked = {name: np.stack([layer[name] for layer in layers]) for name in MEASURES}
-            np.savez_compressed(path, **stacked)
-        paths.append(path)
+            with (path if complete else part).open("wb") as file:
+                np.savez_compressed(file, **stacked)
+        if complete:
+            part.unlink(missing_ok=True)
+            paths.append(path)
     return paths
 
 
@@ -66,6 +94,26 @@ def _get_day(day: date) -> dict[str, np.ndarray]:
     )
     layers = {name: tile[name].astype(np.float32) for name in MEASURES}
     return {name: np.where(layer <= NO_VALUE, np.nan, layer) for name, layer in layers.items()}
+
+
+def _get_wind(day: date) -> np.ndarray:
+    """Return the wind of one day: one layer for each block and each part of `WIND`."""
+    grid, start, bands = weather_grid(), ee.Date(day.isoformat()), []
+    for block in range(24 // BLOCK_HOURS):
+        first = start.advance(block * BLOCK_HOURS, "hour")
+        hours = ee.ImageCollection(ASSET).filterDate(first, first.advance(BLOCK_HOURS, "hour"))
+        parts = hours.select(["u_component_of_wind_10m", "v_component_of_wind_10m"]).mean()
+        speed = hours.map(lambda hour: _measures(hour).select(MEASURES[0])).mean()
+        # Metres for each second to km/h. The speed of `_measures` is in km/h.
+        bands.append(
+            parts.multiply(3.6).addBands(speed).rename([f"{name}{block}" for name in WIND])
+        )
+    image = ee.Image.cat(bands).unmask(NO_VALUE)
+    tile = again(lambda: read_window(image, grid, (0, 0), (grid.width, grid.height)))
+    layers = np.array(
+        [[tile[f"{name}{block}"] for name in WIND] for block in range(len(bands))], dtype=np.float32
+    )
+    return np.where(layers <= NO_VALUE, np.nan, layers)
 
 
 def _measures(hour: ee.Image) -> ee.Image:
@@ -104,3 +152,45 @@ def read_days(raw_dir: Path, first: date, last: date) -> dict[str, np.ndarray]:
     start = (first - date(first.year, first.month, 1)).days
     count = (last - first).days + 1
     return {name: np.concatenate(parts)[start : start + count] for name, parts in found.items()}
+
+
+def read_part(raw_dir: Path, month: date) -> tuple[dict[str, np.ndarray], np.ndarray] | None:
+    """Return the complete days of a month in progress: each measure, and the wind blocks.
+
+    None: the month of the day `month` has no such files. `chispa fetch weather` makes them.
+    """
+    file = f"{month.month:02d}.npz{PART}"
+    days, wind = (raw_dir / kind / str(month.year) / file for kind in ("weather", "wind"))
+    if not (days.exists() and wind.exists()):
+        return None
+    saved = np.load(days)
+    return {name: saved[name] for name in MEASURES}, np.load(wind)["wind"]
+
+
+def read_newest(raw_dir: Path, first: date, limit: date) -> tuple[dict, np.ndarray]:
+    """Return each measure of each day, and the wind of each block, from the month of `first`
+    to the newest day on disk, and not past the month of `limit`.
+
+    It reads each complete month in sequence, then the complete days of a month in progress.
+    The first month can be the month in progress: a forecast of January needs December.
+    """
+    days: dict[str, list] = {name: [] for name in MEASURES}
+    wind, month = [], first.replace(day=1)
+    while month <= limit:
+        folders = [raw_dir / kind / str(month.year) for kind in ("weather", "wind")]
+        paths = [folder / f"{month.month:02d}.npz" for folder in folders]
+        found = None
+        if all(path.exists() for path in paths):
+            found = np.load(paths[0]), np.load(paths[1])["wind"]
+        found = found or read_part(raw_dir, month)
+        if found is None:
+            break
+        for name in MEASURES:
+            days[name].append(found[0][name])
+        wind.append(found[1])
+        if not paths[0].exists():
+            break
+        month = (month.replace(day=28) + timedelta(days=4)).replace(day=1)
+    if not wind:
+        raise RuntimeError(f"Run `chispa fetch weather --year {first.year}` first.")
+    return {name: np.concatenate(parts) for name, parts in days.items()}, np.concatenate(wind)
