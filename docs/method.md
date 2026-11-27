@@ -2139,7 +2139,8 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
    ERA5-Land to its last day on disk.
    The later days come from Open-Meteo, with the model IFS, for the weather cell of each front.
 4. The answer of the command is JSON: one object for each look, with the time of the look, the time to which it
-   has pixels (`pixels_to`), the minimum of a large growth on that day, and each front.
+   has pixels (`pixels_to`), the minimum of a large growth on that day, the mark of the trees that made it
+   (`trees`), and each front.
    A front has its centre, its number of pixels, and the ids of the events of its pixels as we
    issued them: an alert is for an event, and this list joins a front to its alerts. An issued id does not change
    when two events merge. For each window, a front has the limits of the window as
@@ -2150,7 +2151,8 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
 5. Each look gets its object as a file in `data/forecasts` (`forecast_files.py`). A file has `made_at`: the time
    when it was complete, which is later than `pixels_to`. Its name has the time of the look and that time, and a
    file does not change. A look gets a second file when a forecast has more pixels, because a second satellite
-   came, or more fronts with a chance. The first forecast stays as we gave it.
+   came, or more fronts with a chance, or other trees. The first forecast stays as we gave it.
+   `chispa update` makes a new file only for more pixels: after a new fit, `chispa forecast --live` makes it.
 6. `chispa update` makes the file of each new look as its last step, in each update. It does not fit the trees:
    if the saved trees are not those of now, it says so, and `chispa forecast --live` fits them.
    If a layer or the weather is absent, it says so, and the next update does the step again.

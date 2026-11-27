@@ -180,15 +180,15 @@ def look_forecast(
     one: dict, pixels: dict, layers: front_inputs.Layers, saved: dict, now: datetime
 ) -> dict:
     """Return the object of one look: its time, the time to which it has pixels, and the forecast
-    of each front. The object has the minimum of a large growth: a later reader needs the value
-    of the day of the forecast."""
+    of each front. The object has the minimum of a large growth and the mark of its trees: a
+    later reader needs the values of the day of the forecast."""
     keep = one["keep"]
     inputs = front_inputs.look_inputs(pixels, one["bounds"], one["look"], layers)
     places = {name: values[keep] for name, values in one["places"].items()}
     kept = {name: values[keep] for name, values in inputs.items()}
     look_at = _look_at(one)
     times = {"look_at": look_at.isoformat(timespec="minutes"), "pixels_to": to_text(now)}
-    times["large_growth_pixels"] = config.FRONT_LARGE_PIXELS
+    times |= {"large_growth_pixels": config.FRONT_LARGE_PIXELS, "trees": saved["config"]}
     return times | {"fronts": front_rows(saved, places, kept, open_windows(look_at, now))}
 
 
