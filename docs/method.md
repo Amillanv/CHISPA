@@ -2357,8 +2357,8 @@ look can have. `chispa forecast` makes the tables.
 
 1. A look before 1 July (`config.py`) has no value for the two inputs from the annual map of the year before: the
    burned share on the front, and ahead of it in each sector. The map of a year comes in April to July of the next
-   year (`docs/sources.md` section 8.5). From 1 July a look has those inputs. In a year in progress the map can
-   be absent from the disk: then they have no value. A year of the past must have its map on disk.
+   year (`docs/sources.md` section 8.5). From 1 July a look has those inputs. For a live forecast the map can
+   be absent from the disk: then they have no value. The rows of a test must have the map on disk.
 2. A front gets the land cover of two years before, or of the last year that the map has (`config.py`) if that
    is older. We have no checked day for the land cover map of a year. `UNVERIFIED`: we assume that the map of two
    years before exists at each look.
@@ -2370,15 +2370,10 @@ look can have. `chispa forecast` makes the tables.
    other fronts apart, with persistence and the wind for the same fronts. The calendar makes the two groups,
    not the map on disk.
 
-Two probes outside the repository came first (2026-11-27). They had 2019 to 2024, and for each year the trees of
-the other years with the complete maps:
-
-- For the 5283 fronts of 3 pixels or more before 1 June, the mean AUC of new ground at 12 hours was 0.7754 with
-  the map of the year before, 0.7765 with no value, and 0.7772 with the map of two years before in its place.
-  The direction was in 45 degrees for 254, 255 and 256 of 471 fronts. Thus the probe found no cost of no
-  value: the differences are 0.0011 in the AUC and 1 front.
-- The land cover of two years before had a small cost for all fronts of 2020 to 2024: 0.8284 against 0.8294
-  at 12 hours, lower in 4 of 5 years.
+Two probes outside the repository came first (2026-11-27), on 2019 to 2024 with the trees of section 11.30.
+They gave the two rules: no value before 1 July had no cost that we could measure, and the land cover of two
+years before had a small cost. Their numbers are not in this document: no command of the repository makes them.
+The tables below have the cost of the two rules together, as "Trees" against "Trees before".
 
 The result of the development years (tables `forecast`, `forecast_direction` and `forecast_periods` of 2019 to
 2024, 2026-11-27). Each year has the trees of the five other years. Each AUC is the mean of the six years.
@@ -2413,13 +2408,15 @@ The fronts of 3 pixels or more before 1 July, and the other fronts (table `forec
   and by 0.0013 at 24 hours, and the direction is the same.
 - The trees have a higher AUC than persistence and than the regression in each year, for each row of the first
   table. Their Brier skill score is more than 0 in each cell of year, question, hours and size.
-- The stated chances hold for the six years together. For the fronts of 3 pixels or more they expect 11 098.4
-  fronts with new ground at 12 hours, and 11 015 had it. At 24 hours: 15 528.9 and 15 557.
+- The sum of the stated chances is near the count, for the six years together. For the fronts of 3 pixels or
+  more the chances expect 11 098.4 fronts with new ground at 12 hours, and 11 015 had it. At 24 hours: 15 528.9
+  and 15 557. A sum does not show each band of the chance: the table `forecast_chances` has the bands.
   For one year, observed to expected is 0.88 to 1.12 at 12 hours, and 0.86 to 1.10 at 24 hours. For the small
   fronts it is 0.74 to 1.20, and 0.73 to 1.19.
-- Before 1 July the forecast is weaker than in the other months: these are the fires of the wet months.
-  The trees are above persistence in 6 of 6 years. The lowest year is 2021: 0.6688 at 12 hours, with 34 fronts
-  with new ground of 517.
+- Before 1 July the mean AUC is lower than in the other months: 0.7784 against 0.8245 at 12 hours. It is not
+  lower in each year: in 2019 it is 0.8368 against 0.8160. The two groups have different fires and different
+  inputs, thus the table does not say why. The trees are above persistence in 6 of 6 years. The lowest year
+  is 2021: 0.6688 at 12 hours, with 34 fronts with new ground of 517.
 
 The hypothesis, written on 2026-11-27 before the run on 2025 and 2026. The numbers above were known.
 The test years get the trees of 2019 to 2024, one time.
@@ -2439,7 +2436,8 @@ The rules 1 to 4 stay with each result: they are what a live forecast has. The r
 is with them. A negative result is a valid result.
 
 - This is a third score of the fronts of 3 pixels or more of 2025 and 2026, and a second score of their small
-  fronts. The trees are new, and the answers were read before.
+  fronts. The trees are new, and the answers were read before. Thus statement 2 compares two analyses of the
+  same fronts: it is not an independent test of the limit of 0.01.
 - 1 July is one day for each year. The map of 2025 was in Earth Engine on 2026-04-09, and that of 2024 on
   2025-05-21 or before (`docs/sources.md` section 8.5).
 - We have no checked day for the land cover map. `UNVERIFIED`: a year comes in the second half of the next year.
@@ -2525,7 +2523,9 @@ The agent must:
 3. Say when the data is old. Give the age of the newest detection.
 4. Say "no detection" and not "no fire". A satellite does not see through thick cloud.
 5. Give intensity as FRP in megawatts, with the sensor name.
-6. Give growth only as measured growth. Do not call it a forecast.
+6. Give measured growth as measured growth: do not call it a forecast. Give a growth forecast only from the field
+   `forecast` of the event record (section 11.29). Give its chance with the times of its window. Give no direction
+   for a front of 1 or 2 pixels. Give no distance and no speed of the growth to come.
 7. Refuse to estimate a value that no tool gives.
 
 ### 12.3 Burn questions

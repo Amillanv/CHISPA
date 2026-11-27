@@ -66,7 +66,7 @@ def live_layers(raw_dir: Path, centres: np.ndarray, last: date) -> front_inputs.
     The days after the last day of ERA5-Land on disk come from Open-Meteo, for the weather cells
     of the centres.
     """
-    layers = front_inputs.load_layers(raw_dir, last.year)
+    layers = front_inputs.load_layers(raw_dir, last.year, live=True)
     first = layers.first_day + timedelta(days=len(layers.days["rain_mm"]))
     if first > last:
         return layers

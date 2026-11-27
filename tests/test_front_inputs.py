@@ -114,39 +114,35 @@ def test_a_look_before_the_map_of_last_year_has_no_value_from_that_map(monkeypat
 
 
 def test_the_layers_of_a_year_have_only_the_maps_that_a_look_can_have(tmp_path, monkeypatch):
-    # The year in progress, and a year of the past. Each has the maps to two years before now.
-    now = datetime.now(UTC).year
-    past = now - 2
     monkeypatch.setattr("chispa.config.FRONT_COVER_YEARS_BEFORE", 2)
-    monkeypatch.setattr("chispa.config.LANDCOVER_LAST_YEAR", now - 2)
+    monkeypatch.setattr("chispa.config.LANDCOVER_LAST_YEAR", 2024)
     nothing = ({}, np.zeros((0, 3, 1, 1)))
     monkeypatch.setattr(weather, "read_newest", lambda *arguments: nothing)
     grass = min(front_inputs.config.COVER_GROUPS["grassland"])
     number = list(front_inputs.config.COVER_GROUPS).index("grassland") + 1
     (tmp_path / "landcover").mkdir()
     (tmp_path / "burned").mkdir()
-    for year in range(past - 3, now - 1):
-        cover = np.full((2, 2), grass if year == now - 2 else 0, dtype=np.uint8)
+    for year in (2021, 2022, 2023, 2024):
+        cover = np.full((2, 2), grass if year == 2024 else 0, dtype=np.uint8)
         np.savez(tmp_path / "landcover" / f"{year}.npz", cover=cover)
-        np.savez(tmp_path / "burned" / f"{year}.npz", percent=np.full((2, 2), year - past + 10))
-    # A look of the past year gets the land cover of two years before, and the burned map of the
-    # year before: 9 percent.
-    layers = front_inputs.load_layers(tmp_path, past)
+        np.savez(tmp_path / "burned" / f"{year}.npz", percent=np.full((2, 2), year - 2000))
+    # A look of 2024 gets the land cover of 2022, and the burned map of 2023: 23 percent.
+    layers = front_inputs.load_layers(tmp_path, 2024)
     assert layers.cover.tolist() == [[0, 0], [0, 0]]
-    assert layers.burned[0][0, 0] == np.float32(0.09)
-    # A year of the past must have the burned map of the year before it.
-    (tmp_path / "burned" / f"{past - 1}.npz").rename(tmp_path / "burned" / "moved.npz")
-    with pytest.raises(RuntimeError, match=f"chispa fetch burned --year {past - 1}"):
-        front_inputs.load_layers(tmp_path, past)
-    (tmp_path / "burned" / "moved.npz").rename(tmp_path / "burned" / f"{past - 1}.npz")
-    # A look of the year in progress: the burned map of the year before is not on disk, thus it
-    # has no value. The two maps before it have their values.
-    layers = front_inputs.load_layers(tmp_path, now)
+    assert layers.burned[0][0, 0] == np.float32(0.23)
+    # The burned map of 2025 is not on disk. The rows of a test stop with an instruction: thus
+    # two computers make the same trees.
+    with pytest.raises(RuntimeError, match="chispa fetch burned --year 2025"):
+        front_inputs.load_layers(tmp_path, 2026)
+    # A live forecast gets no value from that map, and the two maps before it have their values.
+    layers = front_inputs.load_layers(tmp_path, 2026, live=True)
     assert layers.cover.tolist() == [[number, number], [number, number]]
-    assert np.isnan(layers.burned[0]).all() and layers.burned[1][0, 0] == np.float32(0.1)
+    assert np.isnan(layers.burned[0]).all() and layers.burned[1][0, 0] == np.float32(0.24)
     # A land cover year that is later than the last year of the map: the last year of the map.
     monkeypatch.setattr("chispa.config.FRONT_COVER_YEARS_BEFORE", 0)
-    assert front_inputs.load_layers(tmp_path, now).cover.tolist() == layers.cover.tolist()
+    assert (
+        front_inputs.load_layers(tmp_path, 2026, live=True).cover.tolist() == layers.cover.tolist()
+    )
 
 
 def test_the_weather_before_a_look_and_the_wind_to_each_sector():
