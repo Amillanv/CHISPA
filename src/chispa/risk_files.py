@@ -35,7 +35,8 @@ def save_models(saved: dict, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     # An update can load the file at the moment of a save. It must not read a part of the file,
     # and a save that stops must not lose the file that exists: the name changes last.
-    part = path.with_name(path.name + ".part")
+    # Two updates can make the file at one time: each has its own part.
+    part = path.with_name(f"{path.name}.{os.getpid()}.part")
     part.write_text(json.dumps(saved | {"config": config_hash()}))
     part.replace(path)
 

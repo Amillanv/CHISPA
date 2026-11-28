@@ -34,7 +34,9 @@ def published(raw_dir, year: int, months: dict[int, str]) -> None:
     (folder / "published.json").write_text(json.dumps(months))
 
 
-def test_map_of_now_has_the_months_that_came_before_now(tmp_path):
+def test_map_of_now_has_the_months_that_came_before_now(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.RISK_LIVE_DAYS", 30)
+    monkeypatch.setattr("chispa.config.RISK_RECALIBRATION_WINDOW_DAYS", 365)
     published(tmp_path, 2023, {11: "2023-12-12T00:00:00+00:00", 12: "2024-01-14T00:00:00+00:00"})
     published(tmp_path, 2024, {6: "2024-07-11T00:00:00+00:00", 7: "2024-08-25T00:00:00+00:00"})
     # On 20 August the map of July was not there: it came on 25 August.
@@ -45,8 +47,11 @@ def test_map_of_now_has_the_months_that_came_before_now(tmp_path):
     # a map, and the next look for a new month gets it again.
     (tmp_path / "monitor" / "2024-08").mkdir()
     assert monitor.months_on_disk(2024, tmp_path) == 7
-    # On 5 January 2025 the new year has no month in the map.
-    assert risk_save.map_months(datetime(2025, 1, 5, tzinfo=UTC), tmp_path) == {2024: 7}
+    # On 5 January 2025 the new year has no month in the map. An answer of that day can be for
+    # a moment of December, and its window of 365 days starts in 2023: three years.
+    assert list(risk_save.outcome_years(datetime(2025, 1, 5, tzinfo=UTC))) == [2023, 2024, 2025]
+    assert risk_save.map_months(datetime(2025, 1, 5, tzinfo=UTC), tmp_path) == {2023: 12, 2024: 7}
+    assert list(risk_save.outcome_years(NOW)) == [2023, 2024]
 
 
 def test_rows_stop_some_days_before_the_end_of_the_complete_weather(tmp_path, monkeypatch):

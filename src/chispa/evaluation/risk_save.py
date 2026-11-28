@@ -29,11 +29,21 @@ from chispa.sources import burnday, monitor, weather
 from chispa.store import to_text
 
 
+def outcome_years(now: datetime) -> range:
+    """Return each year with an older alert that the factor of an answer can read.
+
+    An answer can be for a moment of some days before now, and its window starts some days
+    before that moment (`config.py`). In January that is a third year.
+    """
+    days = config.RISK_LIVE_DAYS + config.RISK_RECALIBRATION_WINDOW_DAYS
+    return range((now - timedelta(days=days)).year, now.year + 1)
+
+
 def map_months(now: datetime, raw_dir: Path) -> dict[int, int]:
-    """Return the last month of the saved Monitor map at a time, for this year and the year
-    before. A year with no month in the map at that time is not in the answer."""
+    """Return the last month of the saved Monitor map at a time, for each year of the known
+    outcomes. A year with no month in the map at that time is not in the answer."""
     found = {}
-    for year in (now.year - 1, now.year):
+    for year in outcome_years(now):
         if monitor.months_on_disk(year, raw_dir):
             came = monitor.read_published(year, raw_dir)
             months = [month for month, time in came.items() if time <= now]
@@ -45,7 +55,7 @@ def map_months(now: datetime, raw_dir: Path) -> dict[int, int]:
 def pull_maps(now: datetime, raw_dir: Path, project: str) -> None:
     """Get each new month of the Monitor map and of the burn days."""
     newest = monitor.image_times(project)
-    for year in (now.year - 1, now.year):
+    for year in outcome_years(now):
         has = max((m for m in range(1, 13) if f"brazil-{year}-{m}" in newest), default=0)
         if has > monitor.months_on_disk(year, raw_dir):
             monitor.download_year(year, project, raw_dir, pantanal_grid())

@@ -116,8 +116,9 @@ The event is the event as it was at that time (`issued.py`), not the event of th
   pixels has its chances and no sectors: the forecast has no direction for it (section 11.30).
 - `growth_risk` is `None` when the alert that started the event has no file of the growth risk at the as-of time.
   It has `at_30_minutes` and `at_24_hours`, each when its file is there. For each limit of hectares it has the
-  chance, the rank, the factor and the mark "not tested". A chance is `None` for a limit with a rank only, for an
-  alert with only GOES rows of INPE, and for an alert near an earlier alert: `no_percentage` gives the reason,
+  chance, the rank, the factor and the mark "not tested". A chance is `None` for a limit with a rank only: that
+  is a rule for the limit, and the alert has its other chances. Each chance is `None` for an alert with only
+  GOES rows of INPE, and for an alert near an earlier alert: `no_percentage` gives the reason for the alert,
   and `near_earlier` names the earlier alert. `no_answer` gives the reason for an alert with no answer.
 - `hours_from_first_detection` is a minimum of the age of a fire. The fire started before its first detection,
   and we do not know how long before. For a small fire under cloud, that time can be days.
@@ -2839,7 +2840,7 @@ The rules:
    gets no answer. An alert whose first detection is not in the biome gets no answer.
 2. The saved file `data/risk_models.json` has the six models of section 11.24, with the weights of each year with
    an annual map. It has the values of the alerts that gave the weights: the rank of a new value comes from them.
-   It has the known outcomes of the older alerts of this year and of the year before. An outcome comes from the
+   It has the known outcomes of the older alerts of each year that the window of an answer can read. An outcome comes from the
    Monitor map with the months that it has now, by the rules of the replay (section 11.25). The value of an older
    alert comes from the models of the years with an annual map before its year. An alert after the last month
    of the map is not an older alert with an outcome: with a map that is late, it must not count as "no fire".
