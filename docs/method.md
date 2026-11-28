@@ -2708,6 +2708,8 @@ front. `chispa forecast --front-chance` makes the tables `front_chance`, `front_
    its event at that moment is a GOES detection.
 2. The answer of a row is yes if its event has a front at moment 24: 24 hours after its first detection was
    available (`config.py`). A front is a VIIRS pixel of FIRMS that was available then (section 11.26, rule 10).
+   An event keeps its alerts and their pixels (`issued.py`). Thus an event that got a front at a time before
+   moment 24 has a front at moment 24: the two say the same.
 3. The inputs are those of the growth risk at moment 0 (section 11.22), without the ground that burned
    before: an alert before 1 July does not have the map of the year before (section 11.31). There are 30:
    the inputs of the confidence without the calendar and the fire power, the first hours, and the late weather.
@@ -2844,10 +2846,10 @@ a check of that.
    detection is not in the biome, or it is a part of an older event, or its place has no weather.
 3. Each chance is one file in `data/front_chances`, with the name of the file of the growth risk of its alert.
    A file does not change. It has the chance, the mark of the model and the time of the file of the inputs.
-   It has the time of the update that made it (`made_at`), and the time `until`: 24 hours after CHISPA had the
+   It has the time when the update made it (`made_at`), and the time `until`: 24 hours after CHISPA had the
    first detection.
-4. An update makes a chance only before `until`: `made_at` is the time of that rule. After `until` the store
-   has the answer: a chance from then is not a forecast.
+4. An update makes a chance only before `until`: `made_at` is the time of that rule, for each file. After
+   `until` the store has the answer: a chance from then is not a forecast.
 5. The field `forecast` of the event record has `front_chance` for the alert that started the event, from
    `made_at` to `until`. A forecast of a front of the event replaces it (section 11.29, rule 7). It also goes
    when the event has a VIIRS pixel of FIRMS: the event has a front then, and the question has its answer.
@@ -2858,6 +2860,8 @@ a check of that.
   no front are evidence that it does not have. In 2025 and 2026, only GOES started 1211 first alerts (table
   `front_alerts`). 521 of them had a front at 24 hours, and 487 of those had it at 12 hours. Thus 34 of the
   724 with no front at 12 hours got one in the next 12 hours. A chance for a later time has no model.
+  The table counts each delay apart. The subtraction is correct because an event keeps its pixels (rule 2
+  of the test). `PLAN.md` has a check of the same alerts at the two delays.
 - A file can be later than the moment of its alert, and later than the first VIIRS pixel of its event:
   `made_at` says how late. Its inputs are those of the moment. A score must take the late files apart.
 - The check of the live inputs is that of the growth risk (table `risk_live_inputs`, section 11.35): it has the

@@ -96,7 +96,7 @@ def update_front_chance() -> str:
 
     This is a step of `chispa update`, after the growth risk: it reads the files of that step.
     """
-    return front_chance.update(datetime.now(UTC))
+    return front_chance.update(lambda: datetime.now(UTC))
 
 
 def run_burn(year: int, project: Callable[[], str]) -> None:

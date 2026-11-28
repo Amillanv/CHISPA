@@ -11,6 +11,7 @@ the evaluation. Each chance is one file that does not change, and the event reco
 """
 
 import json
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -85,18 +86,19 @@ def answer(risk: dict, saved: dict, made_at: datetime) -> dict | None:
     return {name: risk[name] for name in KEPT} | made | {"made_at": to_text(made_at)}
 
 
-def update(now: datetime) -> str:
+def update(clock: Callable[[], datetime]) -> str:
     """Make the file of each alert with a new chance, and return one line for `chispa update`.
 
     This step comes after the growth risk in an update: it reads the files of that step.
+    `clock` gives the time of now. Each file gets its own time, for the rule of the second
+    moment and for `made_at`: a file does not say a time before we made it.
     """
     saved = risk_files.load_models(config.FRONT_CHANCE_MODEL_PATH)
     if saved is None:
         return "front chance: no saved model of now. Run `chispa forecast --front-chance`."
     folder, new = config.FRONT_CHANCE_LIVE_DIR, 0
-    for path in due(config.RISK_LIVE_DIR, folder, now):
-        # One time for the rule of the second moment and for the file: the two cannot differ.
-        made = answer(json.loads(path.read_text()), saved, now)
+    for path in due(config.RISK_LIVE_DIR, folder, clock()):
+        made = answer(json.loads(path.read_text()), saved, clock())
         if made is None:
             continue
         try:
@@ -115,9 +117,9 @@ def of_event(folder: Path, found: dict, event_id: int, as_of: datetime) -> dict 
     end, and only while the event has no VIIRS pixel of FIRMS: with such a pixel the event has
     a front, and the question has its answer.
     """
-    first = risk_files.first_of(found, event_id)
     front = (found["family"] == fronts.SENSOR_FAMILY) & (found["source"] == fronts.SOURCE)
-    if first is None or front.any():
+    first = None if front.any() else risk_files.first_of(found, event_id)
+    if first is None:
         return None
     path = risk_files.path_of(folder, MOMENT, first)
     if not path.exists():

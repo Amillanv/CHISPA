@@ -105,21 +105,37 @@ def test_an_alert_of_december_is_due_in_january(tmp_path):
 
 def test_update_makes_one_file_for_each_chance_and_does_not_change_it(tmp_path, monkeypatch):
     now = AVAILABLE + timedelta(hours=1)
-    assert "Run `chispa forecast --front-chance`" in front_chance.update(now)
+    assert "Run `chispa forecast --front-chance`" in front_chance.update(lambda: now)
     risk_files.save_models(SAVED, tmp_path / "model.json")
     risk_files.save(risk_of(AVAILABLE, ONLY_GOES), tmp_path / "risks", now)
     # A second alert of the same poll, at a different place, with a VIIRS detection.
     other = risk_of(AVAILABLE, ONLY_GOES | {"families": 2.0}) | {"first_lat": -18.5}
     risk_files.save(other, tmp_path / "risks", now)
-    assert front_chance.update(now) == "front chance: 1 new files."
+    assert front_chance.update(lambda: now) == "front chance: 1 new files."
     (path,) = (tmp_path / "front_chances" / "2024").glob("*.json")
     first = json.loads(path.read_text())
     assert (first["chance"], first["alert"], first["moment_h"]) == (0.75, 100, "0")
-    assert front_chance.update(now + timedelta(hours=1)) == "front chance: 0 new files."
+    assert front_chance.update(lambda: now + timedelta(hours=1)) == "front chance: 0 new files."
     assert json.loads(path.read_text()) == first
     # A model of other settings is not the model of now.
     monkeypatch.setattr(risk_files, "config_hash", lambda: "other settings")
-    assert "no saved model of now" in front_chance.update(now)
+    assert "no saved model of now" in front_chance.update(lambda: now)
+
+
+def test_an_update_that_goes_past_the_second_moment_makes_no_file(tmp_path):
+    risk_files.save_models(SAVED, tmp_path / "model.json")
+    start = AVAILABLE + timedelta(hours=1)
+    risk_files.save(risk_of(AVAILABLE, ONLY_GOES), tmp_path / "risks", start)
+    # The update finds the alert one second before its second moment, and makes the file at it.
+    until = AVAILABLE + timedelta(hours=24)
+    times = iter([until - timedelta(seconds=1), until])
+    assert front_chance.update(lambda: next(times)) == "front chance: 0 new files."
+    assert not (tmp_path / "front_chances").exists()
+    # The time of a file is the time when the update made it, not the time of its start.
+    times = iter([start, start + timedelta(seconds=5)])
+    assert front_chance.update(lambda: next(times)) == "front chance: 1 new files."
+    (path,) = (tmp_path / "front_chances" / "2024").glob("*.json")
+    assert json.loads(path.read_text())["made_at"] == to_text(start + timedelta(seconds=5))
 
 
 def test_the_file_of_a_chance_gets_its_name_from_the_file_of_the_growth_risk(tmp_path):
@@ -131,7 +147,7 @@ def test_the_file_of_a_chance_gets_its_name_from_the_file_of_the_growth_risk(tmp
     absent = ("first_observed_at", "first_lat", "first_lon")
     risk = json.loads(path.read_text())
     path.write_text(json.dumps({key: value for key, value in risk.items() if key not in absent}))
-    assert front_chance.update(now) == "front chance: 1 new files."
+    assert front_chance.update(lambda: now) == "front chance: 1 new files."
     # The record finds the file of the chance by the first detection of the alert.
     assert risk_files.path_of(tmp_path / "front_chances", "0", FIRST).exists()
 
