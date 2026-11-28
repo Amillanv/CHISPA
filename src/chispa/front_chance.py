@@ -19,7 +19,9 @@ import numpy as np
 from chispa import confidence, config, fronts, risk_files
 from chispa.store import to_text
 
-MOMENT = "0"  # The first moment of the growth risk: one pass gap after the first detection.
+# The two moments of the growth risk. The chance comes from the inputs of the first moment, one
+# pass gap after the first detection. It is for a front before the second moment.
+MOMENT, END = "0", "24"
 # What a file of the chance keeps from the file of the growth risk of its alert.
 KEPT = ("alert", "moment_h", "moment_at", "first_available_at", "lat", "lon", "detections")
 KEPT += ("weather_open_meteo_days",)
@@ -46,38 +48,41 @@ def path_of(folder: Path, risk_path: Path) -> Path:
 
 def due(risk_folder: Path, folder: Path, now: datetime) -> list[Path]:
     """Return the file of the growth risk at the first moment of each alert that can get a
-    chance now: its second moment is after now, and it has no file of the chance.
+    chance now, and has no file of the chance.
 
-    After the second moment the store has the answer: a chance from then is not a forecast.
+    The first moment of the alert is not after now, and its second moment is after now.
     The name of a file starts with the time when CHISPA had the first detection of its alert.
     """
-    oldest = now - timedelta(hours=config.SEVERITY_EVAL_HOURS)
+    seconds = confidence.moment_seconds()
+    newest, oldest = (now - timedelta(seconds=seconds[moment]) for moment in (MOMENT, END))
     found = []
     for year in sorted({oldest.year, now.year}):
         for path in sorted((risk_folder / str(year)).glob(f"*_{MOMENT}.json")):
             first = datetime.strptime(path.name.split("_")[0], risk_files.FIRST)
-            if first.replace(tzinfo=UTC) > oldest and not path_of(folder, path).exists():
+            in_time = oldest < first.replace(tzinfo=UTC) <= newest
+            if in_time and not path_of(folder, path).exists():
                 found.append(path)
     return found
 
 
-def answer(risk: dict, saved: dict) -> dict | None:
-    """Return the chance of a front of one alert, from the file of its growth risk at the first
-    moment and the saved model.
+def answer(risk: dict, saved: dict, made_at: datetime) -> dict | None:
+    """Return the chance of a front of one alert, as we give it at the time `made_at`.
 
-    None: the alert has no inputs, or it has a detection of a sensor that is not GOES.
-    `until` is the second moment of the alert: the chance is for a front before that time.
+    `risk` is the file of the growth risk of the alert at the first moment, and `saved` has the
+    model. `until` is the second moment of the alert: the chance is for a front before that time.
+    None: the alert has no inputs, or it has a detection of a sensor that is not GOES, or
+    `made_at` is not before `until`. Then the store has the answer: a chance is not a forecast.
     """
     values = risk.get("inputs")
-    if values is None or not only_goes(values):
+    first = datetime.fromisoformat(risk["first_available_at"])
+    until = first + timedelta(seconds=confidence.moment_seconds()[END])
+    if values is None or not only_goes(values) or made_at >= until:
         return None
     model = saved["model"]
     row = np.array([[values[name] for name in model["inputs"]]])
-    first = datetime.fromisoformat(risk["first_available_at"])
-    until = first + timedelta(hours=config.SEVERITY_EVAL_HOURS)
     made = {"chance": round(float(confidence.probability(model, row)[0]), 4)}
     made |= {"until": to_text(until), "model": saved["mark"], "inputs_made_at": risk["made_at"]}
-    return {name: risk[name] for name in KEPT} | made
+    return {name: risk[name] for name in KEPT} | made | {"made_at": to_text(made_at)}
 
 
 def update(now: datetime) -> str:
@@ -90,10 +95,10 @@ def update(now: datetime) -> str:
         return "front chance: no saved model of now. Run `chispa forecast --front-chance`."
     folder, new = config.FRONT_CHANCE_LIVE_DIR, 0
     for path in due(config.RISK_LIVE_DIR, folder, now):
-        made = answer(json.loads(path.read_text()), saved)
+        # One time for the rule of the second moment and for the file: the two cannot differ.
+        made = answer(json.loads(path.read_text()), saved, now)
         if made is None:
             continue
-        made["made_at"] = to_text(datetime.now(UTC))
         try:
             risk_files.write_new(path_of(folder, path), made)
         except FileExistsError:  # A different update made this chance first: it stays.

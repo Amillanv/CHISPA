@@ -37,13 +37,14 @@ def risk_of(first: datetime, values: dict | None, moment: str = "0") -> dict:
 def save_chance(folder, made: datetime) -> None:
     """Save the chance of the alert as a file that was complete at a time."""
     risk = risk_of(AVAILABLE, ONLY_GOES) | {"made_at": to_text(made)}
-    chance = front_chance.answer(risk, SAVED) | {"made_at": to_text(made)}
+    chance = front_chance.answer(risk, SAVED, made)
     risk_files.write_new(risk_files.path_of(folder, "0", FIRST), chance)
 
 
 @pytest.fixture(autouse=True)
 def settings(monkeypatch, tmp_path):
     monkeypatch.setattr("chispa.config.SEVERITY_EVAL_HOURS", 24.0)
+    monkeypatch.setattr("chispa.config.PASS_GAP", timedelta(minutes=30))
     monkeypatch.setattr("chispa.config.RISK_LIVE_DIR", tmp_path / "risks")
     monkeypatch.setattr("chispa.config.FRONT_CHANCE_LIVE_DIR", tmp_path / "front_chances")
     monkeypatch.setattr("chispa.config.FRONT_CHANCE_MODEL_PATH", tmp_path / "model.json")
@@ -51,20 +52,29 @@ def settings(monkeypatch, tmp_path):
 
 
 def test_only_an_alert_with_goes_detections_gets_a_chance():
-    risk = risk_of(AVAILABLE, ONLY_GOES) | {"made_at": to_text(AVAILABLE + timedelta(minutes=31))}
-    made = front_chance.answer(risk, SAVED)
+    at = AVAILABLE + timedelta(minutes=31)
+    risk = risk_of(AVAILABLE, ONLY_GOES) | {"made_at": to_text(at)}
+    made = front_chance.answer(risk, SAVED, at)
     # Odds of 3 to 1 are a chance of 0.75. The chance is for a front in the 24 hours.
     assert (made["chance"], made["model"]) == (0.75, "the mark")
     assert made["until"] == to_text(AVAILABLE + timedelta(hours=24))
-    assert made["inputs_made_at"] == risk["made_at"]
+    assert (made["made_at"], made["inputs_made_at"]) == (to_text(at), risk["made_at"])
     # An alert with a GOES detection and a VIIRS detection has two sensor families.
     both = ONLY_GOES | {"families": 2.0}
-    assert front_chance.answer(risk | {"inputs": both}, SAVED) is None
+    assert front_chance.answer(risk | {"inputs": both}, SAVED, at) is None
     # An alert with one family that is not GOES.
     viirs = ONLY_GOES | {"has_abi": 0.0}
-    assert front_chance.answer(risk | {"inputs": viirs}, SAVED) is None
+    assert front_chance.answer(risk | {"inputs": viirs}, SAVED, at) is None
     # An alert with no answer of the growth risk has no inputs.
-    assert front_chance.answer(risk_of(AVAILABLE, None), SAVED) is None
+    assert front_chance.answer(risk_of(AVAILABLE, None), SAVED, at) is None
+
+
+def test_a_chance_from_the_second_moment_or_later_is_not_made():
+    risk = risk_of(AVAILABLE, ONLY_GOES) | {"made_at": to_text(AVAILABLE + timedelta(minutes=31))}
+    # An update can find the alert one second before its second moment, and make the file later.
+    until = AVAILABLE + timedelta(hours=24)
+    assert front_chance.answer(risk, SAVED, until - timedelta(seconds=1))["chance"] == 0.75
+    assert front_chance.answer(risk, SAVED, until) is None
 
 
 def test_an_alert_is_due_before_its_second_moment_and_with_no_file(tmp_path):
@@ -77,6 +87,9 @@ def test_an_alert_is_due_before_its_second_moment_and_with_no_file(tmp_path):
     risk_files.save(risk_of(AVAILABLE, ONLY_GOES, moment="24"), risks, now)
     assert front_chance.due(risks, folder, now) == [new]
     assert front_chance.due(risks, folder, AVAILABLE + timedelta(hours=24)) == []
+    # Before the first moment of the alert, 30 minutes after its first detection, it is not due.
+    assert front_chance.due(risks, folder, AVAILABLE + timedelta(minutes=29)) == []
+    assert front_chance.due(risks, folder, AVAILABLE + timedelta(minutes=30)) == [new]
     # The file of the chance has the name of the file of the growth risk, in its own folder.
     assert front_chance.path_of(folder, new) == risk_files.path_of(folder, "0", FIRST)
     save_chance(folder, now)
