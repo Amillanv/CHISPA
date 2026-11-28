@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from chispa.grid import Grid
@@ -23,6 +24,27 @@ def test_month_grid_has_the_first_month_with_a_burn():
         [12, 12, 0, 0, 0],
         [12, 12, 1, 1, 1],
     ]
+
+
+def test_map_of_one_month_comes_from_the_folder_of_that_month(tmp_path):
+    import shutil
+
+    shutil.copytree(SAMPLES / "monitor" / "2025-12", tmp_path / "monitor" / "2025-12")
+    later = tmp_path / "monitor" / "2025-13"
+    later.mkdir()
+    # A later folder for the year, with a tile that has a different value for each pixel.
+    for path in (SAMPLES / "monitor" / "2025-12").glob("r*_c*.npz"):
+        tile = np.load(path)["month"]
+        np.savez_compressed(later / path.name, month=np.full_like(tile, 7))
+    # A folder is a map only with the file that a download writes last.
+    assert monitor.read_year(2025, tmp_path, GRID)[1] == 12
+    shutil.copy(SAMPLES / "monitor" / "2025-12" / "published.json", later / "published.json")
+    newest, last = monitor.read_year(2025, tmp_path, GRID)
+    assert last == 13 and (newest == 7).all()
+    pinned, last = monitor.read_year(2025, tmp_path, GRID, month=12)
+    assert last == 12 and pinned[1].tolist() == [12, 12, 0, 0, 0]
+    # A month with no folder of its own: the newest folder is read.
+    assert monitor.read_year(2025, tmp_path, GRID, month=6)[1] == 13
 
 
 def test_year_with_no_folder_says_what_to_do():

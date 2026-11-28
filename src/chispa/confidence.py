@@ -33,6 +33,16 @@ INPUTS = (
     "near_log",
 )
 LATER_INPUTS = ("extent_km_log", "has_advance")  # Only at the second moment.
+MOMENTS = ("0", "24")  # The two moments of a model, in hours after the first alert.
+
+
+def moment_seconds() -> dict[str, float]:
+    """Return the seconds from the first detection of an alert to each moment.
+
+    The first moment is one pass gap after the first detection: the detections of the first
+    pass are complete then.
+    """
+    return {"0": config.PASS_GAP.total_seconds(), "24": config.SEVERITY_EVAL_HOURS * 3600}
 
 
 def inputs(found: dict, seen: dict) -> dict[str, float]:

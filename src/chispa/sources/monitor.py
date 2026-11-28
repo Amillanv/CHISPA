@@ -45,6 +45,29 @@ def burned_ha(box: Box, first: datetime, last: datetime) -> float:
     return round(float(found.get("burned") or 0), 2)
 
 
+def image_times(project: str) -> dict[str, str]:
+    """Return the time of the last change of each month image of the asset, by its name."""
+    ee.Initialize(project=project)
+    images = ee.data.listAssets({"parent": ASSET, "pageSize": 1000})["assets"]
+    return {image["name"].rsplit("/", 1)[-1]: image["updateTime"] for image in images}
+
+
+def _maps(year: int, raw_dir: Path) -> list[Path]:
+    """Return the folders of one year that are a complete map, the oldest month first.
+
+    A folder counts only with its file `published.json`, which `download_year` writes last.
+    Thus a download that stopped is not a map, and the next download gets its other tiles.
+    """
+    folders = sorted((raw_dir / "monitor").glob(f"{year}-[0-9][0-9]"))
+    return [folder for folder in folders if (folder / "published.json").exists()]
+
+
+def months_on_disk(year: int, raw_dir: Path) -> int:
+    """Return the last month of one year that the saved map has. 0: the year has no map."""
+    complete = _maps(year, raw_dir)
+    return int(complete[-1].name[-2:]) if complete else 0
+
+
 def download_year(year: int, project: str, raw_dir: Path, grid: Grid) -> list[Path]:
     """Save the map of one year as tiles and return the paths.
 
@@ -53,9 +76,7 @@ def download_year(year: int, project: str, raw_dir: Path, grid: Grid) -> list[Pa
     folder when the map has one more month, and a folder never changes. The file
     `published.json` has the time of the last change of each month image.
     """
-    ee.Initialize(project=project)
-    images = ee.data.listAssets({"parent": ASSET, "pageSize": 1000})["assets"]
-    changed = {image["name"].rsplit("/", 1)[-1]: image["updateTime"] for image in images}
+    changed = image_times(project)
     months = [month for month in range(1, 13) if f"brazil-{year}-{month}" in changed]
     if not months:
         raise RuntimeError(f"The Monitor map has no month of {year}.")
@@ -81,14 +102,20 @@ def download_year(year: int, project: str, raw_dir: Path, grid: Grid) -> list[Pa
     return paths
 
 
-def read_year(year: int, raw_dir: Path, grid: Grid) -> tuple[np.ndarray, int]:
+def read_year(
+    year: int, raw_dir: Path, grid: Grid, month: int | None = None
+) -> tuple[np.ndarray, int]:
     """Return the month grid of one year, and the last month that the map had.
 
-    With more than one folder for the year, the folder with the newest month is read.
+    With more than one folder for the year, the folder with the newest month is read. With
+    `month`, the folder of that month is read if it is on disk: a result for the map of one
+    month then does not change when a later month comes.
     """
-    folders = sorted((raw_dir / "monitor").glob(f"{year}-[0-9][0-9]"))
+    folders = _maps(year, raw_dir)
     if not folders:
         raise RuntimeError(f"Run `chispa fetch monitor --year {year}` first.")
+    if month and (raw_dir / "monitor" / f"{year}-{month:02d}") in folders:
+        folders = [raw_dir / "monitor" / f"{year}-{month:02d}"]
     months = np.zeros((grid.height, grid.width), dtype=np.uint8)
     covered = 0
     for path in sorted(folders[-1].glob("r*_c*.npz")):
@@ -107,8 +134,8 @@ def read_published(year: int, raw_dir: Path) -> dict[int, datetime]:
     An image that did not change after its first day in the asset has the time when the map
     of that month came. The newest folder of the year has the file.
     """
-    folders = sorted((raw_dir / "monitor").glob(f"{year}-[0-9][0-9]"))
-    if not folders or not (folders[-1] / "published.json").exists():
+    folders = _maps(year, raw_dir)
+    if not folders:
         raise RuntimeError(f"Run `chispa fetch monitor --year {year}` first.")
     found = json.loads((folders[-1] / "published.json").read_text())
     return {int(month): datetime.fromisoformat(time) for month, time in found.items()}

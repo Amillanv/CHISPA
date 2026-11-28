@@ -540,6 +540,20 @@ RISK_RECALIBRATION_PRIOR = 10.0
 # this number of large alerts in the test has no answer (owner, 2026-11-25).
 RISK_TEST_YEAR = 2026
 RISK_TEST_MIN_LARGE = 30
+# The test reads only the alerts with a moment at or before this time: those of its first run.
+# `chispa update` gets each new month of the Monitor map, and a later month must not add alerts
+# to the test by accident. The alerts after this time are the next test: the owner sets its day.
+RISK_TEST_UNTIL = datetime(2026, 9, 2, tzinfo=UTC)
+# What a live alert gives (`docs/method.md` section 11.35). For a moment and a limit in the
+# first value it gives a rank and no percentage. For one in the second value its percentage has
+# the mark "not tested". The owner decided the two on 2026-11-26, after the first test run.
+RISK_RANK_ONLY = (("0", 1000.0),)
+RISK_NOT_TESTED = (("24", 1000.0),)
+# An alert is near an earlier alert if a detection of a different alert is not farther than this
+# from one of its detections. That detection was available before the first detection of the
+# alert, and not more than this number of days before it. The two values are from 2023.
+RISK_NEAR_EARLIER_M = 1000.0
+RISK_NEAR_EARLIER_DAYS = 14
 
 # === The values above this line can change a result. The configuration hash covers them. ===
 # The values below this line change no number in a result table.
@@ -569,11 +583,25 @@ FORECAST_LIVE_DIR = DATA_DIR / "forecasts"
 # The live forecast is for the fronts of the looks that started in this many hours before now.
 FORECAST_LIVE_HOURS = 24
 
+# What a live alert needs for its growth risk: the models, and the known outcomes of the older
+# alerts. `chispa update` makes the file, and it makes it again for a new month of the Monitor map.
+RISK_MODELS_PATH = DATA_DIR / "risk_models.json"
+# One file for each alert at each moment, with the growth risk as we gave it.
+RISK_LIVE_DIR = DATA_DIR / "risks"
+# An alert gets its growth risk if its moment was in this many days before now.
+RISK_LIVE_DAYS = 30
+# `chispa update` asks one time in this many hours if the Monitor map has a new month.
+RISK_MAP_CHECK_HOURS = 24
+
 # Seconds between two requests, to stay far below the limit of the API.
 FIRMS_PAUSE_S = 1.0
 
 # The side of a download tile in pixels. Earth Engine limits the size of one request.
 SCAR_TILE_PX = 2048
+
+# The burn day product had a month 40 to 51 days after its end (`docs/sources.md` section 8.9).
+# For this number of days after its end, a month can be absent from the files of a year.
+BURNDAY_LATE_DAYS = 60
 
 # --- Live operation ---
 
