@@ -1,7 +1,7 @@
 """Tests of the file of the live growth risk, with cases small enough for paper."""
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import numpy as np
 import pytest
@@ -39,10 +39,12 @@ def test_map_of_now_has_the_months_that_came_before_now(tmp_path):
     published(tmp_path, 2024, {6: "2024-07-11T00:00:00+00:00", 7: "2024-08-25T00:00:00+00:00"})
     # On 20 August the map of July was not there: it came on 25 August.
     assert risk_save.map_months(NOW, tmp_path) == {2023: 12, 2024: 6}
-    assert (monitor.months_on_disk(2024, tmp_path), monitor.months_on_disk(2022, tmp_path)) == (
-        7,
-        0,
-    )
+    assert monitor.months_on_disk(2024, tmp_path) == 7
+    assert monitor.months_on_disk(2022, tmp_path) == 0
+    # A download of August that stopped has a folder with no file `published.json`: it is not
+    # a map, and the next look for a new month gets it again.
+    (tmp_path / "monitor" / "2024-08").mkdir()
+    assert monitor.months_on_disk(2024, tmp_path) == 7
     # On 5 January 2025 the new year has no month in the map.
     assert risk_save.map_months(datetime(2025, 1, 5, tzinfo=UTC), tmp_path) == {2024: 7}
 
@@ -84,9 +86,18 @@ def test_outcomes_are_those_of_the_alerts_that_a_live_alert_can_be(tmp_path, mon
     rows = [alert(1.0, 500.0, day=1.0), alert(0.0, 0.0, day=2.0)]
     rows += [alert(1.0, 500.0, day=3.0, near_earlier=True)]
     rows += [alert(1.0, 500.0, day=4.0, only_inpe_goes=True), alert(1.0, 0.0, day=5.0, known=True)]
-    monkeypatch.setattr(risk_save, "rows_of_month", lambda *_: {"0": [dict(r) for r in rows]})
+    ends = []
+
+    def rows_of_month(year, month, end, paths):
+        ends.append(end)
+        return {"0": [dict(r) for r in rows]}
+
+    monkeypatch.setattr(risk_save, "rows_of_month", rows_of_month)
     paths = (tmp_path / "store", tmp_path, NOW)
     past = risk_save.known_outcomes(parts, models, {2024: 6}, paths)["0h_100ha"]
+    # The map has the months to June: an alert of July has no outcome in it. The weather is
+    # complete to 20 August, and the rows stop at the end of June.
+    assert ends == [datetime(2024, 7, 1, tzinfo=UTC)]
     # The alert near an earlier alert and the alert with only GOES rows of INPE are left out.
     # The alert that the map puts on a known fire stays: a live alert does not have that mark.
     assert past["time"] == [DAY, 2 * DAY, 5 * DAY]
@@ -119,16 +130,25 @@ def test_file_is_made_again_only_for_a_new_month(tmp_path, monkeypatch):
     assert (saved["made_at"], saved["map_checked_at"]) == (to_text(NOW), to_text(later))
 
 
-def test_burn_days_of_the_year_before_can_be_in_progress(tmp_path):
-    this_year = datetime.now(UTC).year
-    for year, months in ((this_year - 1, 10), (this_year - 2, 10)):
+def test_month_of_burn_days_can_be_absent_only_while_the_product_is_late(tmp_path, monkeypatch):
+    monkeypatch.setattr("chispa.config.BURNDAY_LATE_DAYS", 60)
+    for year, months in ((2026, 10), (2025, 10)):
         folder = tmp_path / "burnday" / str(year)
         folder.mkdir(parents=True)
         for month in range(1, months + 1):
             np.savez_compressed(folder / f"{month:02d}.npz", day=np.ones((2, 2), dtype=np.uint16))
-    # The product has a month some weeks after its end: in January the year before has no
-    # file for its last months. An older year with no file for a month is not complete.
-    found = burnday.read_year(this_year - 1, tmp_path)
+    # On 20 January 2027, November 2026 ended 51 days before: the product can be without it.
+    monkeypatch.setattr(burnday, "_today", lambda: date(2027, 1, 20))
+    found = burnday.read_year(2026, tmp_path)
     assert found.shape == (12, 2, 2) and found[9].all() and not found[10].any()
-    with pytest.raises(RuntimeError, match="fetch burnday"):
-        burnday.read_year(this_year - 2, tmp_path)
+    # 2025 with no file for November is a download that stopped: its end was long before.
+    with pytest.raises(RuntimeError, match="fetch burnday --year 2025"):
+        burnday.read_year(2025, tmp_path)
+    # On 1 March 2027, November 2026 ended 91 days before: its file must be there.
+    monkeypatch.setattr(burnday, "_today", lambda: date(2027, 3, 1))
+    with pytest.raises(RuntimeError, match="fetch burnday --year 2026"):
+        burnday.read_year(2026, tmp_path)
+    # A new year with no file: on 20 February the product is without January, and no month has
+    # a burn day.
+    monkeypatch.setattr(burnday, "_today", lambda: date(2027, 2, 20))
+    assert not burnday.read_year(2027, tmp_path).any()

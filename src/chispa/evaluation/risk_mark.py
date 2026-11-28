@@ -50,20 +50,28 @@ def with_mark(rows: dict[str, list]) -> dict[str, list]:
     return {m: [row | {"known": row["near_earlier"]} for row in found] for m, found in rows.items()}
 
 
+def no_mark(rows: dict[str, list]) -> dict[str, list]:
+    """Return the rows of each moment with no alert left out for a fire that an earlier alert
+    saw: the baseline of the mark."""
+    return {m: [row | {"known": False} for row in found] for m, found in rows.items()}
+
+
 def mark_table(rows: dict[str, list]) -> list[dict]:
     """Return, for each moment of one year, the mark of the detections against that of the map.
 
     The recall is the share of the alerts on a known fire that have the mark. The precision
     is the share of the alerts with the mark that are on a known fire. The last columns are for
-    the alerts that can get a percentage: how many started a fire of a limit or more, and how
-    many of those have the mark and thus get no percentage.
+    the alerts that get a percentage with the mark of the map: not on a known fire, and not
+    with only GOES rows of INPE. They give how many of them became large for each limit, and
+    how many of those have the mark: the live path gives them no percentage.
     """
     table = []
     for moment, of_moment in rows.items():
-        known = np.array([row["known"] for row in of_moment])
-        near = np.array([row["near_earlier"] for row in of_moment])
-        size = np.array([row["size_ha"] for row in of_moment])
-        counted = ~np.array([row["only_inpe_goes"] for row in of_moment])
+        # A moment with no alert gives arrays with no value: they must be arrays of marks.
+        known = np.array([row["known"] for row in of_moment], dtype=bool)
+        near = np.array([row["near_earlier"] for row in of_moment], dtype=bool)
+        size = np.array([row["size_ha"] for row in of_moment], dtype=float)
+        counted = ~known & ~np.array([row["only_inpe_goes"] for row in of_moment], dtype=bool)
         found = {
             "moment_h": moment,
             "alerts": len(known),

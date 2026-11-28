@@ -479,8 +479,8 @@ Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0 | 9245 | 3171 | 3475 | 2091 | 0.6594 | 0.6017 | 1569 | 388 | 514 | 130 | 137 | 31 |
-| 24 | 8643 | 2956 | 3464 | 2074 | 0.7016 | 0.5987 | 1637 | 524 | 571 | 188 | 155 | 49 |
+| 0 | 9245 | 3171 | 3475 | 2091 | 0.6594 | 0.6017 | 930 | 96 | 297 | 31 | 79 | 12 |
+| 24 | 8643 | 2956 | 3464 | 2074 | 0.7016 | 0.5987 | 869 | 116 | 279 | 42 | 70 | 14 |
 
 ### 2019 risk_weights
 
@@ -1244,8 +1244,8 @@ Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0 | 13575 | 6775 | 6653 | 4788 | 0.7067 | 0.7197 | 1749 | 654 | 527 | 190 | 127 | 41 |
-| 24 | 12042 | 5771 | 5956 | 4221 | 0.7314 | 0.7087 | 1782 | 725 | 576 | 222 | 147 | 53 |
+| 0 | 13575 | 6775 | 6653 | 4788 | 0.7067 | 0.7197 | 790 | 95 | 272 | 34 | 74 | 9 |
+| 24 | 12042 | 5771 | 5956 | 4221 | 0.7314 | 0.7087 | 772 | 94 | 265 | 28 | 74 | 10 |
 
 ### 2020 risk_weights
 
@@ -2024,8 +2024,8 @@ Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0 | 5586 | 1969 | 2329 | 1418 | 0.7202 | 0.6088 | 565 | 156 | 182 | 50 | 51 | 11 |
-| 24 | 5197 | 1733 | 2236 | 1320 | 0.7617 | 0.5903 | 658 | 212 | 242 | 75 | 71 | 17 |
+| 0 | 5586 | 1969 | 2329 | 1418 | 0.7202 | 0.6088 | 332 | 30 | 106 | 9 | 30 | 1 |
+| 24 | 5197 | 1733 | 2236 | 1320 | 0.7617 | 0.5903 | 350 | 32 | 127 | 9 | 38 | 3 |
 
 ### 2021 risk_recalibrated
 
@@ -2877,8 +2877,8 @@ Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0 | 3377 | 397 | 1075 | 306 | 0.7708 | 0.2847 | 251 | 32 | 79 | 9 | 24 | 2 |
-| 24 | 3279 | 359 | 1088 | 291 | 0.8106 | 0.2675 | 277 | 47 | 92 | 11 | 30 | 2 |
+| 0 | 3377 | 397 | 1075 | 306 | 0.7708 | 0.2847 | 207 | 8 | 65 | 1 | 21 | 0 |
+| 24 | 3279 | 359 | 1088 | 291 | 0.8106 | 0.2675 | 221 | 11 | 74 | 2 | 24 | 0 |
 
 ### 2022 risk_recalibrated
 
@@ -4202,8 +4202,8 @@ Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0 | 6873 | 1243 | 3242 | 1050 | 0.8447 | 0.3239 | 286 | 86 | 102 | 32 | 33 | 9 |
-| 24 | 6037 | 1055 | 2870 | 912 | 0.8645 | 0.3178 | 293 | 110 | 113 | 40 | 39 | 15 |
+| 0 | 6873 | 1243 | 3242 | 1050 | 0.8447 | 0.3239 | 204 | 27 | 72 | 10 | 23 | 3 |
+| 24 | 6037 | 1055 | 2870 | 912 | 0.8645 | 0.3178 | 198 | 31 | 74 | 9 | 24 | 3 |
 
 ### 2023 risk_recalibrated
 
@@ -5450,8 +5450,8 @@ Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0 | 7085 | 2876 | 3587 | 2232 | 0.7761 | 0.6222 | 804 | 303 | 306 | 111 | 107 | 27 |
-| 24 | 6473 | 2565 | 3333 | 2032 | 0.7922 | 0.6097 | 800 | 342 | 313 | 133 | 106 | 31 |
+| 0 | 7085 | 2876 | 3587 | 2232 | 0.7761 | 0.6222 | 351 | 39 | 153 | 19 | 64 | 5 |
+| 24 | 6473 | 2565 | 3333 | 2032 | 0.7922 | 0.6097 | 319 | 35 | 137 | 16 | 57 | 5 |
 
 ### 2024 risk_recalibrated
 
@@ -6713,8 +6713,8 @@ Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0 | 1755 | 186 | 479 | 145 | 0.7796 | 0.3027 | 168 | 18 | 55 | 6 | 13 | 1 |
-| 24 | 1729 | 189 | 493 | 153 | 0.8095 | 0.3103 | 172 | 24 | 62 | 7 | 13 | 2 |
+| 0 | 1755 | 186 | 479 | 145 | 0.7796 | 0.3027 | 145 | 8 | 49 | 2 | 13 | 1 |
+| 24 | 1729 | 189 | 493 | 153 | 0.8095 | 0.3103 | 143 | 9 | 51 | 2 | 11 | 1 |
 
 ### 2025 risk_percentage
 
@@ -6753,6 +6753,25 @@ Configuration `1814951a61f2`, run on 2026-11-28.
 | 24 | 100.0 | before | 5 | 0.1213 | 0.8592 | 0.6144 | 1.1336 | True | True | True | True |
 | 24 | 1000.0 | recalibrated | 5 | 0.0487 | 0.9953 | 0.5128 | 1.2589 | True | True | True | True |
 | 24 | 1000.0 | before | 5 | -0.0363 | 0.8216 | 0.4478 | 1.1874 | False | True | False | False |
+
+### 2025 risk_percentage_no_mark
+
+Configuration `1814951a61f2`, run on 2026-11-28.
+
+| moment_h | limit_ha | values | years | brier_skill_smallest | level_all_years | level_smallest | level_largest | better_than_base_rate_each_year | level_all_years_in_range | level_each_year_in_range | percentage |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 10.0 | recalibrated | 5 | 0.0379 | 0.9557 | 0.772 | 1.2981 | True | True | True | True |
+| 0 | 10.0 | before | 5 | -0.0742 | 0.6888 | 0.4862 | 0.9375 | False | False | False | False |
+| 0 | 100.0 | recalibrated | 5 | -0.0091 | 0.9808 | 0.7305 | 1.2829 | False | True | True | False |
+| 0 | 100.0 | before | 5 | -0.2333 | 0.5594 | 0.3691 | 0.7992 | False | False | False | False |
+| 0 | 1000.0 | recalibrated | 5 | -0.0719 | 0.9892 | 0.644 | 1.2985 | False | True | True | False |
+| 0 | 1000.0 | before | 5 | -0.2061 | 0.5445 | 0.3364 | 0.7776 | False | False | False | False |
+| 24 | 10.0 | recalibrated | 5 | 0.1094 | 0.8947 | 0.7108 | 1.1884 | True | True | True | True |
+| 24 | 10.0 | before | 5 | -0.0069 | 0.7037 | 0.5007 | 0.9123 | False | False | True | False |
+| 24 | 100.0 | recalibrated | 5 | -0.0224 | 0.8129 | 0.6405 | 1.0799 | False | True | True | False |
+| 24 | 100.0 | before | 5 | -0.339 | 0.548 | 0.3675 | 0.7225 | False | False | False | False |
+| 24 | 1000.0 | recalibrated | 5 | -0.0187 | 0.8665 | 0.6238 | 0.9877 | False | True | True | False |
+| 24 | 1000.0 | before | 5 | -0.3067 | 0.4938 | 0.3401 | 0.6318 | False | False | False | False |
 
 ### 2025 risk_recalibrated
 
@@ -7402,8 +7421,8 @@ Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0 | 890 | 120 | 227 | 85 | 0.7083 | 0.3744 | 130 | 12 | 50 | 2 | 15 | 0 |
-| 24 | 865 | 117 | 232 | 87 | 0.7436 | 0.375 | 124 | 13 | 49 | 3 | 15 | 0 |
+| 0 | 890 | 120 | 227 | 85 | 0.7083 | 0.3744 | 108 | 4 | 43 | 0 | 14 | 0 |
+| 24 | 865 | 117 | 232 | 87 | 0.7436 | 0.375 | 96 | 1 | 38 | 0 | 13 | 0 |
 
 ### 2026 risk_recalibrated
 

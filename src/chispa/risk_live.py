@@ -72,7 +72,7 @@ def due(store: sqlite3.Connection, now: datetime, folder: Path) -> list[tuple[in
     for alert, first in store.execute(ALERTS, (first_id,)):
         for moment, seconds in confidence.moment_seconds().items():
             in_time = since.timestamp() <= first + seconds <= now.timestamp()
-            if in_time and not risk_files.path_of(folder, alert, moment).exists():
+            if in_time and not risk_files.path_of(folder, alert, moment, first).exists():
                 found.append((alert, moment, first))
     return sorted(found, key=lambda one: (one[2], one[0], one[1]))
 

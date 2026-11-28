@@ -32,7 +32,7 @@ from chispa.evaluation.risk_inputs import (
     dryness_of,
     river_inputs,
 )
-from chispa.evaluation.risk_mark import mark_table, with_mark
+from chispa.evaluation.risk_mark import mark_table, no_mark, with_mark
 from chispa.evaluation.risk_parity import parity_table
 from chispa.evaluation.risk_recalibration import recalibration_tables
 from chispa.evaluation.risk_rule import NOW, rule_table
@@ -108,10 +108,12 @@ def _add_shared_tables(parts: dict, of_earlier: dict, tables: dict[int, Tables])
     for more in (fire_tables(parts), recalibration_tables(parts, of_earlier)):
         for year, found in more.items():
             tables[year] |= found
-    # The conditions of a percentage with the mark that a live alert has (section 11.35).
-    marked = {year: part | {"rows": with_mark(part["rows"])} for year, part in parts.items()}
-    found = recalibration_tables(marked, of_earlier)
-    tables[max(found)]["risk_percentage_mark"] = found[max(found)]["risk_percentage"]
+    # The conditions of a percentage with the mark that a live alert has, and with no mark
+    # (section 11.35).
+    for name, change in (("mark", with_mark), ("no_mark", no_mark)):
+        changed = {year: part | {"rows": change(part["rows"])} for year, part in parts.items()}
+        found = recalibration_tables(changed, of_earlier)
+        tables[max(found)][f"risk_percentage_{name}"] = found[max(found)]["risk_percentage"]
 
 
 def _test_tables(parts: dict, of_earlier: dict, paths: tuple[Path, Path]) -> Tables:

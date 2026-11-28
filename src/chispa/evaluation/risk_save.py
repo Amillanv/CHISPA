@@ -96,7 +96,10 @@ def known_outcomes(parts: dict, models: dict, months: dict[int, int], paths: tup
     until = weather_until(now, raw_dir)
     past = {name: {"time": [], "value": [], "large": []} for name in models}
     for year, month in months.items():
-        end = min(until, datetime(year + 1, 1, 1, tzinfo=UTC))
+        # An alert after the last month of the map has no outcome in it: with a map that is
+        # late, such an alert must not count as an alert with no fire.
+        map_end = datetime(year + (month == 12), month % 12 + 1, 1, tzinfo=UTC)
+        end = min(until, map_end)
         rows = percent_rows(with_mark(rows_of_month(year, month, end, (store_path, raw_dir))))
         earlier = [one for one in parts if one < year]
         of_year = models if earlier == sorted(parts) else fit(parts, earlier)

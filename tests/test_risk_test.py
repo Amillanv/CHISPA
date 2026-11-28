@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 
 from chispa.evaluation import risk_recalibration, risk_test
-from chispa.evaluation.risk_test import known_until, replay_table
+from chispa.evaluation.risk_test import known_until, month_of_test, replay_table
 
 DAY = 86_400.0
 
@@ -15,6 +15,16 @@ def test_outcome_is_known_the_delay_after_the_moment_of_an_alert(monkeypatch):
     assert known_until(2026, 10) == datetime(2026, 9, 2, tzinfo=UTC)
     # A map to December ends at the start of the next year.
     assert known_until(2025, 12) == datetime(2025, 11, 2, tzinfo=UTC)
+
+
+def test_test_reads_the_map_of_the_month_that_gave_its_last_alert(monkeypatch):
+    monkeypatch.setattr("chispa.config.RISK_RECALIBRATION_DELAY_DAYS", 60)
+    # The last moment of a test alert is 2 September: 60 days later October ends.
+    monkeypatch.setattr("chispa.config.RISK_TEST_UNTIL", datetime(2026, 9, 2, tzinfo=UTC))
+    assert month_of_test() == 10
+    assert known_until(2026, month_of_test()) == datetime(2026, 9, 2, tzinfo=UTC)
+    monkeypatch.setattr("chispa.config.RISK_TEST_UNTIL", datetime(2026, 11, 2, tzinfo=UTC))
+    assert month_of_test() == 12
 
 
 def test_replay_gives_an_alert_the_factor_of_the_map_that_it_had(monkeypatch):
