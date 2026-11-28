@@ -30,6 +30,7 @@ Use each term only with this meaning.
 | Unmatched alert | An alert with no detection that matches a fire. |
 | Alert with a new fire | An alert that had the first detection that matches a counted fire (section 11.21). |
 | Alert on a known fire | An alert whose detections match a counted fire that a different alert saw first (section 11.21). |
+| Alert near an earlier alert | An alert with a detection of a different, earlier alert near one of its detections. A live alert has this mark in the place of the mark of the map (section 11.35). |
 | Large alert | An alert whose fire ends with a limit of hectares or more. It is the label of the growth risk (section 11.21). |
 | Unmatched share | The detections that match no fire, divided by all detections of a configuration. |
 | Fire recall | The counted fires with a minimum of one match, divided by all counted fires. |
@@ -103,7 +104,7 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 | Observation | `first_observed_at`, `last_observed_at`, `max_frp_mw`, `detections`, `sensor_families`, `newest_detections`, `timeline`: the detections of each day, the land cover in `severity` | |
 | Publication | `newest_available_at`, `newest_observation_age_h`, `passes`: when CHISPA had each pass | The time when a source published a pass |
 | Alert | `level`, `confidence`: the rank, its number of reference alerts and the inputs with the largest effect (section 11.15) | |
-| Growth | `growth`: the newest step. `growth_steps`: each step, the oldest first (section 11.13). `forecast`: the growth forecast of each front of the event, for each window that is open (section 11.29) | A burned area (section 11.12). A distance and a speed of the growth to come |
+| Growth | `growth`: the newest step. `growth_steps`: each step, the oldest first (section 11.13). `forecast`: the growth forecast of each front of the event, for each window that is open (section 11.29). `growth_risk`: the chance that the first alert of the event becomes a fire of 10, 100 or 1000 hectares, at 30 minutes and at 24 hours (section 11.35) | A burned area (section 11.12). A distance and a speed of the growth to come |
 | Confirmation | `level_changes`, the pass that made each change (`passes`), `absorbed` | |
 | End | `goes_view`: what GOES said for the place in its newest saved scan and in each scan after the newest detection, with the last clear look. `viirs_passes_after_last_detection` | A cause of the end. A statement that a fire is out |
 | Mapping | The track record of the level (`evaluation_summary`) | |
@@ -113,6 +114,11 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 - A field with no value is `None`. Do not fill it with an estimate. `notes` says why a part is absent.
 - `forecast` is `None` when no forecast file has a front of the event with an open window. A front of 1 or 2
   pixels has its chances and no sectors: the forecast has no direction for it (section 11.30).
+- `growth_risk` is `None` when the alert that started the event has no file of the growth risk at the as-of time.
+  It has `at_30_minutes` and `at_24_hours`, each when its file is there. For each limit of hectares it has the
+  chance, the rank, the factor and the mark "not tested". A chance is `None` for a limit with a rank only, for an
+  alert with only GOES rows of INPE, and for an alert near an earlier alert: `no_percentage` gives the reason,
+  and `near_earlier` names the earlier alert. `no_answer` gives the reason for an alert with no answer.
 - `hours_from_first_detection` is a minimum of the age of a fire. The fire started before its first detection,
   and we do not know how long before. For a small fire under cloud, that time can be days.
 - An event out of the Pantanal biome of Brazil is in the answers of the tools, with a note: the confidence rank,
@@ -468,7 +474,7 @@ The tables are:
   the flames in Sentinel-2 images (section 11.27).
 - `severity_inputs`, `severity` and `severity_rank`: the severity of the events against the mapped area (section 11.14).
 - `confidence` and `confidence_weights`: the probability of a match at two moments, against the level (section 11.15).
-- The tables with a name that starts with `risk`: the growth risk. Sections 11.21 to 11.25 name each table.
+- The tables with a name that starts with `risk`: the growth risk. Sections 11.21 to 11.25 and 11.35 name each table.
 
 Purity and completeness count matches with counted fires. A detection that matches two fires counts two times.
 
@@ -1600,8 +1606,8 @@ and `risk_percentage` with the newest year: the three conditions of each model, 
   A check outside the repository gave the alerts before 1 July the weights of the years to 2 years before.
   The same five models have the three conditions for 2022 to 2025 (`PLAN.md`).
   The group of an alert comes from the map of the year: new fire, no mapped fire or known fire. A live alert does
-  not have that map. Thus no rule says at the time of an alert that it is on a known fire. The percentage has
-  no check for such an alert. Not built.
+  not have that map. It has the mark of an alert near an earlier alert, from the detections: section 11.35 has
+  the rule and its test.
   The 60 days, the 365 days and the 10 came from a check outside the repository, which gave the same
   result for 12 settings (30 to 120 days, and 5 to 20). The recalibration, the scored years and the rank for the
   alerts with only GOES rows of INPE came after results: the numbers are validation numbers.
@@ -1658,6 +1664,8 @@ The rules:
 4. Only an alert with a known outcome is in the test: its moment is 60 days or more before the end of the last month
    of the map. The map had the months to October 2026. Thus the test has the alerts with a moment before
    2026-09-02 00:00 UTC: 1 January to 1 September, and not the months with the most fires.
+   From 2026-11-27 `config.RISK_TEST_UNTIL` has that time, and a run reads no later alert: `chispa update` gets
+   each new month of the map (section 11.35), and a later month must not add alerts to a run by accident.
 5. The groups of the alerts, the alerts with a rank only and the recalibration are those of sections 11.21 and
    11.24. The known outcomes of 2025 are those of the annual map, and those of 2026 are those of the Monitor map.
 
@@ -1713,7 +1721,8 @@ known fire and without the 7 and the 2 alerts with a rank only.
 The decisions of the owner after the first run (2026-11-26). An alert gives the percentage for 100 hectares at
 24 hours, as for the other models with an answer: the rule of section 11.21 gave no growth risk as a sequence there,
 and this is a change after a result. For 1000 hectares an alert gives a rank at 30 minutes, and at 24 hours the
-percentage with the mark "not tested". The field of the event record is parked.
+percentage with the mark "not tested". The field of the event record was parked on that day. The owner agreed
+to it on 2026-11-27 (section 11.35).
 
 The replay with the maps of the time (table `risk_replay`, asked by the owner on 2026-11-26 after a review).
 In the runs above, the factor of a test alert reads the outcomes of the older alerts from the map to October 2026.
@@ -2810,6 +2819,113 @@ The result of the test (the same tables of 2025 and 2026, 2026-11-27): the four 
   record, for an alert with no front. The field is not built, and no live code makes these inputs: the owner
   decides (section 12.1).
 - The result has satellite sources only.
+
+### 11.35 The live growth risk
+
+`risk_live.py` makes the growth risk of sections 11.21 to 11.24 for the alerts of now. `chispa update` makes it for
+each alert with a new moment, and the event record has it (section 7.3). The owner asked for this path and agreed
+to the field on 2026-11-27. The modules of the path (`risk.py`, `risk_files.py`, `risk_weather.py` and
+`risk_live.py`) import no module of the evaluation: a test does a check of that. `risk.py` has the inputs, the
+factor and the sequence of the limits, and the evaluation uses the same functions.
+
+The rules:
+
+1. An alert gets an answer at each of its two moments: 30 minutes and 24 hours after the time when CHISPA had its
+   first detection. The answer uses the event of the alert as it was at the moment (`issued.py`), with the
+   detections in the biome that were available then. An alert that is a part of an older event at the moment
+   gets no answer. An alert whose first detection is not in the biome gets no answer.
+2. The saved file `data/risk_models.json` has the six models of section 11.24, with the weights of each year with
+   an annual map. It has the values of the alerts that gave the weights: the rank of a new value comes from them.
+   It has the known outcomes of the older alerts of this year and of the year before. An outcome comes from the
+   Monitor map with the months that it has now, by the rules of the replay (section 11.25). The value of an older
+   alert comes from the models of the years with an annual map before its year.
+3. The inputs are those of section 11.22. The weather is ERA5-Land to its last day on disk. If an alert needs a
+   later day, the update gets the files of ERA5-Land again. A day that ERA5-Land does not have yet comes from
+   Open-Meteo, with the model IFS, for the weather cell of the alert. The answer has the number of those days.
+4. An alert is near an earlier alert if a detection of a different alert is not farther than 1 km from one of its
+   detections. That detection was available before the first detection of the alert, and not more than 14 days
+   before it. It is in the biome, and it is not in the event of the alert at the moment. Such an alert gets a rank
+   and no percentage, as an alert with only GOES rows of INPE. The answer names the earlier alert, with the
+   distance, the hours and the sensor families.
+5. The factor of an alert is that of section 11.24, rule 3, at the time of its moment. The older alerts are those
+   that can get a percentage by rule 4: the factor is for the same group of alerts as a live alert.
+6. For each limit of hectares an answer has the chance, the rank, the factor and the mark "not tested". The chance
+   is the value after the recalibration, with no value above that of a smaller limit (section 11.24, rule 5).
+   The rank is the share of the alerts that gave the weights with a smaller value before the recalibration.
+   For 1000 hectares an alert has a rank only at 30 minutes, and a chance with the mark "not tested" at 24 hours
+   (section 11.25).
+7. Each answer is one file in `data/risks`, for one alert and one moment. A file does not change. It has the time
+   when it was complete (`made_at`), the inputs, the months of the Monitor map and the time of the saved file.
+   The update makes each answer of the last 30 days that has no file. Thus an answer can be later than its
+   moment: its detections are those of the moment, and its weather days and its factor are those of `made_at`.
+8. `chispa update` makes the saved file again if it is absent or of other settings. One time in 24 hours it asks
+   Earth Engine for a new month of the Monitor map and of the burn days. With a new month it gets the files and
+   makes the saved file again: approximately 6 minutes. If that fails, the saved file stays.
+9. The field `growth_risk` of the event record has the answers of the alert that started the event: those with a
+   file that was complete at or before the as-of time. A file counts only if it has the time of the first
+   detection of the alert: an id can go to a different alert when the store gets older rows.
+
+The mark of rule 4. The owner proposed it on 2026-11-27: a live alert has no map, and it has each detection.
+We wrote this before the result. 2023 sets the distance (1 to 15 km) and the days (1 to 90): the pair with the
+largest F1 against the mark of the map at 30 minutes. Hypothesis A: in each other year and at each moment, the
+recall and the precision of the mark against the mark of the map are 0.7 or more. Hypothesis B: with the mark in
+the place of the mark of the map, for the scored alerts and for the older alerts of the factor, the percentage for
+10 and 100 hectares keeps its three conditions on 2021 to 2025, and it holds in the replay of 2026. The replay is
+a fourth look at those alerts: an exploratory result.
+
+The result (tables `risk_mark` of each year, `risk_percentage_mark` of 2025 and `risk_replay_mark` of 2026,
+2026-11-27). 2023 gave 1 km and 14 days.
+
+- Hypothesis A is false. The recall is 0.6594 to 0.8645: the smallest is 2091 of 3171 alerts on a known fire, in
+  2019 at 30 minutes. The precision is 0.2675 to 0.7197: the smallest is 291 of 1088 alerts with the mark, in 2022
+  at 24 hours. Many alerts are near an earlier alert that the map does not put on the same fire.
+- Hypothesis B is true. With no mark, the percentage for 100 hectares does not keep condition 1: a check outside
+  the repository gave a smallest Brier skill score of -0.0091 at 30 minutes and of -0.0224 at 24 hours.
+
+| Model | Observed to expected, 2021 to 2025 | In one year | Smallest Brier skill score | Replay of 2026 |
+|---|---|---|---|---|
+| 30 minutes, 10 hectares | 1.0206 | 0.8023 to 1.3609 | 0.074 | 118 for 85.5: 1.3802 |
+| 30 minutes, 100 hectares | 0.9874 | 0.7339 to 1.2927 | 0.0302 | 48 for 31.3: 1.5326 |
+| 24 hours, 10 hectares | 1.0206 | 0.8237 to 1.3422 | 0.2047 | 111 for 85.1: 1.304 |
+| 24 hours, 100 hectares | 0.9398 | 0.7859 to 1.2321 | 0.1763 | 46 for 35.1: 1.3108 |
+
+- For 1000 hectares the answer is that of section 11.24: no percentage at 30 minutes (a smallest Brier skill score
+  of -0.0733), and the three conditions at 24 hours (0.9953, 0.5128 to 1.2589, 0.0487). The replay has 15 large
+  alerts: no answer.
+- The cost of the mark: an alert that saw first a fire of 100 hectares or more can have the mark, and then it
+  gets no percentage. At 30 minutes that was 111 of 306 such alerts in 2024, 32 of 102 in 2023, 6 of 55 in 2025
+  and 2 of 50 in the test of 2026.
+
+The check of the path (table `risk_live_inputs` of 2026, made by `chispa risk --test-run`). It reads each alert of
+the test through the live path, and it compares each input and each mark with those of the evaluation. It reads
+no outcome.
+At 30 minutes the test has 890 alerts, and the live path gave inputs to 871 of them. 859 of the 871 have each input
+the same, to 0.000001, and 865 have the same marks. At 24 hours: 865 alerts, 846 with inputs, 833 with each input
+the same and 842 with the same marks. The first detection of the 19 other alerts is not in the biome: the evaluation
+counts such an alert from its first detection in the biome, and rule 1 gives it no answer. The input that differs
+for the most alerts is the count of the detections near the alert: 12 alerts at each moment. A check outside the
+repository found 11 of the 12 in January, which is the limit of the detections of one year below.
+
+- An answer has no score yet. The files of rule 7 are data that no model has read. Not built: the command that
+  scores them against the Monitor map.
+- An answer that is later than its moment has the factor of a later day. `made_at` and `moment_at` say how late.
+- IFS is not ERA5-Land: its rain is larger (`docs/sources.md` section 8.4). The models have the weights of
+  ERA5-Land. A check outside the repository gave an AUC of 0.8420 and 0.8750 with each weather input from IFS,
+  against 0.8462 and 0.8764 (`PLAN.md`). The level with IFS days is not measured: an answer says how many it has.
+- The burn days of a new month of the Monitor map are those that the product has on that day. The burn day
+  product is later than the map (`docs/sources.md` section 8.9), and the replay had the burn days of now.
+- The evaluation has the detections of one year. A live alert of January also has the detections of December:
+  its count of detections near it, and its mark, can be different from those of the evaluation.
+- From 1 January, the ground that burned before needs the annual map of the year before. That map comes in
+  April or later. Until it is on disk, the share of the year before comes from the Monitor map, with the months
+  that it has. This is only for a year after the test year. A check outside the repository gave the alerts of
+  2026 the share of 2025 from the Monitor map: the sum of the values of each model changed by less than 2 percent
+  (`PLAN.md`). The check read no outcome: it is not a test.
+- The weights are those of the last year with an annual map. A new annual map needs `chispa fetch`, `chispa
+  build` and a new fit: no command does this without a person.
+- The files come from the computer that has the store and runs `chispa update`. The server only records the
+  logs. The dashboard does not show the field, and no text goes to a person with it.
+- The growth risk has satellite sources only.
 
 ## 12. Agent and MCP rules
 

@@ -62,10 +62,13 @@ def read_year(year: int, raw_dir: Path) -> np.ndarray:
     """Return the burn days of one year: one layer for each month, 0 for no burn.
 
     A year in progress has no file for its last months: those layers have no burn day.
+    The product had a month 40 to 51 days after its end (`docs/sources.md` section 8.9).
+    Thus the year before the year of now is also in progress in its first weeks.
     """
     paths = [raw_dir / "burnday" / str(year) / f"{month:02d}.npz" for month in range(1, 13)]
     have = [path.exists() for path in paths]
-    complete = all(have) or (year == datetime.now(UTC).year and have == sorted(have, reverse=True))
+    in_progress = year >= datetime.now(UTC).year - 1 and have == sorted(have, reverse=True)
+    complete = all(have) or in_progress
     if not have[0] or not complete:
         raise RuntimeError(f"Run `chispa fetch burnday --year {year}` first.")
     layers = [np.load(path)["day"] for path, there in zip(paths, have, strict=True) if there]

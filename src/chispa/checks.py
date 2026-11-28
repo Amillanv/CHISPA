@@ -8,7 +8,7 @@ which has the commands that get data, make the store and make the events.
 from collections.abc import Callable
 from datetime import UTC, datetime
 
-from chispa import config
+from chispa import config, risk_live
 from chispa.evaluation import (
     advance,
     burn,
@@ -27,6 +27,7 @@ from chispa.evaluation.events import events_with_a_match
 from chispa.evaluation.growth import step_rows
 from chispa.evaluation.report import write_summary, write_tables
 from chispa.evaluation.risk_run import risk_tables
+from chispa.evaluation.risk_save import refresh
 from chispa.evaluation.run import prepare
 from chispa.evaluation.severity import severity_tables
 from chispa.evaluation.visibility import month_table, visibility
@@ -77,6 +78,17 @@ def run_risk(test_run: bool) -> None:
     write_summary(config.RESULTS_DIR)
     names = ", ".join(tables[max(tables)])  # The first year has no table of the earlier years.
     print(f"{min(tables)} to {max(tables)}: see results/SUMMARY.md, tables {names}.")
+
+
+def update_risk(project: str | None) -> str:
+    """Make the growth risk of each alert with a new moment, and return one line.
+
+    This is a step of `chispa update`. It first makes the saved models and outcomes again if
+    they are absent, or if the Monitor map has a new month: that needs the evaluation, and the
+    live path does not import it. With no project of Earth Engine it gets no file.
+    """
+    now = datetime.now(UTC)
+    return risk_live.update(config.STORE_PATH, config.RAW_DIR, now, (project, refresh))
 
 
 def run_burn(year: int, project: Callable[[], str]) -> None:

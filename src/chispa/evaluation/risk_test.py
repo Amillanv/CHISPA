@@ -19,16 +19,16 @@ from chispa.evaluation.inputs import fire_fields
 from chispa.evaluation.match import Fields, match
 from chispa.evaluation.risk import seen_first, sized_rows
 from chispa.evaluation.risk_inputs import add_model_inputs
+from chispa.evaluation.risk_mark import with_mark
 from chispa.evaluation.risk_recalibration import (
     answer_table,
-    factors,
     model_facts,
     percent_rows,
-    recalibrate,
     year_level_rows,
 )
 from chispa.evaluation.run import biome_detections
 from chispa.grid import pantanal_grid
+from chispa.risk import factors, recalibrate
 from chispa.sources import border, burnday, monitor, scars
 
 
@@ -86,21 +86,40 @@ def _sized(year: int, store_path: Path, raw_dir: Path, last: int | None = None) 
     return {m: sized_rows(rows[m], first, area) for m in MOMENTS}, detections, last
 
 
-def monitor_part(year: int, store_path: Path, raw_dir: Path) -> dict:
-    """Return the rows of the test year: sizes from the Monitor map, and the inputs of the models.
+def _with_inputs(
+    sized: dict, detections: Fields, raw_dir: Path, year: int, until: datetime
+) -> dict:
+    """Return the rows to a time with the inputs of the models, and with no detections.
 
-    Only an alert with a known outcome is in the test. The rows have no input of a group that
-    no model has: the sources of some groups do not have the test year.
+    The rows have no input of a group that no model has: the sources of some groups do not
+    have a year in progress.
     """
-    sized, detections, last = _sized(year, store_path, raw_dir)
-    until = known_until(year, last)
     for moment in MOMENTS:
         sized[moment] = [row for row in sized[moment] if row["at"] <= until.timestamp()]
         add_model_inputs(sized[moment], detections, raw_dir, year, until.date() + timedelta(days=5))
         for row in sized[moment]:
             del row["positions"]
-    states = map_states(year, until, store_path, raw_dir)
-    return {"rows": sized, "until": until, "states": states}
+    return sized
+
+
+def monitor_part(year: int, store_path: Path, raw_dir: Path) -> dict:
+    """Return the rows of the test year: sizes from the Monitor map, and the inputs of the models.
+
+    Only an alert with a known outcome is in the test.
+    """
+    sized, detections, last = _sized(year, store_path, raw_dir)
+    # A later month of the map must not add alerts to a run by accident (`config.py`).
+    until = min(known_until(year, last), config.RISK_TEST_UNTIL)
+    rows = _with_inputs(sized, detections, raw_dir, year, until)
+    return {"rows": rows, "until": until, "states": map_states(year, until, store_path, raw_dir)}
+
+
+def rows_of_month(year: int, month: int, until: datetime, paths: tuple[Path, Path]) -> dict:
+    """Return the rows of one year to a time, with the inputs of the models, and with sizes
+    from the Monitor map as it was when one month came. `paths` has the store and the raw files.
+    """
+    sized, detections, _ = _sized(year, *paths, month)
+    return _with_inputs(sized, detections, paths[1], year, until)
 
 
 def map_states(year: int, until: datetime, store_path: Path, raw_dir: Path) -> list[tuple]:
@@ -138,15 +157,20 @@ def _outcome(row: dict) -> dict:
     return {name: row[name] for name in ("size_ha", "seen_ha", "known")}
 
 
-def replay_table(parts: dict[int, dict], models: dict[int, dict], year: int) -> list[dict]:
+def replay_table(
+    parts: dict[int, dict], models: dict[int, dict], year: int, mark: bool = False
+) -> list[dict]:
     """Return the answer of the test year with the factor that each alert can have at its time.
 
     The known outcomes of an alert at the time T come from the state of the map at T, not from
     the map of the end (`docs/method.md` section 11.25). `parts` has the rows of the year before
     and of the test year, with its states. The scored alerts and their outcomes do not change.
+    With `mark`, the alerts that are left out are those near an earlier alert, not those that
+    the map puts on a known fire: the mark that a live alert has (section 11.35).
     """
+    change = with_mark if mark else (lambda rows: rows)
     states, table = parts[year]["states"], []
-    scored = {year: percent_rows(parts[year]["rows"])}
+    scored = {year: percent_rows(change(parts[year]["rows"]))}
     for moment in MOMENTS:
         for limit in config.RISK_CLASS_LIMITS_HA:
             now = model_facts(scored, {year: models[year]}, moment, limit)[year]
@@ -155,7 +179,8 @@ def replay_table(parts: dict[int, dict], models: dict[int, dict], year: int) -> 
                 end = states[position + 1][0] if position + 1 < len(states) else np.inf
                 chosen = (now["time"] >= start) & (now["time"] < end)
                 then = {
-                    one: percent_rows(_then(parts[one]["rows"], outcomes[one])) for one in outcomes
+                    one: percent_rows(change(_then(parts[one]["rows"], outcomes[one])))
+                    for one in outcomes
                 }
                 older = model_facts(then, {one: models[one] for one in then}, moment, limit)
                 past = {

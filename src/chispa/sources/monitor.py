@@ -45,6 +45,19 @@ def burned_ha(box: Box, first: datetime, last: datetime) -> float:
     return round(float(found.get("burned") or 0), 2)
 
 
+def image_times(project: str) -> dict[str, str]:
+    """Return the time of the last change of each month image of the asset, by its name."""
+    ee.Initialize(project=project)
+    images = ee.data.listAssets({"parent": ASSET, "pageSize": 1000})["assets"]
+    return {image["name"].rsplit("/", 1)[-1]: image["updateTime"] for image in images}
+
+
+def months_on_disk(year: int, raw_dir: Path) -> int:
+    """Return the last month of one year that the saved map has. 0: the year has no folder."""
+    folders = sorted((raw_dir / "monitor").glob(f"{year}-[0-9][0-9]"))
+    return int(folders[-1].name[-2:]) if folders else 0
+
+
 def download_year(year: int, project: str, raw_dir: Path, grid: Grid) -> list[Path]:
     """Save the map of one year as tiles and return the paths.
 
@@ -53,9 +66,7 @@ def download_year(year: int, project: str, raw_dir: Path, grid: Grid) -> list[Pa
     folder when the map has one more month, and a folder never changes. The file
     `published.json` has the time of the last change of each month image.
     """
-    ee.Initialize(project=project)
-    images = ee.data.listAssets({"parent": ASSET, "pageSize": 1000})["assets"]
-    changed = {image["name"].rsplit("/", 1)[-1]: image["updateTime"] for image in images}
+    changed = image_times(project)
     months = [month for month in range(1, 13) if f"brazil-{year}-{month}" in changed]
     if not months:
         raise RuntimeError(f"The Monitor map has no month of {year}.")

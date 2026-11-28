@@ -20,7 +20,7 @@ from chispa.evaluation.run import prepare
 from chispa.evaluation.severity import newest_advance
 from chispa.fusion import LEVELS
 
-MOMENTS = ("0", "24")
+MOMENTS = confidence.MOMENTS
 FIFTHS = 5
 TOP_SHARE = 0.1  # The part of the events with the largest values that a brigade can go to first.
 DAY_S = 86_400
@@ -67,7 +67,7 @@ def moment_rows(detections: Fields, merges: list, links: tuple, layers: severity
     `own_fires` has only the fires that the detections of the alert at the moment match.
     """
     fires_of, (first_link, link_fire) = links
-    limits = {"0": config.PASS_GAP.total_seconds(), "24": config.SEVERITY_EVAL_HOURS * 3600}
+    limits = confidence.moment_seconds()
     counts, place = activity(detections)
     rows = {moment: [] for moment in MOMENTS}
     for moment, alert, own, chosen in at_moments(detections, merges, limits):
