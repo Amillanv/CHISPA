@@ -6,11 +6,10 @@ import pytest
 from chispa.evaluation import risk_recalibration
 from chispa.evaluation.risk_recalibration import (
     class_rows,
-    factors,
     percentage_table,
-    recalibrate,
     recalibration_tables,
 )
+from chispa.risk import factors, recalibrate
 
 DAY = 86_400.0
 

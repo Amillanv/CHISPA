@@ -32,6 +32,8 @@ from chispa.evaluation.risk_inputs import (
     dryness_of,
     river_inputs,
 )
+from chispa.evaluation.risk_mark import mark_table, no_mark, with_mark
+from chispa.evaluation.risk_parity import parity_table
 from chispa.evaluation.risk_recalibration import recalibration_tables
 from chispa.evaluation.risk_rule import NOW, rule_table
 from chispa.evaluation.risk_test import monitor_part, replay_table
@@ -78,6 +80,7 @@ def risk_tables(store_path: Path, raw_dir: Path, test_run: bool = False) -> dict
             "risk_all_alerts": all_alerts_table(part["rows"], part["area_ha"], models, baselines),
             "risk_calibration": calibration_table(kept, models),
             "risk_alerts": part["alerts"],
+            "risk_mark": mark_table(part["rows"]),
             "risk_weights": weight_table(models),
             "risk_inputs": with_levels(
                 input_table(parts, year, kept, tuple(INPUT_SETS)), levels, year
@@ -92,9 +95,7 @@ def risk_tables(store_path: Path, raw_dir: Path, test_run: bool = False) -> dict
             tables[year]["risk_level_sources"] = source_table(kept, models)
     _add_shared_tables(parts, of_earlier, tables)
     if test_run:
-        year = config.RISK_TEST_YEAR
-        part = monitor_part(year, store_path, raw_dir)
-        tables[year] = tables_of_test_year(parts, of_earlier, part)
+        tables[config.RISK_TEST_YEAR] = _test_tables(parts, of_earlier, (store_path, raw_dir))
     return tables
 
 
@@ -107,6 +108,24 @@ def _add_shared_tables(parts: dict, of_earlier: dict, tables: dict[int, Tables])
     for more in (fire_tables(parts), recalibration_tables(parts, of_earlier)):
         for year, found in more.items():
             tables[year] |= found
+    # The conditions of a percentage with the mark that a live alert has, and with no mark
+    # (section 11.35).
+    for name, change in (("mark", with_mark), ("no_mark", no_mark)):
+        changed = {year: part | {"rows": change(part["rows"])} for year, part in parts.items()}
+        found = recalibration_tables(changed, of_earlier)
+        tables[max(found)][f"risk_percentage_{name}"] = found[max(found)]["risk_percentage"]
+
+
+def _test_tables(parts: dict, of_earlier: dict, paths: tuple[Path, Path]) -> Tables:
+    """Return the tables of the test year, with the check of the live path against its rows.
+
+    The check reads each alert of the test through the live path, and no outcome (section 11.35).
+    """
+    part = monitor_part(config.RISK_TEST_YEAR, *paths)
+    models = of_earlier[max(of_earlier)]
+    names = {m: models[key(m, config.RISK_CLASS_LIMITS_HA[0])]["inputs"] for m in MOMENTS}
+    tables = tables_of_test_year(parts, of_earlier, part)
+    return tables | {"risk_live_inputs": parity_table(part["rows"], names, paths)}
 
 
 def tables_of_test_year(parts: dict[int, dict], of_earlier: dict[int, dict], part: dict) -> Tables:
@@ -123,6 +142,8 @@ def tables_of_test_year(parts: dict[int, dict], of_earlier: dict[int, dict], par
     tables = {"risk": result_table(kept, models, confidence.load(path))}
     with_test, all_models = parts | {year: part}, of_earlier | {year: models}
     found = recalibration_tables(with_test, all_models, year)
+    tables |= {"risk_mark": mark_table(part["rows"])}
+    tables |= {"risk_replay_mark": replay_table(with_test, all_models, year, mark=True)}
     return tables | found[year] | {"risk_replay": replay_table(with_test, all_models, year)}
 
 

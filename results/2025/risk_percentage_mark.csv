@@ -1,0 +1,13 @@
+moment_h,limit_ha,values,years,brier_skill_smallest,level_all_years,level_smallest,level_largest,better_than_base_rate_each_year,level_all_years_in_range,level_each_year_in_range,percentage
+0,10.0,recalibrated,5,0.074,1.0206,0.8023,1.3609,True,True,True,True
+0,10.0,before,5,0.0821,0.9366,0.6968,1.3146,True,True,True,True
+0,100.0,recalibrated,5,0.0302,0.9874,0.7339,1.2927,True,True,True,True
+0,100.0,before,5,-0.0211,0.7826,0.5473,1.1578,False,False,True,False
+0,1000.0,recalibrated,5,-0.0733,1.0074,0.5675,1.3064,False,True,True,False
+0,1000.0,before,5,-0.1141,0.7943,0.4743,1.2364,False,False,False,False
+24,10.0,recalibrated,5,0.2047,1.0206,0.8237,1.3422,True,True,True,True
+24,10.0,before,5,0.2125,0.9982,0.7257,1.3195,True,True,True,True
+24,100.0,recalibrated,5,0.1763,0.9398,0.7859,1.2321,True,True,True,True
+24,100.0,before,5,0.1213,0.8592,0.6144,1.1336,True,True,True,True
+24,1000.0,recalibrated,5,0.0487,0.9953,0.5128,1.2589,True,True,True,True
+24,1000.0,before,5,-0.0363,0.8216,0.4478,1.1874,False,True,False,False

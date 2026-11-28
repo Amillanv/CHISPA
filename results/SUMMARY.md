@@ -299,7 +299,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2019 risk
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -320,7 +320,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2019 risk_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | group | alerts | fires |
 |---|---|---|---|
@@ -341,7 +341,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2019 risk_all_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | known_fire_alerts | top_tenth | top_tenth_known_fire_alerts | large_fires | top_tenth_large_fires | large | top_tenth_large |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -362,7 +362,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2019 risk_calibration
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -413,7 +413,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2019 risk_fire
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large |
 |---|---|---|---|---|---|---|---|
@@ -424,7 +424,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2019 risk_inputs
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large | recalibrated_large | recalibrated_expected_large | recalibrated_observed_to_expected | recalibrated_brier_skill |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -473,9 +473,18 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | with river level | 24 | 100.0 | 5687 | 286 | 0.8713 | 0.416 | 162 |  |  |  |  |
 | with river level | 24 | 1000.0 | 5687 | 73 | 0.8212 | 0.184 | 35 |  |  |  |  |
 
+### 2019 risk_mark
+
+Configuration `1814951a61f2`, run on 2026-11-28.
+
+| moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 9245 | 3171 | 3475 | 2091 | 0.6594 | 0.6017 | 930 | 96 | 297 | 31 | 79 | 12 |
+| 24 | 8643 | 2956 | 3464 | 2074 | 0.7016 | 0.5987 | 869 | 116 | 279 | 42 | 70 | 14 |
+
 ### 2019 risk_weights
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | model | input | weight |
 |---|---|---|
@@ -917,7 +926,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2020 risk
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -938,7 +947,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2020 risk_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | group | alerts | fires |
 |---|---|---|---|
@@ -959,7 +968,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2020 risk_all_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | known_fire_alerts | top_tenth | top_tenth_known_fire_alerts | large_fires | top_tenth_large_fires | large | top_tenth_large |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -980,7 +989,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2020 risk_calibration
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1031,7 +1040,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2020 risk_calibration_earlier
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1082,7 +1091,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2020 risk_earlier
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1103,7 +1112,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2020 risk_fire
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large |
 |---|---|---|---|---|---|---|---|
@@ -1114,7 +1123,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2020 risk_fire_calibration
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1165,7 +1174,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2020 risk_inputs
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large | recalibrated_large | recalibrated_expected_large | recalibrated_observed_to_expected | recalibrated_brier_skill |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1216,7 +1225,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2020 risk_level_sources
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected |
 |---|---|---|---|---|---|---|---|---|
@@ -1229,9 +1238,18 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | 24 | 1000.0 | only GOES rows of INPE | 842 | 0.0201 | 0 | 0.0 | 16.9 | 0.0 |
 | 24 | 1000.0 | each other alert | 5429 | 0.014 | 74 | 0.0136 | 76.0 | 0.9732 |
 
+### 2020 risk_mark
+
+Configuration `1814951a61f2`, run on 2026-11-28.
+
+| moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 13575 | 6775 | 6653 | 4788 | 0.7067 | 0.7197 | 790 | 95 | 272 | 34 | 74 | 9 |
+| 24 | 12042 | 5771 | 5956 | 4221 | 0.7314 | 0.7087 | 772 | 94 | 265 | 28 | 74 | 10 |
+
 ### 2020 risk_weights
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | model | input | weight |
 |---|---|---|
@@ -1673,7 +1691,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2021 risk
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1694,7 +1712,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2021 risk_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | group | alerts | fires |
 |---|---|---|---|
@@ -1715,7 +1733,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2021 risk_all_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | known_fire_alerts | top_tenth | top_tenth_known_fire_alerts | large_fires | top_tenth_large_fires | large | top_tenth_large |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -1736,7 +1754,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2021 risk_calibration
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1787,7 +1805,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2021 risk_calibration_earlier
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1838,7 +1856,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2021 risk_classes
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | class | alerts | expected_alerts | observed_to_expected | wrong_sequence_alerts |
 |---|---|---|---|---|---|
@@ -1853,7 +1871,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2021 risk_earlier
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1874,7 +1892,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2021 risk_fire
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large |
 |---|---|---|---|---|---|---|---|
@@ -1885,7 +1903,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2021 risk_fire_calibration
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1936,7 +1954,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2021 risk_inputs
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large | recalibrated_large | recalibrated_expected_large | recalibrated_observed_to_expected | recalibrated_brier_skill |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1987,7 +2005,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2021 risk_level_sources
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected |
 |---|---|---|---|---|---|---|---|---|
@@ -2000,9 +2018,18 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | 24 | 1000.0 | only GOES rows of INPE | 430 | 0.0135 | 3 | 0.007 | 5.8 | 0.5168 |
 | 24 | 1000.0 | each other alert | 3034 | 0.0153 | 38 | 0.0125 | 46.3 | 0.8203 |
 
+### 2021 risk_mark
+
+Configuration `1814951a61f2`, run on 2026-11-28.
+
+| moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 5586 | 1969 | 2329 | 1418 | 0.7202 | 0.6088 | 332 | 30 | 106 | 9 | 30 | 1 |
+| 24 | 5197 | 1733 | 2236 | 1320 | 0.7617 | 0.5903 | 350 | 32 | 127 | 9 | 38 | 3 |
+
 ### 2021 risk_recalibrated
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | expected_large_before | observed_to_expected_before | brier_skill | brier_skill_before | auc | auc_before | factor_smallest | factor_median | factor_largest | rank_only_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -2075,7 +2102,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2021 risk_weights
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | model | input | weight |
 |---|---|---|
@@ -2517,7 +2544,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2022 risk
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -2538,7 +2565,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2022 risk_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | group | alerts | fires |
 |---|---|---|---|
@@ -2559,7 +2586,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2022 risk_all_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | known_fire_alerts | top_tenth | top_tenth_known_fire_alerts | large_fires | top_tenth_large_fires | large | top_tenth_large |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -2580,7 +2607,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2022 risk_calibration
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -2631,7 +2658,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2022 risk_calibration_earlier
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -2682,7 +2709,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2022 risk_classes
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | class | alerts | expected_alerts | observed_to_expected | wrong_sequence_alerts |
 |---|---|---|---|---|---|
@@ -2697,7 +2724,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2022 risk_earlier
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -2718,7 +2745,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2022 risk_fire
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large |
 |---|---|---|---|---|---|---|---|
@@ -2729,7 +2756,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2022 risk_fire_calibration
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -2780,7 +2807,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2022 risk_inputs
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large | recalibrated_large | recalibrated_expected_large | recalibrated_observed_to_expected | recalibrated_brier_skill |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -2831,7 +2858,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2022 risk_level_sources
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected |
 |---|---|---|---|---|---|---|---|---|
@@ -2844,9 +2871,18 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | 24 | 1000.0 | only GOES rows of INPE | 258 | 0.0118 | 1 | 0.0039 | 3.0 | 0.3284 |
 | 24 | 1000.0 | each other alert | 2662 | 0.0137 | 24 | 0.009 | 36.4 | 0.6592 |
 
+### 2022 risk_mark
+
+Configuration `1814951a61f2`, run on 2026-11-28.
+
+| moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 3377 | 397 | 1075 | 306 | 0.7708 | 0.2847 | 207 | 8 | 65 | 1 | 21 | 0 |
+| 24 | 3279 | 359 | 1088 | 291 | 0.8106 | 0.2675 | 221 | 11 | 74 | 2 | 24 | 0 |
+
 ### 2022 risk_recalibrated
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | expected_large_before | observed_to_expected_before | brier_skill | brier_skill_before | auc | auc_before | factor_smallest | factor_median | factor_largest | rank_only_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -2919,7 +2955,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2022 risk_weights
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | model | input | weight |
 |---|---|---|
@@ -3833,7 +3869,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2023 risk
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -3854,7 +3890,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2023 risk_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | group | alerts | fires |
 |---|---|---|---|
@@ -3875,7 +3911,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2023 risk_all_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | known_fire_alerts | top_tenth | top_tenth_known_fire_alerts | large_fires | top_tenth_large_fires | large | top_tenth_large |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -3896,7 +3932,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2023 risk_calibration
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -3947,7 +3983,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2023 risk_calibration_earlier
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -3998,7 +4034,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2023 risk_classes
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | class | alerts | expected_alerts | observed_to_expected | wrong_sequence_alerts |
 |---|---|---|---|---|---|
@@ -4013,7 +4049,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2023 risk_earlier
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -4034,7 +4070,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2023 risk_fire
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large |
 |---|---|---|---|---|---|---|---|
@@ -4045,7 +4081,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2023 risk_fire_calibration
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -4096,7 +4132,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2023 risk_inputs
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large | recalibrated_large | recalibrated_expected_large | recalibrated_observed_to_expected | recalibrated_brier_skill |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -4147,7 +4183,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2023 risk_level_sources
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected |
 |---|---|---|---|---|---|---|---|---|
@@ -4160,9 +4196,18 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | 24 | 1000.0 | only GOES rows of INPE | 2160 | 0.0065 | 2 | 0.0009 | 14.1 | 0.1419 |
 | 24 | 1000.0 | each other alert | 2822 | 0.0203 | 24 | 0.0085 | 57.3 | 0.4192 |
 
+### 2023 risk_mark
+
+Configuration `1814951a61f2`, run on 2026-11-28.
+
+| moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 6873 | 1243 | 3242 | 1050 | 0.8447 | 0.3239 | 204 | 27 | 72 | 10 | 23 | 3 |
+| 24 | 6037 | 1055 | 2870 | 912 | 0.8645 | 0.3178 | 198 | 31 | 74 | 9 | 24 | 3 |
+
 ### 2023 risk_recalibrated
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | expected_large_before | observed_to_expected_before | brier_skill | brier_skill_before | auc | auc_before | factor_smallest | factor_median | factor_largest | rank_only_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -4235,7 +4280,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2023 risk_weights
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | model | input | weight |
 |---|---|---|
@@ -5072,7 +5117,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2024 risk
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -5093,7 +5138,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2024 risk_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | group | alerts | fires |
 |---|---|---|---|
@@ -5114,7 +5159,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2024 risk_all_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | known_fire_alerts | top_tenth | top_tenth_known_fire_alerts | large_fires | top_tenth_large_fires | large | top_tenth_large |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -5135,7 +5180,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2024 risk_calibration
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -5186,7 +5231,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2024 risk_calibration_earlier
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -5237,7 +5282,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2024 risk_classes
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | class | alerts | expected_alerts | observed_to_expected | wrong_sequence_alerts |
 |---|---|---|---|---|---|
@@ -5252,7 +5297,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2024 risk_earlier
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -5273,7 +5318,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2024 risk_fire
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large |
 |---|---|---|---|---|---|---|---|
@@ -5284,7 +5329,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2024 risk_fire_calibration
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -5335,7 +5380,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2024 risk_inputs
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large | recalibrated_large | recalibrated_expected_large | recalibrated_observed_to_expected | recalibrated_brier_skill |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -5386,7 +5431,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2024 risk_level_sources
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected |
 |---|---|---|---|---|---|---|---|---|
@@ -5399,9 +5444,18 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | 24 | 1000.0 | only GOES rows of INPE | 756 | 0.003 | 4 | 0.0053 | 2.3 | 1.7539 |
 | 24 | 1000.0 | each other alert | 3152 | 0.0146 | 57 | 0.0181 | 46.0 | 1.2388 |
 
+### 2024 risk_mark
+
+Configuration `1814951a61f2`, run on 2026-11-28.
+
+| moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 7085 | 2876 | 3587 | 2232 | 0.7761 | 0.6222 | 351 | 39 | 153 | 19 | 64 | 5 |
+| 24 | 6473 | 2565 | 3333 | 2032 | 0.7922 | 0.6097 | 319 | 35 | 137 | 16 | 57 | 5 |
+
 ### 2024 risk_recalibrated
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | expected_large_before | observed_to_expected_before | brier_skill | brier_skill_before | auc | auc_before | factor_smallest | factor_median | factor_largest | rank_only_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -5474,7 +5528,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2024 risk_weights
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | model | input | weight |
 |---|---|---|
@@ -6279,7 +6333,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 risk
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -6300,7 +6354,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 risk_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | group | alerts | fires |
 |---|---|---|---|
@@ -6321,7 +6375,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 risk_all_alerts
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | known_fire_alerts | top_tenth | top_tenth_known_fire_alerts | large_fires | top_tenth_large_fires | large | top_tenth_large |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -6342,7 +6396,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 risk_calibration
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -6393,7 +6447,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 risk_calibration_earlier
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -6444,7 +6498,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 risk_classes
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | class | alerts | expected_alerts | observed_to_expected | wrong_sequence_alerts |
 |---|---|---|---|---|---|
@@ -6459,7 +6513,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 risk_earlier
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -6480,7 +6534,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 risk_fire
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large |
 |---|---|---|---|---|---|---|---|
@@ -6491,7 +6545,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 risk_fire_calibration
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | brier | brier_skill | above_lower_limit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -6542,7 +6596,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 risk_input_rule
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | tested | auc_mean | auc_mean_other | years_larger | years | level | level_other | years_out | years_out_other | passes | models_passed | stays |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -6589,7 +6643,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 risk_inputs
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | inputs | moment_h | limit_ha | alerts | large | auc | average_precision | top_tenth_large | recalibrated_large | recalibrated_expected_large | recalibrated_observed_to_expected | recalibrated_brier_skill |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -6640,7 +6694,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 risk_level_sources
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected |
 |---|---|---|---|---|---|---|---|---|
@@ -6653,9 +6707,18 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | 24 | 1000.0 | only GOES rows of INPE | 3 | 0.0055 | 0 | 0.0 | 0.0 | 0.0 |
 | 24 | 1000.0 | each other alert | 1537 | 0.0144 | 11 | 0.0072 | 22.1 | 0.4975 |
 
+### 2025 risk_mark
+
+Configuration `1814951a61f2`, run on 2026-11-28.
+
+| moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 1755 | 186 | 479 | 145 | 0.7796 | 0.3027 | 145 | 8 | 49 | 2 | 13 | 1 |
+| 24 | 1729 | 189 | 493 | 153 | 0.8095 | 0.3103 | 143 | 9 | 51 | 2 | 11 | 1 |
+
 ### 2025 risk_percentage
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | values | years | brier_skill_smallest | level_all_years | level_smallest | level_largest | better_than_base_rate_each_year | level_all_years_in_range | level_each_year_in_range | percentage |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -6672,9 +6735,47 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | 24 | 1000.0 | recalibrated | 5 | 0.0911 | 0.9722 | 0.5807 | 1.4929 | True | True | True | True |
 | 24 | 1000.0 | before | 5 | -0.0002 | 0.74 | 0.4192 | 1.2388 | False | False | False | False |
 
+### 2025 risk_percentage_mark
+
+Configuration `1814951a61f2`, run on 2026-11-28.
+
+| moment_h | limit_ha | values | years | brier_skill_smallest | level_all_years | level_smallest | level_largest | better_than_base_rate_each_year | level_all_years_in_range | level_each_year_in_range | percentage |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 10.0 | recalibrated | 5 | 0.074 | 1.0206 | 0.8023 | 1.3609 | True | True | True | True |
+| 0 | 10.0 | before | 5 | 0.0821 | 0.9366 | 0.6968 | 1.3146 | True | True | True | True |
+| 0 | 100.0 | recalibrated | 5 | 0.0302 | 0.9874 | 0.7339 | 1.2927 | True | True | True | True |
+| 0 | 100.0 | before | 5 | -0.0211 | 0.7826 | 0.5473 | 1.1578 | False | False | True | False |
+| 0 | 1000.0 | recalibrated | 5 | -0.0733 | 1.0074 | 0.5675 | 1.3064 | False | True | True | False |
+| 0 | 1000.0 | before | 5 | -0.1141 | 0.7943 | 0.4743 | 1.2364 | False | False | False | False |
+| 24 | 10.0 | recalibrated | 5 | 0.2047 | 1.0206 | 0.8237 | 1.3422 | True | True | True | True |
+| 24 | 10.0 | before | 5 | 0.2125 | 0.9982 | 0.7257 | 1.3195 | True | True | True | True |
+| 24 | 100.0 | recalibrated | 5 | 0.1763 | 0.9398 | 0.7859 | 1.2321 | True | True | True | True |
+| 24 | 100.0 | before | 5 | 0.1213 | 0.8592 | 0.6144 | 1.1336 | True | True | True | True |
+| 24 | 1000.0 | recalibrated | 5 | 0.0487 | 0.9953 | 0.5128 | 1.2589 | True | True | True | True |
+| 24 | 1000.0 | before | 5 | -0.0363 | 0.8216 | 0.4478 | 1.1874 | False | True | False | False |
+
+### 2025 risk_percentage_no_mark
+
+Configuration `1814951a61f2`, run on 2026-11-28.
+
+| moment_h | limit_ha | values | years | brier_skill_smallest | level_all_years | level_smallest | level_largest | better_than_base_rate_each_year | level_all_years_in_range | level_each_year_in_range | percentage |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 10.0 | recalibrated | 5 | 0.0379 | 0.9557 | 0.772 | 1.2981 | True | True | True | True |
+| 0 | 10.0 | before | 5 | -0.0742 | 0.6888 | 0.4862 | 0.9375 | False | False | False | False |
+| 0 | 100.0 | recalibrated | 5 | -0.0091 | 0.9808 | 0.7305 | 1.2829 | False | True | True | False |
+| 0 | 100.0 | before | 5 | -0.2333 | 0.5594 | 0.3691 | 0.7992 | False | False | False | False |
+| 0 | 1000.0 | recalibrated | 5 | -0.0719 | 0.9892 | 0.644 | 1.2985 | False | True | True | False |
+| 0 | 1000.0 | before | 5 | -0.2061 | 0.5445 | 0.3364 | 0.7776 | False | False | False | False |
+| 24 | 10.0 | recalibrated | 5 | 0.1094 | 0.8947 | 0.7108 | 1.1884 | True | True | True | True |
+| 24 | 10.0 | before | 5 | -0.0069 | 0.7037 | 0.5007 | 0.9123 | False | False | True | False |
+| 24 | 100.0 | recalibrated | 5 | -0.0224 | 0.8129 | 0.6405 | 1.0799 | False | True | True | False |
+| 24 | 100.0 | before | 5 | -0.339 | 0.548 | 0.3675 | 0.7225 | False | False | False | False |
+| 24 | 1000.0 | recalibrated | 5 | -0.0187 | 0.8665 | 0.6238 | 0.9877 | False | True | True | False |
+| 24 | 1000.0 | before | 5 | -0.3067 | 0.4938 | 0.3401 | 0.6318 | False | False | False | False |
+
 ### 2025 risk_recalibrated
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | expected_large_before | observed_to_expected_before | brier_skill | brier_skill_before | auc | auc_before | factor_smallest | factor_median | factor_largest | rank_only_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -6747,7 +6848,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2025 risk_weights
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | model | input | weight |
 |---|---|---|
@@ -7271,7 +7372,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2026 risk
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | value | alerts | large | base_rate | auc | average_precision | top_tenth | top_tenth_large | precision_top_tenth | recall_top_tenth | new_fire_alerts | auc_new_fire_alerts | large_at_moment | auc_at_moment | largest_alerts | top_tenth_largest_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -7292,7 +7393,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2026 risk_classes
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | class | alerts | expected_alerts | observed_to_expected | wrong_sequence_alerts |
 |---|---|---|---|---|---|
@@ -7305,9 +7406,27 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | 24 | 100 to 1000 hectares | 25 | 21.1 | 1.1875 | 1 |
 | 24 | 1000 hectares or more | 13 | 10.0 | 1.3026 | 1 |
 
+### 2026 risk_live_inputs
+
+Configuration `1814951a61f2`, run on 2026-11-28.
+
+| moment_h | alerts | alerts_with_live_inputs | same_inputs | same_marks | different_most | different_most_alerts | different_most_largest |
+|---|---|---|---|---|---|---|---|
+| 0 | 890 | 871 | 859 | 865 | near_log | 12 | 4.770685 |
+| 24 | 865 | 846 | 833 | 842 | near_log | 12 | 4.770685 |
+
+### 2026 risk_mark
+
+Configuration `1814951a61f2`, run on 2026-11-28.
+
+| moment_h | alerts | known_fire_alerts | near_earlier_alerts | both | recall | precision | large_10ha | large_10ha_near_earlier | large_100ha | large_100ha_near_earlier | large_1000ha | large_1000ha_near_earlier |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 890 | 120 | 227 | 85 | 0.7083 | 0.3744 | 108 | 4 | 43 | 0 | 14 | 0 |
+| 24 | 865 | 117 | 232 | 87 | 0.7436 | 0.375 | 96 | 1 | 38 | 0 | 13 | 0 |
+
 ### 2026 risk_recalibrated
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | group | alerts | probability_mean | large | large_share | expected_large | observed_to_expected | expected_large_before | observed_to_expected_before | brier_skill | brier_skill_before | auc | auc_before | factor_smallest | factor_median | factor_largest | rank_only_alerts |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -7380,7 +7499,7 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 
 ### 2026 risk_replay
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | alerts | large | expected_large | factor_median | auc | brier_skill | observed_to_expected | enough_large_alerts | better_than_base_rate | level_in_range | percentage_holds |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -7391,9 +7510,22 @@ Configuration `652c3a3f5e8f`, run on 2026-11-26.
 | 24 | 100.0 | 746 | 38 | 29.9 | 0.7961 | 0.9316 | 0.4178 | 1.2705 | True | True | True | True |
 | 24 | 1000.0 | 746 | 13 | 10.8 | 0.8993 | 0.9682 | 0.4102 | 1.2078 | False | True | True |  |
 
+### 2026 risk_replay_mark
+
+Configuration `1814951a61f2`, run on 2026-11-28.
+
+| moment_h | limit_ha | alerts | large | expected_large | factor_median | auc | brier_skill | observed_to_expected | enough_large_alerts | better_than_base_rate | level_in_range | percentage_holds |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 10.0 | 658 | 118 | 85.5 | 0.8988 | 0.8265 | 0.1975 | 1.3802 | True | True | True | True |
+| 0 | 100.0 | 658 | 48 | 31.3 | 0.8169 | 0.8536 | 0.1461 | 1.5326 | True | True | True | True |
+| 0 | 1000.0 | 658 | 15 | 10.8 | 0.9145 | 0.9048 | 0.0875 | 1.3916 | False | True | True |  |
+| 24 | 10.0 | 632 | 111 | 85.1 | 0.9146 | 0.9083 | 0.4141 | 1.304 | True | True | True | True |
+| 24 | 100.0 | 632 | 46 | 35.1 | 0.8481 | 0.9324 | 0.4162 | 1.3108 | True | True | True | True |
+| 24 | 1000.0 | 632 | 15 | 12.1 | 0.878 | 0.9634 | 0.3775 | 1.2416 | False | True | True |  |
+
 ### 2026 risk_test
 
-Configuration `652c3a3f5e8f`, run on 2026-11-26.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | moment_h | limit_ha | alerts | large | expected_large | factor_median | auc | brier_skill | observed_to_expected | enough_large_alerts | better_than_base_rate | level_in_range | percentage_holds |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|

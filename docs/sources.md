@@ -259,6 +259,9 @@ Checked 2026-11-27 with live requests, for the weather forecast that we had at a
   the request. The growth forecast does not use the hours after a look (`docs/method.md` section 11.30).
 - `UNVERIFIED`, read on the page of that API: the Historical Forecast API joins the first hours of each run. It is
   near the weather that came, not a forecast with a lead time.
+- Checked 2026-11-28 at 01:00 UTC with a live request for one cell (17.5 S, 57.5 W): the archive API with the model
+  `ecmwf_ifs` gave each hour of 2026-11-21 to 2026-11-26. The growth risk of a live alert reads such days only if
+  ERA5-Land does not have them (`docs/method.md` section 11.35).
 
 ### 8.5 MapBiomas Fogo
 
@@ -728,6 +731,10 @@ Checked 2026-11-25 with live requests to Earth Engine. `chispa fetch weather --y
 - Checked 2026-11-26 with live requests: the two wind bands give the direction of the wind. `chispa fetch weather`
   also saves a file `wind/<year>/<month>.npz`: for each block of 6 hours (UTC), the mean of the wind to the east and
   to the north, and the mean speed, in km/h. One day is one request. 2018 to October 2026 are 432 MB.
+- Checked 2026-11-28 at 01:15 UTC with live requests: the product had the last hour of 2026-11-21, and not that of
+  2026-11-22. The growth risk of a live alert needs the day that is 7 days before its day (`docs/method.md` section
+  11.35): it was there with no margin. One question for one day was a request of approximately 1 second, and the
+  files of the 21 days of the month came in 23 seconds.
   At 18 cells for 2023, the direction of a block was in 45 degrees of the hourly wind of Open-Meteo (`era5`) for 25 446
   of 26 280 blocks, in a check outside the repository. The median difference was 4.0 degrees. The mean speed was
   7.46 km/h against 8.41 km/h.

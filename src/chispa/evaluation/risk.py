@@ -19,6 +19,7 @@ from chispa.evaluation.confidence import (
 from chispa.evaluation.match import Fields, Pairs
 from chispa.evaluation.report import share
 from chispa.evaluation.risk_inputs import ADOPTED, REMOVED
+from chispa.risk import key
 
 
 def seen_first(detections: Fields, pairs: Pairs, fires: Fields) -> dict[int, int]:
@@ -61,11 +62,6 @@ def sized_rows(rows: list[dict], first: dict[int, int], area_ha: np.ndarray) -> 
 def new_or_none(rows: list[dict]) -> list[dict]:
     """Return the rows of the alerts that are not on a known fire."""
     return [row for row in rows if not row["known"]]
-
-
-def key(moment: str, limit_ha: float) -> str:
-    """Return the name of the model of one moment and one limit."""
-    return f"{moment}h_{limit_ha:g}ha"
 
 
 def fit_models(
