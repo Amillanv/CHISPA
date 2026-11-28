@@ -104,7 +104,7 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 | Observation | `first_observed_at`, `last_observed_at`, `max_frp_mw`, `detections`, `sensor_families`, `newest_detections`, `timeline`: the detections of each day, the land cover in `severity` | |
 | Publication | `newest_available_at`, `newest_observation_age_h`, `passes`: when CHISPA had each pass | The time when a source published a pass |
 | Alert | `level`, `confidence`: the rank, its number of reference alerts and the inputs with the largest effect (section 11.15) | |
-| Growth | `growth`: the newest step. `growth_steps`: each step, the oldest first (section 11.13). `forecast`: the growth forecast of each front of the event, for each window that is open (section 11.29). `growth_risk`: the chance that the first alert of the event becomes a fire of 10, 100 or 1000 hectares, at 30 minutes and at 24 hours (section 11.35) | A burned area (section 11.12). A distance and a speed of the growth to come |
+| Growth | `growth`: the newest step. `growth_steps`: each step, the oldest first (section 11.13). `forecast`: the growth forecast of each front of the event, for each window that is open (section 11.29). For an event with no front that only GOES started: the chance of a front (section 11.34). `growth_risk`: the chance that the first alert of the event becomes a fire of 10, 100 or 1000 hectares, at 30 minutes and at 24 hours (section 11.35) | A burned area (section 11.12). A distance and a speed of the growth to come |
 | Confirmation | `level_changes`, the pass that made each change (`passes`), `absorbed` | |
 | End | `goes_view`: what GOES said for the place in its newest saved scan and in each scan after the newest detection, with the last clear look. `viirs_passes_after_last_detection` | A cause of the end. A statement that a fire is out |
 | Mapping | The track record of the level (`evaluation_summary`) | |
@@ -112,8 +112,13 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 `severity` has the number, the points of each part and the facts (section 11.14).
 
 - A field with no value is `None`. Do not fill it with an estimate. `notes` says why a part is absent.
-- `forecast` is `None` when no forecast file has a front of the event with an open window. A front of 1 or 2
-  pixels has its chances and no sectors: the forecast has no direction for it (section 11.30).
+- `forecast` has the fronts of the event, or only `front_chance`, or it is `None`. It has the fronts when a
+  forecast file has a front of the event with an open window. A front of 1 or 2 pixels has its chances and no
+  sectors: the forecast has no direction for it (section 11.30).
+- `forecast` has only `front_chance` for an event with no such front, if only GOES started its first alert.
+  `chance` is the chance that the event gets a front before the time `until`: 24 hours after CHISPA had the
+  first detection. The field has it from the time of its file to that time, while the event has no VIIRS
+  pixel of FIRMS. It is not a chance that the fire grows. Section 11.34 has its rules and its limits.
 - `growth_risk` is `None` when the alert that started the event has no file of the growth risk at the as-of time.
   It has `at_30_minutes` and `at_24_hours`, each when its file is there. For each limit of hectares it has the
   chance, the rank, the factor and the mark "not tested". A chance is `None` for a limit with a rank only: that
@@ -2189,8 +2194,8 @@ trees, as the event record loads the model of the confidence. The rule is for th
 - The store has only the pixels that were available at the time of the run. A forecast from one satellite of a
   look is not the forecast of the complete look.
 - An alert with no front gets no forecast. In 2025 and 2026, 1690 of 3052 first alerts had a front of 1 pixel
-  or more 0.5 hours after the alert (section 11.30). Section 11.34 has a test of the chance that an alert of
-  GOES only gets a front.
+  or more 0.5 hours after the alert (section 11.30). An alert that only GOES started gets the chance of a
+  front (section 11.34).
 - A front outside the biome gets no forecast: the stated chances of the trees were too high there (section 11.33).
 - For a front of 1 or 2 pixels, the sectors are not a direction: they were not better than the wind in the test
   (section 11.30). The answer gives the number of pixels of each front.
@@ -2694,8 +2699,8 @@ pixel: it has no front and no forecast. In 2025, 264 of 699 such first alerts ha
 2026, 257 of 512 (table `front_alerts`). The owner asked on 2026-11-27 for the chance that such an alert gets a
 front. `chispa forecast --front-chance` makes the tables `front_chance`, `front_chance_bands` and
 `front_chance_weights` (`evaluation/front_chance.py`) of 2019 to 2024. With `--test-run` it also makes those of
-2025 and 2026. No field of the event record has this chance: a new field needs the agreement of the owner
-(section 12.1).
+2025 and 2026. The owner agreed on 2026-11-28 to the years of the test and to the chance in the event record:
+"The live chance" below has its rules.
 
 1. A row is an alert in the biome at moment 0: one pass gap after its first detection was available
    (section 11.15). The alert is the event as it was then (`moments.py`). It is a row if each detection of
@@ -2769,9 +2774,8 @@ gets a field. A negative result is a valid result.
 
 - The limit of 0.75 in statement 2 is a choice from the development years.
 - The years of this part are those of the growth forecast (section 7.4, rule 2): the rules from 2019 to 2024,
-  and one score on 2025 and 2026. This choice waits for the answer of the owner. The owner asked for this part
-  on 2026-11-27 and was not there for the choice of the years. If the owner does not agree, the run on 2025 and
-  2026 is a first look, and not the test of the part.
+  and one score on 2025 and 2026. The owner asked for this part on 2026-11-27 and was not there for the choice
+  of the years. The owner agreed to the years on 2026-11-28, after the result.
 - The event of an alert can get its VIIRS pixel by a merge with a fire near it: the answer is for the event,
   not for the place of the first GOES detection. We did not count how many answers come from a merge.
 - A front at moment 24 says that VIIRS saw the fire of the event in 24 hours. It does not say that the
@@ -2819,10 +2823,51 @@ The result of the test (the same tables of 2025 and 2026, 2026-11-27): the four 
 - Statement 3 is for the sum of the chances, not for each band. In the band from 0.1 to 0.2, 52 of 230 alerts
   had a front: more than the band says. A percentage for a person needs a test for each band, written first.
 - 2026 has the alerts to 2026-10-31 (rule 6): 440 rows.
-- This is one test on two years, with the limits above. The chance is a candidate for a field of the event
-  record, for an alert with no front. The field is not built, and no live code makes these inputs: the owner
-  decides (section 12.1).
+- This is one test on two years, with the limits above. The owner decided on 2026-11-28: the event record
+  has the chance, for an event with no front.
 - The result has satellite sources only.
+
+The live chance (`front_chance.py`, built on 2026-11-28). `chispa update` makes it after the growth risk, and the
+event record has it below `forecast` (section 7.3). The module imports no module of the evaluation: a test does
+a check of that.
+
+1. The model is that of the test: the regression of the rows of 2019 to 2024. Each run of
+   `chispa forecast --front-chance` fits it again and saves it in `data/front_chance_model.json`, with a mark:
+   a hash of its values. An update uses the file only if it has the configuration of now. If not, it makes no
+   chance, and it says which command to run. The run of 2026-11-28 that saved it gave the tables of 2019 to
+   2024 again with no change: only their stamps are new. The test years did not run again.
+2. The inputs of an alert are those in the file of its growth risk at 30 minutes (section 11.35, rule 7): the
+   two parts have the same inputs at that moment. An alert gets a chance if those inputs say one sensor
+   family, and that family is GOES. An alert with no answer of the growth risk gets no chance: its first
+   detection is not in the biome, or it is a part of an older event, or its place has no weather.
+3. Each chance is one file in `data/front_chances`, with the name of the file of the growth risk of its alert.
+   A file does not change. It has the chance, the mark of the model and the time of the file of the inputs.
+   It has the time when it was complete (`made_at`), and the time `until`: 24 hours after CHISPA had the first
+   detection.
+4. An update makes a chance only before `until`. After that time the store has the answer: a chance from then
+   is not a forecast.
+5. The field `forecast` of the event record has `front_chance` for the alert that started the event, from
+   `made_at` to `until`. A forecast of a front of the event replaces it (section 11.29, rule 7). It also goes
+   when the event has a VIIRS pixel of FIRMS: the event has a front then, and the question has its answer.
+
+- A live chance has no score yet. The files of rule 3 are data that no model has read. Not built: the command
+  that scores them against the VIIRS pixels that came.
+- A file can be later than the moment of its alert, and later than the first VIIRS pixel of its event:
+  `made_at` says how late. Its inputs are those of the moment. A score must take the late files apart.
+- The check of the live inputs is that of the growth risk (table `risk_live_inputs`, section 11.35): it has the
+  30 inputs of the chance. It is for the alerts of that test, not only for those that only GOES started.
+  `PLAN.md` has a check outside the repository for the alerts of this part.
+- The evaluation has the detections of one year. A live alert of the first days of January also has the
+  detections of December in its count of detections near it (section 11.35). No row of the model had them.
+- In the test the stated chances were too low by approximately one part in ten. The band from 0.1 to 0.2 had
+  more fronts than it says. A text for a person needs the test for each band first.
+- The land cover is that of the last year of the map (`config.py`), as in the test years. For an alert of
+  a later year the map is older.
+- The weather with days of IFS has no test for this model (section 11.35, rule 3). A file says how many such
+  days it has.
+- The files come from the computer that has the store and runs `chispa update`. The dashboard does not show
+  the field, and no text goes to a person with it. Rule 6 of section 12.2 has no sentence for this chance.
+- The chance has satellite sources only, with the weather and the layers of its inputs.
 
 ### 11.35 The live growth risk
 

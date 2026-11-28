@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime, timedelta
 import numpy as np
 import pytest
 
+from chispa import confidence, risk_files
 from chispa.evaluation import front_chance
 
 LAT, LON = -19.0, -57.0
@@ -117,6 +118,8 @@ def test_a_year_gets_the_model_of_the_other_development_years(monkeypatch, tmp_p
     monkeypatch.setattr(front_chance, "goes_alerts", lambda year, *arguments: [f"alert {year}"])
     monkeypatch.setattr(front_chance, "with_fronts", lambda rows, *arguments: rows)
     monkeypatch.setattr(front_chance.confidence, "load", lambda path: {"0": "confidence"})
+    saved = []
+    monkeypatch.setattr(front_chance, "save_model", saved.append)
     monkeypatch.setattr(
         front_chance, "year_tables", lambda rows, training, baseline: (rows, training, baseline)
     )
@@ -127,7 +130,32 @@ def test_a_year_gets_the_model_of_the_other_development_years(monkeypatch, tmp_p
     }
     tables = front_chance.chance_tables(tmp_path, tmp_path, test_run=True)
     assert tables[2021] == (["alert 2021"], ["alert 2019", "alert 2020"], "confidence")
+    # Each run saves the model for the live chance, from the rows of the run.
+    assert [sorted(parts) for parts in saved] == [[2019, 2020], [2019, 2020, 2021]]
     # A year with no row stops the run: it cannot have a table.
     monkeypatch.setattr(front_chance, "goes_alerts", lambda year, *arguments: [])
     with pytest.raises(RuntimeError, match="no alert of 2019 that only GOES started"):
         front_chance.chance_tables(tmp_path, tmp_path, test_run=False)
+
+
+def test_the_saved_model_learns_from_the_development_years_only(monkeypatch, tmp_path):
+    monkeypatch.setattr("chispa.config.FRONT_YEARS", (2019, 2020))
+    monkeypatch.setattr("chispa.config.FRONT_CHANCE_MODEL_PATH", tmp_path / "model.json")
+    # In the two development years, the alert with more detections had a front.
+    parts = {year: [row_of(0.0, False), row_of(1.0, True)] for year in (2019, 2020)}
+    # In the test year it is the opposite: these rows must not be in the model.
+    parts[2021] = [row_of(0.0, True), row_of(1.0, False)] * 5
+    front_chance.save_model(parts)
+    saved = risk_files.load_models(tmp_path / "model.json")
+    assert (saved["fit_years"], saved["alerts"], saved["with_front"]) == ([2019, 2020], 4, 2)
+    rows = np.array(
+        [[row_of(x, False)["inputs"][name] for name in front_chance.NAMES] for x in (0, 1)]
+    )
+    low, high = confidence.probability(saved["model"], rows)
+    # The two groups are equal in size: the chances are p and 1 - p.
+    assert low < 0.5 < high and round(float(low + high), 6) == 1.0
+    # The same rows give the same mark. Other rows give a different mark.
+    front_chance.save_model(parts)
+    assert risk_files.load_models(tmp_path / "model.json")["mark"] == saved["mark"]
+    front_chance.save_model(parts | {2020: [row_of(0.0, True), row_of(1.0, False)]})
+    assert risk_files.load_models(tmp_path / "model.json")["mark"] != saved["mark"]

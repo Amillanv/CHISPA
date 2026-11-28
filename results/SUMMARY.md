@@ -214,7 +214,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2019 front_chance
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
 |---|---|---|---|---|---|---|---|---|---|
@@ -222,7 +222,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2019 front_chance_bands
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -236,7 +236,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2019 front_chance_weights
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | model | input | weight |
 |---|---|---|
@@ -841,7 +841,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2020 front_chance
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
 |---|---|---|---|---|---|---|---|---|---|
@@ -849,7 +849,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2020 front_chance_bands
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -863,7 +863,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2020 front_chance_weights
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | model | input | weight |
 |---|---|---|
@@ -1606,7 +1606,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2021 front_chance
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1614,7 +1614,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2021 front_chance_bands
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -1628,7 +1628,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2021 front_chance_weights
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | model | input | weight |
 |---|---|---|
@@ -2459,7 +2459,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2022 front_chance
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
 |---|---|---|---|---|---|---|---|---|---|
@@ -2467,7 +2467,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2022 front_chance_bands
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -2481,7 +2481,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2022 front_chance_weights
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | model | input | weight |
 |---|---|---|
@@ -3736,7 +3736,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2023 front_chance
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
 |---|---|---|---|---|---|---|---|---|---|
@@ -3744,7 +3744,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2023 front_chance_bands
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -3758,7 +3758,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2023 front_chance_weights
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | model | input | weight |
 |---|---|---|
@@ -4945,7 +4945,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2024 front_chance
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | alerts | with_front | share | training_share | expected | auc_model | auc_confidence | auc_detections | auc_hour | brier_skill |
 |---|---|---|---|---|---|---|---|---|---|
@@ -4953,7 +4953,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2024 front_chance_bands
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | question | hours | chance_from | chance_to | rows | chance_mean | came | came_share |
 |---|---|---|---|---|---|---|---|
@@ -4967,7 +4967,7 @@ Configuration `af9e040fd8d0`, run on 2026-11-27.
 
 ### 2024 front_chance_weights
 
-Configuration `af9e040fd8d0`, run on 2026-11-27.
+Configuration `1814951a61f2`, run on 2026-11-28.
 
 | model | input | weight |
 |---|---|---|

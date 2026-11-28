@@ -4,17 +4,20 @@ The growth forecast is for a front of VIIRS pixels (`fronts.py`). An alert that 
 started has no front, thus it has no forecast. This module asks if we can say at the alert how
 probable a front is at the second moment of the growth risk, 24 hours after the first detection.
 A logistic regression gets the inputs of the growth risk at the first moment, without the ground
-that burned before. Each year gets the model of the other development years.
+that burned before. Each year gets the model of the other development years. A run also saves
+the model of all development years: the chance of a live alert comes from it (`front_chance.py`).
 `docs/method.md` section 11.34 gives the rules.
 """
 
+import hashlib
+import json
 import sqlite3
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
 
-from chispa import confidence, config
+from chispa import confidence, config, risk_files
 from chispa.evaluation import front_alerts
 from chispa.evaluation.confidence import names_of, separation, year_rows
 from chispa.evaluation.forecast_say import chance_rows
@@ -116,8 +119,26 @@ def year_tables(rows: list[dict], training: list[dict], baseline: dict) -> dict[
     return dict(zip(TABLES, ([row], bands, weight_table({"front": model})), strict=True))
 
 
+def save_model(parts: dict[int, list[dict]]) -> None:
+    """Save the model of the rows of all development years, for the chance of a live alert.
+
+    It is the model that scores the test years. Its mark is a hash of its values: an equal
+    model from a later run has the same mark, and a file of a chance names it.
+    """
+    training = [row for year in config.FRONT_YEARS for row in parts[year]]
+    had = np.array([row["front"] for row in training], dtype=float)
+    model = confidence.fit(_table(training, NAMES), had, NAMES)
+    mark = hashlib.sha256(json.dumps(model, sort_keys=True).encode()).hexdigest()[:12]
+    saved = {"mark": mark, "fit_years": list(config.FRONT_YEARS), "alerts": len(training)}
+    saved |= {"with_front": int(had.sum()), "model": model}
+    risk_files.save_models(saved, config.FRONT_CHANCE_MODEL_PATH)
+
+
 def chance_tables(store_path: Path, raw_dir: Path, test_run: bool) -> dict[int, dict]:
-    """Return the tables of each development year, and of each test year in a test run."""
+    """Return the tables of each development year, and of each test year in a test run.
+
+    Each run also saves the model of all development years (`save_model`).
+    """
     years = config.FRONT_YEARS + (config.FRONT_TEST_YEARS if test_run else ())
     parts = {
         year: with_fronts(goes_alerts(year, store_path, raw_dir), store_path, year)
@@ -132,4 +153,5 @@ def chance_tables(store_path: Path, raw_dir: Path, test_run: bool) -> dict[int, 
         others = [other for other in config.FRONT_YEARS if other != year]
         training = [row for other in others for row in parts[other]]
         tables[year] = year_tables(parts[year], training, baseline)
+    save_model(parts)
     return tables
