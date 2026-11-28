@@ -118,7 +118,8 @@ The event is the event as it was at that time (`issued.py`), not the event of th
 - `forecast` has only `front_chance` for an event with no such front, if only GOES started its first alert.
   `chance` is the chance that the event gets a front before the time `until`: 24 hours after CHISPA had the
   first detection. The field has it from the time of its file to that time, while the event has no VIIRS
-  pixel of FIRMS. It is not a chance that the fire grows. Section 11.34 has its rules and its limits.
+  pixel of FIRMS. It is the chance of the 30-minute moment (`moment_at`): it does not change while hours pass
+  with no front. It is not a chance that the fire grows. Section 11.34 has its rules and its limits.
 - `growth_risk` is `None` when the alert that started the event has no file of the growth risk at the as-of time.
   It has `at_30_minutes` and `at_24_hours`, each when its file is there. For each limit of hectares it has the
   chance, the rank, the factor and the mark "not tested". A chance is `None` for a limit with a rank only: that
@@ -2775,7 +2776,8 @@ gets a field. A negative result is a valid result.
 - The limit of 0.75 in statement 2 is a choice from the development years.
 - The years of this part are those of the growth forecast (section 7.4, rule 2): the rules from 2019 to 2024,
   and one score on 2025 and 2026. The owner asked for this part on 2026-11-27 and was not there for the choice
-  of the years. The owner agreed to the years on 2026-11-28, after the result.
+  of the years. The years and the four statements were in the repository before the run: the commit `0564882`
+  has them, and no table of 2025 or 2026. The owner agreed to the years on 2026-11-28, after the result.
 - The event of an alert can get its VIIRS pixel by a merge with a fire near it: the answer is for the event,
   not for the place of the first GOES detection. We did not count how many answers come from a merge.
 - A front at moment 24 says that VIIRS saw the fire of the event in 24 hours. It does not say that the
@@ -2842,16 +2844,20 @@ a check of that.
    detection is not in the biome, or it is a part of an older event, or its place has no weather.
 3. Each chance is one file in `data/front_chances`, with the name of the file of the growth risk of its alert.
    A file does not change. It has the chance, the mark of the model and the time of the file of the inputs.
-   It has the time when it was complete (`made_at`), and the time `until`: 24 hours after CHISPA had the first
-   detection.
-4. An update makes a chance only before `until`. After that time the store has the answer: a chance from then
-   is not a forecast.
+   It has the time of the update that made it (`made_at`), and the time `until`: 24 hours after CHISPA had the
+   first detection.
+4. An update makes a chance only before `until`: `made_at` is the time of that rule. After `until` the store
+   has the answer: a chance from then is not a forecast.
 5. The field `forecast` of the event record has `front_chance` for the alert that started the event, from
    `made_at` to `until`. A forecast of a front of the event replaces it (section 11.29, rule 7). It also goes
    when the event has a VIIRS pixel of FIRMS: the event has a front then, and the question has its answer.
 
 - A live chance has no score yet. The files of rule 3 are data that no model has read. Not built: the command
   that scores them against the VIIRS pixels that came.
+- The chance is that of the 30-minute moment, and the record gives it with no change to `until`. Hours with
+  no front are evidence that it does not have. In 2025 and 2026, only GOES started 1211 first alerts (table
+  `front_alerts`). 521 of them had a front at 24 hours, and 487 of those had it at 12 hours. Thus 34 of the
+  724 with no front at 12 hours got one in the next 12 hours. A chance for a later time has no model.
 - A file can be later than the moment of its alert, and later than the first VIIRS pixel of its event:
   `made_at` says how late. Its inputs are those of the moment. A score must take the late files apart.
 - The check of the live inputs is that of the growth risk (table `risk_live_inputs`, section 11.35): it has the
