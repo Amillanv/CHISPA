@@ -1950,8 +1950,9 @@ The numbers are of the run of 2026-11-27: rule 9 took out 2 fronts. 2249 of the 
 ### 11.28 The growth forecast
 
 A forecast for a front says, at the time of its look, what the next 12 and 24 hours bring: new ground or not,
-large growth or not, and in which sectors. `evaluation/front_inputs.py` makes the inputs, and `evaluation/forecast.py`
-makes the models and the tables. The command `chispa forecast` makes the tables of 2019 to 2024.
+large growth or not, and in which sectors. `front_inputs.py` makes the inputs, `forecast_model.py` has the trees,
+and `evaluation/forecast.py` makes the rows with their answers and the tables. The command `chispa forecast` makes
+the tables of 2019 to 2024.
 With `--test-run` it also makes those of 2025 and 2026.
 
 The rules:
@@ -2007,7 +2008,7 @@ training years by 4 percent.
   year before, and the live command stops (section 11.29). The scores have the fronts of those months, with that
   map. A check outside the repository (2026-11-27): 601 of the 2675 rows of 2025 and 2026 at 12 hours are before
   1 May, and 8704 of the 81 947 rows of 2019 to 2024. Section 11.31 has the rule for those months, and the
-  scores with the maps of the time.
+  scores with a calendar rule for the maps.
 - A Brier skill score of more than 0 says that the chances are better than one number for all fronts. It does not
   say that the level of the chances is correct. The bands of rule 8 and the counts of section 11.30 measure the level.
 - The weather is ERA5-Land, which is 6 days late. A live forecast must read the weather before the look from a second source.
@@ -2123,18 +2124,24 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
 
 ### 11.29 The live growth forecast
 
-`evaluation/forecast_live.py` makes the forecast of section 11.28 for the fronts that burn now. The command
+`forecast_live.py` makes the forecast of section 11.28 for the fronts that burn now. The command
 `chispa forecast --live` gives it, and `chispa update` makes it for each new look. The event record has it
 (section 7.3): the owner agreed to that field on 2026-11-27.
+The modules of this path (`fronts.py`, `front_inputs.py`, `forecast_model.py`, `forecast_live.py` and
+`forecast_files.py`) import no module of the evaluation: a test does a check of that. They load the saved
+trees, as the event record loads the model of the confidence. The rule is for the modules of the path:
+`cli.py` imports each command, and thus the evaluation also.
 
 1. The fronts are those of the looks that started in the last hours (`config.py`), with the minimum size and their
    centre in the biome (section 11.26, rules 1 to 3). A year in progress has no end here. Only the pixels
    that were available at the time of the run count.
-2. The trees are those of section 11.31, from the rows of all development years. A file holds them
-   (`evaluation/forecast_trees.py`). The command
-   fits them again when one of these changes: the first part of `config.py`, the code that makes the rows and the
-   trees, the version of scikit-learn, or a detection of the development years in the store: the file has a hash
-   of those detections. It does not read the raw layers: a raw file does not change (`docs/sources.md` section 8.7).
+2. The trees are those of section 11.31, from the rows of all development years. The command
+   `chispa forecast --trees` fits them and saves them in a file (`evaluation/forecast_trees.py`): some minutes.
+   A live forecast loads the file, and it fits no trees. It uses the trees only if they are for the inputs of
+   now: the first part of `config.py`, the code of the fronts, of the inputs and of the model, and the version of
+   scikit-learn. If not, it gives no forecast and says which command to run.
+   The file also has a mark of its fit, with a hash of the detections of the development years in the store.
+   After a change of those detections, or of the code of the answers, a person runs the command again.
 3. The inputs are those of section 11.28, rule 3, with the maps of section 11.31. The weather comes from
    ERA5-Land to its last day on disk.
    The later days come from Open-Meteo, with the model IFS, for the weather cell of each front.
@@ -2154,7 +2161,7 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
    came, or more fronts with a chance, or other trees. The first forecast stays as we gave it.
    `chispa update` makes a new file only for more pixels: after a new fit, `chispa forecast --live` makes it.
 6. `chispa update` makes the file of each new look as its last step, in each update. It does not fit the trees:
-   if the saved trees are not those of now, it says so, and `chispa forecast --live` fits them.
+   if the saved trees are not those of now, it says so, and `chispa forecast --trees` fits them.
    If a layer or the weather is absent, it says so, and the next update does the step again.
 7. The field `forecast` of the event record is the forecast of the newest look that has a front of the event. It
    comes from the newest file of that look that was complete at or before the as-of time. A front is a front of
@@ -2162,14 +2169,16 @@ What the forecast says, in counts (tables `forecast_chances`, `forecast_sectors`
    windows that are open at the as-of time, and the minimum of a large growth that the file has.
    A front of 1 or 2 pixels has no sectors (section 11.30, statement 5).
 
-- A live forecast has no answer at its time. The files of rule 5 are data that no model has read: a later command
-  can score them against what came. That command does not exist.
+- A live forecast has no answer at its time. The files of rule 5 are data that no model has read:
+  `chispa forecast --score` scores them against what came (section 11.32).
 - IFS is not ERA5-Land. On the fronts of September 2024, the two gave almost the same forecast (`docs/sources.md`
   section 8.4). A month with much rain is not checked.
 - The store has only the pixels that were available at the time of the run. A forecast from one satellite of a
   look is not the forecast of the complete look.
 - An alert with no front gets no forecast. In 2025 and 2026, 1690 of 3052 first alerts had a front of 1 pixel
-  or more 0.5 hours after the alert (section 11.30).
+  or more 0.5 hours after the alert (section 11.30). Section 11.34 has a test of the chance that an alert of
+  GOES only gets a front.
+- A front outside the biome gets no forecast: the stated chances of the trees were too high there (section 11.33).
 - For a front of 1 or 2 pixels, the sectors are not a direction: they were not better than the wind in the test
   (section 11.30). The answer gives the number of pixels of each front.
 - In the first months of a year, the annual map of the burned ground of the year before is not on disk: a front
@@ -2405,7 +2414,7 @@ The fronts of 3 pixels or more before 1 July, and the other fronts (table `forec
 | 24 | From 1 July | 32 300 | 13 561 | 13 611.2 | 0.8057 | 0.6895 | 6203 of 10 709 | 3161 |
 
 - The new trees are near the trees of section 11.30. The mean AUC of new ground is lower by 0.0014 at 12 hours
-  and by 0.0013 at 24 hours, and the direction is the same.
+  and by 0.0013 at 24 hours. The counts of the direction are near: 4577 against 4581, and 6947 against 6929.
 - The trees have a higher AUC than persistence and than the regression in each year, for each row of the first
   table. Their Brier skill score is more than 0 in each cell of year, question, hours and size.
 - The sum of the stated chances is near the count, for the six years together. For the fronts of 3 pixels or
@@ -2488,8 +2497,318 @@ The fronts of 3 pixels or more before 1 July (table `forecast_periods`):
   ground, and 6 of the 275 fronts below 0.05. The three most likely sectors had 2281 of the 3409 new pixels.
 - The forecast of the months before 1 July has a test on one year with many fronts with new ground, 2026.
   2025 has too few for an answer.
-- The rules stay: a live forecast gives each front of each month its forecast. The trees of now are those of
-  this section. The numbers of sections 11.28 and 11.30 are those of their runs.
+- The rules stay: the calendar does not stop a live forecast now. A front must have its other inputs
+  (section 11.29, rule 4). The trees of now are those of this section. The numbers of sections 11.28 and 11.30
+  are those of their runs.
+- A live forecast from 1 July with no map of the year before on disk has inputs that no test had: each row of a
+  test from 1 July has that map.
+- The next independent test is the saved files of the live forecast (section 11.32), and the fronts after
+  2026-11-20.
+- The result has satellite sources only.
+
+### 11.32 The score of the saved live forecasts
+
+A file of section 11.29 is a forecast that we gave before its answer existed. The command
+`chispa forecast --score` gives each front of those files its answer, and it scores the stated chances
+(`evaluation/forecast_score.py`). No model has read these fronts: each look is after the end of the test of
+section 11.31. The owner asked for this command on 2026-11-27.
+
+1. The forecast of a look is its newest file that was complete before the first window starts. A look with only
+   later files has no score. The longest window must end in the year of the look (section 11.26, rule 9).
+2. The command makes the look again as the file saw it, with the pixels that were available at `pixels_to`.
+   The later pixels are those of the store of now, from the start of the first window.
+3. A look has a score only if the store of now has the same look, by three signs: its first pixel is in the
+   minute of the look of the file, it has the same number of pixels, and each front of the file is there with
+   the same centre and the same size. If a pixel of the look came after the file, the look was not complete
+   before its first window (section 11.26, rule 11). The table counts the fronts of such looks (`same_look`).
+4. A window has an answer when the poller has a pass that read each source with no failure (`polls.py`) in a
+   span of time. The span starts 6 hours after the end of the window: the hours in which a look must be
+   complete (`config.py`), because the pixels of the last pass of a window come some hours after the pass.
+   The span ends one read-back of the poller (`config.py`, 4 days) after the start of the window: a later pass
+   does not get the pixels and the masks of the window. The time of the clock is not sufficient: after a stop
+   of a source, "no pixel" must not become "no new ground".
+   The command stops if a FIRMS log on disk has a row that the store did not read.
+5. The answer of a front comes from the rules 5 to 8 of section 11.26. The masks are those of the live poller:
+   each scan that it recorded.
+6. A front has a score if it has a chance, and if GOES examined its place at each time of the window
+   (section 11.30, rule 1).
+7. The table `forecast_live` has one row for each window and each size of front: the looks, the fronts, the
+   fronts with a score, those with new ground, the sum of the stated chances, the AUC of the trees and of
+   persistence, and the direction of the fronts with 3 new pixels or more. An AUC needs a front with new ground
+   and a front with none. The file `results/<year>/forecast_live/fronts.csv` has one row for each front and
+   each window, with the mark of its trees. A direction has one decimal there, and the count of 45 degrees
+   uses that value.
+8. Each run makes the table of a year again from all files of that year. A run with no answer makes no table.
+   The table of the run that answers the hypothesis must go into git with that run: a later run replaces it.
+
+The hypothesis, written on 2026-11-27 before a window of a saved forecast had an answer. The first files are of
+the look of 2026-11-27 16:41 UTC. The statements are for the table of a year, at the first run in which 100 or
+more fronts of 3 pixels or more have a score at 12 hours. Before that count, the table is a count in progress:
+it does not answer the hypothesis.
+
+1. For the fronts of 3 pixels or more, the AUC of the trees for new ground is higher than that of persistence,
+   at 12 and at 24 hours.
+2. For the fronts of 3 pixels or more, observed to expected for new ground is from 0.8 to 1.25, at 12 and at
+   24 hours.
+
+A negative result is a valid result.
+
+- 100 fronts are few. In the test of section 11.31, 230 of the 1190 fronts of 3 pixels or more had new ground
+  at 12 hours. At that share, 100 fronts give approximately 19 with new ground: statement 2 can be false by
+  chance.
+- A look has a file only if the computer with the store ran `chispa update` before the first window. A look
+  with no file has no score, and the table does not count it.
+- The masks of the poller have each scan, and the test had one scan of each hour (section 11.26). The limit in
+  time from a scan to its moment is the same.
+- One table can have the files of trees with different marks. The file of the fronts has the mark of each row.
+- The table has no wind: the count of the direction has no baseline.
+- The wait of rule 4 is not a measured delay. The delay report of the live logs is not made (`PLAN.md`).
+- Rule 3 compares the number of the pixels of a look, and the centre and the size of each front. It does not
+  compare each pixel: a file does not have its pixels.
+- The limits of sections 11.26 to 11.31 apply. The score has satellite sources only.
+
+### 11.33 The fronts in Brazil outside the biome
+
+The store has the detections of the whole box, and an alert can be outside the biome border. Its fronts have no
+forecast: the trees learn from the fronts of the biome, and each score is for those fronts (section 11.26,
+rule 3). The owner asked on 2026-11-27 for a test of the trees on the fronts in Brazil outside the biome.
+`chispa forecast --outside` makes the tables `forecast_outside` and `forecast_direction_outside`
+(`evaluation/forecast_outside.py`) of 2019 to 2024. With `--test-run` it also makes those of 2025 and 2026.
+
+1. A front is in Brazil if its centre is in a cell with a land cover class: the land cover map has Brazil only
+   (`docs/sources.md` section 8.14). A front in a different country has no maps: it is not in this test.
+2. The fronts of this section are in Brazil, and their centre is not in the biome border. Each other rule of the
+   fronts, of their answers and of their inputs is that of sections 11.26 to 11.31.
+3. The trees are those of section 11.31: a year gets the trees of the biome fronts of the other development
+   years. No tree reads a front outside the biome. The regression and the baselines also come from the biome.
+
+The result of the development years (tables `forecast_outside` and `forecast_direction_outside` of 2019 to 2024,
+2026-11-27). Each AUC is the mean of the six years. "Expected" is the sum of the stated chances of the trees.
+
+| Fronts | Question | Hours | Rows | With the answer yes | Expected | Persistence | Regression | Trees | Trees in the biome |
+|---|---|---|---|---|---|---|---|---|---|
+| 3 or more | New ground | 12 | 18 867 | 3531 | 3670.9 | 0.6399 | 0.7542 | 0.7768 | 0.8264 |
+| 3 or more | New ground | 24 | 15 996 | 5382 | 5646.3 | 0.6095 | 0.7304 | 0.7620 | 0.8062 |
+| 3 or more | Large growth | 12 | 18 867 | 1065 | 1249.5 | 0.7159 | 0.8302 | 0.8384 | 0.8651 |
+| 3 or more | Large growth | 24 | 15 996 | 2252 | 2447.3 | 0.6634 | 0.8171 | 0.8387 | 0.8406 |
+| 1 or 2 | New ground | 12 | 26 949 | 1260 | 1729.2 | 0.4691 | 0.7058 | 0.7325 | 0.8260 |
+| 1 or 2 | New ground | 24 | 22 034 | 2835 | 3344.5 | 0.4834 | 0.6286 | 0.6783 | 0.7445 |
+
+| Fronts | Hours | Fronts with a direction | Trees in 45 degrees | Regression | Wind before the look |
+|---|---|---|---|---|---|
+| 3 or more | 12 | 2199 | 1237 | 1169 | 805 |
+| 3 or more | 24 | 3862 | 2029 | 2024 | 1209 |
+| 1 or 2 | 12 | 549 | 245 | 230 | 189 |
+| 1 or 2 | 24 | 1328 | 505 | 517 | 397 |
+
+- For new ground and for the sectors, the trees have a higher AUC than persistence and than the regression in
+  6 of 6 years, for each size and each window.
+- The AUC is lower than in the biome: by 0.0496 at 12 hours and by 0.0442 at 24 hours, for the fronts of
+  3 pixels or more. The lowest year is 2022: 0.7156 and 0.6668.
+- The stated chances are near the count for the six years together, and not for each year. For the fronts of
+  3 pixels or more, observed to expected for new ground is 0.54 to 1.04 for one year at 12 hours, and 0.55 to
+  1.00 at 24 hours. In 2022 the trees expected 146.9 fronts with new ground at 12 hours, and 80 had it. In 2023:
+  334.5 and 247. In the biome, one year had 0.88 to 1.12 (section 11.31).
+- For the small fronts the stated chances are too high: observed to expected is 0.73 at 12 hours and 0.85 at
+  24 hours, and 0.53 to 0.86 for one year at 12 hours.
+- The chance of a large growth is too high: for the fronts of 3 pixels or more, observed to expected for one
+  year is 0.11 to 1.19 at 12 hours. For the small fronts, 180 had a large growth of 355.1 expected.
+
+The hypothesis, written on 2026-11-27 before the run on 2025 and 2026. The numbers above were known. No command
+read an answer of a front outside the biome of those two years. The test years get the trees of 2019 to 2024,
+one time.
+
+1. For the fronts of 3 pixels or more, the trees have a higher AUC for new ground than persistence in each test
+   year, at 12 and at 24 hours.
+2. For the fronts of 3 pixels or more, the mean AUC of the trees for new ground of the two years is not lower
+   than that of the biome fronts by more than 0.10. Those means are 0.84425 at 12 hours and 0.7893 at 24 hours
+   (section 11.31).
+3. For the fronts of 3 pixels or more, with the two years together, observed to expected for new ground is from
+   0.8 to 1.25, at 12 and at 24 hours.
+4. For the fronts of 3 pixels or more, with the two years together, the direction of the trees is in 45 degrees
+   for more fronts than the wind before the look, at 12 and at 24 hours.
+5. For the small fronts, the trees have a higher AUC for new ground than persistence in each test year, at 12
+   and at 24 hours.
+
+What follows from the result, written before it. If the statements 1 to 4 are true, a live forecast can give a
+front of 3 pixels or more outside the biome its chance of new ground and its sectors, with a mark that it is
+outside the biome. A small front outside the biome gets a chance only if statement 5 is true and its observed to
+expected for new ground is in the range of statement 3: in the development years it was not, at 12 hours.
+No statement is for the chance of a large growth: an alert must not give it for a front outside the biome.
+A negative result is a valid result.
+
+- The limit of 0.10 in statement 2 comes from the development years: no two of them have a larger mean
+  difference. It is a choice.
+- The maps end at the border of Brazil. For a front near that border, the ground ahead in a different country has
+  no land cover group and no burned ground in the inputs. A front of the biome near the border has the same limit.
+- The Brier skill score in the table `forecast_outside` compares the trees with the share of the biome fronts
+  of the training years, not with a share of the fronts outside.
+- The limits of sections 11.26 to 11.31 apply. The result has satellite sources only.
+
+The result of the test (the same tables of 2025 and 2026, 2026-11-27): the statements 1, 2, 4 and 5 are true.
+Statement 3 is false. Each cell has the value of 2025, then the value of 2026.
+
+| Fronts | Hours | Rows | With new ground | Expected | Persistence | Regression | Trees | Trees in the biome |
+|---|---|---|---|---|---|---|---|---|
+| 3 or more | 12 | 1386, 970 | 148, 78 | 187.1, 125.3 | 0.6605, 0.6267 | 0.7735, 0.7866 | 0.8192, 0.7991 | 0.8706, 0.8179 |
+| 3 or more | 24 | 1058, 776 | 228, 152 | 290.0, 207.8 | 0.6177, 0.6329 | 0.7385, 0.6714 | 0.7881, 0.6912 | 0.8111, 0.7675 |
+| 1 or 2 | 12 | 2394, 1674 | 67, 40 | 131.3, 89.0 | 0.4824, 0.5407 | 0.7130, 0.6901 | 0.7518, 0.7099 | 0.8060, 0.8034 |
+| 1 or 2 | 24 | 1832, 1293 | 190, 117 | 249.4, 177.6 | 0.4829, 0.4914 | 0.5541, 0.5716 | 0.6681, 0.6280 | 0.7328, 0.7462 |
+
+- Statement 1: the trees are above persistence in each year, at 12 and at 24 hours. They are also above the
+  regression in each cell of the table.
+- Statement 2: the mean AUC is 0.80915 at 12 hours and 0.73965 at 24 hours. It is lower than in the biome by
+  0.0351 and by 0.04965.
+- Statement 3: false. The trees expected 312.4 fronts with new ground at 12 hours, and 226 had it: 0.72.
+  At 24 hours: 497.8 and 380, 0.76. For one year: 0.79 and 0.62 at 12 hours, 0.79 and 0.73 at 24 hours.
+  The stated chances are too high. In the biome the same years had 0.86 and 0.83 (section 11.31).
+- Statement 4: the trees are in 45 degrees for 59 of 138 fronts at 12 hours, and the wind for 43. At 24 hours:
+  109 and 75 of 243. The regression has 61 and 90.
+- Statement 5: for a small front the trees are above persistence in each year. Their chances are too high:
+  107 small fronts had new ground at 12 hours of 220.3 expected, and 307 of 427.0 at 24 hours.
+- For a large growth, 61 fronts of 3 pixels or more had it at 12 hours of 92.4 expected.
+- What follows, by the rule above: a live forecast gives a front outside the biome no chance. The trees of the
+  biome put those fronts in a useful sequence, and their percentage is too high there.
+- Not tested: trees that also learn from the fronts outside the biome, and a correction of the chance for
+  those fronts. Each needs its hypothesis and its test. The fronts outside the biome of 2025 and 2026 now have
+  one read: a second score on them is not an independent test.
+- The result has satellite sources only.
+
+### 11.34 The chance of a front for an alert that only GOES started
+
+A growth forecast is for a front of VIIRS pixels (section 11.26). An alert that only GOES started has no VIIRS
+pixel: it has no front and no forecast. In 2025, 264 of 699 such first alerts had a front 24 hours later, and in
+2026, 257 of 512 (table `front_alerts`). The owner asked on 2026-11-27 for the chance that such an alert gets a
+front. `chispa forecast --front-chance` makes the tables `front_chance`, `front_chance_bands` and
+`front_chance_weights` (`evaluation/front_chance.py`) of 2019 to 2024. With `--test-run` it also makes those of
+2025 and 2026. No field of the event record has this chance: a new field needs the agreement of the owner
+(section 12.1).
+
+1. A row is an alert in the biome at moment 0: one pass gap after its first detection was available
+   (section 11.15). The alert is the event as it was then (`moments.py`). It is a row if each detection of
+   its event at that moment is a GOES detection.
+2. The answer of a row is yes if its event has a front at moment 24: 24 hours after its first detection was
+   available (`config.py`). A front is a VIIRS pixel of FIRMS that was available then (section 11.26, rule 10).
+3. The inputs are those of the growth risk at moment 0 (section 11.22), without the ground that burned
+   before: an alert before 1 July does not have the map of the year before (section 11.31). There are 30:
+   the inputs of the confidence without the calendar and the fire power, the first hours, and the late weather.
+4. The model is a logistic regression (`confidence.py`), as for the growth risk. A development year (2019 to
+   2024) gets the model of the five other years. 2025 and 2026 get the model of the six years, one time.
+5. The baselines are the confidence at moment 0 (section 11.15) and the number of detections.
+   The model of the confidence comes from 2023: in 2023 this baseline has the rows that it learned from.
+   The Brier skill score compares the chance with one number: the share of the training rows with a front.
+   A third baseline came after the review of pull request 48, and after the test: a regression with only
+   the hour of the first detection. It is not a part of the hypothesis.
+6. Moment 0 must be 24 hours or more before the end of the year, and before the end of a year in progress
+   (section 11.26, rule 9). This is stricter than moment 24 by one pass gap.
+   The day of moment 0 must have its weather on disk. For 2026 the weather files are complete to
+   October: its rows end on 2026-10-31.
+
+The result of the development years (table `front_chance` of 2019 to 2024, 2026-11-27). "Expected" is the sum
+of the stated chances.
+
+| Year | Alerts | With a front | Expected | AUC of the model | AUC of the confidence | AUC of the detections | AUC of the hour | Brier skill |
+|---|---|---|---|---|---|---|---|---|
+| 2019 | 707 | 412 | 328.4 | 0.8348 | 0.6619 | 0.5930 | 0.7363 | 0.4562 |
+| 2020 | 2328 | 624 | 724.4 | 0.8627 | 0.6186 | 0.5691 | 0.8209 | 0.4091 |
+| 2021 | 1046 | 463 | 404.5 | 0.8667 | 0.6128 | 0.6129 | 0.7804 | 0.4345 |
+| 2022 | 971 | 418 | 380.5 | 0.7316 | 0.4903 | 0.6133 | 0.6269 | 0.1642 |
+| 2023 | 4709 | 895 | 1191.2 | 0.7965 | 0.6067 | 0.5803 | 0.6033 | 0.3176 |
+| 2024 | 3513 | 1064 | 1016.2 | 0.8380 | 0.6789 | 0.6246 | 0.6493 | 0.3334 |
+
+By stated chance, for the six years together (table `front_chance_bands`):
+
+| Stated chance | Alerts | With a front |
+|---|---|---|
+| Below 0.05 | 636 | 26 |
+| 0.05 to 0.1 | 2341 | 162 |
+| 0.1 to 0.2 | 3624 | 421 |
+| 0.2 to 0.35 | 2572 | 614 |
+| 0.35 to 0.5 | 1304 | 563 |
+| 0.5 to 0.7 | 1138 | 752 |
+| 0.7 or more | 1659 | 1338 |
+
+- The model has a higher AUC than the two baselines in 6 of 6 years. The mean AUC of the six years is 0.8217,
+  against 0.6115 for the confidence and 0.5989 for the number of detections.
+- From after the test (rule 5): the hour alone has a mean AUC of 0.7029, and the model is above it in 6 of
+  6 years. In 2019 to 2021 the hour gives most of the sequence: 0.7363, 0.8209 and 0.7804. In 2022 to 2024 it
+  gives less: 0.6033 to 0.6493.
+- The share of the alerts with a front changes with the year: 895 of 4709 in 2023, and 412 of 707 in 2019.
+  The stated chances follow that only in part: observed to expected for one year is 0.75 to 1.25. For the six
+  years together it is 3876 to 4045.2.
+- The inputs with the largest weights are the hour of the first detection, the rain of the 30 days before, the
+  dryness of the air, and the detections near the place in the days before (table `front_chance_weights`).
+  The hour says how near the next VIIRS pass is. A weight is not a cause: the weather inputs go together.
+
+The hypothesis, written on 2026-11-27 before the run on 2025 and 2026. The numbers above were known, and the
+counts of the table `front_alerts` of the two years. The column of the hour was not known: it came after the
+test (rule 5). The test years get the model of 2019 to 2024, one time.
+
+1. In each test year, the model has a higher AUC than the confidence and than the number of detections.
+2. The mean AUC of the model of the two years is 0.75 or more. No two development years have a lower mean
+   than 0.7641.
+3. With the two years together, observed to expected is from 0.8 to 1.25.
+4. In each test year, the Brier skill score of the model is more than 0.
+
+What follows from the result, written before it. If the statements 1 and 2 are true, the chance puts the alerts
+in a useful sequence. A percentage for a person also needs statement 3. The owner decides if the event record
+gets a field. A negative result is a valid result.
+
+- The limit of 0.75 in statement 2 is a choice from the development years.
+- The years of this part are those of the growth forecast (section 7.4, rule 2): the rules from 2019 to 2024,
+  and one score on 2025 and 2026. This choice waits for the answer of the owner. The owner asked for this part
+  on 2026-11-27 and was not there for the choice of the years. If the owner does not agree, the run on 2025 and
+  2026 is a first look, and not the test of the part.
+- The event of an alert can get its VIIRS pixel by a merge with a fire near it: the answer is for the event,
+  not for the place of the first GOES detection. We did not count how many answers come from a merge.
+- A front at moment 24 says that VIIRS saw the fire of the event in 24 hours. It does not say that the
+  fire is large, and no front does not say that the fire stopped: cloud hides a fire from VIIRS.
+- The time when a VIIRS pixel was available is an estimate for the years from the archive (`config.py`).
+- The land cover is that of the year before, as for the confidence. An alert of the first months of a year
+  did not have that map: section 11.31 uses two years before. Thus this test has a land cover that is newer
+  than some alerts had. A run with the calendar of section 11.31 is not made: it is a second analysis.
+- The rows are fewer than the alerts of the table `front_alerts`. An alert that merged with an older event
+  before moment 0 is not a row, and an alert that got a detection of a different sensor in that time is not one.
+- The number of the alerts that only GOES started changes with the year: 1002 in 2022 and 5824 in 2023 (table
+  `front_alerts`). `UNVERIFIED`: we did not examine the cause, or why 2023 has the lowest share with a front.
+- The result has satellite sources only.
+
+The result of the test (the same tables of 2025 and 2026, 2026-11-27): the four statements are true.
+
+| Year | Alerts | With a front | Expected | AUC of the model | AUC of the confidence | AUC of the detections | AUC of the hour | Brier skill |
+|---|---|---|---|---|---|---|---|---|
+| 2025 | 693 | 263 | 231.4 | 0.8254 | 0.6418 | 0.7186 | 0.6240 | 0.3124 |
+| 2026 | 440 | 223 | 201.7 | 0.7661 | 0.6394 | 0.6837 | 0.5590 | 0.2930 |
+
+| Stated chance | Alerts of the two years | With a front |
+|---|---|---|
+| Below 0.05 | 64 | 4 |
+| 0.05 to 0.1 | 178 | 23 |
+| 0.1 to 0.2 | 230 | 52 |
+| 0.2 to 0.35 | 162 | 65 |
+| 0.35 to 0.5 | 108 | 54 |
+| 0.5 to 0.7 | 142 | 88 |
+| 0.7 or more | 249 | 200 |
+
+- Statement 1: the model has the highest AUC in each year. The number of detections is a better baseline than
+  in the development years: 0.7186 and 0.6837, against a mean of 0.5989.
+- The hour alone has 0.6240 and 0.5590: the model is above a regression with only the hour. The hour is not
+  the real opportunity of a VIIRS view: the pass times, the swath and the cloud are not in that baseline, and
+  a baseline with them is not made. Thus we do not know how much of the sequence is the fire and how much is
+  the view. This baseline came after the test (rule 5). The run for it read the two years a second time, and
+  each other number of the tables stayed the same.
+- Statement 2: the mean AUC of the two years is 0.79575.
+- Statement 3: 486 alerts had a front, and the chances expected 433.1: 1.12. For one year: 1.14 and 1.11.
+  The stated chances are too low by approximately one part in ten.
+- Statement 4: the Brier skill score is 0.3124 and 0.2930.
+- 200 of the 249 alerts with a chance of 0.7 or more had a front, and 27 of the 242 alerts below 0.1.
+  In 2026, 4 of the 17 alerts below 0.05 had a front: the lowest band has few alerts.
+- Statement 3 is for the sum of the chances, not for each band. In the band from 0.1 to 0.2, 52 of 230 alerts
+  had a front: more than the band says. A percentage for a person needs a test for each band, written first.
+- 2026 has the alerts to 2026-10-31 (rule 6): 440 rows.
+- This is one test on two years, with the limits above. The chance is a candidate for a field of the event
+  record, for an alert with no front. The field is not built, and no live code makes these inputs: the owner
+  decides (section 12.1).
 - The result has satellite sources only.
 
 ## 12. Agent and MCP rules

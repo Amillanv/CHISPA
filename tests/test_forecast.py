@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 
+from chispa import forecast_model
 from chispa.evaluation import forecast, forecast_run
 
 
@@ -110,8 +111,8 @@ def test_the_trees_learn_a_simple_rule_and_give_the_same_answer_each_time():
     # 300 rows of three years. The label is 1 if the first input is more than 0.
     values = np.random.default_rng(1).normal(size=(300, 3))
     label, years = (values[:, 0] > 0).astype(float), np.repeat([2019, 2020, 2021], 100)
-    first = forecast.fit_trees(values, label, years).predict_proba(values)[:, 1]
-    second = forecast.fit_trees(values, label, years).predict_proba(values)[:, 1]
+    first = forecast_model.fit_trees(values, label, years).predict_proba(values)[:, 1]
+    second = forecast_model.fit_trees(values, label, years).predict_proba(values)[:, 1]
     assert ((first > 0.5) == (label > 0)).mean() > 0.95
     assert first.tolist() == second.tolist()
 

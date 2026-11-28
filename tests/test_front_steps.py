@@ -51,7 +51,7 @@ def masks_of(first_day: dict[int, int], second_day: dict[int, int]) -> steps.Mas
 
 
 def rows_of(pixels: dict, masks: steps.Masks) -> dict:
-    a, b, look = next(steps.each_look(pixels))
+    a, b, look = next(fronts.each_look(pixels))
     return steps.look_rows(pixels, (a, b), look, masks)
 
 

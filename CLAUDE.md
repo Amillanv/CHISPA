@@ -88,6 +88,7 @@ sources -> data/raw/ -> store -> fusion -> store -> evaluation -> results
 - The bucket holds raw files only: no store, no code, no key. A file in the bucket never changes.
 - A source module does not import a different source module.
 - The fusion never reads burn scars and does not import the evaluation.
+- The live path of the growth forecast does not import the evaluation: it loads the saved trees.
 - At time T, the fusion uses only detections with `available_at` at or before T.
 - The MCP server, the agent and the dashboard contain no logic. They call the tools module.
 - All thresholds and estimates are in `config.py` and in no other file.

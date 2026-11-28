@@ -5,8 +5,7 @@ from datetime import UTC, date, datetime
 import numpy as np
 import pytest
 
-from chispa import fronts
-from chispa.evaluation import front_inputs
+from chispa import front_inputs, fronts
 from chispa.grid import layer_grid
 from chispa.sources import weather
 

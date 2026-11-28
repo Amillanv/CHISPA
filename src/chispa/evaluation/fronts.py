@@ -19,16 +19,8 @@ from chispa.evaluation.report import percentile, share
 from chispa.grid import pantanal_grid
 from chispa.sources import border, goes
 
-SOURCE = "firms"  # One product for each pass. INPE gives the same passes from a second processor.
 ANSWERS = ("new_ground", "front_again", "clear_no_fire", "not_visible")
 HIDDEN = ANSWERS.index("not_visible")
-PIXEL_QUERY = """
-SELECT CAST(strftime('%s', observed_at) AS INTEGER), lat, lon, frp_mw, platform,
-       CAST(strftime('%s', available_at) AS INTEGER)
-FROM detections
-WHERE sensor_family = ? AND source = ? AND observed_at >= ? AND observed_at < ?
-ORDER BY 1
-"""
 
 
 @dataclass(frozen=True)
@@ -40,44 +32,17 @@ class Masks:
     days: dict
 
 
-def load_pixels(store: sqlite3.Connection, year: int) -> dict[str, np.ndarray]:
-    """Return the VIIRS detections of FIRMS of one year in the box, in time sequence."""
-    arguments = (fronts.SENSOR_FAMILY, SOURCE, f"{year}-01-01", f"{year + 1}-01-01")
-    rows = store.execute(PIXEL_QUERY, arguments).fetchall()
-    if not rows:
-        raise RuntimeError(f"The store has no VIIRS detection of {year}. Run `chispa build`.")
-    seconds, lat, lon, power, platform, available = zip(*rows, strict=True)
-    seconds, lat, lon = np.array(seconds, dtype=float), np.array(lat), np.array(lon)
-    return {
-        "seconds": seconds,
-        "available": np.array(available, dtype=float),
-        "lat": lat,
-        "lon": lon,
-        "frp_mw": np.array([np.nan if value is None else value for value in power]),
-        "platform": np.array(platform),
-        "points": fronts.metres(lat, lon),
-        "look": fronts.looks(seconds),
-    }
-
-
-def each_look(pixels: dict, since: float = -np.inf):
-    """Give (first row, row after the last, look) for each look of the year, in time sequence.
-
-    `since`: only the looks that started at or after this time. A live forecast needs only the
-    newest looks, and to make each look of a year needs seconds.
-    """
-    first = np.searchsorted(pixels["look"], np.arange(pixels["look"].max() + 2))
-    for a, b in zip(first[:-1], first[1:], strict=True):
-        if pixels["seconds"][a] >= since:
-            yield a, b, fronts.make_look(pixels["points"][a:b], pixels["points"][:a])
-
-
 def open_masks(raw_dir: Path, year: int) -> Masks:
     """Return the masks of one year. A year that is complete must have the mask of its last day."""
     folder = raw_dir / "goes_mask"
     if year < datetime.now(UTC).year and not (folder / str(year) / f"{year}-12-31.npz").exists():
         raise RuntimeError(f"Run `chispa fetch goes_mask --year {year}` first.")
-    place = np.load(folder / "grid.npz")
+    return masks_in(raw_dir)
+
+
+def masks_in(raw_dir: Path) -> Masks:
+    """Return the masks below a folder: the fetched masks, or those that the poller recorded."""
+    place = np.load(raw_dir / "goes_mask" / "grid.npz")
     return Masks(raw_dir, cKDTree(fronts.metres(place["lat"].ravel(), place["lon"].ravel())), {})
 
 
@@ -119,22 +84,6 @@ def examined(masks: Masks, at: float) -> np.ndarray:
     return seen
 
 
-def places(pixels: dict, bounds: tuple[int, int], look: fronts.Look) -> dict[str, np.ndarray]:
-    """Return the start of the look, and the size and the centre of each front of the look.
-
-    `complete_h` is the time from the start of the look to the moment when its last pixel was
-    available: a forecast from the complete look cannot be earlier.
-    """
-    a, b = bounds
-    size = np.bincount(look.labels, minlength=look.labels.max() + 1)
-    rows = {"start": np.full(len(size), pixels["seconds"][a]), "pixels": size}
-    complete_h = (pixels["available"][a:b].max() - pixels["seconds"][a]) / 3600
-    rows["complete_h"] = np.full(len(size), complete_h)
-    for name in ("lat", "lon"):
-        rows[name] = np.bincount(look.labels, pixels[name][a:b], minlength=len(size)) / size
-    return rows
-
-
 def look_rows(pixels: dict, bounds: tuple[int, int], look: fronts.Look, masks: Masks) -> dict:
     """Return one row for each front of a look: its place, its size and its answers.
 
@@ -143,7 +92,7 @@ def look_rows(pixels: dict, bounds: tuple[int, int], look: fronts.Look, masks: M
     `examined` says only if GOES examined the place at each time: it does not read a later pixel.
     """
     a, b = bounds
-    seconds, rows = pixels["seconds"], places(pixels, bounds, look)
+    seconds, rows = pixels["seconds"], fronts.places(pixels, bounds, look)
     size, count = rows["pixels"], len(rows["pixels"])
     cells = masks.tree.query(look.points)[1]
     middle, before, hidden_before = float(np.median(seconds[a:b])), np.zeros(count), False
@@ -168,18 +117,11 @@ def look_rows(pixels: dict, bounds: tuple[int, int], look: fronts.Look, masks: M
 def front_rows(pixels: dict, masks: Masks, in_biome: np.ndarray) -> dict[str, np.ndarray]:
     """Return the rows of the fronts of one year: the fronts of the minimum size in the biome."""
     parts = []
-    for a, b, look in each_look(pixels):
+    for a, b, look in fronts.each_look(pixels):
         rows = look_rows(pixels, (a, b), look, masks)
         keep = kept(rows, in_biome)
         parts.append({name: values[keep] for name, values in rows.items()})
     return {name: np.concatenate([part[name] for part in parts]) for name in parts[0]}
-
-
-def counted(rows: dict, in_biome: np.ndarray) -> np.ndarray:
-    """Return True for each front of a look with the minimum size and its centre in the biome."""
-    keep = rows["pixels"] >= config.FRONT_MIN_PIXELS
-    keep[keep] = in_biome[pantanal_grid().rows_cols(rows["lat"][keep], rows["lon"][keep])]
-    return keep
 
 
 def kept(rows: dict, in_biome: np.ndarray) -> np.ndarray:
@@ -194,14 +136,7 @@ def kept(rows: dict, in_biome: np.ndarray) -> np.ndarray:
     year = datetime.fromtimestamp(float(rows["start"][0]), UTC).year
     end = datetime(year + 1, 1, 1, tzinfo=UTC).timestamp() - longest * 3600
     end = min(end, config.FRONT_TEST_END.timestamp())
-    return counted(rows, in_biome) & (rows["start"] < end) & (rows["complete_h"] <= first)
-
-
-def is_day_look(start: np.ndarray) -> np.ndarray:
-    """Return True for each look that starts in the day hours of `config.py`."""
-    low, high = config.FRONT_DAY_HOURS_UTC
-    hour = (start % 86400) / 3600
-    return (hour >= low) & (hour <= high)
+    return fronts.counted(rows, in_biome) & (rows["start"] < end) & (rows["complete_h"] <= first)
 
 
 def step_table(rows: dict[str, np.ndarray]) -> list[dict]:
@@ -210,7 +145,7 @@ def step_table(rows: dict[str, np.ndarray]) -> list[dict]:
     The share of the fronts with new ground is of the fronts that were visible. The two counts
     "not examined" are the fronts that have an answer only because a later pixel came.
     """
-    day = is_day_look(rows["start"])
+    day = fronts.is_day_look(rows["start"])
     table = []
     for hours in config.FRONT_WINDOWS_H:
         answer, new = rows[f"answer_{hours}"], rows[f"new_{hours}"]
@@ -235,7 +170,7 @@ def step_tables(year: int, store_path: Path, raw_dir: Path) -> dict[str, list[di
     store = sqlite3.connect(store_path)
     rings = border.read_rings(raw_dir / "border" / "pantanal.geojson")
     in_biome = border.rasterize(rings, pantanal_grid())
-    rows = front_rows(load_pixels(store, year), open_masks(raw_dir, year), in_biome)
+    rows = front_rows(fronts.load_pixels(store, year), open_masks(raw_dir, year), in_biome)
     small = rows["pixels"] < config.FRONT_SMALL_BELOW
     parts = {"front_steps": ~small, "front_steps_small": small}
     return {

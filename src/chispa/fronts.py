@@ -4,9 +4,11 @@ An event can hold many fires, thus one direction for an event has little meaning
 no event: it is the pixels of one look that are adjacent. The later looks give the answer for a
 front: new ground or not, how many new pixels, and in which sector of the compass.
 A forecast learns from this answer, and the same answer scores a forecast.
+This module also reads the pixels of a year from the store, and it says which fronts count.
 `docs/method.md` section 11.26 gives the rules.
 """
 
+import sqlite3
 from dataclasses import dataclass
 
 import numpy as np
@@ -15,8 +17,17 @@ from scipy.sparse.csgraph import connected_components
 from scipy.spatial import cKDTree
 
 from chispa import config
+from chispa.grid import pantanal_grid
 
 SENSOR_FAMILY = "viirs"  # A GOES pixel is too large to show the side of a fire.
+SOURCE = "firms"  # One product for each pass. INPE gives the same passes from a second processor.
+PIXEL_QUERY = """
+SELECT CAST(strftime('%s', observed_at) AS INTEGER), lat, lon, frp_mw, platform,
+       CAST(strftime('%s', available_at) AS INTEGER)
+FROM detections
+WHERE sensor_family = ? AND source = ? AND observed_at >= ? AND observed_at < ?
+ORDER BY 1
+"""
 
 
 @dataclass(frozen=True)
@@ -122,3 +133,65 @@ def mean_lines(owner: np.ndarray, lines: np.ndarray, count: int) -> dict[str, np
         distance[front] = np.percentile(lengths[owner == front], config.GROWTH_ADVANCE_PERCENT)
     direction = np.where(has, np.degrees(np.arctan2(east, north)) % 360, np.nan)
     return {"direction_deg": direction, "distance_m": distance}
+
+
+def load_pixels(store: sqlite3.Connection, year: int) -> dict[str, np.ndarray]:
+    """Return the VIIRS detections of FIRMS of one year in the box, in time sequence."""
+    arguments = (SENSOR_FAMILY, SOURCE, f"{year}-01-01", f"{year + 1}-01-01")
+    rows = store.execute(PIXEL_QUERY, arguments).fetchall()
+    if not rows:
+        raise RuntimeError(f"The store has no VIIRS detection of {year}. Run `chispa build`.")
+    seconds, lat, lon, power, platform, available = zip(*rows, strict=True)
+    seconds, lat, lon = np.array(seconds, dtype=float), np.array(lat), np.array(lon)
+    return {
+        "seconds": seconds,
+        "available": np.array(available, dtype=float),
+        "lat": lat,
+        "lon": lon,
+        "frp_mw": np.array([np.nan if value is None else value for value in power]),
+        "platform": np.array(platform),
+        "points": metres(lat, lon),
+        "look": looks(seconds),
+    }
+
+
+def each_look(pixels: dict, since: float = -np.inf):
+    """Give (first row, row after the last, look) for each look of the year, in time sequence.
+
+    `since`: only the looks that started at or after this time. A live forecast needs only the
+    newest looks, and to make each look of a year needs seconds.
+    """
+    first = np.searchsorted(pixels["look"], np.arange(pixels["look"].max() + 2))
+    for a, b in zip(first[:-1], first[1:], strict=True):
+        if pixels["seconds"][a] >= since:
+            yield a, b, make_look(pixels["points"][a:b], pixels["points"][:a])
+
+
+def places(pixels: dict, bounds: tuple[int, int], look: Look) -> dict[str, np.ndarray]:
+    """Return the start of the look, and the size and the centre of each front of the look.
+
+    `complete_h` is the time from the start of the look to the moment when its last pixel was
+    available: a forecast from the complete look cannot be earlier.
+    """
+    a, b = bounds
+    size = np.bincount(look.labels, minlength=look.labels.max() + 1)
+    rows = {"start": np.full(len(size), pixels["seconds"][a]), "pixels": size}
+    complete_h = (pixels["available"][a:b].max() - pixels["seconds"][a]) / 3600
+    rows["complete_h"] = np.full(len(size), complete_h)
+    for name in ("lat", "lon"):
+        rows[name] = np.bincount(look.labels, pixels[name][a:b], minlength=len(size)) / size
+    return rows
+
+
+def counted(rows: dict, in_biome: np.ndarray) -> np.ndarray:
+    """Return True for each front of a look with the minimum size and its centre in the biome."""
+    keep = rows["pixels"] >= config.FRONT_MIN_PIXELS
+    keep[keep] = in_biome[pantanal_grid().rows_cols(rows["lat"][keep], rows["lon"][keep])]
+    return keep
+
+
+def is_day_look(start: np.ndarray) -> np.ndarray:
+    """Return True for each look that starts in the day hours of `config.py`."""
+    low, high = config.FRONT_DAY_HOURS_UTC
+    hour = (start % 86400) / 3600
+    return (hour >= low) & (hour <= high)

@@ -198,16 +198,16 @@ def test_merge_gain_counts_fires_that_a_family_does_not_find_or_finds_later(monk
 
 
 def test_configuration_hash_covers_only_the_values_before_the_marker(monkeypatch, tmp_path):
-    from chispa.evaluation import report
+    from chispa.config_hash import HASH_END, config_hash
 
     path = tmp_path / "config.py"
     monkeypatch.setattr("chispa.config.__file__", str(path))
-    path.write_text(f"LIMIT = 1\n{report.HASH_END}\nPATH = 'a'\n")
-    first = report.config_hash()
-    path.write_text(f"LIMIT = 1\n{report.HASH_END}\nPATH = 'b'\n")
-    assert report.config_hash() == first
-    path.write_text(f"LIMIT = 2\n{report.HASH_END}\nPATH = 'b'\n")
-    assert report.config_hash() != first
+    path.write_text(f"LIMIT = 1\n{HASH_END}\nPATH = 'a'\n")
+    first = config_hash()
+    path.write_text(f"LIMIT = 1\n{HASH_END}\nPATH = 'b'\n")
+    assert config_hash() == first
+    path.write_text(f"LIMIT = 2\n{HASH_END}\nPATH = 'b'\n")
+    assert config_hash() != first
 
 
 def test_stamp_of_a_table_is_in_the_file_of_the_year_and_not_in_its_rows(tmp_path, monkeypatch):

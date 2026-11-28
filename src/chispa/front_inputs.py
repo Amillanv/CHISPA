@@ -15,7 +15,6 @@ import numpy as np
 from scipy.spatial import cKDTree
 
 from chispa import config, fronts
-from chispa.evaluation.fronts import is_day_look
 from chispa.grid import layer_grid
 from chispa.sources import burned, landcover, weather
 
@@ -246,7 +245,7 @@ def look_inputs(pixels: dict, bounds: tuple[int, int], look: fronts.Look, layers
     a, b = bounds
     count = look.labels.max() + 1
     inputs, centre, reach = shape_inputs(look, pixels["frp_mw"][a:b])
-    inputs["day_look"] = np.full(count, float(is_day_look(pixels["seconds"][a : a + 1])[0]))
+    inputs["day_look"] = np.full(count, float(fronts.is_day_look(pixels["seconds"][a : a + 1])[0]))
     # The share of the pixels of a front that had fire at the look before: the fire stays active.
     first = np.searchsorted(pixels["look"], pixels["look"][a] - 1)
     again = np.zeros(b - a)
