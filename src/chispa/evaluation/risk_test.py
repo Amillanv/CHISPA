@@ -42,10 +42,14 @@ def monitor_fires(
     With `last`, the map is as it was when that month came: it has no later month, and it has
     the burn days of the months before that month only. The burn day product comes
     approximately one month later than the map (`docs/sources.md` sections 8.9 and 8.18).
+    Thus the name of the file also has the months of the burn days that it read: when the
+    burn days of one more month come, the fires are made again.
     """
     grid = pantanal_grid()
     months, newest = monitor.read_year(year, raw_dir, grid, last)
-    name = f"{year}-{last:02d}-replay" if last else f"{year}-{newest:02d}"
+    name = f"{year}-{newest:02d}"
+    if last:
+        name = f"{year}-{last:02d}-replay-b{burn_day_months(year, last, raw_dir):02d}"
     path = data_dir / "fires_monitor" / f"{name}.npz"
     if not path.exists():
         days, coarse = burnday.read_year(year, raw_dir), burnday.burnday_grid()
@@ -62,6 +66,18 @@ def monitor_fires(
     saved = np.load(path)
     fields = {name: saved[name] for name in saved.files if name != "numbers"} | {"year": year}
     return saved["numbers"], fields, last or newest
+
+
+def burn_day_months(year: int, last: int, raw_dir: Path) -> int:
+    """Return how many months of burn days the fires of a map to the month `last` read: the
+    months on disk, and not more than the months before the last month."""
+    return min(burnday.months_on_disk(year, raw_dir), last - 1)
+
+
+def weather_margin() -> timedelta:
+    """Return the time after its moment for which a row reads the weather: the inputs of the
+    days after a moment need those days (`config.py`)."""
+    return timedelta(days=config.RISK_WEATHER_DAYS)
 
 
 def known_until(year: int, last_month: int) -> datetime:
@@ -103,7 +119,8 @@ def _with_inputs(
     """
     for moment in MOMENTS:
         sized[moment] = [row for row in sized[moment] if row["at"] <= until.timestamp()]
-        add_model_inputs(sized[moment], detections, raw_dir, year, until.date() + timedelta(days=5))
+        last_day = (until + weather_margin()).date()
+        add_model_inputs(sized[moment], detections, raw_dir, year, last_day)
         for row in sized[moment]:
             del row["positions"]
     return sized

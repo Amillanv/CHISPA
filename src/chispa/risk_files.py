@@ -22,8 +22,9 @@ from chispa.store import to_text
 
 # The form of the time of the first detection in the name of a file, in UTC.
 FIRST = "%Y%m%dT%H%M%S"
-# The first detection of an alert: the time when it was available in seconds, and its place.
-First = tuple[int, float, float]
+# The first detection of an alert: when it was available and when it was observed, in seconds,
+# and its place.
+First = tuple[int, int, float, float]
 # The name of each moment in the event record.
 NAMES = {"0": "at_30_minutes", "24": "at_24_hours"}
 
@@ -73,14 +74,14 @@ def keep_current(store_path: Path, raw_dir: Path, now: datetime, pull: tuple) ->
 
 
 def first_detection(rows: Iterable[tuple]) -> First:
-    """Return the first detection of an alert: the time when it was available, and its place.
+    """Return the first detection of an alert: its two times and its place.
 
     `rows` has (available, observed, lat, lon) of each detection of the alert itself. Of the
-    detections with the first time, it is the first in the sequence of the observation time,
-    the latitude and the longitude. No id of the store is in this rule.
+    detections with the first time when CHISPA had them, it is the first in the sequence of
+    the observation time, the latitude and the longitude. No id of the store is in this rule.
     """
-    available, _, lat, lon = min(rows)
-    return int(available), float(lat), float(lon)
+    available, observed, lat, lon = min(rows)
+    return int(available), int(observed), float(lat), float(lon)
 
 
 def path_of(folder: Path, moment: str, first: First) -> Path:
@@ -88,11 +89,12 @@ def path_of(folder: Path, moment: str, first: First) -> Path:
 
     The name has the first detection of the alert, and not its id: an id can go to a
     different alert when the store gets older rows. Two alerts that came in one poll have the
-    same time, thus the name also has the place.
+    same time, thus the name also has the place. Two alerts of one poll can be at one place,
+    on different days: thus it also has the observation time.
     """
-    first_s, lat, lon = first
-    stamp = datetime.fromtimestamp(first_s, UTC).strftime(FIRST)
-    return folder / stamp[:4] / f"{stamp}_{lat:.5f}_{lon:.5f}_{moment}.json"
+    available, observed = (datetime.fromtimestamp(time, UTC).strftime(FIRST) for time in first[:2])
+    name = f"{available}_{observed}_{first[2]:.5f}_{first[3]:.5f}_{moment}.json"
+    return folder / available[:4] / name
 
 
 def save(answer: dict, folder: Path, made_at: datetime) -> Path:
@@ -101,8 +103,9 @@ def save(answer: dict, folder: Path, made_at: datetime) -> Path:
     The file has `made_at`: the time when it was complete. A file never changes: the answer
     stays as we gave it.
     """
-    first_s = int(datetime.fromisoformat(answer["first_available_at"]).timestamp())
-    path = path_of(folder, answer["moment_h"], (first_s, answer["first_lat"], answer["first_lon"]))
+    times = (answer["first_available_at"], answer["first_observed_at"])
+    seconds = [int(datetime.fromisoformat(time).timestamp()) for time in times]
+    path = path_of(folder, answer["moment_h"], (*seconds, answer["first_lat"], answer["first_lon"]))
     if path.exists():
         raise RuntimeError(f"{path} exists: a file of the growth risk does not change.")
     # A reader must not get a part of a file: the name is final only when the file is complete.

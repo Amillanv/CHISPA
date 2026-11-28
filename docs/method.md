@@ -2859,9 +2859,10 @@ The rules:
    For 1000 hectares an alert has a rank only at 30 minutes, and a chance with the mark "not tested" at 24 hours
    (section 11.25).
 7. Each answer is one file in `data/risks`, for one alert and one moment. A file does not change. Its name has
-   the first detection of the alert, with its time and its place, and the moment. It does not have the id of the
-   alert: an id can go to a different alert when the store gets older rows, and two alerts of one poll have the
-   same time. The first detection is the detection of the alert with the first time when CHISPA had it. Of two
+   the first detection of the alert, and the moment: the time when CHISPA had that detection, its observation
+   time and its place. It does not have the id of the alert: an id can go to a different alert when the store
+   gets older rows. Two alerts of one poll have the same first time, and they can be at one place on different
+   days. The first detection is the detection of the alert with the first time when CHISPA had it. Of two
    with that time, it is the first by the observation time, the latitude and the longitude.
    A file has the time when it was complete (`made_at`), the inputs, the months of the Monitor map and the time
    of the saved file (`models_made_at`). The update makes each answer of the last 30 days that has no file. Thus
@@ -2870,9 +2871,12 @@ The rules:
    that window are those of the saved file.
 8. `chispa update` makes the saved file again if it is absent or of other settings. One time in 24 hours it asks
    Earth Engine for a new month of the Monitor map and of the burn days. With a new month it gets the files and
-   makes the saved file again: approximately 6 minutes. If that fails, the saved file stays. A folder of the map
-   is a map only when its download is complete, and a month of the burn days can be absent only for 60 days
-   after its end (`config.py`): a download that stopped does not give a map with fewer fires.
+   makes the saved file again: approximately 6 minutes. If that fails, the saved file stays. The saved file
+   names the maps that made it: the last month of the Monitor map and the months of the burn days, for each
+   year. It is current only if the maps on disk are those maps. The fires of a map are made again when the
+   burn days of one more month come. A folder of the map is a map only when its download is complete, and a
+   month of the burn days can be absent only for 60 days after its end (`config.py`): a download that stopped
+   does not give a map with fewer fires.
 9. The field `growth_risk` of the event record has the answers of the alert that started the event: those with a
    file that was complete at or before the as-of time. The record finds the files by the first detection of
    that alert (rule 7). Thus an alert keeps its answers when its id changes, and an alert that gets an old id
@@ -2887,7 +2891,8 @@ the place of the mark of the map, for the scored alerts and for the older alerts
 a fourth look at those alerts: an exploratory result.
 
 The result (tables `risk_mark` of each year, `risk_percentage_mark` and `risk_percentage_no_mark` of 2025, and
-`risk_replay_mark` of 2026, 2026-11-27). 2023 gave 1 km and 14 days.
+`risk_replay_mark` of 2026). 2023 gave 1 km and 14 days. The first run was in the evening of 2026-11-27 at the
+place of the owner. The stamp of a table has the day in UTC: 2026-11-28, and the day of a later run.
 
 - Hypothesis A is false. The recall is 0.6594 to 0.8645: the smallest is 2091 of 3171 alerts on a known fire, in
   2019 at 30 minutes. The precision is 0.2675 to 0.7197: the smallest is 291 of 1088 alerts with the mark, in 2022
@@ -2908,7 +2913,7 @@ The result (tables `risk_mark` of each year, `risk_percentage_mark` and `risk_pe
 - The cost of the mark, for the large alerts of the main tables that can get a percentage: not on a known fire,
   and not with only GOES rows of INPE. A large alert with the mark gets no percentage from the live path. For 100
   hectares at 30 minutes that was 19 of 153 large alerts in 2024, 10 of 72 in 2023, 2 of 49 in 2025 and 0 of 43
-  in the test of 2026. The largest share of a year is that of 2023. The first table of 2026-11-27 also counted
+  in the test of 2026. The largest share of a year is that of 2023. The table of the first run also counted
   the alerts on a known fire that saw a different fire first: a review found that, and the counts were larger.
 
 The check of the path (table `risk_live_inputs` of 2026, made by `chispa risk --test-run`). It reads each alert of
@@ -2925,20 +2930,22 @@ file has 6 decimals.
 
 - The level of a percentage is for the alerts that get a percentage, together. A live alert does not have the
   group of the map. Some of those alerts are on a known fire by the map: in 2019 at 30 minutes, 1080 of the 3171
-  alerts on a known fire have no mark (table `risk_mark`). The percentage of such an alert is for a new fire,
-  and it is too high for it. Thus the percentage of each other alert is too low by a part. Not measured: the
-  level of each of the two groups.
+  alerts on a known fire have no mark (table `risk_mark`). The percentage is for a new fire: for the group of
+  those alerts, the percentages expect more large alerts than can come. Not measured: the level of each of the
+  two groups. The level of all alerts together says nothing about one alert.
 - If the map is late, the newest alerts of its last month count in the factor with fewer days after them than
   in the replay: there the map had 15 days or more after each alert that counted. A limit of 60 days after
   each alert is a different rule from that of the replay: the owner decides it after the next test.
 - An answer has no score yet. The files of rule 7 are data that no model has read. Not built: the command that
   scores them against the Monitor map.
-- An answer that is later than its moment has the factor of a later day. `made_at` and `moment_at` say how late.
+- An answer that is later than its moment has the outcomes of a later day in its factor. `made_at` and
+  `moment_at` say how late. A score of the files must take the late answers apart: they are not answers of
+  their moment.
 - IFS is not ERA5-Land: its rain is larger (`docs/sources.md` section 8.4). The models have the weights of
   ERA5-Land. `PLAN.md` has a check outside the repository of the sequence with each weather input from IFS.
   The level with IFS days is not measured: an answer says how many it has.
-- The burn days of a new month of the Monitor map are those that the product has on that day. The burn day
-  product is later than the map (`docs/sources.md` section 8.9), and the replay had the burn days of now.
+- The burn day product is later than the map (`docs/sources.md` section 8.9). For some days, the fires of a new
+  month of the map have no burn day for the month before its last month. The replay had the burn days of now.
 - The evaluation has the detections of one year. A live alert of January also has the detections of December:
   its count of detections near it, and its mark, can be different from those of the evaluation.
 - From 1 January, the ground that burned before needs the annual map of the year before. That map comes in
