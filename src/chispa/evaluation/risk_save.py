@@ -24,6 +24,7 @@ from chispa.evaluation.risk_rule import NOW
 from chispa.evaluation.risk_run import year_parts
 from chispa.evaluation.risk_test import rows_of_month
 from chispa.grid import pantanal_grid
+from chispa.risk import DIGITS
 from chispa.sources import burnday, monitor
 from chispa.store import to_text
 
@@ -79,7 +80,8 @@ def fit(parts: dict[int, dict], years: list[int]) -> dict[str, dict]:
         for limit in config.RISK_CLASS_LIMITS_HA:
             model = models[key(moment, limit)]
             table = as_table(training[moment], tuple(model["inputs"]))[0]
-            model["reference"] = np.sort(confidence.probability(model, table)).round(6).tolist()
+            values = np.sort(confidence.probability(model, table).round(DIGITS))
+            model["reference"] = values.tolist()
     return models
 
 
@@ -109,7 +111,7 @@ def known_outcomes(parts: dict, models: dict, months: dict[int, int], paths: tup
             for limit in config.RISK_CLASS_LIMITS_HA:
                 facts = model_facts({year: rows}, {year: of_year}, moment, limit)[year]
                 for name in ("time", "value", "large"):
-                    past[key(moment, limit)][name] += facts[name].round(6).tolist()
+                    past[key(moment, limit)][name] += facts[name].round(DIGITS).tolist()
     return past
 
 

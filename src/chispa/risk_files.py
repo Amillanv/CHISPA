@@ -3,21 +3,27 @@
 `risk_live.py` makes the growth risk of an alert at its moment. This module saves each answer
 as a file that does not change, and it gives the event record the answers of one event from
 those files. Thus the record only reads a file: it gets no weather and it reads no model.
+It also loads the saved models, and it asks for new ones when they are absent or old.
 A later run can score the files against what came: they are data that no model has read.
 `docs/method.md` section 11.35 gives the rules.
 """
 
 import json
-from datetime import UTC, datetime
+from collections.abc import Iterable
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import ee
 import numpy as np
 
+from chispa import config
 from chispa.config_hash import config_hash
 from chispa.store import to_text
 
 # The form of the time of the first detection in the name of a file, in UTC.
 FIRST = "%Y%m%dT%H%M%S"
+# The first detection of an alert: the time when it was available in seconds, and its place.
+First = tuple[int, float, float]
 # The name of each moment in the event record.
 NAMES = {"0": "at_30_minutes", "24": "at_24_hours"}
 
@@ -43,14 +49,50 @@ def load_models(path: Path) -> dict | None:
     return saved if saved.get("config") == config_hash() else None
 
 
-def path_of(folder: Path, alert: int, moment: str, first_s: int) -> Path:
-    """Return the file of one alert at one moment. An alert id starts with its year.
+def keep_current(store_path: Path, raw_dir: Path, now: datetime, pull: tuple) -> str | None:
+    """Make the saved models and outcomes again if they are absent, of other settings, or if
+    the last look for a new month of the Monitor map is old. Return a note, or None.
 
-    The name has the time when the first detection of the alert was available: an id can go
-    to a different alert when the store gets older rows, and that alert then gets its own file.
+    `pull` has the project of Earth Engine and the function that makes the file: the function
+    is in the evaluation, and this module does not import it.
     """
-    first = datetime.fromtimestamp(first_s, UTC).strftime(FIRST)
-    return folder / str(alert)[:4] / f"{alert}_{moment}_{first}.json"
+    project, refresh = pull
+    saved = load_models(config.RISK_MODELS_PATH)
+    limit = timedelta(hours=config.RISK_MAP_CHECK_HOURS)
+    if saved is not None and now - datetime.fromisoformat(saved["map_checked_at"]) < limit:
+        return None
+    if not project or refresh is None:
+        return None if saved else "Add EE_PROJECT to the file .env: an update then makes them."
+    try:
+        return refresh(store_path, raw_dir, now, project)
+    except (RuntimeError, OSError, ValueError, ee.EEException) as error:
+        if saved is not None:  # The next look is after the usual time, not in the next update.
+            checked = saved | {"map_checked_at": to_text(now)}
+            save_models(checked, config.RISK_MODELS_PATH)
+        return f"The saved models are not new. {error}"
+
+
+def first_detection(rows: Iterable[tuple]) -> First:
+    """Return the first detection of an alert: the time when it was available, and its place.
+
+    `rows` has (available, observed, lat, lon) of each detection of the alert itself. Of the
+    detections with the first time, it is the first in the sequence of the observation time,
+    the latitude and the longitude. No id of the store is in this rule.
+    """
+    available, _, lat, lon = min(rows)
+    return int(available), float(lat), float(lon)
+
+
+def path_of(folder: Path, moment: str, first: First) -> Path:
+    """Return the file of one alert at one moment, in the folder of the year of the alert.
+
+    The name has the first detection of the alert, and not its id: an id can go to a
+    different alert when the store gets older rows. Two alerts that came in one poll have the
+    same time, thus the name also has the place.
+    """
+    first_s, lat, lon = first
+    stamp = datetime.fromtimestamp(first_s, UTC).strftime(FIRST)
+    return folder / stamp[:4] / f"{stamp}_{lat:.5f}_{lon:.5f}_{moment}.json"
 
 
 def save(answer: dict, folder: Path, made_at: datetime) -> Path:
@@ -60,7 +102,7 @@ def save(answer: dict, folder: Path, made_at: datetime) -> Path:
     stays as we gave it.
     """
     first_s = int(datetime.fromisoformat(answer["first_available_at"]).timestamp())
-    path = path_of(folder, answer["alert"], answer["moment_h"], first_s)
+    path = path_of(folder, answer["moment_h"], (first_s, answer["first_lat"], answer["first_lon"]))
     if path.exists():
         raise RuntimeError(f"{path} exists: a file of the growth risk does not change.")
     # A reader must not get a part of a file: the name is final only when the file is complete.
@@ -76,19 +118,20 @@ def of_event(folder: Path, found: dict, event_id: int, as_of: datetime) -> dict 
 
     `found` has the detections of the event. The answers are those of the alert that started
     the event, for each moment with a file that was complete at the as-of time. The file of an
-    alert has the time of its first detection in its name (`path_of`).
+    alert has the first detection of the alert in its name (`path_of`).
     """
-    own = found["available"][found["issued"] == event_id]
-    if not len(own):
+    own = found["issued"] == event_id
+    if not own.any():
         return None
+    names = ("available", "observed", "lat", "lon")
+    first = first_detection(zip(*(found[name][own].tolist() for name in names), strict=True))
     answers = {}
     for moment, name in NAMES.items():
-        path = path_of(folder, event_id, moment, int(own.min()))
+        path = path_of(folder, moment, first)
         if not path.exists():
             continue
         answer = json.loads(path.read_text())
-        made = datetime.fromisoformat(answer["made_at"])
-        if made <= as_of:
+        if datetime.fromisoformat(answer["made_at"]) <= as_of:
             # The inputs stay in the file: the record has what a person reads.
             answers[name] = {key: value for key, value in answer.items() if key != "inputs"}
     return answers or None

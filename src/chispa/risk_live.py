@@ -9,12 +9,10 @@ at a moment is one JSON object in a file that does not change, and the event rec
 """
 
 import sqlite3
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-import ee
 import numpy as np
 
 from chispa import confidence, config, record, risk, risk_files, risk_weather, severity
@@ -27,6 +25,12 @@ SELECT m.issued_id, MIN(CAST(strftime('%s', d.available_at) AS INTEGER))
 FROM detections d JOIN memberships m ON m.detection_id = d.id
 WHERE m.issued_id >= ? GROUP BY m.issued_id
 """
+OWN = """
+SELECT m.issued_id, CAST(strftime('%s', d.available_at) AS INTEGER),
+       CAST(strftime('%s', d.observed_at) AS INTEGER), d.lat, d.lon
+FROM detections d JOIN memberships m ON m.detection_id = d.id
+WHERE d.available_at >= ? AND m.issued_id >= ?
+"""
 EARLIER = """
 SELECT d.lat, d.lon, CAST(strftime('%s', d.available_at) AS INTEGER), d.sensor_family, m.issued_id
 FROM detections d JOIN memberships m ON m.detection_id = d.id
@@ -36,7 +40,6 @@ AND d.lat >= ? AND d.lat < ? AND d.lon >= ? AND d.lon < ?
 NOT_FIRST = "the first detection is not in the Pantanal biome of Brazil"
 ONLY_GOES = "only GOES rows of INPE"
 NEAR_EARLIER = "near an earlier alert"
-Refresh = Callable[[Path, Path, datetime, str], str]
 
 
 @dataclass(frozen=True)
@@ -61,20 +64,28 @@ def load_layers(raw_dir: Path, year: int) -> Layers:
     return Layers(places, rings, risk.ground_before(raw_dir, year))
 
 
-def due(store: sqlite3.Connection, now: datetime, folder: Path) -> list[tuple[int, str, int]]:
-    """Return (alert, moment, the time of its first detection) for each moment with no file.
+def due(store: sqlite3.Connection, now: datetime, folder: Path) -> list[tuple]:
+    """Return (alert, moment, its first detection) for each moment of an alert with no file.
 
     A moment counts if it is in the last days (`config.py`) and not after the time of now.
     """
-    since = now - timedelta(days=config.RISK_LIVE_DAYS)
-    first_id = since.year * config.EVENT_IDS_OF_A_YEAR
+    since, moments = now - timedelta(days=config.RISK_LIVE_DAYS), confidence.moment_seconds()
+    # An alert of the days before the window can have its last moment in the window.
+    oldest = since - timedelta(seconds=max(moments.values()))
+    first_id = oldest.year * config.EVENT_IDS_OF_A_YEAR
+    started = dict(store.execute(ALERTS, (first_id,)))
+    own: dict[int, list] = {}
+    for alert, *row in store.execute(OWN, (to_text(oldest), first_id)):
+        if started[alert] == row[0]:
+            own.setdefault(alert, []).append(tuple(row))
     found = []
-    for alert, first in store.execute(ALERTS, (first_id,)):
-        for moment, seconds in confidence.moment_seconds().items():
-            in_time = since.timestamp() <= first + seconds <= now.timestamp()
-            if in_time and not risk_files.path_of(folder, alert, moment, first).exists():
+    for alert, rows in own.items():
+        first = risk_files.first_detection(rows)
+        for moment, seconds in moments.items():
+            in_time = since.timestamp() <= first[0] + seconds <= now.timestamp()
+            if in_time and not risk_files.path_of(folder, moment, first).exists():
                 found.append((alert, moment, first))
-    return sorted(found, key=lambda one: (one[2], one[0], one[1]))
+    return sorted(found, key=lambda one: (one[2][0], one[0], one[1]))
 
 
 def event_at(store: sqlite3.Connection, alert: int, at: datetime, layers: Layers) -> dict | str:
@@ -85,9 +96,13 @@ def event_at(store: sqlite3.Connection, alert: int, at: datetime, layers: Layers
     if replay.root(alert) != alert:
         return f"a part of the event {replay.root(alert)} at the moment"
     found = record.read(store, replay.ids(alert), at)
-    keep = layers.in_biome(found["lat"], found["lon"])
-    if not keep[np.nonzero(found["issued"] == alert)[0][0]]:
+    own = found["issued"] == alert
+    names = ("available", "observed", "lat", "lon")
+    rows = zip(*(found[name][own].tolist() for name in names), strict=True)
+    _, lat, lon = risk_files.first_detection(rows)
+    if not layers.in_biome(np.array([lat]), np.array([lon]))[0]:
         return NOT_FIRST
+    keep = layers.in_biome(found["lat"], found["lon"])
     return {name: values[keep] for name, values in found.items()}
 
 
@@ -148,17 +163,19 @@ def answer(one: dict, saved: dict) -> dict:
     if one["no_percentage"]:
         found = [limit | {"chance": None} for limit in found]
     made = {"models_made_at": saved["made_at"], "map_months": saved["map"]}
-    return one | {"limits": found, "inputs": {k: round(v, 6) for k, v in values.items()}} | made
+    inputs = {name: round(value, risk.DIGITS) for name, value in values.items()}
+    return one | {"limits": found, "inputs": inputs} | made
 
 
 def read_alert(store: sqlite3.Connection, waiting: tuple, layers: Layers) -> dict:
     """Return what one alert has at one moment, with no weather: its times, its place, its
     marks and its inputs. An alert with no answer has the reason, and no inputs."""
     alert, moment, first = waiting
-    at_s = first + confidence.moment_seconds()[moment]
+    at_s = first[0] + confidence.moment_seconds()[moment]
     at = datetime.fromtimestamp(at_s, UTC)
     one = {"alert": alert, "moment_h": moment, "moment_at": to_text(at)}
-    one |= {"first_available_at": to_text(datetime.fromtimestamp(first, UTC))}
+    one |= {"first_available_at": to_text(datetime.fromtimestamp(first[0], UTC))}
+    one |= {"first_lat": first[1], "first_lon": first[2]}
     found = event_at(store, alert, at, layers)
     if isinstance(found, str):
         return one | {"no_answer": found}
@@ -218,11 +235,11 @@ def read_all(
     store: sqlite3.Connection, raw_dir: Path, waiting: list[tuple], project: str | None
 ) -> list[dict]:
     """Return each waiting alert at its moment with each of its inputs, or with the reason for
-    no answer. `waiting` has (alert, moment, the time of its first detection)."""
+    no answer. `waiting` has (alert, moment, its first detection)."""
     layers: dict[int, Layers] = {}
     read = []
     for one in waiting:
-        year = datetime.fromtimestamp(one[2], UTC).year
+        year = datetime.fromtimestamp(one[2][0], UTC).year
         if year not in layers:
             layers[year] = load_layers(raw_dir, year)
         read.append(read_alert(store, one, layers[year]))
@@ -241,36 +258,13 @@ def answers(
     return [one if "no_answer" in one else answer(one, saved) for one in read]
 
 
-def keep_current(store_path: Path, raw_dir: Path, now: datetime, pull: tuple) -> str | None:
-    """Make the saved models and outcomes again if they are absent, of other settings, or if
-    the last look for a new month of the Monitor map is old. Return a note, or None.
-
-    `pull` has the project of Earth Engine and the function that makes the file: the function
-    is in the evaluation, and this module does not import it.
-    """
-    project, refresh = pull
-    saved = risk_files.load_models(config.RISK_MODELS_PATH)
-    limit = timedelta(hours=config.RISK_MAP_CHECK_HOURS)
-    if saved is not None and now - datetime.fromisoformat(saved["map_checked_at"]) < limit:
-        return None
-    if not project or refresh is None:
-        return None if saved else "Add EE_PROJECT to the file .env: an update then makes them."
-    try:
-        return refresh(store_path, raw_dir, now, project)
-    except (RuntimeError, OSError, ValueError, ee.EEException) as error:
-        if saved is not None:  # The next look is after the usual time, not in the next update.
-            checked = saved | {"map_checked_at": to_text(now)}
-            risk_files.save_models(checked, config.RISK_MODELS_PATH)
-        return f"The saved models are not new. {error}"
-
-
 def update(store_path: Path, raw_dir: Path, now: datetime, pull: tuple) -> str:
     """Make the file of each alert with a new moment, and return one line for `chispa update`.
 
     A layer or the weather can be absent. Then the line says so: the update is complete with
     no answer, and the next update does this step again.
     """
-    note = keep_current(store_path, raw_dir, now, pull)
+    note = risk_files.keep_current(store_path, raw_dir, now, pull)
     store, folder = sqlite3.connect(store_path), config.RISK_LIVE_DIR
     waiting = due(store, now, folder)
     try:

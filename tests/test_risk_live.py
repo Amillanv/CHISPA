@@ -108,24 +108,35 @@ def test_chance_of_a_larger_limit_is_not_above_that_of_a_smaller_limit(monkeypat
     assert found[1]["rank"] == 0.5
 
 
-def answer_of(moment: str, first: datetime = AVAILABLE) -> dict:
+def answer_of(moment: str, first: datetime = AVAILABLE, lat: float = -17.5) -> dict:
     at = first + timedelta(hours=0.5 if moment == "0" else 24)
     times = {"moment_at": to_text(at), "first_available_at": to_text(first)}
-    return {"alert": FIRST_ID, "moment_h": moment, "limits": []} | times
+    place = {"first_lat": lat, "first_lon": -57.5}
+    return {"alert": FIRST_ID, "moment_h": moment, "limits": []} | times | place
 
 
 def test_answer_of_an_alert_is_one_file_that_does_not_change(tmp_path):
     made = AVAILABLE + timedelta(minutes=31)
     path = risk_files.save(answer_of("0"), tmp_path, made)
-    assert path == tmp_path / "2024" / f"{FIRST_ID}_0_20240815T080000.json"
+    assert path == tmp_path / "2024" / "20240815T080000_-17.50000_-57.50000_0.json"
     assert json.loads(path.read_text())["made_at"] == to_text(made)
     with pytest.raises(RuntimeError, match="does not change"):
         risk_files.save(answer_of("0"), tmp_path, made)
 
 
+def test_first_detection_of_an_alert_does_not_read_an_id():
+    # (available, observed, lat, lon). Two detections were available at the time 10: the
+    # first detection is that with the earlier observation.
+    rows = [(10, 5, -17.0, -57.0), (10, 4, -18.0, -57.0), (11, 1, -16.0, -57.0)]
+    assert risk_files.first_detection(rows) == (10, -18.0, -57.0)
+    assert risk_files.first_detection(reversed(rows)) == (10, -18.0, -57.0)
+
+
 def test_record_has_the_answers_that_were_complete_at_the_as_of_time(tmp_path):
     seconds = int(AVAILABLE.timestamp())
     found = {"available": np.array([seconds, seconds + 60]), "issued": np.array([FIRST_ID] * 2)}
+    found |= {"observed": np.array([seconds - 10_800] * 2)}
+    found |= {"lat": np.array([-17.5, -17.6]), "lon": np.array([-57.5, -57.5])}
     risk_files.save(answer_of("0"), tmp_path, AVAILABLE + timedelta(hours=1))
     risk_files.save(answer_of("24"), tmp_path, AVAILABLE + timedelta(hours=25))
     assert risk_files.of_event(tmp_path, found, FIRST_ID, AVAILABLE + timedelta(minutes=40)) is None
@@ -133,16 +144,15 @@ def test_record_has_the_answers_that_were_complete_at_the_as_of_time(tmp_path):
     assert list(early) == ["at_30_minutes"]
     late = risk_files.of_event(tmp_path, found, FIRST_ID, AVAILABLE + timedelta(hours=26))
     assert list(late) == ["at_30_minutes", "at_24_hours"]
-    # After new older rows in the store, the id can be the id of a different alert: its first
-    # detection has a different time. The files are then not files of this alert, and the
-    # alert gets its own file with the same id.
-    other = found | {"available": found["available"] + 3600}
+    # After new older rows in the store, the id can be the id of a different alert of the same
+    # poll: its first detection has the same time and a different place. The files are then
+    # not files of this alert, and the alert gets its own file.
+    other = found | {"lat": found["lat"] - 2.0}
     assert risk_files.of_event(tmp_path, other, FIRST_ID, AVAILABLE + timedelta(hours=26)) is None
-    later = AVAILABLE + timedelta(hours=1)
-    path = risk_files.save(answer_of("0", first=later), tmp_path, later + timedelta(hours=1))
-    assert path.name == f"{FIRST_ID}_0_20240815T090000.json"
+    path = risk_files.save(answer_of("0", lat=-19.5), tmp_path, AVAILABLE + timedelta(hours=2))
+    assert path.name == "20240815T080000_-19.50000_-57.50000_0.json"
     again = risk_files.of_event(tmp_path, other, FIRST_ID, AVAILABLE + timedelta(hours=26))
-    assert again["at_30_minutes"]["first_available_at"] == to_text(later)
+    assert again["at_30_minutes"]["first_lat"] == -19.5
 
 
 def test_saved_models_are_only_those_of_the_settings_of_now(tmp_path, monkeypatch):
@@ -156,20 +166,47 @@ def test_saved_models_are_only_those_of_the_settings_of_now(tmp_path, monkeypatc
 
 def test_alert_is_due_when_its_moment_came_and_it_has_no_file(tmp_path):
     store = store_of(tmp_path, [VIIRS, FAR])
-    folder, first = tmp_path / "risks", int(AVAILABLE.timestamp())
+    folder, seconds = tmp_path / "risks", int(AVAILABLE.timestamp())
+    near, far = (seconds, -17.5, -57.5), (seconds, -19.5, -57.5)
     # The two alerts were available 3 hours after T0. The first moment is 30 minutes later.
     assert risk_live.due(store, AVAILABLE + timedelta(minutes=29), folder) == []
     found = risk_live.due(store, AVAILABLE + timedelta(minutes=30), folder)
-    assert found == [(FIRST_ID, "0", first), (FIRST_ID + 1, "0", first)]
+    assert found == [(FIRST_ID, "0", near), (FIRST_ID + 1, "0", far)]
     risk_files.save(answer_of("0"), folder, AVAILABLE + timedelta(minutes=31))
     later = risk_live.due(store, AVAILABLE + timedelta(hours=24), folder)
-    assert later == [
-        (FIRST_ID, "24", first),
-        (FIRST_ID + 1, "0", first),
-        (FIRST_ID + 1, "24", first),
-    ]
+    assert later == [(FIRST_ID, "24", near), (FIRST_ID + 1, "0", far), (FIRST_ID + 1, "24", far)]
     # A moment of more than 30 days before now gets no answer.
     assert risk_live.due(store, AVAILABLE + timedelta(days=31, hours=1), folder) == []
+
+
+def test_alert_keeps_its_answer_when_its_id_goes_to_an_alert_of_the_same_poll(tmp_path):
+    store_of(tmp_path, [VIIRS, FAR])
+    folder, now = tmp_path / "risks", AVAILABLE + timedelta(hours=1)
+    risk_files.save(answer_of("0"), folder, AVAILABLE + timedelta(minutes=31))
+    # The store is made again, and the two alerts of the poll have each the id of the other.
+    (tmp_path / "again").mkdir()
+    store = store_of(tmp_path / "again", [FAR, VIIRS])
+    far, near = record.read(store, [FIRST_ID], now), record.read(store, [FIRST_ID + 1], now)
+    assert (far["lat"].tolist(), near["lat"].tolist()) == ([-19.5], [-17.5])
+    # The alert with the old id of the saved answer has no answer, and it is due for its own.
+    assert risk_files.of_event(folder, far, FIRST_ID, now) is None
+    assert [one[:2] for one in risk_live.due(store, now, folder)] == [(FIRST_ID, "0")]
+    # The alert of the saved answer has it with its new id.
+    assert list(risk_files.of_event(folder, near, FIRST_ID + 1, now)) == ["at_30_minutes"]
+
+
+def test_alert_of_december_has_its_last_moment_in_a_window_that_starts_in_january(tmp_path):
+    late = datetime(2024, 12, 31, 12, tzinfo=UTC)
+    old = replace(VIIRS, observed_at=late - timedelta(hours=3), available_at=late)
+    connection = open_store(tmp_path / "store.sqlite")
+    add_detections(connection, [old])
+    found = read_detections(connection, late - timedelta(days=1), late + timedelta(days=1))
+    replace_fusion(connection, (FIRST_ID, FIRST_ID + 1000), fuse(found, first_id=FIRST_ID))
+    # The window of 30 days starts on 1 January at 06:00. The alert is of 2024, and its moment
+    # of 24 hours is on 1 January at 12:00.
+    now = datetime(2025, 1, 31, 6, tzinfo=UTC)
+    due = risk_live.due(connection, now, tmp_path / "risks")
+    assert [one[:2] for one in due] == [(FIRST_ID, "24")]
 
 
 def test_alert_near_a_detection_of_an_earlier_alert_has_the_mark(tmp_path, monkeypatch):
@@ -273,17 +310,17 @@ def test_saved_models_are_made_again_one_time_each_day(tmp_path):
 
     paths = (tmp_path / "store.sqlite", tmp_path)
     # No file and no project of Earth Engine: nothing can make the file.
-    assert "Add EE_PROJECT" in risk_live.keep_current(*paths, now, (None, refresh))
+    assert "Add EE_PROJECT" in risk_files.keep_current(*paths, now, (None, refresh))
     line = risk_live.update(*paths, now, (None, refresh))
     assert line == (
         "growth risk: no saved models. Add EE_PROJECT to the file .env: an update then makes them."
     )
     # No file: the function of the evaluation makes it.
-    assert risk_live.keep_current(*paths, now, ("project", refresh)).startswith("The Monitor map")
+    assert risk_files.keep_current(*paths, now, ("project", refresh)).startswith("The Monitor map")
     save_models(now - timedelta(hours=1))
-    assert risk_live.keep_current(*paths, now, ("project", refresh)) is None
+    assert risk_files.keep_current(*paths, now, ("project", refresh)) is None
     save_models(now - timedelta(hours=25))
-    risk_live.keep_current(*paths, now, ("project", refresh))
+    risk_files.keep_current(*paths, now, ("project", refresh))
     assert calls == ["project", "project"]
 
 
@@ -292,7 +329,7 @@ def test_failed_look_for_a_new_month_keeps_the_saved_models(tmp_path):
         raise RuntimeError("Earth Engine gave no answer.")
 
     save_models(AVAILABLE - timedelta(hours=25))
-    note = risk_live.keep_current(tmp_path, tmp_path, AVAILABLE, ("project", refresh))
+    note = risk_files.keep_current(tmp_path, tmp_path, AVAILABLE, ("project", refresh))
     assert note == "The saved models are not new. Earth Engine gave no answer."
     # The models stay, and the next look is one day later: not in the next update.
     assert risk_files.load_models(_models_path())["map_checked_at"] == to_text(AVAILABLE)
@@ -332,8 +369,8 @@ def test_update_gives_each_new_alert_its_file_and_the_record_reads_it(tmp_path, 
     assert [limit["chance"] for limit in older["at_24_hours"]["limits"]] == [0.5, 0.5]
     # The file has the inputs of the answer. The record does not.
     assert "inputs" not in older["at_24_hours"]
-    first_s = int((AVAILABLE - timedelta(days=2)).timestamp())
-    saved = json.loads(risk_files.path_of(tmp_path / "risks", FIRST_ID, "24", first_s).read_text())
+    first = (int((AVAILABLE - timedelta(days=2)).timestamp()), EARLIER.lat, EARLIER.lon)
+    saved = json.loads(risk_files.path_of(tmp_path / "risks", "24", first).read_text())
     assert saved["inputs"] == {"x": 1.0, "rain": 0.0}
 
 
