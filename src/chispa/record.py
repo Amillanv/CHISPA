@@ -2,7 +2,7 @@
 
 An alert, a tool and the dashboard read this one record. It has the state of the event,
 the rank of its confidence, its severity, its growth steps, what GOES examined, the growth
-forecast of its fronts, and the growth risk of its first alert.
+forecast of its fronts or the chance of a front, and the growth risk of its first alert.
 Each part uses only data that was available at the as-of time, and the event is the event
 as it was at that time (`issued.py`). A part that we cannot give is None, with a note.
 """
@@ -14,7 +14,17 @@ from pathlib import Path
 
 import numpy as np
 
-from chispa import confidence, config, forecast_files, growth, history, risk_files, severity, view
+from chispa import (
+    confidence,
+    config,
+    forecast_files,
+    front_chance,
+    growth,
+    history,
+    risk_files,
+    severity,
+    view,
+)
 from chispa.fusion import LEVELS
 from chispa.issued import Replay
 from chispa.sources import border
@@ -240,7 +250,10 @@ def event_record(store: sqlite3.Connection, event_id: int, as_of: datetime, raw_
     record["goes_view"] = view.goes_view(*place, last_seen, as_of, raw_dir)
     record["viirs_passes_after_last_detection"] = view.passes_after(found, as_of, raw_dir)
     ids = replay.ids(event_id)
-    record["forecast"] = forecast_files.of_event(config.FORECAST_LIVE_DIR, ids, as_of)
+    forecast = forecast_files.of_event(config.FORECAST_LIVE_DIR, ids, as_of)
+    if forecast is None:  # The forecast of a front replaces the chance of a front.
+        forecast = front_chance.of_event(config.FRONT_CHANCE_LIVE_DIR, found, root, as_of)
+    record["forecast"] = forecast
     record["growth_risk"] = risk_files.of_event(config.RISK_LIVE_DIR, found, root, as_of)
     record |= {"severity": None, "confidence": None}
     return _with_layers(store, record, found, as_of, raw_dir)

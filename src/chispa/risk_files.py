@@ -111,20 +111,36 @@ def save(answer: dict, folder: Path, made_at: datetime) -> Path:
     times = (answer["first_available_at"], answer["first_observed_at"])
     seconds = [int(datetime.fromisoformat(time).timestamp()) for time in times]
     path = path_of(folder, answer["moment_h"], (*seconds, answer["first_lat"], answer["first_lon"]))
+    write_new(path, answer | {"made_at": to_text(made_at)})
+    return path
+
+
+def write_new(path: Path, answer: dict) -> None:
+    """Write one answer as a file that does not exist. If it exists: `FileExistsError`."""
     # A reader must not get a part of a file: the name is final only when the file is complete.
     # Two updates can make one answer at one time: each has its own part, and a link does not
     # replace a file that exists. Thus the second update changes nothing.
     part = path.with_name(f"{path.name}.{os.getpid()}.part")
     path.parent.mkdir(parents=True, exist_ok=True)
-    part.write_text(json.dumps(answer | {"made_at": to_text(made_at)}, indent=1))
+    part.write_text(json.dumps(answer, indent=1))
     try:
         os.link(part, path)
     except FileExistsError:
-        message = f"{path} exists: a file of the growth risk does not change."
-        raise FileExistsError(message) from None
+        raise FileExistsError(f"{path} exists: a file of an answer does not change.") from None
     finally:
         part.unlink()
-    return path
+
+
+def first_of(found: dict, alert: int) -> First | None:
+    """Return the first detection of an alert, from the detections of its event.
+
+    None: the event has no detection of that alert.
+    """
+    own = found["issued"] == alert
+    if not own.any():
+        return None
+    names = ("available", "observed", "lat", "lon")
+    return first_detection(zip(*(found[name][own].tolist() for name in names), strict=True))
 
 
 def of_event(folder: Path, found: dict, event_id: int, as_of: datetime) -> dict | None:
@@ -134,11 +150,9 @@ def of_event(folder: Path, found: dict, event_id: int, as_of: datetime) -> dict 
     the event, for each moment with a file that was complete at the as-of time. The file of an
     alert has the first detection of the alert in its name (`path_of`).
     """
-    own = found["issued"] == event_id
-    if not own.any():
+    first = first_of(found, event_id)
+    if first is None:
         return None
-    names = ("available", "observed", "lat", "lon")
-    first = first_detection(zip(*(found[name][own].tolist() for name in names), strict=True))
     answers = {}
     for moment, name in NAMES.items():
         path = path_of(folder, moment, first)

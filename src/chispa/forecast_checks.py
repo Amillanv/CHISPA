@@ -18,7 +18,7 @@ ACTIONS = {
     "trees": "Fit and save the live trees.",
     "score": "Score the saved live forecasts.",
     "outside": "Score the trees on the fronts in Brazil outside the biome.",
-    "front-chance": "Score the chance of a front for the alerts that only GOES started.",
+    "front-chance": "Score the chance of a front for an alert of GOES only, and save its model.",
 }
 
 
@@ -40,7 +40,8 @@ def run(action: str | None, test_run: bool) -> None:
     `trees` fits the trees of all development years, and saves them for the live forecast.
     `live` makes no table: it gives the forecast of the fronts of the newest looks.
     `score` makes the table of the saved live forecasts against what came.
-    `front-chance` makes the tables of the chance of a front for an alert that only GOES started.
+    `front-chance` makes the tables of the chance of a front for an alert that only GOES started,
+    and it saves the model of all development years for the live chance.
     """
     arguments = (config.STORE_PATH, config.RAW_DIR)
     if action == "trees":

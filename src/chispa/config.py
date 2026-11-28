@@ -593,6 +593,13 @@ RISK_LIVE_DAYS = 30
 # `chispa update` asks one time in this many hours if the Monitor map has a new month.
 RISK_MAP_CHECK_HOURS = 24
 
+# The model of the chance of a front, for an alert that only GOES started. The command
+# `chispa forecast --front-chance` makes the file. Run it again when the first part of this file
+# changes.
+FRONT_CHANCE_MODEL_PATH = DATA_DIR / "front_chance_model.json"
+# One file for each alert that only GOES started, with the chance of a front as we gave it.
+FRONT_CHANCE_LIVE_DIR = DATA_DIR / "front_chances"
+
 # Seconds between two requests, to stay far below the limit of the API.
 FIRMS_PAUSE_S = 1.0
 

@@ -8,7 +8,7 @@ which has the commands that get data, make the store and make the events.
 from collections.abc import Callable
 from datetime import UTC, datetime
 
-from chispa import config, risk_live
+from chispa import config, front_chance, risk_live
 from chispa.evaluation import (
     advance,
     burn,
@@ -89,6 +89,14 @@ def update_risk(project: str | None) -> str:
     """
     now = datetime.now(UTC)
     return risk_live.update(config.STORE_PATH, config.RAW_DIR, now, (project, refresh))
+
+
+def update_front_chance() -> str:
+    """Make the chance of a front of each new alert that only GOES started, and return one line.
+
+    This is a step of `chispa update`, after the growth risk: it reads the files of that step.
+    """
+    return front_chance.update(lambda: datetime.now(UTC))
 
 
 def run_burn(year: int, project: Callable[[], str]) -> None:

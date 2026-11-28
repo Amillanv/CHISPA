@@ -26,9 +26,9 @@ forecast_outside,af9e040fd8d0,2026-11-27
 forecast_periods,af9e040fd8d0,2026-11-27
 forecast_sectors,af9e040fd8d0,2026-11-27
 front_alerts,af9e040fd8d0,2026-11-27
-front_chance,af9e040fd8d0,2026-11-27
-front_chance_bands,af9e040fd8d0,2026-11-27
-front_chance_weights,af9e040fd8d0,2026-11-27
+front_chance,1814951a61f2,2026-11-28
+front_chance_bands,1814951a61f2,2026-11-28
+front_chance_weights,1814951a61f2,2026-11-28
 front_flames,df8ac8bde25f,2026-11-27
 front_steps,af9e040fd8d0,2026-11-27
 front_steps_small,af9e040fd8d0,2026-11-27
