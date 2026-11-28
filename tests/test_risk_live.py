@@ -117,7 +117,7 @@ def answer_of(moment: str, first: datetime = AVAILABLE) -> dict:
 def test_answer_of_an_alert_is_one_file_that_does_not_change(tmp_path):
     made = AVAILABLE + timedelta(minutes=31)
     path = risk_files.save(answer_of("0"), tmp_path, made)
-    assert path == tmp_path / "2024" / f"{FIRST_ID}_0.json"
+    assert path == tmp_path / "2024" / f"{FIRST_ID}_0_20240815T080000.json"
     assert json.loads(path.read_text())["made_at"] == to_text(made)
     with pytest.raises(RuntimeError, match="does not change"):
         risk_files.save(answer_of("0"), tmp_path, made)
@@ -134,9 +134,15 @@ def test_record_has_the_answers_that_were_complete_at_the_as_of_time(tmp_path):
     late = risk_files.of_event(tmp_path, found, FIRST_ID, AVAILABLE + timedelta(hours=26))
     assert list(late) == ["at_30_minutes", "at_24_hours"]
     # After new older rows in the store, the id can be the id of a different alert: its first
-    # detection has a different time. The file is then not a file of this alert.
+    # detection has a different time. The files are then not files of this alert, and the
+    # alert gets its own file with the same id.
     other = found | {"available": found["available"] + 3600}
     assert risk_files.of_event(tmp_path, other, FIRST_ID, AVAILABLE + timedelta(hours=26)) is None
+    later = AVAILABLE + timedelta(hours=1)
+    path = risk_files.save(answer_of("0", first=later), tmp_path, later + timedelta(hours=1))
+    assert path.name == f"{FIRST_ID}_0_20240815T090000.json"
+    again = risk_files.of_event(tmp_path, other, FIRST_ID, AVAILABLE + timedelta(hours=26))
+    assert again["at_30_minutes"]["first_available_at"] == to_text(later)
 
 
 def test_saved_models_are_only_those_of_the_settings_of_now(tmp_path, monkeypatch):
@@ -326,7 +332,8 @@ def test_update_gives_each_new_alert_its_file_and_the_record_reads_it(tmp_path, 
     assert [limit["chance"] for limit in older["at_24_hours"]["limits"]] == [0.5, 0.5]
     # The file has the inputs of the answer. The record does not.
     assert "inputs" not in older["at_24_hours"]
-    saved = json.loads(risk_files.path_of(tmp_path / "risks", FIRST_ID, "24").read_text())
+    first_s = int((AVAILABLE - timedelta(days=2)).timestamp())
+    saved = json.loads(risk_files.path_of(tmp_path / "risks", FIRST_ID, "24", first_s).read_text())
     assert saved["inputs"] == {"x": 1.0, "rain": 0.0}
 
 

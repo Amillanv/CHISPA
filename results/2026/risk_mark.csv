@@ -1,3 +1,3 @@
 moment_h,alerts,known_fire_alerts,near_earlier_alerts,both,recall,precision,large_10ha,large_10ha_near_earlier,large_100ha,large_100ha_near_earlier,large_1000ha,large_1000ha_near_earlier
-0,890,120,227,85,0.7083,0.3744,130,12,50,2,15,0
-24,865,117,232,87,0.7436,0.375,124,13,49,3,15,0
+0,890,120,227,85,0.7083,0.3744,108,4,43,0,14,0
+24,865,117,232,87,0.7436,0.375,96,1,38,0,13,0

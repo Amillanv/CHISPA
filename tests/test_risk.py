@@ -226,11 +226,13 @@ def test_tables_of_a_year_come_from_models_of_the_other_years(tmp_path, monkeypa
     assert set(tables[2002]) == names | earlier | {"risk_fire_calibration"}
     # The table of the rule is for all years together: it is with the newest year.
     # Only 2003 has two training years: it is the one scored year of the recalibration.
-    scored = {"risk_recalibrated", "risk_classes", "risk_percentage", "risk_percentage_mark"}
+    scored = {"risk_recalibrated", "risk_classes", "risk_percentage"}
+    scored |= {"risk_percentage_mark", "risk_percentage_no_mark"}
     assert set(tables[2003]) == set(tables[2002]) | {"risk_input_rule"} | scored
     # No alert of this case is near an earlier alert: the mark leaves out no alert, and the
-    # alerts on a known fire are also scored. Each of the 40 has the value of a small x.
+    # alerts on a known fire are also scored. Thus the mark and no mark give the same table.
     assert tables[2003]["risk_percentage_mark"][0]["years"] == 1
+    assert tables[2003]["risk_percentage_mark"] == tables[2003]["risk_percentage_no_mark"]
     assert tables[2001]["risk_mark"][0]["known_fire_alerts"] == 40
     assert {row["inputs"] for row in tables[2003]["risk_input_rule"]} == {"with more"}
     # With the earlier years only, 2002 has the weights of 2001: the same form, thus correct.

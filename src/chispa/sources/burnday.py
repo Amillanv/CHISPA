@@ -5,7 +5,7 @@ pixel of 463 m burned. We use it to say when a fire burned, not where.
 The day comes from the change in the surface reflectance, not from a hotspot.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import ee
@@ -58,18 +58,30 @@ def _get_month(year: int, month: int) -> tuple[np.ndarray, np.ndarray]:
     return day, np.clip(tile["Uncertainty"], 0, 255).astype(np.uint8)
 
 
+def _today() -> date:
+    return datetime.now(UTC).date()
+
+
+def _can_be_absent(year: int, month: int) -> bool:
+    """Return True if the product can still be without a month: its end is not long ago."""
+    end = date(year + (month == 12), month % 12 + 1, 1)
+    return _today() < end + timedelta(days=config.BURNDAY_LATE_DAYS)
+
+
 def read_year(year: int, raw_dir: Path) -> np.ndarray:
     """Return the burn days of one year: one layer for each month, 0 for no burn.
 
-    A year in progress has no file for its last months: those layers have no burn day.
-    The product had a month 40 to 51 days after its end (`docs/sources.md` section 8.9).
-    Thus the year before the year of now is also in progress in its first weeks.
+    A month with no file has no burn day. That is permitted only for a month that the product
+    can still be without: it had a month 40 to 51 days after its end (`docs/sources.md`
+    section 8.9), and `config.py` has the days that we wait. The files that exist must be the
+    first months of the year. In each other case a download stopped, or it is old.
     """
     paths = [raw_dir / "burnday" / str(year) / f"{month:02d}.npz" for month in range(1, 13)]
     have = [path.exists() for path in paths]
-    in_progress = year >= datetime.now(UTC).year - 1 and have == sorted(have, reverse=True)
-    complete = all(have) or in_progress
-    if not have[0] or not complete:
+    late = [there or _can_be_absent(year, month) for month, there in enumerate(have, start=1)]
+    if have != sorted(have, reverse=True) or not all(late):
         raise RuntimeError(f"Run `chispa fetch burnday --year {year}` first.")
     layers = [np.load(path)["day"] for path, there in zip(paths, have, strict=True) if there]
-    return np.stack(layers + [np.zeros_like(layers[0])] * (12 - len(layers)))
+    grid = burnday_grid()
+    empty = np.zeros_like(layers[0]) if layers else np.zeros((grid.height, grid.width), np.uint16)
+    return np.stack(layers + [empty] * (12 - len(layers)))

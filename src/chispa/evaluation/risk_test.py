@@ -44,7 +44,7 @@ def monitor_fires(
     approximately one month later than the map (`docs/sources.md` sections 8.9 and 8.18).
     """
     grid = pantanal_grid()
-    months, newest = monitor.read_year(year, raw_dir, grid)
+    months, newest = monitor.read_year(year, raw_dir, grid, last)
     name = f"{year}-{last:02d}-replay" if last else f"{year}-{newest:02d}"
     path = data_dir / "fires_monitor" / f"{name}.npz"
     if not path.exists():
@@ -86,6 +86,13 @@ def _sized(year: int, store_path: Path, raw_dir: Path, last: int | None = None) 
     return {m: sized_rows(rows[m], first, area) for m in MOMENTS}, detections, last
 
 
+def month_of_test() -> int:
+    """Return the last month of the Monitor map in the test: the month whose end is the delay
+    of the recalibration after the last moment of a test alert (`config.RISK_TEST_UNTIL`)."""
+    end = config.RISK_TEST_UNTIL + timedelta(days=config.RISK_RECALIBRATION_DELAY_DAYS)
+    return (end - timedelta(days=1)).month
+
+
 def _with_inputs(
     sized: dict, detections: Fields, raw_dir: Path, year: int, until: datetime
 ) -> dict:
@@ -107,8 +114,9 @@ def monitor_part(year: int, store_path: Path, raw_dir: Path) -> dict:
 
     Only an alert with a known outcome is in the test.
     """
-    sized, detections, last = _sized(year, store_path, raw_dir)
-    # A later month of the map must not add alerts to a run by accident (`config.py`).
+    # `chispa update` gets each new month of the map. The test reads the map as it was when
+    # the month of its first run came: a later month adds no alert, and it changes no outcome.
+    sized, detections, last = _sized(year, store_path, raw_dir, month_of_test())
     until = min(known_until(year, last), config.RISK_TEST_UNTIL)
     rows = _with_inputs(sized, detections, raw_dir, year, until)
     return {"rows": rows, "until": until, "states": map_states(year, until, store_path, raw_dir)}

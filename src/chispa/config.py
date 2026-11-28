@@ -599,6 +599,10 @@ FIRMS_PAUSE_S = 1.0
 # The side of a download tile in pixels. Earth Engine limits the size of one request.
 SCAR_TILE_PX = 2048
 
+# The burn day product had a month 40 to 51 days after its end (`docs/sources.md` section 8.9).
+# For this number of days after its end, a month can be absent from the files of a year.
+BURNDAY_LATE_DAYS = 60
+
 # --- Live operation ---
 
 # The first day of the live logs. A fetch of the archive files stops on the day before it:

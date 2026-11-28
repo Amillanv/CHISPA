@@ -16,6 +16,8 @@ import numpy as np
 from chispa.config_hash import config_hash
 from chispa.store import to_text
 
+# The form of the time of the first detection in the name of a file, in UTC.
+FIRST = "%Y%m%dT%H%M%S"
 # The name of each moment in the event record.
 NAMES = {"0": "at_30_minutes", "24": "at_24_hours"}
 
@@ -41,9 +43,14 @@ def load_models(path: Path) -> dict | None:
     return saved if saved.get("config") == config_hash() else None
 
 
-def path_of(folder: Path, alert: int, moment: str) -> Path:
-    """Return the file of one alert at one moment. An alert id starts with its year."""
-    return folder / str(alert)[:4] / f"{alert}_{moment}.json"
+def path_of(folder: Path, alert: int, moment: str, first_s: int) -> Path:
+    """Return the file of one alert at one moment. An alert id starts with its year.
+
+    The name has the time when the first detection of the alert was available: an id can go
+    to a different alert when the store gets older rows, and that alert then gets its own file.
+    """
+    first = datetime.fromtimestamp(first_s, UTC).strftime(FIRST)
+    return folder / str(alert)[:4] / f"{alert}_{moment}_{first}.json"
 
 
 def save(answer: dict, folder: Path, made_at: datetime) -> Path:
@@ -52,7 +59,8 @@ def save(answer: dict, folder: Path, made_at: datetime) -> Path:
     The file has `made_at`: the time when it was complete. A file never changes: the answer
     stays as we gave it.
     """
-    path = path_of(folder, answer["alert"], answer["moment_h"])
+    first_s = int(datetime.fromisoformat(answer["first_available_at"]).timestamp())
+    path = path_of(folder, answer["alert"], answer["moment_h"], first_s)
     if path.exists():
         raise RuntimeError(f"{path} exists: a file of the growth risk does not change.")
     # A reader must not get a part of a file: the name is final only when the file is complete.
@@ -67,22 +75,20 @@ def of_event(folder: Path, found: dict, event_id: int, as_of: datetime) -> dict 
     """Return the growth risk of one event at the as-of time. None: it has no file.
 
     `found` has the detections of the event. The answers are those of the alert that started
-    the event, for each moment with a file that was complete at the as-of time. A file is of
-    this alert only if it has the time of its first detection: an id can go to a different
-    alert when the store gets older rows.
+    the event, for each moment with a file that was complete at the as-of time. The file of an
+    alert has the time of its first detection in its name (`path_of`).
     """
     own = found["available"][found["issued"] == event_id]
     if not len(own):
         return None
-    first = to_text(datetime.fromtimestamp(int(own.min()), UTC))
     answers = {}
     for moment, name in NAMES.items():
-        path = path_of(folder, event_id, moment)
+        path = path_of(folder, event_id, moment, int(own.min()))
         if not path.exists():
             continue
         answer = json.loads(path.read_text())
         made = datetime.fromisoformat(answer["made_at"])
-        if made <= as_of and answer["first_available_at"] == first:
+        if made <= as_of:
             # The inputs stay in the file: the record has what a person reads.
             answers[name] = {key: value for key, value in answer.items() if key != "inputs"}
     return answers or None

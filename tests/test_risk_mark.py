@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from chispa.evaluation.risk_mark import mark_table, near_earlier, with_mark
+from chispa.evaluation.risk_mark import mark_table, near_earlier, no_mark, with_mark
 from tests.test_fusion import KM
 
 DAY = 86_400.0
@@ -42,7 +42,8 @@ def alert(known: bool, near: bool, size_ha: float, only_inpe_goes: bool = False)
 
 def test_table_compares_the_mark_with_the_mark_of_the_map(monkeypatch):
     monkeypatch.setattr("chispa.config.RISK_CLASS_LIMITS_HA", (10.0, 100.0))
-    rows = [alert(True, True, 0.0)] * 3 + [alert(True, False, 0.0)]
+    # One alert on a known fire also saw a different fire of 500 hectares first.
+    rows = [alert(True, True, 0.0)] * 2 + [alert(True, True, 500.0), alert(True, False, 0.0)]
     rows += [alert(False, True, 0.0), alert(False, True, 500.0), alert(False, False, 50.0)]
     rows += [alert(False, False, 500.0, only_inpe_goes=True)]
     found = mark_table({"0": rows})[0]
@@ -50,12 +51,17 @@ def test_table_compares_the_mark_with_the_mark_of_the_map(monkeypatch):
     # 3 of the 4 alerts on a known fire have the mark, and 3 of the 5 alerts with the mark are
     # on a known fire.
     assert (found["both"], found["recall"], found["precision"]) == (3, 0.75, 0.6)
-    # An alert with only GOES rows of INPE gets no percentage: it is not a large alert here.
+    # The large alerts are those of the main tables: not on a known fire, and not with only
+    # GOES rows of INPE. The alert on a known fire with 500 hectares is not one of them.
     assert (found["large_10ha"], found["large_10ha_near_earlier"]) == (2, 1)
     assert (found["large_100ha"], found["large_100ha_near_earlier"]) == (1, 1)
     # With the mark in the place of the mark of the map, the tables leave out the 5 alerts.
-    marked = with_mark({"0": rows})["0"]
-    assert sum(one["known"] for one in marked) == 5
+    # With no mark they leave out no alert.
+    assert sum(one["known"] for one in with_mark({"0": rows})["0"]) == 5
+    assert sum(one["known"] for one in no_mark({"0": rows})["0"]) == 0
+    # A moment with no alert gives a row of zeros.
+    empty = mark_table({"24": []})[0]
+    assert (empty["alerts"], empty["recall"], empty["large_100ha"]) == (0, None, 0)
 
 
 def test_live_path_is_compared_with_the_rows_of_the_evaluation():
