@@ -60,6 +60,13 @@ def download_year(year: int, project: str, raw_dir: Path) -> list[Path]:
     return paths
 
 
+def has_day(day: date, project: str) -> bool:
+    """Return True if the product has the last hour of a day: the day is complete."""
+    ee.Initialize(project=project)
+    hour = ee.Date(day.isoformat()).advance(23, "hour")
+    return ee.ImageCollection(ASSET).filterDate(hour, hour.advance(1, "hour")).size().getInfo() > 0
+
+
 def _save_month(raw_dir: Path, last: date, complete: bool) -> list[Path]:
     """Save the measures file and the wind file of one month, to the day `last`.
 

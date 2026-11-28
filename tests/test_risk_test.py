@@ -29,6 +29,7 @@ def test_replay_gives_an_alert_the_factor_of_the_map_that_it_had(monkeypatch):
 
     def alert(number: int, day: float, size_ha: float) -> dict:
         row = {"alert": number, "inputs": {"x": 0.0}, "size_ha": size_ha, "known": False}
+        row |= {"near_earlier": number == 8}  # The alert 8 is near an earlier alert.
         return row | {"at": day * DAY, "only_inpe_goes": False, "matched": size_ha > 0}
 
     # The model gives each alert the value 0.5. The year before has 10 alerts on the days 0 to 9.
@@ -56,3 +57,9 @@ def test_replay_gives_an_alert_the_factor_of_the_map_that_it_had(monkeypatch):
     assert found["observed_to_expected"] == round(2 / (2 * 4 / 15 + 2 / 3), 4)
     # The level is 1.6667: in the range of one year.
     assert found["level_in_range"] is True
+    # With the mark of the detections, the alert 8 is left out at each time, and the alert 9 is
+    # not: the mark of the map is not read. Day 400: 9 alerts again. Day 500: 9 alerts, 2 large
+    # for 4.5 expected: a factor of 3 divided by 5.5, a value of 3 divided by 8.5.
+    marked = replay_table(parts, models, 2003, mark=True)[0]
+    assert (marked["alerts"], marked["large"]) == (4, 2)
+    assert marked["observed_to_expected"] == round(2 / (2 * 4 / 15 + 2 * 3 / 8.5), 4)

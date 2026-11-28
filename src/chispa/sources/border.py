@@ -71,3 +71,29 @@ def rasterize(rings: list[np.ndarray], grid: Grid) -> np.ndarray:
         for first, after_last in zip(cols[0::2], cols[1::2], strict=True):
             mask[row, first:after_last] = True
     return mask
+
+
+def contains(rings: list[np.ndarray], grid: Grid, lat: np.ndarray, lon: np.ndarray) -> np.ndarray:
+    """Return True for each position whose pixel of the grid has its centre in the border.
+
+    The answer is that of `rasterize` at the pixel of each position, with no grid in memory:
+    a large grid needs much memory, and a live alert has few positions. A position that is
+    off the grid is not in the border.
+    """
+    rows, cols = grid.rows_cols(np.atleast_1d(lat).astype(float), np.atleast_1d(lon).astype(float))
+    starts = np.concatenate([ring[:-1] for ring in rings])
+    ends = np.concatenate([ring[1:] for ring in rings])
+    x1, y1, x2, y2 = starts[:, 0], starts[:, 1], ends[:, 0], ends[:, 1]
+    inside = np.zeros(len(rows), dtype=bool)
+    on_grid = (rows >= 0) & (rows < grid.height) & (cols >= 0) & (cols < grid.width)
+    for row in np.unique(rows[on_grid]):
+        centre = grid.north - (row + 0.5) * grid.pixel_deg
+        crosses = (y1 <= centre) != (y2 <= centre)
+        at = x1[crosses] + (centre - y1[crosses]) * (x2[crosses] - x1[crosses]) / (
+            y2[crosses] - y1[crosses]
+        )
+        # The first column with its centre east of each crossing, as in `rasterize`.
+        first = np.clip(np.ceil((at - grid.west) / grid.pixel_deg - 0.5), 0, grid.width)
+        chosen = on_grid & (rows == row)
+        inside[chosen] = (first[None, :] <= cols[chosen][:, None]).sum(axis=1) % 2 == 1
+    return inside

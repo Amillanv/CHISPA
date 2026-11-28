@@ -16,8 +16,11 @@ front_chance_bands,af9e040fd8d0,2026-11-27
 front_chance_weights,af9e040fd8d0,2026-11-27
 front_steps,af9e040fd8d0,2026-11-27
 front_steps_small,af9e040fd8d0,2026-11-27
-risk,652c3a3f5e8f,2026-11-26
-risk_classes,652c3a3f5e8f,2026-11-26
-risk_recalibrated,652c3a3f5e8f,2026-11-26
-risk_replay,652c3a3f5e8f,2026-11-26
-risk_test,652c3a3f5e8f,2026-11-26
+risk,1814951a61f2,2026-11-28
+risk_classes,1814951a61f2,2026-11-28
+risk_live_inputs,1814951a61f2,2026-11-28
+risk_mark,1814951a61f2,2026-11-28
+risk_recalibrated,1814951a61f2,2026-11-28
+risk_replay,1814951a61f2,2026-11-28
+risk_replay_mark,1814951a61f2,2026-11-28
+risk_test,1814951a61f2,2026-11-28

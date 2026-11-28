@@ -1,21 +1,21 @@
 """The event record: all that CHISPA can say about one event at one time.
 
 An alert, a tool and the dashboard read this one record. It has the state of the event,
-the rank of its confidence, its severity, its growth steps, what GOES examined, and the growth
-forecast of its fronts.
+the rank of its confidence, its severity, its growth steps, what GOES examined, the growth
+forecast of its fronts, and the growth risk of its first alert.
 Each part uses only data that was available at the as-of time, and the event is the event
 as it was at that time (`issued.py`). A part that we cannot give is None, with a note.
 """
 
 import sqlite3
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
 
-from chispa import confidence, config, forecast_files, growth, history, severity, view
+from chispa import confidence, config, forecast_files, growth, history, risk_files, severity, view
 from chispa.fusion import LEVELS
-from chispa.grid import layer_grid
 from chispa.issued import Replay
 from chispa.sources import border
 from chispa.store import to_text
@@ -153,11 +153,12 @@ def growth_steps(found: dict) -> list[dict]:
     ]
 
 
-def near_before(store: sqlite3.Connection, found: dict, event_id: int, in_biome: np.ndarray) -> int:
+def near_before(store: sqlite3.Connection, found: dict, event_id: int, inside: Callable) -> int:
     """Return the detections near the first detection of the event, in the days before its day.
 
     This is the input "activity near the event" of the confidence model: the same days,
-    the same cells and only detections in the biome.
+    the same cells and only detections in the biome. `inside` says which positions are in the
+    biome: it gets the latitudes and the longitudes.
     """
     own = np.nonzero(found["issued"] == event_id)[0]
     first = own[0] if len(own) else 0
@@ -173,7 +174,19 @@ def near_before(store: sqlite3.Connection, found: dict, event_id: int, in_biome:
         west + (col + 2) * side,
     )
     places = np.array(store.execute(NEAR, (*times, *box)).fetchall()).reshape(-1, 2)
-    return int(in_biome[layer_grid().rows_cols(places[:, 0], places[:, 1])].sum())
+    return int(inside(places[:, 0], places[:, 1]).sum())
+
+
+def seen(found: dict, near: int) -> dict:
+    """Return what the detections of an event say, for the inputs of `confidence.inputs`."""
+    first = int(found["observed"].argmin())
+    return {
+        "families": set(found["family"].tolist()),
+        "has_high": bool(found["high"].any()),
+        "day": datetime.fromtimestamp(int(found["observed"][first]), UTC).timetuple().tm_yday,
+        "local_hour": (found["observed"][first] / 3600 + found["lon"][first] / 15) % 24,
+        "near": near,
+    }
 
 
 def rank(found: dict, facts: dict, near: int, as_of: datetime) -> dict:
@@ -182,19 +195,11 @@ def rank(found: dict, facts: dict, near: int, as_of: datetime) -> dict:
     The rank is the share of the alerts of the development year with a smaller value.
     It is not a probability (`docs/method.md` section 11.15).
     """
-    first = int(found["observed"].argmin())
     hours = (as_of.timestamp() - float(found["available"].min())) / 3600
     moment = "0" if hours < config.SEVERITY_EVAL_HOURS else "24"
     path = config.RESULTS_DIR / str(config.DEVELOPMENT_YEAR) / "confidence" / "model.json"
     model = confidence.load(path)[moment]
-    seen = {
-        "families": set(found["family"].tolist()),
-        "has_high": bool(found["high"].any()),
-        "day": datetime.fromtimestamp(int(found["observed"][first]), UTC).timetuple().tm_yday,
-        "local_hour": (found["observed"][first] / 3600 + found["lon"][first] / 15) % 24,
-        "near": near,
-    }
-    values = confidence.inputs(facts, seen)
+    values = confidence.inputs(facts, seen(found, near))
     row = np.array([[values[name] for name in model["inputs"]]])
     value = float(confidence.probability(model, row)[0])
     effects = (
@@ -236,6 +241,7 @@ def event_record(store: sqlite3.Connection, event_id: int, as_of: datetime, raw_
     record["viirs_passes_after_last_detection"] = view.passes_after(found, as_of, raw_dir)
     ids = replay.ids(event_id)
     record["forecast"] = forecast_files.of_event(config.FORECAST_LIVE_DIR, ids, as_of)
+    record["growth_risk"] = risk_files.of_event(config.RISK_LIVE_DIR, found, root, as_of)
     record |= {"severity": None, "confidence": None}
     return _with_layers(store, record, found, as_of, raw_dir)
 
@@ -267,7 +273,9 @@ def _with_layers(
             "the land cover and the track record of the level have no check for this place."
         )
     try:
-        near = near_before(store, found, root, in_biome)
+        near = near_before(
+            store, found, root, lambda lat, lon: in_biome[layers.grid.rows_cols(lat, lon)]
+        )
         record["confidence"] = rank(found, facts, near, as_of)
     except RuntimeError as error:  # The model file is absent. The severity stays.
         record["notes"].append(f"No confidence rank: {error}")

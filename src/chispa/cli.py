@@ -280,7 +280,7 @@ def run_poll(since: datetime | None) -> None:
 def run_update() -> None:
     """Add the detections of the live logs to the store, then make the events again for each
     year with a mark: its events are older than its detections. Then make the growth forecast
-    of each new look."""
+    of each new look, and the growth risk of each alert with a new moment."""
     now = datetime.now(UTC)
     store = open_store(config.STORE_PATH)
     new, rejected = add_live(config.RAW_DIR, store)
@@ -296,3 +296,4 @@ def run_update() -> None:
         newest = status["complete_pass_at"] or "no pass"
         print(f"live: LATE. The newest pass with no failure: {newest}. Do a check of the poller.")
     print(forecast_live.update(config.STORE_PATH, config.RAW_DIR, datetime.now(UTC)))
+    print(checks.update_risk(os.environ.get("EE_PROJECT")))

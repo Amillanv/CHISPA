@@ -13,34 +13,9 @@ from chispa.evaluation.confidence import MOMENTS, as_table, separation
 from chispa.evaluation.report import share
 from chispa.evaluation.risk import key, new_or_none
 from chispa.evaluation.risk_calibration import TENTHS, level_row
+from chispa.risk import factors, in_sequence, recalibrate
 
-DAY_S = 86_400
 Tables = dict[str, list[dict]]
-
-
-def factors(times: np.ndarray, past: dict[str, np.ndarray]) -> np.ndarray:
-    """Return the factor of each alert from the known outcomes of the alerts before it.
-
-    `past` has the time, the value and the label of the older alerts. An outcome is known if
-    its alert is older than the delay, and it counts if it is in the window. The factor is the
-    large alerts that came, divided by those that the values expected. The prior is added to
-    the two: with few known outcomes, the factor stays near 1.
-    """
-    order = np.argsort(past["time"], kind="stable")
-    ordered = past["time"][order]
-    came = np.concatenate([[0.0], np.cumsum(past["large"][order])])
-    expected = np.concatenate([[0.0], np.cumsum(past["value"][order])])
-    delay = config.RISK_RECALIBRATION_DELAY_DAYS * DAY_S
-    window = config.RISK_RECALIBRATION_WINDOW_DAYS * DAY_S
-    newest = np.searchsorted(ordered, times - delay, side="right")
-    oldest = np.searchsorted(ordered, times - window, side="right")
-    prior = config.RISK_RECALIBRATION_PRIOR
-    return (came[newest] - came[oldest] + prior) / (expected[newest] - expected[oldest] + prior)
-
-
-def recalibrate(values: np.ndarray, factor: np.ndarray) -> np.ndarray:
-    """Return the values with their odds multiplied by the factor."""
-    return values * factor / (1 - values + values * factor)
 
 
 def recalibration_tables(
@@ -170,9 +145,7 @@ def class_rows(values: list[np.ndarray], size: np.ndarray) -> list[dict]:
     alert then gets the smaller of the two, and the class between gets 0.
     """
     limits = config.RISK_CLASS_LIMITS_HA
-    reach = [values[0]]
-    for value in values[1:]:
-        reach.append(np.minimum(reach[-1], value))
+    reach = in_sequence(values)
     wrong = int(
         sum((value > lower).sum() for lower, value in zip(values, values[1:], strict=False))
     )

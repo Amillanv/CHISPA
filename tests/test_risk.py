@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from chispa import risk
 from chispa.evaluation import risk_inputs, risk_run
 from chispa.evaluation.risk import (
     all_alerts_table,
@@ -108,7 +109,8 @@ def test_average_precision_of_equal_values_is_the_base_rate():
 def alert(x: float, size_ha: float, advance_m: float | None = None, **more) -> dict:
     row = {"inputs": {"x": x, "detections_log": -x}, "size_ha": size_ha, "advance_m": advance_m}
     row |= {"seen_ha": size_ha, "known": False, "own_fires": frozenset(), "alert": int(x)}
-    return row | {"matched": size_ha > 0, "only_inpe_goes": False, "at": 0.0} | more
+    row |= {"matched": size_ha > 0, "only_inpe_goes": False, "near_earlier": False, "at": 0.0}
+    return row | more
 
 
 MODEL = {"inputs": ["x"], "mean": [0.0], "spread": [1.0], "start": 0.0, "weights": [1.0]}
@@ -207,7 +209,7 @@ def test_tables_of_a_year_come_from_models_of_the_other_years(tmp_path, monkeypa
     tables = risk_run.risk_tables(tmp_path / "store", tmp_path)
     assert set(tables) == {2001, 2002, 2003}
     names = {"risk", "risk_all_alerts", "risk_calibration", "risk_alerts", "risk_weights"}
-    names |= {"risk_inputs", "risk_fire"}
+    names |= {"risk_inputs", "risk_fire", "risk_mark"}
     sets = {(row["inputs"], row["moment_h"]): row for row in tables[2003]["risk_inputs"]}
     assert set(sets) == {
         ("inputs now", "0"),
@@ -224,8 +226,12 @@ def test_tables_of_a_year_come_from_models_of_the_other_years(tmp_path, monkeypa
     assert set(tables[2002]) == names | earlier | {"risk_fire_calibration"}
     # The table of the rule is for all years together: it is with the newest year.
     # Only 2003 has two training years: it is the one scored year of the recalibration.
-    scored = {"risk_recalibrated", "risk_classes", "risk_percentage"}
+    scored = {"risk_recalibrated", "risk_classes", "risk_percentage", "risk_percentage_mark"}
     assert set(tables[2003]) == set(tables[2002]) | {"risk_input_rule"} | scored
+    # No alert of this case is near an earlier alert: the mark leaves out no alert, and the
+    # alerts on a known fire are also scored. Each of the 40 has the value of a small x.
+    assert tables[2003]["risk_percentage_mark"][0]["years"] == 1
+    assert tables[2001]["risk_mark"][0]["known_fire_alerts"] == 40
     assert {row["inputs"] for row in tables[2003]["risk_input_rule"]} == {"with more"}
     # With the earlier years only, 2002 has the weights of 2001: the same form, thus correct.
     assert tables[2002]["risk_earlier"][0]["auc"] == 1.0
@@ -336,23 +342,23 @@ def test_first_hours_count_the_scans_the_passes_and_the_time_that_the_sensors_sa
         "family": np.array(["abi", "abi", "abi", "viirs"]),
         "platform": np.array(["GOES16", "GOES16", "GOES16", "NOAA20"]),
     }
-    found = risk_inputs.first_hours_inputs(detections, np.arange(4))
+    found = risk.first_hours_inputs(detections, np.arange(4))
     # The first detection is at 14:00 at the place: the angle of 14 of 24 hours.
     assert round(found["hour_sin"], 4) == round(float(np.sin(2 * np.pi * 14 / 24)), 4)
     assert round(found["abi_scans_log"], 4) == round(float(np.log(1 + 2)), 4)
     assert round(found["abi_night_scans_log"], 4) == round(float(np.log(1 + 2)), 4)
     assert round(found["polar_passes_log"], 4) == round(float(np.log(1 + 1)), 4)
     assert round(found["span_h_log"], 4) == round(float(np.log(1 + 7)), 4)
-    only_goes = risk_inputs.first_hours_inputs(detections, np.array([0]))
+    only_goes = risk.first_hours_inputs(detections, np.array([0]))
     assert (only_goes["polar_passes_log"], only_goes["span_h_log"]) == (0.0, 0.0)
-    assert set(found) == set(risk_inputs.FIRST_HOURS)
+    assert set(found) == set(risk.FIRST_HOURS)
     # A second GOES platform in the period of 20:00 adds no scan: the count is of periods.
     detections["platform"][1] = "GOES19"
-    again = risk_inputs.first_hours_inputs(detections, np.arange(4))
+    again = risk.first_hours_inputs(detections, np.arange(4))
     assert again["abi_scans_log"] == found["abi_scans_log"]
     # The night comes from the configuration: with a night from 21:00, one scan is at night.
     monkeypatch.setattr("chispa.config.NIGHT_HOURS", (21, 6))
-    later = risk_inputs.first_hours_inputs(detections, np.arange(4))
+    later = risk.first_hours_inputs(detections, np.arange(4))
     assert round(later["abi_night_scans_log"], 4) == round(float(np.log(1 + 1)), 4)
 
 
@@ -397,7 +403,7 @@ def test_weather_inputs_use_the_days_before_and_the_days_from_the_day_of_the_mom
     monkeypatch.setattr("chispa.config.RISK_RAIN_DAY_MM", 1.0)
     monkeypatch.setattr("chispa.config.RISK_WEATHER_DAYS", 2)
     monkeypatch.setattr("chispa.config.RISK_WEATHER_LATE_DAYS", 0)
-    monkeypatch.setattr(risk_inputs, "RAIN", ("rain_2d_log", "rain_4d_log"))
+    monkeypatch.setattr(risk, "RAIN", ("rain_2d_log", "rain_4d_log"))
     # Six days. The day of the moment is day 4. The last day with rain before it is day 1.
     series = {
         "rain_mm": np.array([0.0, 5.0, 0.2, 0.0, 9.0, 1.0]),
@@ -427,7 +433,7 @@ def test_late_weather_inputs_stop_some_days_before_the_usual_end(monkeypatch):
     monkeypatch.setattr("chispa.config.RISK_RAIN_DAYS", (2,))
     monkeypatch.setattr("chispa.config.RISK_WEATHER_DAYS", 1)
     monkeypatch.setattr("chispa.config.RISK_WEATHER_LATE_DAYS", 3)
-    monkeypatch.setattr(risk_inputs, "RAIN", ("rain_2d_log",))
+    monkeypatch.setattr(risk, "RAIN", ("rain_2d_log",))
     # Ten days. The day of the moment is day 8: the late inputs are those of day 5.
     series = {
         "rain_mm": np.array([0.0, 0.0, 0.0, 4.0, 2.0, 0.0, 0.0, 1.0, 0.0, 0.0]),
@@ -444,12 +450,12 @@ def test_ground_that_burned_before_gives_the_years_the_times_and_the_share_near(
     monkeypatch.setattr("chispa.config.RISK_BURNED_CELL_SHARE", 0.5)
     monkeypatch.setattr("chispa.config.RISK_BURNED_NEAR_CELLS", 3)
     monkeypatch.setattr("chispa.config.RISK_BURNED_NEAR_YEARS", (1, 2))
-    monkeypatch.setattr(risk_inputs, "BURNED_NEAR", ("burned_near_1y", "burned_near_2y"))
+    monkeypatch.setattr(risk, "BURNED_NEAR", ("burned_near_1y", "burned_near_2y"))
     # Three years of a grid of 3 rows and 3 columns, the oldest year first.
     oldest = np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
     middle = np.array([[0.6, 0.4, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
     newest = np.array([[0.0, 0.0, 0.0], [0.0, 0.9, 0.0], [0.0, 0.0, 0.0]])
-    found = risk_inputs.burned_layers([oldest, middle, newest])
+    found = risk.burned_layers([oldest, middle, newest])
     # The corner cell burned in the two oldest years: its last burn is 2 years before.
     # The centre cell burned the year before. A cell with no burn gets 3 + 1 years.
     years = found["burned_years_log"]
