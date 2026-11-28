@@ -223,7 +223,9 @@ def add_weather(read: list[dict], raw_dir: Path, project: str | None) -> list[di
     asked = [one for one in read if "no_answer" not in one]
     if not asked:
         return read
-    first = min(one["day"] for one in asked) - timedelta(days=late_days + 95)
+    first = min(one["day"] for one in asked) - timedelta(
+        days=late_days + max(config.RISK_RAIN_DAYS)
+    )
     need = max(one["day"] for one in asked) - timedelta(days=late_days + 1)
     days = risk_weather.load(raw_dir, first, need, {one["cell"] for one in asked}, project)
     found = []
