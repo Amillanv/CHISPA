@@ -251,9 +251,9 @@ def event_record(store: sqlite3.Connection, event_id: int, as_of: datetime, raw_
     record["viirs_passes_after_last_detection"] = view.passes_after(found, as_of, raw_dir)
     ids = replay.ids(event_id)
     forecast = forecast_files.of_event(config.FORECAST_LIVE_DIR, ids, as_of)
-    # The forecast of a front replaces the chance of a front: the event has a front then.
-    chance = front_chance.of_event(config.FRONT_CHANCE_LIVE_DIR, found, root, as_of)
-    record["forecast"] = forecast or chance
+    if forecast is None:  # The forecast of a front replaces the chance of a front.
+        forecast = front_chance.of_event(config.FRONT_CHANCE_LIVE_DIR, found, root, as_of)
+    record["forecast"] = forecast
     record["growth_risk"] = risk_files.of_event(config.RISK_LIVE_DIR, found, root, as_of)
     record |= {"severity": None, "confidence": None}
     return _with_layers(store, record, found, as_of, raw_dir)
