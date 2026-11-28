@@ -58,6 +58,14 @@ def _get_month(year: int, month: int) -> tuple[np.ndarray, np.ndarray]:
     return day, np.clip(tile["Uncertainty"], 0, 255).astype(np.uint8)
 
 
+def months_on_disk(year: int, raw_dir: Path) -> int:
+    """Return the number of the first months of one year that have a file of burn days."""
+    count = 0
+    while count < 12 and (raw_dir / "burnday" / str(year) / f"{count + 1:02d}.npz").exists():
+        count += 1
+    return count
+
+
 def _today() -> date:
     return datetime.now(UTC).date()
 

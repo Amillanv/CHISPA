@@ -3,6 +3,7 @@
 import json
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -111,6 +112,7 @@ def test_chance_of_a_larger_limit_is_not_above_that_of_a_smaller_limit(monkeypat
 def answer_of(moment: str, first: datetime = AVAILABLE, lat: float = -17.5) -> dict:
     at = first + timedelta(hours=0.5 if moment == "0" else 24)
     times = {"moment_at": to_text(at), "first_available_at": to_text(first)}
+    times |= {"first_observed_at": to_text(first - timedelta(hours=3))}
     place = {"first_lat": lat, "first_lon": -57.5}
     return {"alert": FIRST_ID, "moment_h": moment, "limits": []} | times | place
 
@@ -118,7 +120,8 @@ def answer_of(moment: str, first: datetime = AVAILABLE, lat: float = -17.5) -> d
 def test_answer_of_an_alert_is_one_file_that_does_not_change(tmp_path):
     made = AVAILABLE + timedelta(minutes=31)
     path = risk_files.save(answer_of("0"), tmp_path, made)
-    assert path == tmp_path / "2024" / "20240815T080000_-17.50000_-57.50000_0.json"
+    name = "20240815T080000_20240815T050000_-17.50000_-57.50000_0.json"
+    assert path == tmp_path / "2024" / name
     assert json.loads(path.read_text())["made_at"] == to_text(made)
     with pytest.raises(RuntimeError, match="does not change"):
         risk_files.save(answer_of("0"), tmp_path, made)
@@ -128,8 +131,11 @@ def test_first_detection_of_an_alert_does_not_read_an_id():
     # (available, observed, lat, lon). Two detections were available at the time 10: the
     # first detection is that with the earlier observation.
     rows = [(10, 5, -17.0, -57.0), (10, 4, -18.0, -57.0), (11, 1, -16.0, -57.0)]
-    assert risk_files.first_detection(rows) == (10, -18.0, -57.0)
-    assert risk_files.first_detection(reversed(rows)) == (10, -18.0, -57.0)
+    assert risk_files.first_detection(rows) == (10, 4, -18.0, -57.0)
+    assert risk_files.first_detection(reversed(rows)) == (10, 4, -18.0, -57.0)
+    # Two alerts of one poll at one place, of different days, have different files.
+    first, second = (10, 4, -18.0, -57.0), (10, 90_000, -18.0, -57.0)
+    assert risk_files.path_of(Path("."), "0", first) != risk_files.path_of(Path("."), "0", second)
 
 
 def test_record_has_the_answers_that_were_complete_at_the_as_of_time(tmp_path):
@@ -150,7 +156,7 @@ def test_record_has_the_answers_that_were_complete_at_the_as_of_time(tmp_path):
     other = found | {"lat": found["lat"] - 2.0}
     assert risk_files.of_event(tmp_path, other, FIRST_ID, AVAILABLE + timedelta(hours=26)) is None
     path = risk_files.save(answer_of("0", lat=-19.5), tmp_path, AVAILABLE + timedelta(hours=2))
-    assert path.name == "20240815T080000_-19.50000_-57.50000_0.json"
+    assert path.name == "20240815T080000_20240815T050000_-19.50000_-57.50000_0.json"
     again = risk_files.of_event(tmp_path, other, FIRST_ID, AVAILABLE + timedelta(hours=26))
     assert again["at_30_minutes"]["first_lat"] == -19.5
 
@@ -167,7 +173,8 @@ def test_saved_models_are_only_those_of_the_settings_of_now(tmp_path, monkeypatc
 def test_alert_is_due_when_its_moment_came_and_it_has_no_file(tmp_path):
     store = store_of(tmp_path, [VIIRS, FAR])
     folder, seconds = tmp_path / "risks", int(AVAILABLE.timestamp())
-    near, far = (seconds, -17.5, -57.5), (seconds, -19.5, -57.5)
+    observed = seconds - 10_800
+    near, far = (seconds, observed, -17.5, -57.5), (seconds, observed, -19.5, -57.5)
     # The two alerts were available 3 hours after T0. The first moment is 30 minutes later.
     assert risk_live.due(store, AVAILABLE + timedelta(minutes=29), folder) == []
     found = risk_live.due(store, AVAILABLE + timedelta(minutes=30), folder)
@@ -369,7 +376,8 @@ def test_update_gives_each_new_alert_its_file_and_the_record_reads_it(tmp_path, 
     assert [limit["chance"] for limit in older["at_24_hours"]["limits"]] == [0.5, 0.5]
     # The file has the inputs of the answer. The record does not.
     assert "inputs" not in older["at_24_hours"]
-    first = (int((AVAILABLE - timedelta(days=2)).timestamp()), EARLIER.lat, EARLIER.lon)
+    seconds = int((AVAILABLE - timedelta(days=2)).timestamp())
+    first = (seconds, seconds - 10_800, EARLIER.lat, EARLIER.lon)
     saved = json.loads(risk_files.path_of(tmp_path / "risks", "24", first).read_text())
     assert saved["inputs"] == {"x": 1.0, "rain": 0.0}
 

@@ -22,7 +22,7 @@ from chispa.evaluation.risk_mark import with_mark
 from chispa.evaluation.risk_recalibration import model_facts, percent_rows
 from chispa.evaluation.risk_rule import NOW
 from chispa.evaluation.risk_run import year_parts
-from chispa.evaluation.risk_test import rows_of_month
+from chispa.evaluation.risk_test import burn_day_months, rows_of_month, weather_margin
 from chispa.grid import pantanal_grid
 from chispa.risk import DIGITS
 from chispa.sources import burnday, monitor
@@ -42,29 +42,37 @@ def map_months(now: datetime, raw_dir: Path) -> dict[int, int]:
     return found
 
 
-def pull_maps(now: datetime, raw_dir: Path, project: str) -> int:
-    """Get each new month of the Monitor map and of the burn days, and return how many came."""
+def pull_maps(now: datetime, raw_dir: Path, project: str) -> None:
+    """Get each new month of the Monitor map and of the burn days."""
     newest = monitor.image_times(project)
-    new = 0
     for year in (now.year - 1, now.year):
         has = max((m for m in range(1, 13) if f"brazil-{year}-{m}" in newest), default=0)
         if has > monitor.months_on_disk(year, raw_dir):
             monitor.download_year(year, project, raw_dir, pantanal_grid())
-            new += 1
         if has:
-            before = len(list((raw_dir / "burnday" / str(year)).glob("*.npz")))
-            new += len(burnday.download_year(year, project, raw_dir)) - before
-    return new
+            burnday.download_year(year, project, raw_dir)
+
+
+def made_from(now: datetime, raw_dir: Path) -> dict:
+    """Return the maps that the known outcomes read at a time: for each year, the last month
+    of the Monitor map and the months of the burn days. The saved file has them: a file is
+    current only if the maps on disk are those that made it."""
+    months = map_months(now, raw_dir)
+    days = {year: burn_day_months(year, month, raw_dir) for year, month in months.items()}
+    return {
+        "map": {str(year): month for year, month in months.items()},
+        "burn_days": {str(year): count for year, count in days.items()},
+    }
 
 
 def weather_until(now: datetime, raw_dir: Path) -> datetime:
-    """Return the time to which a row can have its inputs: some days before the end of the
-    last complete month of the weather on disk."""
+    """Return the time to which a row can have its inputs: the weather that a row reads after
+    its moment must be in the last complete month of the weather on disk."""
     year, month = now.year, now.month
     for _ in range(24):
         if (raw_dir / "weather" / str(year) / f"{month:02d}.npz").exists():
             last = date(year, month, monthrange(year, month)[1])
-            return datetime(last.year, last.month, last.day, tzinfo=UTC) - timedelta(days=5)
+            return datetime(last.year, last.month, last.day, tzinfo=UTC) - weather_margin()
         year, month = (year, month - 1) if month > 1 else (year - 1, 12)
     raise RuntimeError(f"Run `chispa fetch weather --year {now.year}` first.")
 
@@ -100,8 +108,8 @@ def known_outcomes(parts: dict, models: dict, months: dict[int, int], paths: tup
     for year, month in months.items():
         # An alert after the last month of the map has no outcome in it: with a map that is
         # late, such an alert must not count as an alert with no fire.
-        map_end = datetime(year + (month == 12), month % 12 + 1, 1, tzinfo=UTC)
-        end = min(until, map_end)
+        after_map = datetime(year + (month == 12), month % 12 + 1, 1, tzinfo=UTC)
+        end = min(until, after_map - timedelta(seconds=1))
         rows = percent_rows(with_mark(rows_of_month(year, month, end, (store_path, raw_dir))))
         earlier = [one for one in parts if one < year]
         of_year = models if earlier == sorted(parts) else fit(parts, earlier)
@@ -120,16 +128,18 @@ def refresh(store_path: Path, raw_dir: Path, now: datetime, project: str) -> str
     new month of a map came. Return one sentence that says what this did."""
     path = config.RISK_MODELS_PATH
     saved = risk_files.load_models(path)
-    new = pull_maps(now, raw_dir, project)
-    months = {str(year): month for year, month in map_months(now, raw_dir).items()}
-    if saved is not None and not new and saved["map"] == months:
+    pull_maps(now, raw_dir, project)
+    maps = made_from(now, raw_dir)
+    # The maps on disk, not the files that came in this run: a run that failed after a download
+    # must not make the next run say that the saved file is current.
+    if saved is not None and all(saved.get(name) == value for name, value in maps.items()):
         risk_files.save_models(saved | {"map_checked_at": to_text(now)}, path)
-        return "The Monitor map has no new month."
+        return "The maps have no new month."
     parts = {year: year_parts(year, store_path, raw_dir) for year in config.YEAR_ROLES}
     models = fit(parts, sorted(parts))
-    of_months = {int(year): month for year, month in months.items()}
-    past = known_outcomes(parts, models, of_months, (store_path, raw_dir, now))
+    months = {int(year): month for year, month in maps["map"].items()}
+    past = known_outcomes(parts, models, months, (store_path, raw_dir, now))
     times = {"made_at": to_text(now), "map_checked_at": to_text(now)}
-    made = times | {"fit_years": sorted(parts), "map": months, "models": models, "past": past}
+    made = times | {"fit_years": sorted(parts), "models": models, "past": past} | maps
     risk_files.save_models(made, path)
-    return f"New saved models and outcomes: the Monitor map to {months}."
+    return f"New saved models and outcomes: the Monitor map to {maps['map']}."

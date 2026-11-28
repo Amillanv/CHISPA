@@ -58,7 +58,9 @@ class Layers:
 
 
 def load_layers(raw_dir: Path, year: int) -> Layers:
-    """Return the layers for the alerts with a moment in one year."""
+    """Return the layers for the alerts of one year: the year of their first detection, also
+    for a moment in January of the next year. The evaluation gives an alert the layers of the
+    year of the alert."""
     places = severity.load_layers(raw_dir, severity.cover_year(year))
     rings = border.read_rings(raw_dir / "border" / "pantanal.geojson")
     return Layers(places, rings, risk.ground_before(raw_dir, year))
@@ -99,7 +101,7 @@ def event_at(store: sqlite3.Connection, alert: int, at: datetime, layers: Layers
     own = found["issued"] == alert
     names = ("available", "observed", "lat", "lon")
     rows = zip(*(found[name][own].tolist() for name in names), strict=True)
-    _, lat, lon = risk_files.first_detection(rows)
+    _, _, lat, lon = risk_files.first_detection(rows)
     if not layers.in_biome(np.array([lat]), np.array([lon]))[0]:
         return NOT_FIRST
     keep = layers.in_biome(found["lat"], found["lon"])
@@ -175,7 +177,8 @@ def read_alert(store: sqlite3.Connection, waiting: tuple, layers: Layers) -> dic
     at = datetime.fromtimestamp(at_s, UTC)
     one = {"alert": alert, "moment_h": moment, "moment_at": to_text(at)}
     one |= {"first_available_at": to_text(datetime.fromtimestamp(first[0], UTC))}
-    one |= {"first_lat": first[1], "first_lon": first[2]}
+    one |= {"first_observed_at": to_text(datetime.fromtimestamp(first[1], UTC))}
+    one |= {"first_lat": first[2], "first_lon": first[3]}
     found = event_at(store, alert, at, layers)
     if isinstance(found, str):
         return one | {"no_answer": found}

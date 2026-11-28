@@ -56,9 +56,11 @@ def parity_table(rows: dict[str, list], names: dict[str, list], paths: tuple[Pat
     store, table = sqlite3.connect(paths[0]), []
     for moment in MOMENTS:
         seconds = confidence.moment_seconds()[moment]
-        # The live path reads the place of the first detection from the store: 0 is not read.
+        # The live path reads the first detection from the store: each 0 here is not read.
+        starts = [int(row["at"] - seconds) for row in rows[moment]]
         waiting = [
-            (row["alert"], moment, (int(row["at"] - seconds), 0.0, 0.0)) for row in rows[moment]
+            (row["alert"], moment, (start, 0, 0.0, 0.0))
+            for row, start in zip(rows[moment], starts, strict=True)
         ]
         read = risk_live.read_all(store, paths[1], waiting, None)
         table.append(_row(moment, list(zip(rows[moment], read, strict=True)), names[moment]))
