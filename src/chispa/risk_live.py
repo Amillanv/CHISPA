@@ -132,12 +132,15 @@ def near_earlier(store: sqlite3.Connection, found: dict, alert: int, layers: Lay
     if not near.any():
         return None
     nearest = int(np.argmin(np.where(near, distance, np.inf)))
+    # The count and the sensor families are those of the alert that the answer names.
+    of_nearest = near & (issued == issued[nearest])
     return {
         "alert": int(issued[nearest]),
         "distance_m": round(float(distance[nearest])),
         "hours_before": round((first_s - int(available[nearest])) / 3600, 1),
-        "detections": int(near.sum()),
-        "sensor_families": sorted(set(family[near].tolist())),
+        "detections": int(of_nearest.sum()),
+        "sensor_families": sorted(set(family[of_nearest].tolist())),
+        "earlier_alerts": len(set(issued[near].tolist())),
     }
 
 
@@ -208,7 +211,8 @@ def late_weather(one: dict, days: risk_weather.Days) -> dict[str, float] | None:
     late_day = (one.pop("day") - days.start).days - config.RISK_WEATHER_LATE_DAYS
     if len(series["rain_mm"]) < late_day:
         raise RuntimeError("The weather does not have each day before this alert. Try again.")
-    one["weather_open_meteo_days"] = max(late_day - era5, 0)
+    # Only the days that the inputs read: the longest input is the rain of some days.
+    one["weather_open_meteo_days"] = min(max(late_day - era5, 0), max(config.RISK_RAIN_DAYS))
     late = risk.late_weather_inputs(series, late_day + config.RISK_WEATHER_LATE_DAYS)
     return None if np.isnan(list(late.values())).any() else late
 
@@ -276,9 +280,14 @@ def update(store_path: Path, raw_dir: Path, now: datetime, pull: tuple) -> str:
         return f"growth risk: no answer. {error}"
     if made is None:
         return f"growth risk: no saved models. {note or 'The next update makes them.'}"
+    new = []
     for one in made:
-        risk_files.save(one, folder, datetime.now(UTC))
-    chances = [[limit["chance"] for limit in one.get("limits", [])] for one in made]
+        try:
+            risk_files.save(one, folder, datetime.now(UTC))
+        except FileExistsError:  # A different update made this answer first: it stays.
+            continue
+        new.append(one)
+    chances = [[limit["chance"] for limit in one.get("limits", [])] for one in new]
     count = sum(any(chance is not None for chance in of_one) for of_one in chances)
-    line = f"growth risk: {len(made)} new files, {count} with a percentage."
+    line = f"growth risk: {len(new)} new files, {count} with a percentage."
     return f"{line} {note}" if note else line

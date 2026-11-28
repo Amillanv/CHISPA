@@ -2849,8 +2849,9 @@ The rules:
 4. An alert is near an earlier alert if a detection of a different alert is not farther than 1 km from one of its
    detections. That detection was available before the first detection of the alert, and not more than 14 days
    before it. It is in the biome, and it is not in the event of the alert at the moment. Such an alert gets a rank
-   and no percentage, as an alert with only GOES rows of INPE. The answer names the earlier alert, with the
-   distance, the hours and the sensor families.
+   and no percentage, as an alert with only GOES rows of INPE. The answer names the nearest earlier alert, with
+   the distance, the hours, and the detections and sensor families of that alert near it. It also has the
+   number of earlier alerts that are near.
 5. The factor of an alert is that of section 11.24, rule 3, at the time of its moment. The older alerts are those
    that can get a percentage by rule 4: the factor is for the same group of alerts as a live alert.
 6. For each limit of hectares an answer has the chance, the rank, the factor and the mark "not tested". The chance
@@ -2858,7 +2859,8 @@ The rules:
    The rank is the share of the alerts that gave the weights with a smaller value before the recalibration.
    For 1000 hectares an alert has a rank only at 30 minutes, and a chance with the mark "not tested" at 24 hours
    (section 11.25).
-7. Each answer is one file in `data/risks`, for one alert and one moment. A file does not change. Its name has
+7. Each answer is one file in `data/risks`, for one alert and one moment. A file does not change: if two updates
+   make one answer at one time, the file of the first stays. Its name has
    the first detection of the alert, and the moment: the time when CHISPA had that detection, its observation
    time and its place. It does not have the id of the alert: an id can go to a different alert when the store
    gets older rows. Two alerts of one poll have the same first time, and they can be at one place on different
@@ -2871,7 +2873,8 @@ The rules:
    that window are those of the saved file.
 8. `chispa update` makes the saved file again if it is absent or of other settings. One time in 24 hours it asks
    Earth Engine for a new month of the Monitor map and of the burn days. With a new month it gets the files and
-   makes the saved file again: approximately 6 minutes. If that fails, the saved file stays. The saved file
+   makes the saved file again: approximately 6 minutes. It gets the newest files of ERA5-Land first: the older
+   alerts stop at the complete weather on disk. If that fails, the saved file stays. The saved file
    names the maps that made it: the last month of the Monitor map and the months of the burn days, for each
    year. It is current only if the maps on disk are those maps. The fires of a map are made again when the
    burn days of one more month come. A folder of the map is a map only when its download is complete, and a
@@ -2897,8 +2900,10 @@ place of the owner. The stamp of a table has the day in UTC: 2026-11-28, and the
 - Hypothesis A is false. The recall is 0.6594 to 0.8645: the smallest is 2091 of 3171 alerts on a known fire, in
   2019 at 30 minutes. The precision is 0.2675 to 0.7197: the smallest is 291 of 1088 alerts with the mark, in 2022
   at 24 hours. Many alerts are near an earlier alert that the map does not put on the same fire.
-- Hypothesis B is true. With no mark, the percentage for 100 hectares does not keep condition 1: the smallest
-  Brier skill score is -0.0091 at 30 minutes and -0.0224 at 24 hours (table `risk_percentage_no_mark`).
+- Hypothesis B is true for the recorded alerts. It is not a result for the answers of the live path: they have
+  no score yet, and their test is a score of the saved files. With no mark, the percentage for 100 hectares
+  does not keep condition 1: the smallest Brier skill score is -0.0091 at 30 minutes and -0.0224 at 24 hours
+  (table `risk_percentage_no_mark`).
 
 | Model | Observed to expected, 2021 to 2025 | In one year | Smallest Brier skill score | Replay of 2026 |
 |---|---|---|---|---|
