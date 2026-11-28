@@ -360,13 +360,20 @@ def test_saved_models_are_made_again_one_time_each_day(tmp_path):
 
 def test_failed_look_for_a_new_month_keeps_the_saved_models(tmp_path):
     def refresh(store_path, raw_dir, time, project):
+        # A different update makes new models in the minutes of this look, which then fails.
+        newer = risk_files.load_models(_models_path()) | {"made_at": "by a different update"}
+        risk_files.save_models(newer, _models_path())
         raise RuntimeError("Earth Engine gave no answer.")
 
     save_models(AVAILABLE - timedelta(hours=25))
     note = risk_files.keep_current(tmp_path, tmp_path, AVAILABLE, ("project", refresh))
     assert note == "The saved models are not new. Earth Engine gave no answer."
     # The models stay, and the next look is one day later: not in the next update.
-    assert risk_files.load_models(_models_path())["map_checked_at"] == to_text(AVAILABLE)
+    saved = risk_files.load_models(_models_path())
+    assert (saved["map_checked_at"], saved["made_at"]) == (
+        to_text(AVAILABLE),
+        "by a different update",
+    )
 
 
 def test_update_gives_each_new_alert_its_file_and_the_record_reads_it(tmp_path, monkeypatch):

@@ -69,9 +69,11 @@ def keep_current(store_path: Path, raw_dir: Path, now: datetime, pull: tuple) ->
     try:
         return refresh(store_path, raw_dir, now, project)
     except (RuntimeError, OSError, ValueError, ee.EEException) as error:
-        if saved is not None:  # The next look is after the usual time, not in the next update.
-            checked = saved | {"map_checked_at": to_text(now)}
-            save_models(checked, config.RISK_MODELS_PATH)
+        # The next look is after the usual time, not in the next update. A different update
+        # can have made new models in the minutes of this look: the file of now gets the time.
+        current = load_models(config.RISK_MODELS_PATH)
+        if current is not None:
+            save_models(current | {"map_checked_at": to_text(now)}, config.RISK_MODELS_PATH)
         return f"The saved models are not new. {error}"
 
 
