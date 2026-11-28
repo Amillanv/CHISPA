@@ -109,6 +109,7 @@ def test_outcomes_are_those_of_the_alerts_that_a_live_alert_can_be(tmp_path, mon
 
 def test_file_is_made_again_only_for_a_new_month(tmp_path, monkeypatch):
     monkeypatch.setattr(risk_save, "pull_maps", lambda now, raw_dir, project: None)
+    monkeypatch.setattr("chispa.sources.weather.download_year", lambda year, project, raw: [])
     monkeypatch.setattr(risk_save, "map_months", lambda now, raw_dir: {2024: 6})
     folder = tmp_path / "burnday" / "2024"
     folder.mkdir(parents=True)

@@ -25,7 +25,7 @@ from chispa.evaluation.risk_run import year_parts
 from chispa.evaluation.risk_test import burn_day_months, rows_of_month, weather_margin
 from chispa.grid import pantanal_grid
 from chispa.risk import DIGITS
-from chispa.sources import burnday, monitor
+from chispa.sources import burnday, monitor, weather
 from chispa.store import to_text
 
 
@@ -135,6 +135,11 @@ def refresh(store_path: Path, raw_dir: Path, now: datetime, project: str) -> str
     if saved is not None and all(saved.get(name) == value for name, value in maps.items()):
         risk_files.save_models(saved | {"map_checked_at": to_text(now)}, path)
         return "The maps have no new month."
+    # The rows of the outcomes stop at the complete weather on disk: get the newest months.
+    for year in sorted(
+        {(now - timedelta(days=config.RISK_RECALIBRATION_DELAY_DAYS)).year, now.year}
+    ):
+        weather.download_year(year, project, raw_dir)
     parts = {year: year_parts(year, store_path, raw_dir) for year in config.YEAR_ROLES}
     models = fit(parts, sorted(parts))
     months = {int(year): month for year, month in maps["map"].items()}

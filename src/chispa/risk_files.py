@@ -9,6 +9,7 @@ A later run can score the files against what came: they are data that no model h
 """
 
 import json
+import os
 from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -101,18 +102,25 @@ def save(answer: dict, folder: Path, made_at: datetime) -> Path:
     """Save the answer of one alert at one moment, and return its file.
 
     The file has `made_at`: the time when it was complete. A file never changes: the answer
-    stays as we gave it.
+    stays as we gave it. If the file exists, this stops with `FileExistsError`, also when a
+    different update made it at the same time.
     """
     times = (answer["first_available_at"], answer["first_observed_at"])
     seconds = [int(datetime.fromisoformat(time).timestamp()) for time in times]
     path = path_of(folder, answer["moment_h"], (*seconds, answer["first_lat"], answer["first_lon"]))
-    if path.exists():
-        raise RuntimeError(f"{path} exists: a file of the growth risk does not change.")
     # A reader must not get a part of a file: the name is final only when the file is complete.
-    part = path.with_name(path.name + ".part")
+    # Two updates can make one answer at one time: each has its own part, and a link does not
+    # replace a file that exists. Thus the second update changes nothing.
+    part = path.with_name(f"{path.name}.{os.getpid()}.part")
     path.parent.mkdir(parents=True, exist_ok=True)
     part.write_text(json.dumps(answer | {"made_at": to_text(made_at)}, indent=1))
-    part.rename(path)
+    try:
+        os.link(part, path)
+    except FileExistsError:
+        message = f"{path} exists: a file of the growth risk does not change."
+        raise FileExistsError(message) from None
+    finally:
+        part.unlink()
     return path
 
 

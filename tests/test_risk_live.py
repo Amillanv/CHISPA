@@ -123,8 +123,11 @@ def test_answer_of_an_alert_is_one_file_that_does_not_change(tmp_path):
     name = "20240815T080000_20240815T050000_-17.50000_-57.50000_0.json"
     assert path == tmp_path / "2024" / name
     assert json.loads(path.read_text())["made_at"] == to_text(made)
-    with pytest.raises(RuntimeError, match="does not change"):
-        risk_files.save(answer_of("0"), tmp_path, made)
+    with pytest.raises(FileExistsError, match="does not change"):
+        risk_files.save(answer_of("0"), tmp_path, made + timedelta(hours=1))
+    # The answer is that of the first save, and no part of a file stays in the folder.
+    assert json.loads(path.read_text())["made_at"] == to_text(made)
+    assert [one.name for one in path.parent.iterdir()] == [name]
 
 
 def test_first_detection_of_an_alert_does_not_read_an_id():
@@ -223,6 +226,7 @@ def test_alert_near_a_detection_of_an_earlier_alert_has_the_mark(tmp_path, monke
     assert found["issued"].tolist() == [FIRST_ID + 1]
     mark = risk_live.near_earlier(store, found, FIRST_ID + 1, layers())
     assert (mark["alert"], mark["hours_before"], mark["detections"]) == (FIRST_ID, 48.0, 1)
+    assert mark["earlier_alerts"] == 1
     assert 495 <= mark["distance_m"] <= 505
     assert mark["sensor_families"] == ["modis"]
     # The earlier alert itself has no detection before it.
@@ -233,6 +237,29 @@ def test_alert_near_a_detection_of_an_earlier_alert_has_the_mark(tmp_path, monke
     monkeypatch.setattr("chispa.config.RISK_NEAR_EARLIER_DAYS", 14)
     monkeypatch.setattr("chispa.config.RISK_NEAR_EARLIER_M", 400.0)
     assert risk_live.near_earlier(store, found, FIRST_ID + 1, layers()) is None
+
+
+def test_mark_gives_the_sensors_of_the_alert_that_it_names(tmp_path):
+    # A second earlier alert, 4 days before and 800 m to the south, from a different sensor.
+    other = replace(
+        VIIRS,
+        lat=-17.5 - 0.8 * KM,
+        sensor_family="avhrr",
+        platform="NOAA19",
+        observed_at=T0 - timedelta(days=4),
+        available_at=T0 - timedelta(days=4) + timedelta(hours=3),
+    )
+    store = store_of(tmp_path, [other, EARLIER, VIIRS])
+    found = risk_live.event_at(store, FIRST_ID + 2, AVAILABLE + timedelta(minutes=30), layers())
+    mark = risk_live.near_earlier(store, found, FIRST_ID + 2, layers())
+    # The nearest is the alert of 2 days before. The answer has its detection and its sensor,
+    # and it says that two earlier alerts are near.
+    assert (mark["alert"], mark["detections"], mark["sensor_families"]) == (
+        FIRST_ID + 1,
+        1,
+        ["modis"],
+    )
+    assert mark["earlier_alerts"] == 2
 
 
 def test_alert_that_did_not_start_in_the_biome_has_no_answer(tmp_path):
