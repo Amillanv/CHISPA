@@ -1,7 +1,7 @@
 /* The clock in the bar: the mode, the time, the lag of the live data and the time zone of the page.
    The time is the as-of time in a replay, and the time now when live. Each time on the page is in the zone of the clock.
    The lag is the time from the newest pass of the poller (tool `live_status`) to the as-of time. */
-import { stamp, zoned, zoneLabel, zoneTag, counter } from "./format.js";
+import { stamp, zoned, zoneTag, counter } from "./format.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -13,7 +13,7 @@ export function zoneOf(state) {
 export function drawClock(state) {
   const mode = $("mode"), zone = zoneOf(state);
   mode.className = `mode${state.live ? " live" : ""}`;
-  mode.innerHTML = `<span class="dot"></span>${state.live ? "Live" : "Replay"}`;
+  mode.innerHTML = `<span class="dot"></span><span class="text">${state.live ? "Live" : "Replay"}</span>`;
   mode.title = state.live ? "The as-of time is now." : "Go back to live.";
   $("zone").innerHTML = [["local", "Pantanal"], ["utc", "UTC"]]
     .map(([key, name]) => `<button type="button" data-zone="${key}" aria-pressed="${state.zone === key}">${name}</button>`).join("");
@@ -28,7 +28,7 @@ export function drawClock(state) {
 export function tick(state) {
   const zone = zoneOf(state), live = state.live;
   const moment = live ? Date.now() : new Date(state.asOf).getTime();
-  $("asof-label").textContent = `${live ? "" : "As-of · "}`;
+  $("asof-label").textContent = live ? "" : "As-of"; // live: the time is now, with no label
   if (live) {
     const t = zoned(moment, zone ?? "UTC", true);
     $("asof").innerHTML = `<span class="d">${t.date}</span>${t.time}`;
