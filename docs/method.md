@@ -2963,7 +2963,8 @@ file has 6 decimals.
   build` and a new fit: no command does this without a person.
 - The files come from the computer that has the store and runs `chispa update`. The server only records the
   logs. The dashboard does not show the field, and no text goes to a person with it.
-- The growth risk has satellite sources only.
+- The detections of the growth risk are from satellites only: no camera, and no report of a person. Its other
+  inputs are the weather, the maps and the layers of section 11.22.
 
 ## 12. Agent and MCP rules
 
