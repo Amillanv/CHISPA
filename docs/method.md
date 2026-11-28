@@ -2895,8 +2895,10 @@ the place of the mark of the map, for the scored alerts and for the older alerts
 a fourth look at those alerts: an exploratory result.
 
 The result (tables `risk_mark` of each year, `risk_percentage_mark` and `risk_percentage_no_mark` of 2025, and
-`risk_replay_mark` of 2026). 2023 gave 1 km and 14 days. The first run was in the evening of 2026-11-27 at the
-place of the owner. The stamp of a table has the day in UTC: 2026-11-28, and the day of a later run.
+`risk_replay_mark` of 2026). 2023 gave 1 km and 14 days. That search was a check outside the repository:
+`PLAN.md` has its values, and the tables have the pair of `config.py` only. The first run was in the evening of
+2026-11-27 at the place of the owner. The stamp of a table has the day in UTC: 2026-11-28, and the day of a
+later run.
 
 - Hypothesis A is false. The recall is 0.6594 to 0.8645: the smallest is 2091 of 3171 alerts on a known fire, in
   2019 at 30 minutes. The precision is 0.2675 to 0.7197: the smallest is 291 of 1088 alerts with the mark, in 2022
