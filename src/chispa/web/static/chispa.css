@@ -84,27 +84,33 @@ button { cursor: pointer; }
 .wordmark { font: 500 13px/1 var(--font); letter-spacing: 0.34em; }
 .region { font-size: 12px; color: var(--fg-3); padding-left: 11px; border-left: 1px solid var(--hair-2); }
 .clock { justify-self: center; display: flex; align-items: stretch; height: 38px; background: var(--ink-1); border: 1px solid var(--hair); border-radius: var(--r); backdrop-filter: blur(18px); }
-.mode { display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 0; background: none; border-right: 1px solid var(--hair); font: 500 10.5px/1 var(--ui); letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-2); }
+/* The parts of the clock: a hairline at the left of each part after the mode, 14 px at each side, 5 px round a switch. */
+.mode { display: flex; align-items: center; gap: 9px; padding: 0 14px; border: 0; background: none; font: 500 10.5px/1 var(--ui); letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-2); }
+.mode:hover { color: var(--fg-1); }
 .mode .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--fg-4); }
 .mode.live .dot { background: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); animation: breathe 2.4s ease-in-out infinite; }
 .mode.live { color: var(--fg-1); }
-.reading { display: flex; flex-direction: row; justify-content: center; align-items: center; padding: 0 14px; border-left: 1px solid var(--hair); }
-.reading.lag {gap: 7px}
-.reading.zone {padding: 5px;}
-.reading .label { font-size: 8.5px; white-space: nowrap;}
-.reading .mono { font-size: 12.5px; color: var(--fg-1); white-space: nowrap; }
+.reading { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 0 14px; border-left: 1px solid var(--hair); }
+.reading .label { font-size: 9px; line-height: 1; white-space: nowrap; }
+.reading .label:empty { display: none; }
+.reading .mono { font-size: 12.5px; line-height: 1; color: var(--fg-1); white-space: nowrap; }
 .reading .mono .d { color: var(--fg-3); margin-right: 6px; }
-.reading.zone .seg button { padding: 2px 7px; font-size: 10.5px; height: 100%;}
+.reading.zone { padding: 5px; }
+.reading.zone .seg { height: 100%; }
+.reading.zone .seg button { padding: 0 11px; font-size: 10.5px; }
+/* Each text of the clock is centred on its capitals and digits. The line box of each font puts them a little lower or higher. */
+.mode .text, .reading .label, .reading .mono { text-box: trim-both cap alphabetic; }
 /* The lag counter: the time from the newest pass of the poller. Amber when the poller is late. */
 .lag { min-width: 104px; }
-.lag .mono { display: flex; align-items: center; gap: 7px; }
-.lag .mono::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--fg-4); }
+.lag .label { order: -1; } /* the label, then the dot, then the value */
+.lag::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--fg-4); }
 .lag.late .mono { color: var(--low); }
-.lag.late .mono::before { background: var(--low); box-shadow: 0 0 0 3px rgba(245, 193, 108, 0.16); }
+.lag.late::before { background: var(--low); box-shadow: 0 0 0 3px rgba(245, 193, 108, 0.16); }
 .lag.archive .mono { color: var(--fg-3); }
-.replays { border: 0; border-left: 1px solid var(--hair); background: none; padding: 0 28px 0 12px; color: var(--fg-2); font-size: 12px; appearance: none;
+.replays { border: 0; border-left: 1px solid var(--hair); background: none; padding: 0 32px 0 14px; color: var(--fg-2); font-size: 12px; appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, var(--fg-3) 50%), linear-gradient(-45deg, transparent 50%, var(--fg-3) 50%);
-  background-position: right 14px center, right 10px center; background-size: 4px 4px; background-repeat: no-repeat; border-radius: 0px;}
+  background-position: right 18px center, right 14px center; background-size: 4px 4px; background-repeat: no-repeat; border-radius: 0; }
+.replays:hover { color: var(--fg-1); }
 .replays option { background: #111; }
 .status { display: flex; align-items: center; gap: 8px; }
 .tag { font: 500 10px/1 var(--ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-3); padding: 7px 9px; border: 1px solid var(--hair); border-radius: var(--r); background: var(--ink-1); }
@@ -147,10 +153,15 @@ button { cursor: pointer; }
 .barrow .v small { color: var(--fg-3); }
 .sub { margin: 14px 0 8px; }
 
-.seg { display: inline-flex; border: 1px solid var(--hair); border-radius: var(--r); height: 100%;}
-.seg button { background: none; border: 0; padding: 4px 8px; font: 400 11px/1 var(--mono); color: var(--fg-3); }
-.seg button + button { border-left: 1px solid var(--hair); }
-.seg button[aria-pressed="true"] { color: var(--fg-1); background: var(--blue-highlight); }
+/* A switch. Each part has its own hairline edge, with no hairline at its left after the first part.
+   The selected part has CHISPA blue and a blue edge on four sides: its left edge covers the hairline before it. */
+.seg { display: inline-flex; }
+.seg button { background: none; border: 1px solid var(--hair); border-left-width: 0; padding: 4px 8px; font: 400 11px/1 var(--mono); color: var(--fg-3); }
+.seg button:first-child { border-left-width: 1px; border-radius: var(--r) 0 0 var(--r); }
+.seg button:last-child { border-radius: 0 var(--r) var(--r) 0; }
+.seg button:hover { color: var(--fg-1); }
+.seg button[aria-pressed="true"] { color: var(--fg-1); background: var(--blue-highlight); border-color: var(--blue); }
+.seg button[aria-pressed="true"]:not(:first-child) { border-left-width: 1px; margin-left: -1px; }
 
 /* --- Right: events list and dossier --- */
 .right { grid-area: right; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
@@ -395,10 +406,12 @@ details.raw[open] summary::after { content: "−"; }
   .reading { padding: 0 8px; flex: 1; }
   .reading .mono { font-size: 11.5px; }
   .reading .mono .d { display: none; }
-  /* The list of recorded moments goes to a second row of the clock. */
-  .clock { flex-wrap: wrap; height: auto; top: calc(56vh - 78px); }
+  /* Two rows of the clock: the mode, the time and the lag; then the time zone and the list of recorded moments. */
+  .clock { flex-wrap: wrap; height: auto; top: calc(56vh - 86px); }
+  .clock::after { content: ""; flex-basis: 100%; order: 1; }
   .clock > .mode, .clock > .reading { height: 38px; }
-  .replays { flex-basis: 100%; height: 30px; border-left: 0; border-top: 1px solid var(--hair); max-width: none; border-radius: 0px; }
+  .reading.zone { order: 2; flex: none; border-left: 0; border-top: 1px solid var(--hair); }
+  .replays { order: 3; flex: 1; height: 38px; border-top: 1px solid var(--hair); max-width: none; }
   .lag { min-width: 0; }
   .status { justify-self: end; }
   .status .tag, .drawer-toggle, .controls .segmented, #zoom-in, #zoom-out { display: none; }

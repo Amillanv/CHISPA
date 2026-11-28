@@ -8,6 +8,7 @@ const CANVAS = "#050505", ICE = "#d9e7ea", BLUE = "#087cff";
 const WORLD = [[-180, -85], [180, -85], [180, 85], [-180, 85], [-180, -85]];
 const EMPTY = { type: "FeatureCollection", features: [] };
 const STILL = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const HOME_PAD = 12; // the margin in pixels round the biome in the home view
 const tiles = (key, name) => `https://api.maptiler.com/tiles/${name}/tiles.json?key=${key}`;
 
 /* Imagery: the satellite mosaic, a little darker and less saturated, so that the marks stay legible.
@@ -66,10 +67,15 @@ export class MapView {
     this.data = { events: EMPTY, detections: EMPTY, hover: null };
     this.border = fetch("/api/border").then((r) => (r.ok ? r.json() : null)).catch(() => null);
     const [west, south, east, north] = settings.box;
+    // The home view: the box of the data requests until the border gives the limits of the biome.
+    this.home = [[west, south], [east, north]];
+    this.island = false;
     this.map = new maplibregl.Map({
-      container, style: imagery(settings.map_key), bounds: [[west, south], [east, north]],
-      fitBoundsOptions: { padding: this.padding() }, maxPitch: 70, attributionControl: false, dragRotate: true,
+      container, style: imagery(settings.map_key), maxPitch: 70, attributionControl: false, dragRotate: true,
     });
+    // The camera keeps the free area between the panels as its padding. A fit adds its margin to that padding.
+    this.map.setPadding(this.padding());
+    this.fit(0);
     this.map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
     this.map.addControl(new maplibregl.ScaleControl({ unit: "metric", maxWidth: 90 }), "bottom-left");
     this.map.on("style.load", () => this.dress());
@@ -80,8 +86,7 @@ export class MapView {
   padding() {
     const box = document.querySelector(".map-ui").getBoundingClientRect();
     const map = document.getElementById("map").getBoundingClientRect();
-    const pad = 24;
-    return { left: box.left - map.left + pad, top: box.top - map.top + pad, right: map.right - box.right + pad, bottom: map.bottom - box.bottom + pad };
+    return { left: box.left - map.left, top: box.top - map.top, right: map.right - box.right, bottom: map.bottom - box.bottom };
   }
 
   async dress() {
@@ -92,6 +97,7 @@ export class MapView {
     this.addGraticule(font);
     const border = await this.border;
     if (border && !map.getSource("border")) this.addIsland(border);
+    if (border && !this.island) this.homeOnBiome(border);
     this.addEvents();
   }
 
@@ -140,10 +146,9 @@ export class MapView {
 
   /* The biome as an island: a mask darkens the world outside the border. Events outside stay visible. */
   addIsland(border) {
-    const geometry = (border.features ? border.features[0] : border).geometry;
-    const polygons = geometry.type === "MultiPolygon" ? geometry.coordinates : [geometry.coordinates];
+    const polygons = outerRings(border);
     this.map.addSource("border", { type: "geojson", data: border });
-    this.map.addSource("mask", { type: "geojson", data: { type: "Feature", geometry: { type: "Polygon", coordinates: [WORLD, ...polygons.map((p) => p[0])] } } });
+    this.map.addSource("mask", { type: "geojson", data: { type: "Feature", geometry: { type: "Polygon", coordinates: [WORLD, ...polygons] } } });
     this.map.addLayer({ id: "mask", type: "fill", source: "mask", paint: { "fill-color": CANVAS, "fill-opacity": 0.84 } }, "graticule");
     this.map.addLayer({ id: "shore-glow", type: "line", source: "border", paint: { "line-color": ICE, "line-width": 7, "line-blur": 7, "line-opacity": 0.12 } }, "graticule");
     this.map.addLayer({ id: "shore", type: "line", source: "border", paint: { "line-color": ICE, "line-width": 1, "line-opacity": 0.55 } }, "graticule");
@@ -216,9 +221,21 @@ export class MapView {
     this.map.getSource("detections")?.setData(this.data.detections);
   }
 
-  fit() {
-    const [west, south, east, north] = this.settings.box;
-    this.map.fitBounds([[west, south], [east, north]], { padding: this.padding(), pitch: 0, bearing: 0, duration: STILL ? 0 : 900 });
+  /* The first time that the border is in, the home view becomes the biome. The camera goes there at once,
+     if no event is selected: the biome is a little smaller than the box of the start. */
+  homeOnBiome(border) {
+    let [west, south, east, north] = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const [lon, lat] of outerRings(border).flat()) {
+      [west, south, east, north] = [Math.min(west, lon), Math.min(south, lat), Math.max(east, lon), Math.max(north, lat)];
+    }
+    this.home = [[west, south], [east, north]];
+    this.island = true;
+    if (!this.marker) this.fit(0);
+  }
+
+  /* The home view: all of the biome in the free area between the panels. */
+  fit(duration = 900) {
+    this.map.fitBounds(this.home, { padding: HOME_PAD, pitch: 0, bearing: 0, duration: STILL ? 0 : duration });
   }
 
   setBase(base) {
@@ -237,7 +254,14 @@ export class MapView {
   }
 
   zoom(delta) { this.map.zoomTo(this.map.getZoom() + delta, { duration: STILL ? 0 : 250 }); }
-  resize() { this.map.resize(); }
+  resize() { this.map.resize(); this.map.setPadding(this.padding()); }
+}
+
+/* The outer ring of each polygon of the biome border. */
+function outerRings(border) {
+  const geometry = (border.features ? border.features[0] : border).geometry;
+  const polygons = geometry.type === "MultiPolygon" ? geometry.coordinates : [geometry.coordinates];
+  return polygons.map((p) => p[0]);
 }
 
 function point(lon, lat, properties) { return { type: "Feature", geometry: { type: "Point", coordinates: [lon, lat] }, properties }; }

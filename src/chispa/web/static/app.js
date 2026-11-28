@@ -241,6 +241,7 @@ function back() {
   state.selectedId = null;
   state.record = null;
   map.select(null);
+  map.fit();
   writeUrl();
   drawRight();
   drawHistory();
