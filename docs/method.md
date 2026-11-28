@@ -1662,8 +1662,9 @@ The rules:
    burn days of the months that the burn day product has.
 3. The match rule has the year (section 11.4).
 4. Only an alert with a known outcome is in the test: its moment is 60 days or more before the end of the last month
-   of the map. The map had the months to October 2026. Thus the test has the alerts with a moment before
-   2026-09-02 00:00 UTC: 1 January to 1 September, and not the months with the most fires.
+   of the map. The map had the months to October 2026. Thus the test has the alerts with a moment at or before
+   2026-09-02 00:00 UTC: 1 January to 1 September, and not the months with the most fires. No alert has its
+   moment at that time. The next test has the alerts with a moment after it.
    From 2026-11-27 `config.RISK_TEST_UNTIL` has that time, and a run reads no later alert: `chispa update` gets
    each new month of the map (section 11.35), and a later month must not add alerts to a run by accident.
    A run reads the map as it was when October came: the folder of that month, with the burn days of the months
@@ -2858,19 +2859,24 @@ The rules:
    For 1000 hectares an alert has a rank only at 30 minutes, and a chance with the mark "not tested" at 24 hours
    (section 11.25).
 7. Each answer is one file in `data/risks`, for one alert and one moment. A file does not change. Its name has
-   the id of the alert, the moment and the time of the first detection of the alert. It has the time
-   when it was complete (`made_at`), the inputs, the months of the Monitor map and the time of the saved file.
-   The update makes each answer of the last 30 days that has no file. Thus an answer can be later than its
-   moment: its detections are those of the moment, and its weather days and its factor are those of `made_at`.
+   the first detection of the alert, with its time and its place, and the moment. It does not have the id of the
+   alert: an id can go to a different alert when the store gets older rows, and two alerts of one poll have the
+   same time. The first detection is the detection of the alert with the first time when CHISPA had it. Of two
+   with that time, it is the first by the observation time, the latitude and the longitude.
+   A file has the time when it was complete (`made_at`), the inputs, the months of the Monitor map and the time
+   of the saved file (`models_made_at`). The update makes each answer of the last 30 days that has no file. Thus
+   an answer can be later than its moment. Its detections are those of the moment. Its weather days are those
+   that the files had at `made_at`. The window of its factor is from its moment (rule 5), and the outcomes in
+   that window are those of the saved file.
 8. `chispa update` makes the saved file again if it is absent or of other settings. One time in 24 hours it asks
    Earth Engine for a new month of the Monitor map and of the burn days. With a new month it gets the files and
    makes the saved file again: approximately 6 minutes. If that fails, the saved file stays. A folder of the map
    is a map only when its download is complete, and a month of the burn days can be absent only for 60 days
    after its end (`config.py`): a download that stopped does not give a map with fewer fires.
 9. The field `growth_risk` of the event record has the answers of the alert that started the event: those with a
-   file that was complete at or before the as-of time. The time of the first detection in the name of a file is
-   a part of its key: an id can go to a different alert when the store gets older rows, and that alert then gets
-   its own answer.
+   file that was complete at or before the as-of time. The record finds the files by the first detection of
+   that alert (rule 7). Thus an alert keeps its answers when its id changes, and an alert that gets an old id
+   gets its own answers.
 
 The mark of rule 4. The owner proposed it on 2026-11-27: a live alert has no map, and it has each detection.
 We wrote this before the result. 2023 sets the distance (1 to 15 km) and the days (1 to 90): the pair with the
@@ -2914,8 +2920,17 @@ the same and 842 with the same marks. The first detection of the 19 other alerts
 counts such an alert from its first detection in the biome, and rule 1 gives it no answer. The input that differs
 for the most alerts is the count of the detections near the alert: 12 alerts at each moment. `PLAN.md` has a
 check of their months: most are alerts of January, which is the limit of the detections of one year below.
-The check has a tolerance for two equal values (`evaluation/risk_parity.py`): it is not a setting of a result.
+Two values of an input are the same if the file of an answer has the same number for the two: an input in a
+file has 6 decimals.
 
+- The level of a percentage is for the alerts that get a percentage, together. A live alert does not have the
+  group of the map. Some of those alerts are on a known fire by the map: in 2019 at 30 minutes, 1080 of the 3171
+  alerts on a known fire have no mark (table `risk_mark`). The percentage of such an alert is for a new fire,
+  and it is too high for it. Thus the percentage of each other alert is too low by a part. Not measured: the
+  level of each of the two groups.
+- If the map is late, the newest alerts of its last month count in the factor with fewer days after them than
+  in the replay: there the map had 15 days or more after each alert that counted. A limit of 60 days after
+  each alert is a different rule from that of the replay: the owner decides it after the next test.
 - An answer has no score yet. The files of rule 7 are data that no model has read. Not built: the command that
   scores them against the Monitor map.
 - An answer that is later than its moment has the factor of a later day. `made_at` and `moment_at` say how late.

@@ -25,6 +25,8 @@ WEATHER_LATE = tuple(f"{name}_late" for name in WEATHER_BEFORE)
 BURNED_NEAR = tuple(f"burned_near_{years}y" for years in config.RISK_BURNED_NEAR_YEARS)
 BURNED = ("burned_years_log", "burned_times", *BURNED_NEAR)
 DAY_S = 86_400
+# The decimals of a value in a saved file: an input of an answer, and a value of the reference.
+DIGITS = 6
 
 
 def key(moment: str, limit_ha: float) -> str:
@@ -216,7 +218,8 @@ def limits(saved: dict, values: dict[str, float], moment: str, at_s: float) -> l
     found = []
     for place, limit in enumerate(config.RISK_CLASS_LIMITS_HA):
         reference = saved["models"][names[place]]["reference"]
-        smaller = float(np.searchsorted(reference, before[place][0]))
+        # The reference has its values with the decimals of a saved file: so has the value here.
+        smaller = float(np.searchsorted(reference, round(float(before[place][0]), DIGITS)))
         rank_only = (moment, limit) in config.RISK_RANK_ONLY
         found.append(
             {

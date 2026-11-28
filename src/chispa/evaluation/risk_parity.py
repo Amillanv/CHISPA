@@ -14,17 +14,18 @@ import numpy as np
 
 from chispa import confidence, risk_live
 from chispa.evaluation.confidence import MOMENTS
-
-SAME = 1e-6  # Two values of an input are the same if they differ by less than this.
+from chispa.risk import DIGITS
 
 
 def _row(moment: str, pairs: list[tuple], names: list[str]) -> dict:
     """Return the table row of one moment from (row of the evaluation, alert of the live path)."""
     both = [(row, one) for row, one in pairs if "no_answer" not in one]
-    gaps = np.array(
-        [[abs(one["values"][name] - row["inputs"][name]) for name in names] for row, one in both]
-    ).reshape(len(both), len(names))
-    differs = (gaps >= SAME).sum(axis=0)
+    shape = (len(both), len(names))
+    live = np.array([[one["values"][name] for name in names] for _, one in both]).reshape(shape)
+    before = np.array([[row["inputs"][name] for name in names] for row, _ in both]).reshape(shape)
+    # Two values are the same if the file of an answer has the same number for the two.
+    different = live.round(DIGITS) != before.round(DIGITS)
+    differs = different.sum(axis=0)
     worst = int(differs.argmax()) if len(both) else 0
     marks = [
         (one["near_earlier"] is not None) == row["near_earlier"]
@@ -32,15 +33,16 @@ def _row(moment: str, pairs: list[tuple], names: list[str]) -> dict:
         for row, one in both
     ]
     some = bool(differs.any())
+    largest = float(np.abs(live - before)[:, worst].max()) if some else None
     return {
         "moment_h": moment,
         "alerts": len(pairs),
         "alerts_with_live_inputs": len(both),
-        "same_inputs": int((gaps < SAME).all(axis=1).sum()),
+        "same_inputs": int((~different).all(axis=1).sum()),
         "same_marks": int(sum(marks)),
         "different_most": names[worst] if some else None,
         "different_most_alerts": int(differs[worst]) if some else 0,
-        "different_most_largest": round(float(gaps[:, worst].max()), 6) if some else None,
+        "different_most_largest": round(largest, DIGITS) if some else None,
     }
 
 
@@ -54,7 +56,10 @@ def parity_table(rows: dict[str, list], names: dict[str, list], paths: tuple[Pat
     store, table = sqlite3.connect(paths[0]), []
     for moment in MOMENTS:
         seconds = confidence.moment_seconds()[moment]
-        waiting = [(row["alert"], moment, int(row["at"] - seconds)) for row in rows[moment]]
+        # The live path reads the place of the first detection from the store: 0 is not read.
+        waiting = [
+            (row["alert"], moment, (int(row["at"] - seconds), 0.0, 0.0)) for row in rows[moment]
+        ]
         read = risk_live.read_all(store, paths[1], waiting, None)
         table.append(_row(moment, list(zip(rows[moment], read, strict=True)), names[moment]))
     return table
