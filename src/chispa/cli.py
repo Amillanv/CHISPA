@@ -10,7 +10,7 @@ from functools import partial
 
 from dotenv import load_dotenv
 
-from chispa import bucket, checks, config, live, polls, watch
+from chispa import bucket, checks, config, forecast_checks, forecast_live, live, polls, watch
 from chispa.build import add_live, build_store
 from chispa.evaluation.report import write_summary, write_tables
 from chispa.evaluation.run import evaluate
@@ -85,7 +85,9 @@ def main(arguments: list[str] | None = None) -> None:
     risk.add_argument("--test-run", action="store_true", help="Also score the test year one time.")
     forecast = commands.add_parser("forecast", help="Make the growth forecast of the fronts.")
     forecast.add_argument("--test-run", action="store_true", help="Also score the test years.")
-    forecast.add_argument("--live", action="store_true", help="Forecast the newest fronts.")
+    runs = forecast.add_mutually_exclusive_group()
+    for name, text in forecast_checks.ACTIONS.items():
+        runs.add_argument(f"--{name}", dest="action", action="store_const", const=name, help=text)
     poll = commands.add_parser("poll", help="Do one pass of the live poller: record the new rows.")
     since = "Read back the GOES scans and the INPE files to this UTC time, to fill a hole: "
     since += "2026-11-20T00:00:00+00:00. It does not change the FIRMS request."
@@ -121,7 +123,7 @@ def main(arguments: list[str] | None = None) -> None:
     elif chosen.command == "risk":
         checks.run_risk(chosen.test_run)
     elif chosen.command == "forecast":
-        checks.run_forecast(chosen.test_run, chosen.live)
+        forecast_checks.run(chosen.action, chosen.test_run)
     elif chosen.command == "images":
         checks.run_images(chosen.year, lambda: read_setting("EE_PROJECT"), chosen.look)
     elif chosen.command == "poll":
@@ -293,4 +295,4 @@ def run_update() -> None:
     if status["late_at"] is None or now > datetime.fromisoformat(status["late_at"]):
         newest = status["complete_pass_at"] or "no pass"
         print(f"live: LATE. The newest pass with no failure: {newest}. Do a check of the poller.")
-    checks.run_new_forecasts(datetime.now(UTC))
+    print(forecast_live.update(config.STORE_PATH, config.RAW_DIR, datetime.now(UTC)))

@@ -5,16 +5,14 @@ This module also gives the one format of a share and of a percentile in all tabl
 """
 
 import csv
-import hashlib
 from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
 
 from chispa import config
+from chispa.config_hash import config_hash
 
-# The start of the marker line in `config.py`. The hash covers the text before it.
-HASH_END = "# === The values above this line can change a result."
 # The file of a year with the stamp of each of its tables: the configuration and the day of the run.
 # A stamp in each row of a table made each row new at each run, also with no new value.
 STAMPS = "stamps.csv"
@@ -46,18 +44,6 @@ def share(part: float, total: float) -> float | None:
 def percentile(values: np.ndarray, percent: int) -> float | None:
     """Return a percentile of the values, or no value if there are none."""
     return round(float(np.percentile(values, percent)), 2) if len(values) else None
-
-
-def config_hash() -> str:
-    """Return a short hash of the first part of `config.py`: the values that can change a result.
-
-    Two runs with the same hash used the same settings. A new path or a new live value
-    is below the marker line, thus it does not change the hash of a frozen evaluation.
-    """
-    text = Path(config.__file__).read_text()
-    if HASH_END not in text:
-        raise RuntimeError("config.py has no marker line. Put the line back, then run again.")
-    return hashlib.sha256(text.split(HASH_END)[0].encode()).hexdigest()[:12]
 
 
 def read_stamps(folder: Path) -> dict[str, dict[str, str]]:
